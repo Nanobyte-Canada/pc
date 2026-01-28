@@ -1,0 +1,185 @@
+# Portfolio Construction Application
+
+A full-stack application for portfolio construction using public ETFs and Mutual Funds.
+
+## Tech Stack
+
+- **Backend**: Kotlin + Spring Boot 3
+- **Frontend**: React + TypeScript + Vite
+- **Database**: PostgreSQL 16
+- **Migrations**: Flyway
+- **Containerization**: Docker + Docker Compose
+- **CI/CD**: GitHub Actions
+- **Cloud**: GCP (Cloud Run, Cloud SQL, Cloud Storage, HTTPS Load Balancer)
+
+## Project Structure
+
+```
+portfolio-app/
+├── backend/          # Kotlin Spring Boot API
+├── frontend/         # React TypeScript SPA
+├── infra/            # Terraform infrastructure
+├── scripts/          # Utility scripts
+├── docs/             # Documentation
+└── docker-compose.yml
+```
+
+## Prerequisites
+
+- Docker and Docker Compose
+- JDK 21 (for local backend development)
+- Node.js 20 (for local frontend development)
+
+## Quick Start
+
+### Using Docker Compose (Recommended)
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Access Points
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8080
+- **Health Check**: http://localhost:8080/health
+- **Version**: http://localhost:8080/api/v1/version
+
+## Local Development
+
+### Backend
+
+```bash
+cd backend
+
+# Run with Gradle
+./gradlew bootRun
+
+# Run tests
+./gradlew test
+
+# Build JAR
+./gradlew build
+```
+
+### Frontend
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Run tests
+npm test
+
+# Build for production
+npm run build
+```
+
+## Environment Configuration
+
+Environment variables are configured per environment:
+
+- `.env.local` - Local development
+- `.env.dev` - Development environment
+- `.env.prod` - Production environment
+
+Copy `.env.example` and configure as needed.
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check endpoint |
+| `/api/v1/version` | GET | Returns application version and environment |
+
+## Testing
+
+### Backend Tests
+
+```bash
+cd backend
+./gradlew test                    # All tests
+./gradlew test --tests "*Unit*"   # Unit tests only
+./gradlew test --tests "*Integration*"  # Integration tests
+```
+
+### Frontend Tests
+
+```bash
+cd frontend
+npm test              # Run tests in watch mode
+npm run test:coverage # Run with coverage report
+```
+
+## Docker
+
+### Build Images
+
+```bash
+# Backend
+docker build -t portfolio-backend ./backend
+
+# Frontend
+docker build -t portfolio-frontend ./frontend
+```
+
+### Run Containers
+
+```bash
+# Using docker-compose (recommended)
+docker-compose up -d
+
+# Or run individually
+docker run -p 8080:8080 portfolio-backend
+docker run -p 3000:80 portfolio-frontend
+```
+
+## CI/CD
+
+GitHub Actions workflows:
+
+- **ci.yml**: Runs on PRs - lint, test, build
+- **deploy.yml**: Runs on main branch - deploy to GCP
+
+### Required GitHub Secrets
+
+- `GCP_PROJECT_NUMBER`: GCP project number for Workload Identity
+- Environment-specific secrets configured in GitHub Environments
+
+## GCP Deployment
+
+### Architecture
+
+```
+HTTPS Load Balancer
+├── /* → Cloud Storage (React SPA)
+└── /api/* → Cloud Run (Spring Boot)
+           └── Cloud SQL (PostgreSQL)
+```
+
+### Resources
+
+- **Cloud Run**: Backend API with autoscaling
+- **Cloud SQL**: PostgreSQL database (private IP)
+- **Cloud Storage**: Static frontend hosting
+- **HTTPS Load Balancer**: TLS termination + routing
+- **Secret Manager**: Secure credential storage
+- **Artifact Registry**: Docker image storage
+
+See `docs/deployment.md` for detailed deployment instructions.
+
+## License
+
+Private - All rights reserved

@@ -1,0 +1,25 @@
+.top-holdings-grid {
+  width: 100%;
+  --ag-background-color: transparent;
+  --ag-header-background-color: #0f0f1a;
+  --ag-odd-row-background-color: rgba(255, 255, 255, 0.02);
+  --ag-row-hover-color: rgba(0, 217, 255, 0.1);
+  --ag-border-color: #16213e;
+  --ag-header-foreground-color: #a0aec0;
+  --ag-foreground-color: #e2e8f0;
+  --ag-font-size: 13px;
+}
+
+.top-holdings-grid .ticker-cell {
+  font-weight: 600;
+  color: #00d9ff;
+}
+
+.top-holdings-grid .weight-cell {
+  font-weight: 500;
+}
+
+.top-holdings-grid .sources-cell {
+  color: #a0aec0;
+  font-size: 12px;
+}

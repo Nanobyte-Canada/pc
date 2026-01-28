@@ -1,0 +1,27 @@
+# Local development overrides
+# This file is automatically used by docker-compose when present
+
+version: '3.8'
+
+services:
+  backend:
+    # For local development, you can mount source for hot-reload if using bootRun
+    # Uncomment the following for development mode
+    # volumes:
+    #   - ./backend/src:/app/src:ro
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      # Enable debug mode for local development
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    ports:
+      - "8080:8080"
+      - "5005:5005"  # Debug port
+
+  frontend:
+    # Enable hot module replacement for frontend
+    environment:
+      VITE_API_URL: http://localhost:8080
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html

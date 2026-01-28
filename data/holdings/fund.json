@@ -1,0 +1,134 @@
+{
+  "data": [
+    {
+      "id": "BSL",
+      "tickerId": 16685,
+      "attributes": {
+        "longDesc": "Blackstone Senior Floating Rate 2027 Term Fund is a closed-ended fixed income mutual fund launched by The Blackstone Group L.P. It is managed by GSO / Blackstone Debt Funds Management LLC. The fund invests in the fixed income markets of the United States. It seeks to invest in stocks of companies operating across diversified sectors. The fund primarily invests in senior secured, floating rate loans that are issued by corporations, partnerships, and other business entities. It seeks to invest in securities that are rated below investment grade. The fund invests in securities across the maturity spectrum, while maintaining an average duration of less than one year. It employs fundamental analysis using a research-driven credit analysis approach while focusing on factors like companies which offer attractive risk / return characteristics to create its portfolio. The fund benchmarks the performance of its portfolio against the S&P/LSTA Leveraged Loan Index. Blackstone Senior Floating Rate 2027 Term Fund was formed on March 4, 2010 and is domiciled in the United States.",
+        "prospectusPrimaryBenchmark": "Morningstar LSTA US LL TR USD",
+        "fundProfile": {
+          "fundName": "Blackstone Senior Float Rt 2027 term ord",
+          "providerCompany": "Blackstone Liquid Credit Strategies LLC",
+          "providerCompanyCompleteAddress": "Blackstone Liquid Credit Strategies LLC 345 Park Avenue, Floor 31 New York, 10154 United States",
+          "inceptionDate": "2010-05-26",
+          "currency": "USD",
+          "morningStarCategory": "Bank Loan",
+          "monthEndNav": 14.13,
+          "monthEndNavDate": "2025-12-31",
+          "indexFund": false,
+          "fundOfFunds": false,
+          "exchangeTradedNote": false,
+          "leveragedFund": true,
+          "trueNoLoadFund": true,
+          "minimumInvestmentCurrency": "USD",
+          "registrationCompany": "Blackstone Senior Floating Rate Term Fund",
+          "investmentStrategy": "The Fund’s primary investment objective is to seek high current income, with a secondary objective to seek preservation of capital, consistent with its primary goal of high current income.",
+          "netAssets": 184232117,
+          "legalName": "Blackstone Senior Floating Rate 2027 Term Fund",
+          "registrationCompanyCompleteAddress": "280 Park Avenue 11th Floor New York, NY 10017 USA",
+          "fundObjective": "The Fund’s primary investment objective is to seek high current income, with a secondary objective to seek preservation of capital, consistent with its primary goal of high current income.",
+          "closedToNewInvestors": false,
+          "closedToAllInvestors": false
+        },
+        "topTen": {
+          "list": {
+            "global Medical Response Inc": {
+              "companyName": "Global Medical Response Inc",
+              "weighting": 1.53172,
+              "symbol": null,
+              "top10AsOfDate": "2025-11-30",
+              "isValidSymbol": false
+            },
+            "allied Universal Holdco Llc": {
+              "companyName": "Allied Universal Holdco Llc",
+              "weighting": 1.38703,
+              "symbol": null,
+              "top10AsOfDate": "2025-11-30",
+              "isValidSymbol": false
+            },
+            "boost Newco Borrower Llc": {
+              "companyName": "Boost Newco Borrower Llc",
+              "weighting": 1.23991,
+              "symbol": null,
+              "top10AsOfDate": "2025-11-30",
+              "isValidSymbol": false
+            },
+            "action Environmental Group, Inc.": {
+              "companyName": "Action Environmental Group, Inc.",
+              "weighting": 1.22264,
+              "symbol": null,
+              "top10AsOfDate": "2025-11-30",
+              "isValidSymbol": false
+            },
+            "dawn Bidco Llc": {
+              "companyName": "Dawn Bidco Llc",
+              "weighting": 1.13937,
+              "symbol": null,
+              "top10AsOfDate": "2025-11-30",
+              "isValidSymbol": false
+            },
+            "hyperion Insurance::Howden 7::24 Tlb 1l": {
+              "companyName": "Hyperion Insurance/Howden 7/24 Tlb 1l",
+              "weighting": 1.13489,
+              "symbol": null,
+              "top10AsOfDate": "2025-11-30",
+              "isValidSymbol": false
+            },
+            "fortress Intermediate 3 Inc": {
+              "companyName": "Fortress Intermediate 3 Inc",
+              "weighting": 1.13247,
+              "symbol": null,
+              "top10AsOfDate": "2025-11-30",
+              "isValidSymbol": false
+            },
+            "opal Us Llc": {
+              "companyName": "Opal Us Llc",
+              "weighting": 1.0854,
+              "symbol": null,
+              "top10AsOfDate": "2025-11-30",
+              "isValidSymbol": false
+            },
+            "ws Audiology As": {
+              "companyName": "Ws Audiology As",
+              "weighting": 1.08153,
+              "symbol": null,
+              "top10AsOfDate": "2025-11-30",
+              "isValidSymbol": false
+            },
+            "orbit Private Holdings I Ltd": {
+              "companyName": "Orbit Private Holdings I Ltd",
+              "weighting": 1.07128,
+              "symbol": null,
+              "top10AsOfDate": "2025-11-30",
+              "isValidSymbol": false
+            }
+          },
+          "holdingsAsOfDate": "2025-11-30",
+          "total": 12.02624,
+          "numOfHoldings": 372
+        },
+        "stockHoldings": {
+          "basicMaterials": 0,
+          "consumerCyclical": 0,
+          "financials": 0,
+          "realEstate": 0,
+          "consumerDefensive": 0,
+          "healthcare": 61.85319,
+          "utilities": 0,
+          "communication": 0,
+          "energy": 0,
+          "industrials": 0,
+          "technology": 38.14681
+        },
+        "bondHoldings": {
+          "government": 0,
+          "municipal": 0,
+          "corporate": 140.35296,
+          "securitized": 9.54966,
+          "derivative": 0,
+          "cashAndEquiv": -50.30744
+        }
+      }
+    }
+  ]
+}

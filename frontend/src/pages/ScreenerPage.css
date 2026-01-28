@@ -1,0 +1,53 @@
+.screener-page {
+  color: #e2e8f0;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.page-subtitle {
+  color: #a0aec0;
+  margin-bottom: 2rem;
+}
+
+.filters-section,
+.results-section {
+  background-color: #1a1a2e;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #16213e;
+  margin-bottom: 1.5rem;
+}
+
+.filters-section h2,
+.results-section h2 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.placeholder-text {
+  color: #718096;
+  font-style: italic;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.results-header h2 {
+  margin-bottom: 0;
+}
+
+.results-count {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}

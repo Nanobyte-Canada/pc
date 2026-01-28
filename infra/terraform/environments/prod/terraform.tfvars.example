@@ -1,0 +1,8 @@
+# Copy this file to terraform.tfvars and fill in the values
+
+project_id     = "portfolio-prod"
+project_number = "123456789012"
+region         = "us-central1"
+github_org     = "your-org"
+github_repo    = "portfolio-app"
+domain         = "portfolio.example.com"
