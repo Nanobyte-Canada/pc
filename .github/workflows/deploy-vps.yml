@@ -32,14 +32,10 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          # Configure SSH to accept new host keys (safe for dev environment)
-          cat >> ~/.ssh/config << 'EOF'
-          Host *
-            StrictHostKeyChecking accept-new
-            UserKnownHostsFile ~/.ssh/known_hosts
-          EOF
+          echo "Host *" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking accept-new" >> ~/.ssh/config
+          echo "  UserKnownHostsFile ~/.ssh/known_hosts" >> ~/.ssh/config
           chmod 600 ~/.ssh/config
-          # Try to fetch host key, but don't fail if unreachable
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || echo "Warning: Could not fetch host key via ssh-keyscan"
 
       - name: Create deployment package
