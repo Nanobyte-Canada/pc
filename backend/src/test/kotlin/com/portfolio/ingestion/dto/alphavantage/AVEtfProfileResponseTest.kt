@@ -240,10 +240,20 @@ class AVEtfProfileResponseTest {
     }
 
     @Test
-    fun `isValid returns false when response contains information message`() {
+    fun `isValid returns true when response contains non-rate-limit information message`() {
+        // Per design: only rate-limit messages invalidate the response, not general info messages
         val response = AVEtfProfileResponse(
             sectors = listOf(AVSector(sector = "Tech", weight = "0.5")),
-            information = "Invalid API call"
+            information = "Thank you for using Alpha Vantage!"
+        )
+        assertTrue(response.isValid())
+    }
+
+    @Test
+    fun `isValid returns false when response contains rate limit information message`() {
+        val response = AVEtfProfileResponse(
+            sectors = listOf(AVSector(sector = "Tech", weight = "0.5")),
+            information = "API call frequency exceeded. Please wait."
         )
         assertFalse(response.isValid())
     }

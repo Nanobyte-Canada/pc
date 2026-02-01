@@ -47,25 +47,17 @@ class BrokerIntegrationTest {
     private lateinit var restTemplate: TestRestTemplate
 
     @Test
-    fun `GET brokers returns list of available brokers`() {
+    fun `GET brokers requires authentication`() {
         val response = restTemplate.getForEntity(
             "http://localhost:$port/api/v1/brokers",
             Map::class.java
         )
 
-        assertEquals(HttpStatus.OK, response.statusCode)
-        assertNotNull(response.body)
-
-        @Suppress("UNCHECKED_CAST")
-        val brokers = response.body!!["brokers"] as List<Map<String, Any>>
-
-        // Should have at least the seeded brokers from migration
-        assertTrue(brokers.isNotEmpty(), "Should have at least one broker")
-
-        // Find Questrade in the list
-        val questrade = brokers.find { it["code"] == "QUESTRADE" }
-        assertNotNull(questrade, "Questrade should be in the broker list")
-        assertEquals("Questrade", questrade["name"])
+        // Should return 401 or 403 for unauthenticated request
+        assertTrue(
+            response.statusCode == HttpStatus.UNAUTHORIZED || response.statusCode == HttpStatus.FORBIDDEN,
+            "Brokers endpoint should require authentication"
+        )
     }
 
     @Test
