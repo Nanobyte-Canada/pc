@@ -22,8 +22,7 @@ export function BrokerPositionsPage() {
   // Get latest fetch time from connections
   const lastFetchTime = connectionsData?.connections
     .filter(c => c.lastPositionsFetchedAt)
-    .sort((a, b) => new Date(b.lastPositionsFetchedAt!).getTime() - new Date(a.lastPositionsFetchedAt!).getTime())
-    [0]?.lastPositionsFetchedAt
+    .sort((a, b) => new Date(b.lastPositionsFetchedAt!).getTime() - new Date(a.lastPositionsFetchedAt!).getTime())[0]?.lastPositionsFetchedAt
 
   const columnDefs: ColDef<AggregatedPosition>[] = [
     {

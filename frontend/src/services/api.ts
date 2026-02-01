@@ -38,7 +38,8 @@ export async function apiFetch(
 }
 
 // Legacy exports for backward compatibility
-export function setCsrfToken(_token: string | null) {
+export function setCsrfToken(_token: string | null): void {
+  void _token;
   // No-op: CSRF token is now read from cookie
 }
 
