@@ -23,21 +23,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          echo "Host *" >> ~/.ssh/config
-          echo "  StrictHostKeyChecking accept-new" >> ~/.ssh/config
-          echo "  UserKnownHostsFile ~/.ssh/known_hosts" >> ~/.ssh/config
-          chmod 600 ~/.ssh/config
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || echo "Warning: Could not fetch host key via ssh-keyscan"
-
       - name: Create deployment package
         run: |
           # Create a tarball of the application (excluding node_modules, build artifacts)
@@ -50,10 +35,16 @@ jobs:
               backend frontend docker-compose.vps.yml
 
       - name: Copy files to VPS
-        run: |
-          scp deploy.tar.gz ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.DEPLOY_PATH }}/
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          source: "deploy.tar.gz"
+          target: /opt/portfolio
 
       - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1.0.3
         env:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           JWT_SIGNING_KEY: ${{ secrets.JWT_SIGNING_KEY }}
@@ -64,11 +55,15 @@ jobs:
           QUESTRADE_CLIENT_SECRET: ${{ secrets.QUESTRADE_CLIENT_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-        run: |
-          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+          GITHUB_SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          envs: POSTGRES_PASSWORD,JWT_SIGNING_KEY,EODHD_API_KEY,ALPHA_VANTAGE_API_KEY,BROKER_ENCRYPTION_KEY,QUESTRADE_CLIENT_ID,QUESTRADE_CLIENT_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,GITHUB_SHA
+          script: |
             set -e
-
-            cd ${{ env.DEPLOY_PATH }}
+            cd /opt/portfolio
 
             # Backup current deployment
             if [ -d "current" ]; then
@@ -83,23 +78,21 @@ jobs:
 
             cd current
 
-            # Create .env file with secrets
-            cat > .env << 'EOF'
-          POSTGRES_DB=portfolio
-          POSTGRES_USER=portfolio
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          APP_VERSION=${{ github.sha }}
-          APP_ENVIRONMENT=dev
-          SPRING_PROFILES_ACTIVE=dev
-          JWT_SIGNING_KEY=${{ secrets.JWT_SIGNING_KEY }}
-          EODHD_API_KEY=${{ secrets.EODHD_API_KEY }}
-          ALPHA_VANTAGE_API_KEY=${{ secrets.ALPHA_VANTAGE_API_KEY }}
-          BROKER_ENCRYPTION_KEY=${{ secrets.BROKER_ENCRYPTION_KEY }}
-          QUESTRADE_CLIENT_ID=${{ secrets.QUESTRADE_CLIENT_ID }}
-          QUESTRADE_CLIENT_SECRET=${{ secrets.QUESTRADE_CLIENT_SECRET }}
-          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          EOF
+            # Create .env file with secrets (using echo to avoid whitespace issues)
+            echo "POSTGRES_DB=portfolio" > .env
+            echo "POSTGRES_USER=portfolio" >> .env
+            echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> .env
+            echo "APP_VERSION=$GITHUB_SHA" >> .env
+            echo "APP_ENVIRONMENT=dev" >> .env
+            echo "SPRING_PROFILES_ACTIVE=dev" >> .env
+            echo "JWT_SIGNING_KEY=$JWT_SIGNING_KEY" >> .env
+            echo "EODHD_API_KEY=$EODHD_API_KEY" >> .env
+            echo "ALPHA_VANTAGE_API_KEY=$ALPHA_VANTAGE_API_KEY" >> .env
+            echo "BROKER_ENCRYPTION_KEY=$BROKER_ENCRYPTION_KEY" >> .env
+            echo "QUESTRADE_CLIENT_ID=$QUESTRADE_CLIENT_ID" >> .env
+            echo "QUESTRADE_CLIENT_SECRET=$QUESTRADE_CLIENT_SECRET" >> .env
+            echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
+            echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
 
             # Build and deploy with docker compose
             docker compose -f docker-compose.vps.yml down || true
@@ -124,13 +117,16 @@ jobs:
             docker image prune -f
 
             echo "Deployment completed successfully!"
-          ENDSSH
 
       - name: Rollback on failure
         if: failure()
-        run: |
-          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
-            cd ${{ env.DEPLOY_PATH }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/portfolio
             if [ -d "previous" ]; then
               echo "Rolling back to previous deployment..."
               rm -rf current
@@ -141,4 +137,3 @@ jobs:
             else
               echo "No previous deployment to rollback to"
             fi
-          ENDSSH
