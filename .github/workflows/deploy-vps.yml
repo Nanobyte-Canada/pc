@@ -60,23 +60,66 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          command_timeout: 30m
           envs: POSTGRES_PASSWORD,JWT_SIGNING_KEY,EODHD_API_KEY,ALPHA_VANTAGE_API_KEY,BROKER_ENCRYPTION_KEY,QUESTRADE_CLIENT_ID,QUESTRADE_CLIENT_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,GITHUB_SHA
           script: |
             set -e
             cd /opt/portfolio
 
+            echo "=== Starting deployment ==="
+            echo "Current directory: $(pwd)"
+            echo "Contents before deployment:"
+            ls -la
+
+            # Check if tarball exists
+            if [ ! -f "deploy.tar.gz" ]; then
+              echo "ERROR: deploy.tar.gz not found in /opt/portfolio"
+              echo "Contents of /opt/portfolio:"
+              ls -la /opt/portfolio
+              exit 1
+            fi
+
+            echo "Tarball size: $(ls -lh deploy.tar.gz | awk '{print $5}')"
+            echo "Tarball contents preview:"
+            tar -tzf deploy.tar.gz | head -20
+
             # Backup current deployment
             if [ -d "current" ]; then
+              echo "Backing up current deployment to previous/"
               rm -rf previous
               mv current previous
             fi
 
             # Extract new deployment
+            echo "Extracting deployment package..."
             mkdir -p current
             tar -xzf deploy.tar.gz -C current
             rm deploy.tar.gz
 
             cd current
+            echo "Extracted to: $(pwd)"
+            echo "Contents after extraction:"
+            ls -la
+
+            # Verify critical files exist
+            if [ ! -f "docker-compose.vps.yml" ]; then
+              echo "ERROR: docker-compose.vps.yml not found after extraction!"
+              echo "Contents of current directory:"
+              ls -la
+              exit 1
+            fi
+
+            if [ ! -d "backend" ]; then
+              echo "ERROR: backend directory not found after extraction!"
+              exit 1
+            fi
+
+            if [ ! -d "frontend" ]; then
+              echo "ERROR: frontend directory not found after extraction!"
+              exit 1
+            fi
+
+            echo "All required files verified successfully"
 
             # Create .env file with secrets (using echo to avoid whitespace issues)
             echo "POSTGRES_DB=portfolio" > .env
@@ -94,29 +137,51 @@ jobs:
             echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
             echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
 
+            # Verify .env was created
+            echo ".env file created with $(wc -l < .env) lines"
+
+            # Verify we're in the right directory with the right files
+            echo "=== Pre-docker compose verification ==="
+            echo "Working directory: $(pwd)"
+            echo "docker-compose.vps.yml exists: $(test -f docker-compose.vps.yml && echo 'YES' || echo 'NO')"
+            echo "backend/Dockerfile exists: $(test -f backend/Dockerfile && echo 'YES' || echo 'NO')"
+            echo "frontend/Dockerfile exists: $(test -f frontend/Dockerfile && echo 'YES' || echo 'NO')"
+
             # Build and deploy with docker compose
+            echo "=== Stopping existing containers ==="
             docker compose -f docker-compose.vps.yml down || true
+
+            echo "=== Building containers ==="
             docker compose -f docker-compose.vps.yml build --no-cache
+
+            echo "=== Starting containers ==="
             docker compose -f docker-compose.vps.yml up -d
+
+            echo "=== Container status ==="
+            docker compose -f docker-compose.vps.yml ps
 
             # Wait for services to be healthy
             echo "Waiting for services to start..."
             sleep 30
 
             # Health check
+            echo "=== Health check ==="
             if curl -f http://localhost:8080/health; then
               echo ""
               echo "Backend is healthy"
             else
               echo "Backend health check failed"
+              echo "=== Backend logs ==="
               docker compose -f docker-compose.vps.yml logs backend
+              echo "=== All container logs ==="
+              docker compose -f docker-compose.vps.yml logs --tail=50
               exit 1
             fi
 
             # Cleanup old images
             docker image prune -f
 
-            echo "Deployment completed successfully!"
+            echo "=== Deployment completed successfully! ==="
 
       - name: Rollback on failure
         if: failure()
@@ -125,15 +190,26 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          command_timeout: 10m
           script: |
+            echo "=== Rollback triggered ==="
             cd /opt/portfolio
+            echo "Current directory contents:"
+            ls -la
+
             if [ -d "previous" ]; then
               echo "Rolling back to previous deployment..."
               rm -rf current
               mv previous current
               cd current
-              docker compose -f docker-compose.vps.yml up -d
-              echo "Rollback completed"
+              echo "Rollback directory contents:"
+              ls -la
+              if [ -f "docker-compose.vps.yml" ]; then
+                docker compose -f docker-compose.vps.yml up -d
+                echo "Rollback completed"
+              else
+                echo "ERROR: docker-compose.vps.yml not found in previous deployment"
+              fi
             else
               echo "No previous deployment to rollback to"
             fi
