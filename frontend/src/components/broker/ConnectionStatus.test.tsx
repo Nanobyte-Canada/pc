@@ -15,7 +15,7 @@ describe('ConnectionStatus', () => {
 
   it('renders EXPIRED status with correct label', () => {
     render(<ConnectionStatus status="EXPIRED" />)
-    expect(screen.getByText('Expired')).toBeInTheDocument()
+    expect(screen.getByText('Token Expired')).toBeInTheDocument()
   })
 
   it('renders ERROR status with correct label', () => {
