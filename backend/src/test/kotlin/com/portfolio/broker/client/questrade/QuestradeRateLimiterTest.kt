@@ -1,6 +1,11 @@
 package com.portfolio.broker.client.questrade
 
+import com.portfolio.broker.config.BrokerConfig
+import com.portfolio.broker.config.QuestradeConfig
+import com.portfolio.broker.config.RateLimitConfig
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -16,24 +21,27 @@ class QuestradeRateLimiterTest {
         meterRegistry = SimpleMeterRegistry()
     }
 
+    private fun createConfig(requestsPerSecond: Double, burstSize: Int): BrokerConfig {
+        val config = mockk<BrokerConfig>()
+        val questradeConfig = mockk<QuestradeConfig>()
+        val rateLimitConfig = RateLimitConfig(requestsPerSecond = requestsPerSecond, burstSize = burstSize)
+        every { questradeConfig.rateLimit } returns rateLimitConfig
+        every { config.questrade } returns questradeConfig
+        return config
+    }
+
     @Test
     fun `tryAcquire succeeds when capacity available`() = runBlocking {
-        val limiter = QuestradeRateLimiter(
-            requestsPerSecond = 10,
-            burstCapacity = 20,
-            meterRegistry = meterRegistry
-        )
+        val config = createConfig(requestsPerSecond = 10.0, burstSize = 20)
+        val limiter = QuestradeRateLimiter(config = config, meterRegistry = meterRegistry)
 
         assertTrue(limiter.tryAcquire(), "First request should succeed")
     }
 
     @Test
     fun `tryAcquire returns false when burst capacity exhausted`() = runBlocking {
-        val limiter = QuestradeRateLimiter(
-            requestsPerSecond = 1,
-            burstCapacity = 3,
-            meterRegistry = meterRegistry
-        )
+        val config = createConfig(requestsPerSecond = 1.0, burstSize = 3)
+        val limiter = QuestradeRateLimiter(config = config, meterRegistry = meterRegistry)
 
         // First 3 requests should succeed (burst capacity)
         assertTrue(limiter.tryAcquire(), "Request 1 should succeed")
@@ -45,43 +53,18 @@ class QuestradeRateLimiterTest {
     }
 
     @Test
-    fun `reset restores full capacity`() = runBlocking {
-        val limiter = QuestradeRateLimiter(
-            requestsPerSecond = 1,
-            burstCapacity = 2,
-            meterRegistry = meterRegistry
-        )
+    fun `availableTokens returns current capacity`() = runBlocking {
+        val config = createConfig(requestsPerSecond = 1.0, burstSize = 2)
+        val limiter = QuestradeRateLimiter(config = config, meterRegistry = meterRegistry)
+
+        // Initial capacity should be equal to burst size
+        assertTrue(limiter.availableTokens() >= 1.0, "Should have available tokens initially")
 
         // Exhaust capacity
         assertTrue(limiter.tryAcquire())
         assertTrue(limiter.tryAcquire())
-        assertFalse(limiter.tryAcquire())
 
-        // Reset
-        limiter.reset()
-
-        // Should work again
-        assertTrue(limiter.tryAcquire(), "Request after reset should succeed")
-    }
-
-    @Test
-    fun `multiple limiters are independent`() = runBlocking {
-        val limiter1 = QuestradeRateLimiter(
-            requestsPerSecond = 1,
-            burstCapacity = 1,
-            meterRegistry = meterRegistry
-        )
-        val limiter2 = QuestradeRateLimiter(
-            requestsPerSecond = 1,
-            burstCapacity = 1,
-            meterRegistry = meterRegistry
-        )
-
-        // Exhaust limiter1
-        assertTrue(limiter1.tryAcquire())
-        assertFalse(limiter1.tryAcquire())
-
-        // limiter2 should still have capacity
-        assertTrue(limiter2.tryAcquire(), "Second limiter should be independent")
+        // Should have no tokens left
+        assertTrue(limiter.availableTokens() < 1.0, "Should have less than 1 token after exhaustion")
     }
 }

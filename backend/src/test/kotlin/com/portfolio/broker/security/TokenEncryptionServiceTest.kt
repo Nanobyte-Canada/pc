@@ -1,10 +1,8 @@
 package com.portfolio.broker.security
 
-import com.portfolio.broker.config.BrokerConfig
-import io.mockk.every
-import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
@@ -12,16 +10,12 @@ import kotlin.test.assertTrue
 class TokenEncryptionServiceTest {
 
     private lateinit var service: TokenEncryptionService
-    private lateinit var config: BrokerConfig
 
     @BeforeEach
     fun setup() {
-        config = mockk<BrokerConfig>()
         // AES-256 requires a 32-byte (256-bit) key, base64 encoded = 44 chars
         val testKey = "dGhpcyBpcyBhIDMyIGJ5dGUgdGVzdCBrZXkxMjM0NTY="
-        every { config.encryptionKey } returns testKey
-
-        service = TokenEncryptionService(config)
+        service = TokenEncryptionService(testKey)
     }
 
     @Test
@@ -60,13 +54,12 @@ class TokenEncryptionServiceTest {
     }
 
     @Test
-    fun `encrypt and decrypt handles empty string`() {
+    fun `encrypt rejects empty string`() {
         val plaintext = ""
 
-        val encrypted = service.encrypt(plaintext)
-        val decrypted = service.decrypt(encrypted)
-
-        assertEquals(plaintext, decrypted)
+        assertThrows<IllegalArgumentException> {
+            service.encrypt(plaintext)
+        }
     }
 
     @Test

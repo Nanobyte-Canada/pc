@@ -129,8 +129,8 @@ class BrokerServiceTest {
         val result = service.getUserConnections(1L)
 
         assertEquals(2, result.size)
-        assertEquals("12345", result[0].accountIdExternal)
-        assertEquals("67890", result[1].accountIdExternal)
+        assertEquals("ACC-12345", result[0].accountNumber)
+        assertEquals("ACC-67890", result[1].accountNumber)
     }
 
     @Test
@@ -154,7 +154,7 @@ class BrokerServiceTest {
         val result = service.getActiveConnections(1L)
 
         assertEquals(1, result.size)
-        assertEquals(ConnectionStatus.ACTIVE, result[0].status)
+        assertEquals("ACTIVE", result[0].status)
     }
 
     @Test
@@ -258,8 +258,7 @@ class BrokerServiceTest {
             id = id,
             email = "user$id@example.com",
             passwordHash = "hashedPassword",
-            name = "Test User",
-            roles = mutableSetOf()
+            name = "Test User"
         )
     }
 
@@ -268,7 +267,7 @@ class BrokerServiceTest {
             id = id,
             code = code,
             name = name,
-            authType = AuthType.OAUTH2,
+            authType = BrokerAuthType.OAUTH2,
             status = BrokerStatus.ACTIVE
         )
     }
