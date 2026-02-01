@@ -22,7 +22,14 @@ enum class AuditEventType {
     ROLE_REVOKE,
     USER_LOCK,
     USER_UNLOCK,
-    USER_SUSPEND
+    USER_SUSPEND,
+    // Broker integration events
+    BROKER_CONNECT,
+    BROKER_DISCONNECT,
+    BROKER_FETCH_POSITIONS,
+    BROKER_PREFS_UPDATE,
+    BROKER_TOKEN_REFRESH,
+    BROKER_FETCH_ERROR
 }
 
 @Entity

@@ -93,6 +93,7 @@ class JwtAuthenticationFilter(
         return path.startsWith("/auth/") ||
                path == "/health" ||
                path == "/api/v1/version" ||
-               path.startsWith("/actuator/")
+               path.startsWith("/actuator/") ||
+               path.matches(Regex("/api/v1/brokers/[^/]+/callback"))  // OAuth callbacks
     }
 }

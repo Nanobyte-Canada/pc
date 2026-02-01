@@ -1,0 +1,139 @@
+name: Deploy to VPS (Development)
+
+on:
+  push:
+    branches: [development]
+  workflow_dispatch:
+
+env:
+  DEPLOY_PATH: /opt/portfolio
+
+jobs:
+  # Run tests before deployment
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: test
+    environment: development
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create deployment package
+        run: |
+          # Create a tarball of the application (excluding node_modules, build artifacts)
+          tar --exclude='node_modules' \
+              --exclude='frontend/dist' \
+              --exclude='backend/build' \
+              --exclude='.git' \
+              --exclude='*.log' \
+              -czf deploy.tar.gz \
+              backend frontend docker-compose.vps.yml
+
+      - name: Copy files to VPS
+        run: |
+          scp deploy.tar.gz ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.DEPLOY_PATH }}/
+
+      - name: Deploy on VPS
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SIGNING_KEY: ${{ secrets.JWT_SIGNING_KEY }}
+          EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          BROKER_ENCRYPTION_KEY: ${{ secrets.BROKER_ENCRYPTION_KEY }}
+          QUESTRADE_CLIENT_ID: ${{ secrets.QUESTRADE_CLIENT_ID }}
+          QUESTRADE_CLIENT_SECRET: ${{ secrets.QUESTRADE_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+            set -e
+
+            cd ${{ env.DEPLOY_PATH }}
+
+            # Backup current deployment
+            if [ -d "current" ]; then
+              rm -rf previous
+              mv current previous
+            fi
+
+            # Extract new deployment
+            mkdir -p current
+            tar -xzf deploy.tar.gz -C current
+            rm deploy.tar.gz
+
+            cd current
+
+            # Create .env file with secrets
+            cat > .env << 'EOF'
+          POSTGRES_DB=portfolio
+          POSTGRES_USER=portfolio
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          APP_VERSION=${{ github.sha }}
+          APP_ENVIRONMENT=dev
+          SPRING_PROFILES_ACTIVE=dev
+          JWT_SIGNING_KEY=${{ secrets.JWT_SIGNING_KEY }}
+          EODHD_API_KEY=${{ secrets.EODHD_API_KEY }}
+          ALPHA_VANTAGE_API_KEY=${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          BROKER_ENCRYPTION_KEY=${{ secrets.BROKER_ENCRYPTION_KEY }}
+          QUESTRADE_CLIENT_ID=${{ secrets.QUESTRADE_CLIENT_ID }}
+          QUESTRADE_CLIENT_SECRET=${{ secrets.QUESTRADE_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          EOF
+
+            # Build and deploy with docker compose
+            docker compose -f docker-compose.vps.yml down || true
+            docker compose -f docker-compose.vps.yml build --no-cache
+            docker compose -f docker-compose.vps.yml up -d
+
+            # Wait for services to be healthy
+            echo "Waiting for services to start..."
+            sleep 30
+
+            # Health check
+            if curl -f http://localhost:8080/health; then
+              echo ""
+              echo "Backend is healthy"
+            else
+              echo "Backend health check failed"
+              docker compose -f docker-compose.vps.yml logs backend
+              exit 1
+            fi
+
+            # Cleanup old images
+            docker image prune -f
+
+            echo "Deployment completed successfully!"
+          ENDSSH
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+            cd ${{ env.DEPLOY_PATH }}
+            if [ -d "previous" ]; then
+              echo "Rolling back to previous deployment..."
+              rm -rf current
+              mv previous current
+              cd current
+              docker compose -f docker-compose.vps.yml up -d
+              echo "Rollback completed"
+            else
+              echo "No previous deployment to rollback to"
+            fi
+          ENDSSH

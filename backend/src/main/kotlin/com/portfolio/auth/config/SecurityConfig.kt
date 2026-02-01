@@ -48,7 +48,8 @@ class SecurityConfig(
                         "/auth/google/callback",
                         "/health",
                         "/actuator/**",
-                        "/api/v1/portfolio/**"
+                        "/api/v1/portfolio/**",
+                        "/api/v1/brokers/*/callback"  // OAuth callbacks from brokers
                     )
             }
             // Configure CORS
@@ -66,6 +67,8 @@ class SecurityConfig(
                     .requestMatchers("/health", "/api/v1/version").permitAll()
                     .requestMatchers("/auth/**").permitAll()
                     .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                    // OAuth callbacks from brokers (public - validated via state token)
+                    .requestMatchers(HttpMethod.GET, "/api/v1/brokers/*/callback").permitAll()
                     // Admin endpoints
                     .requestMatchers("/api/v1/admin/**", "/admin/**").hasRole("ADMIN")
                     // All other API endpoints require authentication

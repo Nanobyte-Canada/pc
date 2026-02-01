@@ -97,3 +97,40 @@ ingestion:
     batch-size: ${AV_BATCH_SIZE:75}
     stale-threshold-days: ${AV_STALE_THRESHOLD:30}
     daily-quota: ${AV_DAILY_QUOTA:-1}
+
+# Broker integration configuration
+broker:
+  enabled: ${BROKER_ENABLED:true}
+  encryption:
+    secret-key: ${BROKER_ENCRYPTION_KEY:}  # Base64-encoded 32-byte key for AES-256
+  scheduler:
+    enabled: ${BROKER_SCHEDULER_ENABLED:true}
+    default-fetch-hour: 6  # 6 AM UTC
+  questrade:
+    client-id: ${QUESTRADE_CLIENT_ID:}
+    client-secret: ${QUESTRADE_CLIENT_SECRET:}
+    redirect-uri: ${QUESTRADE_REDIRECT_URI:http://localhost:8080/api/v1/brokers/QUESTRADE/callback}
+    authorization-url: https://login.questrade.com/oauth2/authorize
+    token-url: https://login.questrade.com/oauth2/token
+    scopes:
+      - read_account
+    rate-limit:
+      requests-per-second: 1.0
+      burst-size: 5
+  ibkr:
+    client-id: ${IBKR_CLIENT_ID:}
+    private-key-path: ${IBKR_PRIVATE_KEY_PATH:}
+    redirect-uri: ${IBKR_REDIRECT_URI:http://localhost:8080/api/v1/brokers/IBKR/callback}
+    authorization-url: https://www.interactivebrokers.com/oauth2/authorize
+    token-url: https://www.interactivebrokers.com/oauth2/token
+    rate-limit:
+      requests-per-second: 2.0
+      burst-size: 10
+  snaptrade:
+    client-id: ${SNAPTRADE_CLIENT_ID:}
+    consumer-key: ${SNAPTRADE_CONSUMER_KEY:}
+    redirect-uri: ${SNAPTRADE_REDIRECT_URI:http://localhost:8080/api/v1/brokers/WEALTHSIMPLE/callback}
+    base-url: https://api.snaptrade.com
+    rate-limit:
+      requests-per-second: 1.0
+      burst-size: 3

@@ -21,6 +21,11 @@ import { ProfilePage } from './pages/ProfilePage'
 import { AdminPage } from './pages/admin/AdminPage'
 import { UnauthorizedPage } from './pages/UnauthorizedPage'
 
+// Broker pages
+import { BrokerConnectionsPage } from './pages/BrokerConnectionsPage'
+import { BrokerPositionsPage } from './pages/BrokerPositionsPage'
+import { PositionDetailsPage } from './pages/PositionDetailsPage'
+
 import './App.css'
 
 function App() {
@@ -62,6 +67,9 @@ function App() {
         <Route path="screener/etfs" element={<EtfScreenerPage />} />
         <Route path="screener/mutual-funds" element={<MutualFundScreenerPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="brokers/connections" element={<BrokerConnectionsPage />} />
+        <Route path="brokers/positions" element={<BrokerPositionsPage />} />
+        <Route path="brokers/positions/:connectionId" element={<PositionDetailsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route
           path="admin"

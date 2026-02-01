@@ -46,6 +46,13 @@ export function Navigation() {
         >
           Analytics
         </NavLink>
+        <div className="nav-dropdown">
+          <span className="nav-link dropdown-trigger">Brokers</span>
+          <div className="dropdown-menu">
+            <NavLink to="/brokers/connections" className="dropdown-item">Connections</NavLink>
+            <NavLink to="/brokers/positions" className="dropdown-item">Positions</NavLink>
+          </div>
+        </div>
         {user?.roles.includes('ADMIN') && (
           <NavLink
             to="/admin"
