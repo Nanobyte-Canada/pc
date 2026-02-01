@@ -10,7 +10,8 @@ describe('BrokerCard', () => {
     name: 'Questrade',
     description: 'Canadian discount brokerage',
     authType: 'OAUTH2',
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    logoUrl: null
   }
 
   it('renders broker name', () => {

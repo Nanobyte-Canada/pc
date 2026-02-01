@@ -11,16 +11,19 @@ describe('BrokerConnectionCard', () => {
       code: 'QUESTRADE',
       name: 'Questrade',
       authType: 'OAUTH2',
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      logoUrl: null,
+      description: null
     },
-    accountIdExternal: 'ACC123',
     accountNumber: '51234567',
     accountType: 'TFSA',
     accountName: 'My TFSA',
     status: 'ACTIVE',
     positionsCount: 5,
     totalValue: 25000.50,
-    lastPositionsFetchedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+    lastPositionsFetchedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    errorMessage: null,
+    createdAt: new Date().toISOString()
   }
 
   it('renders broker name', () => {
