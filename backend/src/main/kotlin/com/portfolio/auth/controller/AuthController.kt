@@ -250,20 +250,21 @@ class AuthController(
     }
 
     private fun setAuthCookies(response: HttpServletResponse, accessToken: String, refreshToken: String) {
-        val isProduction = appEnvironment == "prod"
+        // Use secure cookies for both prod and dev (both use HTTPS)
+        val isSecure = appEnvironment == "prod" || appEnvironment == "dev"
 
         val accessCookie = ResponseCookie.from(ACCESS_TOKEN_COOKIE, accessToken)
             .httpOnly(true)
-            .secure(isProduction)  // Only require HTTPS in production
-            .sameSite(if (isProduction) "Strict" else "Lax")  // Lax for dev to allow cross-origin
+            .secure(isSecure)  // Secure for HTTPS sites (prod and dev)
+            .sameSite("Lax")  // Lax allows cookies on same-site navigation
             .path("/")
             .maxAge(Duration.ofMinutes(15))
             .build()
 
         val refreshCookie = ResponseCookie.from(REFRESH_TOKEN_COOKIE, refreshToken)
             .httpOnly(true)
-            .secure(isProduction)
-            .sameSite(if (isProduction) "Strict" else "Lax")
+            .secure(isSecure)
+            .sameSite("Lax")
             .path("/")  // Changed from "/auth" to "/" so refresh token is sent with all requests
             .maxAge(Duration.ofDays(7))
             .build()
@@ -273,20 +274,21 @@ class AuthController(
     }
 
     private fun clearAuthCookies(response: HttpServletResponse) {
-        val isProduction = appEnvironment == "prod"
+        // Use secure cookies for both prod and dev (both use HTTPS)
+        val isSecure = appEnvironment == "prod" || appEnvironment == "dev"
 
         val accessCookie = ResponseCookie.from(ACCESS_TOKEN_COOKIE, "")
             .httpOnly(true)
-            .secure(isProduction)
-            .sameSite(if (isProduction) "Strict" else "Lax")
+            .secure(isSecure)
+            .sameSite("Lax")
             .path("/")
             .maxAge(Duration.ZERO)
             .build()
 
         val refreshCookie = ResponseCookie.from(REFRESH_TOKEN_COOKIE, "")
             .httpOnly(true)
-            .secure(isProduction)
-            .sameSite(if (isProduction) "Strict" else "Lax")
+            .secure(isSecure)
+            .sameSite("Lax")
             .path("/")  // Must match the path used in setAuthCookies
             .maxAge(Duration.ZERO)
             .build()

@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-portfolio}
       POSTGRES_USER: ${POSTGRES_USER:-portfolio}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localdev123}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
     ports:
       - "5432:5432"
     volumes:
@@ -29,7 +29,7 @@ services:
       SPRING_PROFILES_ACTIVE: local
       DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
       DATABASE_USERNAME: ${POSTGRES_USER:-portfolio}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-localdev123}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
       APP_VERSION: ${APP_VERSION:-0.0.1-SNAPSHOT}
       APP_ENVIRONMENT: local
     ports:
