@@ -65,7 +65,7 @@ services:
       dockerfile: Dockerfile
       target: production
       args:
-        VITE_API_URL: https://devpc.nanobyte.ca/api
+        VITE_API_URL: https://devpc.nanobyte.ca
     container_name: portfolio-frontend
     restart: unless-stopped
     ports:
