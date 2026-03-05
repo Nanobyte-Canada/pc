@@ -32,7 +32,7 @@ jobs:
               --exclude='.git' \
               --exclude='*.log' \
               -czf deploy.tar.gz \
-              backend frontend docker-compose.vps.yml portfolio_dump.backup
+              backend frontend docker-compose.vps.yml
 
       - name: Copy files to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -154,27 +154,7 @@ jobs:
             echo "=== Building containers ==="
             docker compose -f docker-compose.vps.yml build --no-cache
 
-            # Phase 1: Start postgres only and wait for it to be healthy
-            echo "=== Starting postgres ==="
-            docker compose -f docker-compose.vps.yml up -d postgres
-            echo "Waiting for postgres to be ready..."
-            until docker compose -f docker-compose.vps.yml exec -T postgres pg_isready -U portfolio; do
-              sleep 2
-            done
-            echo "Postgres is ready"
-
-            # Phase 2: Restore database from backup
-            echo "=== Restoring database from backup ==="
-            docker cp portfolio_dump.backup portfolio-postgres:/tmp/portfolio_dump.backup
-            docker compose -f docker-compose.vps.yml exec -T postgres \
-              pg_restore --clean --if-exists --no-owner --no-privileges \
-              -U portfolio -d portfolio /tmp/portfolio_dump.backup || true
-            docker compose -f docker-compose.vps.yml exec -T postgres \
-              rm -f /tmp/portfolio_dump.backup
-            echo "Database restore completed"
-
-            # Phase 3: Start backend + frontend
-            echo "=== Starting all containers ==="
+            echo "=== Starting containers ==="
             docker compose -f docker-compose.vps.yml up -d
 
             echo "=== Container status ==="
