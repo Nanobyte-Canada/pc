@@ -16,17 +16,17 @@ interface BrokerConnectionRepository : JpaRepository<BrokerConnection, Long> {
 
     @Query("""
         SELECT bc FROM BrokerConnection bc
-        JOIN FETCH bc.broker
+        LEFT JOIN FETCH bc.broker
         WHERE bc.user.id = :userId
-        ORDER BY bc.broker.name, bc.accountName
+        ORDER BY bc.accountName
     """)
     fun findByUserIdWithBroker(userId: Long): List<BrokerConnection>
 
     @Query("""
         SELECT bc FROM BrokerConnection bc
-        JOIN FETCH bc.broker
+        LEFT JOIN FETCH bc.broker
         WHERE bc.user.id = :userId AND bc.status = :status
-        ORDER BY bc.broker.name, bc.accountName
+        ORDER BY bc.accountName
     """)
     fun findByUserIdAndStatusWithBroker(userId: Long, status: ConnectionStatus): List<BrokerConnection>
 
@@ -34,23 +34,22 @@ interface BrokerConnectionRepository : JpaRepository<BrokerConnection, Long> {
 
     @Query("""
         SELECT bc FROM BrokerConnection bc
-        JOIN FETCH bc.broker
-        LEFT JOIN FETCH bc.token
+        LEFT JOIN FETCH bc.broker
         WHERE bc.id = :id AND bc.user.id = :userId
     """)
-    fun findByIdAndUserIdWithBrokerAndToken(id: Long, userId: Long): BrokerConnection?
+    fun findByIdAndUserIdWithBroker(id: Long, userId: Long): BrokerConnection?
 
-    fun findByUserIdAndBrokerIdAndAccountIdExternal(
-        userId: Long,
-        brokerId: Long,
-        accountIdExternal: String
-    ): BrokerConnection?
+    fun findBySnaptradeAuthorizationId(snaptradeAuthorizationId: String): BrokerConnection?
 
-    fun existsByUserIdAndBrokerId(userId: Long, brokerId: Long): Boolean
+    fun findByUserIdAndSnaptradeAuthorizationId(userId: Long, snaptradeAuthorizationId: String): BrokerConnection?
+
+    fun findByUserIdAndAccountIdExternal(userId: Long, accountIdExternal: String): BrokerConnection?
+
+    fun existsByUserIdAndSnaptradeAuthorizationId(userId: Long, snaptradeAuthorizationId: String): Boolean
 
     @Query("""
         SELECT bc FROM BrokerConnection bc
-        JOIN FETCH bc.broker
+        LEFT JOIN FETCH bc.broker
         WHERE bc.user.id IN :userIds AND bc.status = 'ACTIVE'
     """)
     fun findActiveConnectionsForUsers(userIds: List<Long>): List<BrokerConnection>
@@ -61,16 +60,4 @@ interface BrokerConnectionRepository : JpaRepository<BrokerConnection, Long> {
 
     @Query("SELECT COUNT(bc) FROM BrokerConnection bc WHERE bc.user.id = :userId AND bc.status = 'ACTIVE'")
     fun countActiveConnectionsByUserId(userId: Long): Long
-
-    @Query("""
-        SELECT bc FROM BrokerConnection bc
-        JOIN FETCH bc.broker
-        WHERE bc.status = 'ACTIVE'
-        AND bc.user.id IN (
-            SELECT ubp.user.id FROM UserBrokerPrefs ubp
-            WHERE ubp.autoFetchEnabled = true
-            AND EXTRACT(HOUR FROM ubp.fetchTimeUtc) = :hour
-        )
-    """)
-    fun findConnectionsForScheduledFetch(hour: Int): List<BrokerConnection>
 }

@@ -3,30 +3,25 @@ package com.portfolio.broker.service
 import com.portfolio.auth.entity.AuditEventType
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
-import com.portfolio.broker.client.BrokerClientFactory
-import com.portfolio.broker.client.BrokerRateLimitException
-import com.portfolio.broker.client.BrokerTokenExpiredException
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
-import com.portfolio.broker.security.TokenEncryptionService
-import kotlinx.coroutines.runBlocking
+import com.snaptrade.client.model.Position
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
 @Service
 class PositionFetchService(
     private val connectionRepository: BrokerConnectionRepository,
-    private val tokenRepository: ConnectionTokenRepository,
     private val positionRepository: BrokerPositionRepository,
     private val fetchLogRepository: PositionFetchLogRepository,
     private val userRepository: UserRepository,
-    private val brokerClientFactory: BrokerClientFactory,
-    private val encryptionService: TokenEncryptionService,
+    private val snapTradeService: SnapTradeService,
     private val auditService: AuditService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -37,10 +32,9 @@ class PositionFetchService(
      */
     @Transactional
     fun triggerManualFetch(connectionId: Long, userId: Long): PositionFetchLog {
-        val connection = connectionRepository.findByIdAndUserIdWithBrokerAndToken(connectionId, userId)
+        val connection = connectionRepository.findByIdAndUserId(connectionId, userId)
             ?: throw IllegalArgumentException("Connection not found: $connectionId")
 
-        // Create fetch log entry
         val fetchLog = PositionFetchLog(
             connection = connection,
             user = connection.user,
@@ -50,30 +44,9 @@ class PositionFetchService(
         )
         val savedLog = fetchLogRepository.save(fetchLog)
 
-        // Trigger async fetch
         executeAsyncFetch(connectionId, savedLog.id, userId)
 
         return savedLog
-    }
-
-    /**
-     * Executes position fetch for scheduled jobs.
-     */
-    @Transactional
-    fun executeScheduledFetch(connectionId: Long, userId: Long): PositionFetchLog {
-        val connection = connectionRepository.findByIdAndUserIdWithBrokerAndToken(connectionId, userId)
-            ?: throw IllegalArgumentException("Connection not found: $connectionId")
-
-        val fetchLog = PositionFetchLog(
-            connection = connection,
-            user = connection.user,
-            fetchType = PositionFetchType.SCHEDULED,
-            status = FetchStatus.PENDING,
-            triggeredBy = "scheduler"
-        )
-        val savedLog = fetchLogRepository.save(fetchLog)
-
-        return executePositionFetch(connectionId, savedLog.id, userId)
     }
 
     @Async
@@ -93,87 +66,65 @@ class PositionFetchService(
         fetchLog.status = FetchStatus.IN_PROGRESS
         fetchLogRepository.save(fetchLog)
 
-        val connection = connectionRepository.findByIdAndUserIdWithBrokerAndToken(connectionId, userId)
+        val connection = connectionRepository.findByIdAndUserId(connectionId, userId)
             ?: throw IllegalArgumentException("Connection not found: $connectionId")
 
-        val token = tokenRepository.findByConnectionId(connectionId)
-            ?: throw IllegalStateException("Token not found for connection: $connectionId")
+        val user = userRepository.findById(userId).orElseThrow {
+            IllegalArgumentException("User not found: $userId")
+        }
 
-        val user = connection.user
+        val accountId = connection.accountIdExternal
+            ?: throw IllegalStateException("No account ID for connection: $connectionId")
 
         try {
-            val client = brokerClientFactory.getClient(connection.broker.code)
-
-            // Check if token needs refresh
-            var accessToken = encryptionService.decrypt(token.accessTokenEncrypted)
-            var apiServerUrl = token.apiServerUrl
-
-            if (token.isExpiringSoon()) {
-                log.info("Token expiring soon for connection {}, refreshing...", connectionId)
-
-                val refreshToken = token.refreshTokenEncrypted?.let { encryptionService.decrypt(it) }
-                    ?: throw BrokerTokenExpiredException("No refresh token available")
-
-                val newTokens = runBlocking { client.refreshAccessToken(refreshToken) }
-
-                // Update stored tokens
-                token.accessTokenEncrypted = encryptionService.encrypt(newTokens.accessToken)
-                token.refreshTokenEncrypted = newTokens.refreshToken?.let { encryptionService.encrypt(it) }
-                token.expiresAt = newTokens.expiresIn?.let { OffsetDateTime.now().plusSeconds(it) }
-                token.apiServerUrl = newTokens.apiServerUrl ?: token.apiServerUrl
-                token.lastRefreshedAt = OffsetDateTime.now()
-                token.refreshCount++
-                tokenRepository.save(token)
-
-                accessToken = newTokens.accessToken
-                apiServerUrl = newTokens.apiServerUrl ?: apiServerUrl
-
-                auditService.log(
-                    eventType = AuditEventType.BROKER_TOKEN_REFRESH,
-                    user = user,
-                    resourceType = "broker_connection",
-                    resourceId = connectionId.toString(),
-                    details = mapOf("broker" to connection.broker.code)
-                )
-            }
-
-            // Fetch positions from broker
-            val response = runBlocking {
-                client.fetchPositions(
-                    accessToken = accessToken,
-                    accountId = connection.accountIdExternal ?: connection.accountNumber ?: "",
-                    apiServerUrl = apiServerUrl
-                )
-            }
+            val snapPositions: List<Position> = snapTradeService.fetchPositions(user, accountId)
 
             // Mark old positions as non-current
             positionRepository.markAllNonCurrent(connectionId)
 
             // Save new positions
             var totalValue = BigDecimal.ZERO
-            val positions = response.positions.map { dto ->
+            val positions = snapPositions.map { snapPos: Position ->
+                val units: BigDecimal? = snapPos.units?.let { BigDecimal.valueOf(it) }
+                val price: BigDecimal? = snapPos.price?.let { BigDecimal.valueOf(it) }
+                val currentValue = if (units != null && price != null) units.multiply(price) else null
+
+                val avgCost: BigDecimal? = snapPos.averagePurchasePrice?.let { BigDecimal.valueOf(it) }
+                val qty = units ?: BigDecimal.ZERO
+                val totalPnl = if (currentValue != null && avgCost != null) {
+                    currentValue - avgCost.multiply(qty)
+                } else null
+                val costBasis = if (avgCost != null) avgCost.multiply(qty) else null
+                val totalPnlPercent = if (totalPnl != null && costBasis != null && costBasis.compareTo(BigDecimal.ZERO) > 0) {
+                    totalPnl.divide(costBasis, 4, RoundingMode.HALF_UP).multiply(BigDecimal(100))
+                } else null
+
+                // Position.symbol is PositionSymbol, which has .symbol (UniversalSymbol)
+                val universalSymbol = snapPos.symbol?.symbol
+                // Position.currency is PositionCurrency with .code
+                val currencyCode: String = snapPos.currency?.code
+                    ?: universalSymbol?.currency?.code
+                    ?: "CAD"
+
                 val position = BrokerPosition(
                     connection = connection,
-                    symbol = dto.symbol,
-                    symbolIdExternal = dto.symbolId,
-                    securityName = dto.securityName,
-                    instrumentType = dto.instrumentType?.let {
-                        try { InstrumentType.valueOf(it) } catch (e: Exception) { null }
-                    },
-                    quantity = dto.quantity,
-                    averageCost = dto.averageCost,
-                    currentPrice = dto.currentPrice,
-                    currentValue = dto.currentValue,
-                    dayPnl = dto.dayPnl,
-                    totalPnl = dto.totalPnl,
-                    totalPnlPercent = dto.totalPnlPercent,
-                    currency = dto.currency,
+                    symbol = universalSymbol?.symbol ?: "UNKNOWN",
+                    symbolIdExternal = snapPos.symbol?.id?.toString(),
+                    securityName = universalSymbol?.description,
+                    instrumentType = mapInstrumentType(universalSymbol?.type?.code),
+                    quantity = qty,
+                    averageCost = avgCost,
+                    currentPrice = price,
+                    currentValue = currentValue,
+                    dayPnl = null,
+                    totalPnl = totalPnl,
+                    totalPnlPercent = totalPnlPercent,
+                    currency = currencyCode,
                     asOfDate = LocalDate.now(),
-                    asOfTimestamp = response.asOfTimestamp ?: OffsetDateTime.now(),
-                    isCurrent = true,
-                    rawPayload = dto.rawData?.let { com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(it) }
+                    asOfTimestamp = OffsetDateTime.now(),
+                    isCurrent = true
                 )
-                totalValue += dto.currentValue ?: BigDecimal.ZERO
+                totalValue += currentValue ?: BigDecimal.ZERO
                 position
             }
             positionRepository.saveAll(positions)
@@ -188,7 +139,6 @@ class PositionFetchService(
 
             // Update fetch log
             fetchLog.markSuccess(positions.size, totalValue)
-            fetchLog.rawResponse = response.rawPayload
             fetchLogRepository.save(fetchLog)
 
             auditService.log(
@@ -197,7 +147,6 @@ class PositionFetchService(
                 resourceType = "broker_connection",
                 resourceId = connectionId.toString(),
                 details = mapOf(
-                    "broker" to connection.broker.code,
                     "positionsCount" to positions.size,
                     "totalValue" to totalValue,
                     "fetchType" to fetchLog.fetchType.name
@@ -206,47 +155,6 @@ class PositionFetchService(
 
             log.info("Successfully fetched {} positions for connection {}", positions.size, connectionId)
             return fetchLog
-
-        } catch (e: BrokerTokenExpiredException) {
-            log.warn("Token expired for connection {}", connectionId)
-            connection.markAsExpired(e.message)
-            connectionRepository.save(connection)
-
-            fetchLog.markFailed("TOKEN_EXPIRED", e.message ?: "Token expired")
-            fetchLogRepository.save(fetchLog)
-
-            auditService.log(
-                eventType = AuditEventType.BROKER_FETCH_ERROR,
-                user = user,
-                resourceType = "broker_connection",
-                resourceId = connectionId.toString(),
-                success = false,
-                details = mapOf<String, Any>(
-                    "broker" to connection.broker.code,
-                    "errorCode" to "TOKEN_EXPIRED",
-                    "errorMessage" to (e.message ?: "Token expired")
-                )
-            )
-            throw e
-
-        } catch (e: BrokerRateLimitException) {
-            log.warn("Rate limited for connection {}", connectionId)
-            fetchLog.markFailed("RATE_LIMITED", e.message ?: "Rate limited")
-            fetchLog.retryCount++
-            fetchLogRepository.save(fetchLog)
-
-            auditService.log(
-                eventType = AuditEventType.BROKER_FETCH_ERROR,
-                user = user,
-                resourceType = "broker_connection",
-                resourceId = connectionId.toString(),
-                success = false,
-                details = mapOf<String, Any>(
-                    "broker" to connection.broker.code,
-                    "errorCode" to "RATE_LIMITED"
-                )
-            )
-            throw e
 
         } catch (e: Exception) {
             log.error("Position fetch failed for connection {}: {}", connectionId, e.message, e)
@@ -263,12 +171,23 @@ class PositionFetchService(
                 resourceId = connectionId.toString(),
                 success = false,
                 details = mapOf<String, Any>(
-                    "broker" to connection.broker.code,
                     "errorCode" to "FETCH_ERROR",
                     "errorMessage" to (e.message ?: "Unknown error")
                 )
             )
             throw e
+        }
+    }
+
+    private fun mapInstrumentType(typeCode: String?): InstrumentType? {
+        return when (typeCode?.lowercase()) {
+            "cs", "equity", "stock" -> InstrumentType.STOCK
+            "et", "etf" -> InstrumentType.ETF
+            "mf", "mutual_fund", "mutualfund" -> InstrumentType.MUTUAL_FUND
+            "op", "option" -> InstrumentType.OPTION
+            "bnd", "bond", "fixed_income" -> InstrumentType.BOND
+            "cash", "currency" -> InstrumentType.CASH
+            else -> InstrumentType.OTHER
         }
     }
 }

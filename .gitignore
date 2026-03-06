@@ -103,6 +103,9 @@ coverage/
 *.lcov
 .nyc_output/
 
+# Database dumps
+*.backup
+
 # Misc
 *.swp
 *.swo

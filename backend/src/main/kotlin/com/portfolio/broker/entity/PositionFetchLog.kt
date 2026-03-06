@@ -7,7 +7,7 @@ import java.math.BigDecimal
 import java.time.OffsetDateTime
 
 enum class PositionFetchType {
-    MANUAL, SCHEDULED, INITIAL, RECONNECT
+    MANUAL, INITIAL
 }
 
 enum class FetchStatus {

@@ -7,18 +7,18 @@ interface SectorChartProps {
 }
 
 const SECTOR_COLORS: Record<string, string> = {
-  '45': '#00d9ff', // Information Technology
-  '35': '#00ff88', // Health Care
-  '40': '#ffaa00', // Financials
-  '25': '#ff6b6b', // Consumer Discretionary
-  '30': '#9b59b6', // Consumer Staples
-  '55': '#3498db', // Utilities
-  '10': '#e67e22', // Energy
-  '15': '#1abc9c', // Materials
-  '20': '#f39c12', // Industrials
-  '50': '#e74c3c', // Communication Services
-  '60': '#2ecc71', // Real Estate
-  'UNKNOWN': '#718096',
+  '45': '#2a8a81', // Information Technology
+  '35': '#059669', // Health Care
+  '40': '#d97706', // Financials
+  '25': '#dc2626', // Consumer Discretionary
+  '30': '#7c3aed', // Consumer Staples
+  '55': '#0284c7', // Utilities
+  '10': '#ea580c', // Energy
+  '15': '#0d9488', // Materials
+  '20': '#ca8a04', // Industrials
+  '50': '#e11d48', // Communication Services
+  '60': '#16a34a', // Real Estate
+  'UNKNOWN': '#6b7280',
 };
 
 export function SectorChart({ data }: SectorChartProps) {
@@ -41,7 +41,7 @@ export function SectorChart({ data }: SectorChartProps) {
         innerRadiusRatio: 0.5,
         fills: chartData.map((d) => d.color),
         strokeWidth: 1,
-        stroke: '#1a1a2e',
+        stroke: '#ffffff',
         calloutLabel: {
           enabled: true,
           minAngle: 20,
@@ -66,7 +66,7 @@ export function SectorChart({ data }: SectorChartProps) {
       position: 'bottom' as const,
       item: {
         label: {
-          color: '#a0aec0',
+          color: '#4a5568',
           fontSize: 11,
         },
       },

@@ -31,13 +31,13 @@ describe('ConnectionStatus', () => {
   it('applies correct color styling for ACTIVE status', () => {
     const { container } = render(<ConnectionStatus status="ACTIVE" />)
     const span = container.querySelector('span')
-    expect(span).toHaveStyle({ color: '#10b981' })
+    expect(span).toHaveStyle({ color: '#059669' })
   })
 
   it('applies correct color styling for ERROR status', () => {
     const { container } = render(<ConnectionStatus status="ERROR" />)
     const span = container.querySelector('span')
-    expect(span).toHaveStyle({ color: '#ef4444' })
+    expect(span).toHaveStyle({ color: '#dc2626' })
   })
 
   it('renders with status indicator dot', () => {

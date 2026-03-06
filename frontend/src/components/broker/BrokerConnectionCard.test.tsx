@@ -7,14 +7,13 @@ describe('BrokerConnectionCard', () => {
   const mockConnection: BrokerConnection = {
     id: 1,
     broker: {
-      id: 1,
-      code: 'QUESTRADE',
       name: 'Questrade',
-      authType: 'OAUTH2',
+      slug: 'questrade',
       status: 'ACTIVE',
       logoUrl: null,
       description: null
     },
+    snaptradeAuthorizationId: 'auth-uuid-123',
     accountNumber: '51234567',
     accountType: 'TFSA',
     accountName: 'My TFSA',
@@ -32,6 +31,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -44,6 +44,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -56,6 +57,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -68,6 +70,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -80,6 +83,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -93,6 +97,7 @@ describe('BrokerConnectionCard', () => {
         connection={singlePositionConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -105,6 +110,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -117,6 +123,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={true}
       />
     )
@@ -130,6 +137,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={mockOnFetch}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -145,6 +153,7 @@ describe('BrokerConnectionCard', () => {
         connection={expiredConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -158,6 +167,7 @@ describe('BrokerConnectionCard', () => {
         connection={errorConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -170,6 +180,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -182,6 +193,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -192,13 +204,14 @@ describe('BrokerConnectionCard', () => {
     expect(screen.getByText('Cancel')).toBeInTheDocument()
   })
 
-  it('calls onDisconnect when Confirm clicked', () => {
+  it('calls onDisconnect with authorizationId when Confirm clicked', () => {
     const mockOnDisconnect = vi.fn()
     render(
       <BrokerConnectionCard
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={mockOnDisconnect}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -206,7 +219,7 @@ describe('BrokerConnectionCard', () => {
     fireEvent.click(screen.getByText('Disconnect'))
     fireEvent.click(screen.getByText('Confirm'))
 
-    expect(mockOnDisconnect).toHaveBeenCalledWith(1)
+    expect(mockOnDisconnect).toHaveBeenCalledWith('auth-uuid-123')
   })
 
   it('hides confirmation when Cancel clicked', () => {
@@ -215,6 +228,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -238,6 +252,7 @@ describe('BrokerConnectionCard', () => {
         connection={errorConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )
@@ -250,6 +265,7 @@ describe('BrokerConnectionCard', () => {
         connection={mockConnection}
         onFetch={vi.fn()}
         onDisconnect={vi.fn()}
+        onReconnect={vi.fn()}
         isFetching={false}
       />
     )

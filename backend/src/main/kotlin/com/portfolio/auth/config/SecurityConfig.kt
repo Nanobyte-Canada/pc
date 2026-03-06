@@ -3,7 +3,6 @@ package com.portfolio.auth.config
 import com.portfolio.auth.security.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -48,8 +47,7 @@ class SecurityConfig(
                         "/auth/google/callback",
                         "/health",
                         "/actuator/**",
-                        "/api/v1/portfolio/**",
-                        "/api/v1/brokers/*/callback"  // OAuth callbacks from brokers
+                        "/api/v1/portfolio/**"
                     )
             }
             // Configure CORS
@@ -67,8 +65,6 @@ class SecurityConfig(
                     .requestMatchers("/health", "/api/v1/version").permitAll()
                     .requestMatchers("/auth/**").permitAll()
                     .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                    // OAuth callbacks from brokers (public - validated via state token)
-                    .requestMatchers(HttpMethod.GET, "/api/v1/brokers/*/callback").permitAll()
                     // Admin endpoints
                     .requestMatchers("/api/v1/admin/**", "/admin/**").hasRole("ADMIN")
                     // All other API endpoints require authentication

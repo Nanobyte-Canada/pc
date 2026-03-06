@@ -1,9 +1,8 @@
 export interface Broker {
-  id: number
-  code: string
+  id?: number
   name: string
-  authType: 'OAUTH2' | 'API_KEY' | 'AGGREGATOR'
-  status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE'
+  slug?: string
+  status?: string
   logoUrl: string | null
   description: string | null
 }
@@ -15,6 +14,7 @@ export interface BrokersResponse {
 export interface BrokerConnection {
   id: number
   broker: Broker
+  snaptradeAuthorizationId: string | null
   accountNumber: string | null
   accountType: string | null
   accountName: string | null
@@ -30,9 +30,13 @@ export interface BrokerConnectionsResponse {
   connections: BrokerConnection[]
 }
 
-export interface OAuthInitiateResponse {
+export interface ConnectBrokerRequest {
+  broker?: string
+  reconnectAuthId?: string
+}
+
+export interface ConnectBrokerResponse {
   redirectUrl: string
-  state: string
 }
 
 export interface PositionFetchResponse {
@@ -64,7 +68,7 @@ export interface PositionsSummary {
 
 export interface ConnectionPositionsResponse {
   connectionId: number
-  broker: string
+  broker: string | null
   accountNumber: string | null
   asOfDate: string
   positions: BrokerPosition[]
@@ -72,7 +76,7 @@ export interface ConnectionPositionsResponse {
 }
 
 export interface BrokerBreakdown {
-  broker: string
+  broker: string | null
   accountNumber: string | null
   quantity: number
   value: number | null
@@ -106,32 +110,14 @@ export interface AggregatedPositionsResponse {
   aggregateSummary: AggregateSummary
 }
 
-export interface BrokerPrefs {
-  autoFetchEnabled: boolean
-  fetchTimeUtc: string
-  notificationOnFetch: boolean
-  notificationOnError: boolean
-}
-
-export interface UpdateBrokerPrefsRequest {
-  autoFetchEnabled: boolean
-  fetchTimeUtc?: string
-}
-
-export interface BrokerPrefsResponse {
-  autoFetchEnabled: boolean
-  fetchTimeUtc: string
-  message?: string
-}
-
 // Utility types
 export type ConnectionStatusType = BrokerConnection['status']
 
 export const connectionStatusColors: Record<ConnectionStatusType, string> = {
-  PENDING: '#f59e0b',
-  ACTIVE: '#10b981',
-  EXPIRED: '#ef4444',
-  ERROR: '#ef4444',
+  PENDING: '#d97706',
+  ACTIVE: '#059669',
+  EXPIRED: '#dc2626',
+  ERROR: '#dc2626',
   DISCONNECTED: '#6b7280'
 }
 

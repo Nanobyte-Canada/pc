@@ -2,15 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getAvailableBrokers,
   getUserConnections,
-  initiateConnection,
+  connectBroker,
   disconnectBroker,
   triggerPositionFetch,
   getConnectionPositions,
-  getAggregatedPositions,
-  getBrokerPreferences,
-  updateBrokerPreferences
+  getAggregatedPositions
 } from '../services/brokerService'
-import type { UpdateBrokerPrefsRequest } from '../types/broker'
+import type { ConnectBrokerRequest } from '../types/broker'
 
 // Query keys
 export const brokerKeys = {
@@ -19,8 +17,7 @@ export const brokerKeys = {
   connections: () => [...brokerKeys.all, 'connections'] as const,
   positions: () => [...brokerKeys.all, 'positions'] as const,
   connectionPositions: (id: number) => [...brokerKeys.positions(), id] as const,
-  aggregatedPositions: () => [...brokerKeys.positions(), 'aggregated'] as const,
-  preferences: () => [...brokerKeys.all, 'preferences'] as const
+  aggregatedPositions: () => [...brokerKeys.positions(), 'aggregated'] as const
 }
 
 // ========== Queries ==========
@@ -58,21 +55,13 @@ export function useAggregatedPositions() {
   })
 }
 
-export function useBrokerPreferences() {
-  return useQuery({
-    queryKey: brokerKeys.preferences(),
-    queryFn: getBrokerPreferences,
-    staleTime: 5 * 60 * 1000 // 5 minutes
-  })
-}
-
 // ========== Mutations ==========
 
-export function useInitiateConnection() {
+export function useConnectBroker() {
   return useMutation({
-    mutationFn: (brokerCode: string) => initiateConnection(brokerCode),
+    mutationFn: (request?: ConnectBrokerRequest) => connectBroker(request),
     onSuccess: (data) => {
-      // Redirect to OAuth URL
+      // Redirect to SnapTrade connection portal
       window.location.href = data.redirectUrl
     }
   })
@@ -82,7 +71,7 @@ export function useDisconnectBroker() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (connectionId: number) => disconnectBroker(connectionId),
+    mutationFn: (authorizationId: string) => disconnectBroker(authorizationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brokerKeys.connections() })
       queryClient.invalidateQueries({ queryKey: brokerKeys.positions() })
@@ -102,17 +91,6 @@ export function useTriggerPositionFetch() {
         queryClient.invalidateQueries({ queryKey: brokerKeys.connectionPositions(connectionId) })
         queryClient.invalidateQueries({ queryKey: brokerKeys.aggregatedPositions() })
       }, 2000)
-    }
-  })
-}
-
-export function useUpdateBrokerPreferences() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (request: UpdateBrokerPrefsRequest) => updateBrokerPreferences(request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: brokerKeys.preferences() })
     }
   })
 }

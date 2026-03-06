@@ -7,25 +7,26 @@
 .profile-title {
   font-size: 1.75rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0 0 2rem 0;
 }
 
 .profile-section {
-  background: #1a1a2e;
-  border: 1px solid #16213e;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .section-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #00d9ff;
+  color: var(--accent);
   margin: 0 0 1.25rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid #16213e;
+  border-bottom: 1px solid var(--border);
 }
 
 /* Info Grid */
@@ -44,22 +45,22 @@
 .info-item label {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .info-item span {
   font-size: 0.9375rem;
-  color: #e5e7eb;
+  color: var(--text-primary);
 }
 
 .info-item .verified {
-  color: #34d399;
+  color: var(--success);
 }
 
 .info-item .not-verified {
-  color: #f87171;
+  color: var(--error);
 }
 
 /* Form Styles */
@@ -78,39 +79,39 @@
 .form-group label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #9ca3af;
+  color: var(--text-secondary);
 }
 
 .form-group input {
   padding: 0.75rem 1rem;
-  background: #0f0f1a;
-  border: 1px solid #374151;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.9375rem;
-  color: #fff;
+  color: var(--text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(42, 138, 129, 0.2);
 }
 
 .form-group input::placeholder {
-  color: #4b5563;
+  color: var(--text-muted);
 }
 
 .form-hint {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 /* Buttons */
 .submit-button {
   align-self: flex-start;
   padding: 0.75rem 1.5rem;
-  background: #3b82f6;
+  background: var(--accent);
   color: white;
   border: none;
   border-radius: 6px;
@@ -121,19 +122,20 @@
 }
 
 .submit-button:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--accent-hover);
 }
 
 .submit-button:disabled {
-  background: #4b5563;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 
 /* Messages */
 .success-message {
-  background: rgba(52, 211, 153, 0.1);
-  border: 1px solid #34d399;
-  color: #34d399;
+  background: rgba(5, 150, 105, 0.08);
+  border: 1px solid var(--success);
+  color: var(--success);
   padding: 0.75rem 1rem;
   border-radius: 6px;
   font-size: 0.875rem;
@@ -141,9 +143,9 @@
 }
 
 .error-message {
-  background: rgba(248, 113, 113, 0.1);
-  border: 1px solid #f87171;
-  color: #f87171;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid var(--error);
+  color: var(--error);
   padding: 0.75rem 1rem;
   border-radius: 6px;
   font-size: 0.875rem;

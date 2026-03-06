@@ -51,8 +51,8 @@ jobs:
           EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
           ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
           BROKER_ENCRYPTION_KEY: ${{ secrets.BROKER_ENCRYPTION_KEY }}
-          QUESTRADE_CLIENT_ID: ${{ secrets.QUESTRADE_CLIENT_ID }}
-          QUESTRADE_CLIENT_SECRET: ${{ secrets.QUESTRADE_CLIENT_SECRET }}
+          SNAPTRADE_CLIENT_ID: ${{ secrets.SNAPTRADE_CLIENT_ID }}
+          SNAPTRADE_CONSUMER_KEY: ${{ secrets.SNAPTRADE_CONSUMER_KEY }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GITHUB_SHA: ${{ github.sha }}
@@ -61,7 +61,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           command_timeout: 30m
-          envs: POSTGRES_PASSWORD,JWT_SIGNING_KEY,EODHD_API_KEY,ALPHA_VANTAGE_API_KEY,BROKER_ENCRYPTION_KEY,QUESTRADE_CLIENT_ID,QUESTRADE_CLIENT_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,GITHUB_SHA
+          envs: POSTGRES_PASSWORD,JWT_SIGNING_KEY,EODHD_API_KEY,ALPHA_VANTAGE_API_KEY,BROKER_ENCRYPTION_KEY,SNAPTRADE_CLIENT_ID,SNAPTRADE_CONSUMER_KEY,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,GITHUB_SHA
           script: |
             set -e
             cd /opt/portfolio
@@ -132,8 +132,9 @@ jobs:
             echo "EODHD_API_KEY=$EODHD_API_KEY" >> .env
             echo "ALPHA_VANTAGE_API_KEY=$ALPHA_VANTAGE_API_KEY" >> .env
             echo "BROKER_ENCRYPTION_KEY=$BROKER_ENCRYPTION_KEY" >> .env
-            echo "QUESTRADE_CLIENT_ID=$QUESTRADE_CLIENT_ID" >> .env
-            echo "QUESTRADE_CLIENT_SECRET=$QUESTRADE_CLIENT_SECRET" >> .env
+            echo "SNAPTRADE_CLIENT_ID=$SNAPTRADE_CLIENT_ID" >> .env
+            echo "SNAPTRADE_CONSUMER_KEY=$SNAPTRADE_CONSUMER_KEY" >> .env
+            echo "SNAPTRADE_REDIRECT_URI=https://devpc.nanobyte.ca/brokers/connections" >> .env
             echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
             echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
 

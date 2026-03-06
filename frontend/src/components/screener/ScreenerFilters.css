@@ -27,7 +27,7 @@
 .filter-select {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text-primary);
@@ -37,6 +37,7 @@
 .filter-input:focus,
 .filter-select:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(42, 138, 129, 0.2);
 }
 
 .filter-select {
@@ -61,7 +62,7 @@
 
 .filter-btn.primary {
   background-color: var(--accent);
-  color: #000;
+  color: #fff;
 }
 
 .filter-btn.primary:hover {
@@ -69,11 +70,11 @@
 }
 
 .filter-btn.secondary {
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-primary);
   color: var(--text-primary);
   border: 1px solid var(--border);
 }
 
 .filter-btn.secondary:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--bg-tertiary);
 }

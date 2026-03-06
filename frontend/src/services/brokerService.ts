@@ -2,13 +2,11 @@ import { apiFetch } from './api'
 import type {
   BrokersResponse,
   BrokerConnectionsResponse,
-  OAuthInitiateResponse,
+  ConnectBrokerRequest,
+  ConnectBrokerResponse,
   PositionFetchResponse,
   ConnectionPositionsResponse,
-  AggregatedPositionsResponse,
-  BrokerPrefs,
-  UpdateBrokerPrefsRequest,
-  BrokerPrefsResponse
+  AggregatedPositionsResponse
 } from '../types/broker'
 
 const BROKER_API_BASE = '/api/v1/brokers'
@@ -33,9 +31,10 @@ export async function getUserConnections(): Promise<BrokerConnectionsResponse> {
   return response.json()
 }
 
-export async function initiateConnection(brokerCode: string): Promise<OAuthInitiateResponse> {
-  const response = await apiFetch(`${BROKER_API_BASE}/${brokerCode}/connect`, {
-    method: 'POST'
+export async function connectBroker(request?: ConnectBrokerRequest): Promise<ConnectBrokerResponse> {
+  const response = await apiFetch(`${BROKER_API_BASE}/connect`, {
+    method: 'POST',
+    body: JSON.stringify(request || {})
   })
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
@@ -44,8 +43,8 @@ export async function initiateConnection(brokerCode: string): Promise<OAuthIniti
   return response.json()
 }
 
-export async function disconnectBroker(connectionId: number): Promise<void> {
-  const response = await apiFetch(`${BROKER_API_BASE}/connections/${connectionId}`, {
+export async function disconnectBroker(authorizationId: string): Promise<void> {
+  const response = await apiFetch(`${BROKER_API_BASE}/connections/${authorizationId}`, {
     method: 'DELETE'
   })
   if (!response.ok) {
@@ -78,28 +77,6 @@ export async function getAggregatedPositions(): Promise<AggregatedPositionsRespo
   const response = await apiFetch(`${BROKER_API_BASE}/positions`)
   if (!response.ok) {
     throw new Error('Failed to fetch aggregated positions')
-  }
-  return response.json()
-}
-
-// ========== User Preferences ==========
-
-export async function getBrokerPreferences(): Promise<BrokerPrefs> {
-  const response = await apiFetch(`${BROKER_API_BASE}/preferences`)
-  if (!response.ok) {
-    throw new Error('Failed to fetch broker preferences')
-  }
-  return response.json()
-}
-
-export async function updateBrokerPreferences(request: UpdateBrokerPrefsRequest): Promise<BrokerPrefsResponse> {
-  const response = await apiFetch(`${BROKER_API_BASE}/preferences`, {
-    method: 'PUT',
-    body: JSON.stringify(request)
-  })
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.message || 'Failed to update broker preferences')
   }
   return response.json()
 }

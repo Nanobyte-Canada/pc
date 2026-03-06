@@ -40,11 +40,9 @@ services:
       EODHD_API_KEY: ${EODHD_API_KEY:-}
       ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-}
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY:-}
-      QUESTRADE_CLIENT_ID: ${QUESTRADE_CLIENT_ID:-}
-      QUESTRADE_CLIENT_SECRET: ${QUESTRADE_CLIENT_SECRET:-}
-      QUESTRADE_REDIRECT_URI: https://devpc.nanobyte.ca/api/v1/brokers/QUESTRADE/callback
-      IBKR_REDIRECT_URI: https://devpc.nanobyte.ca/api/v1/brokers/IBKR/callback
-      SNAPTRADE_REDIRECT_URI: https://devpc.nanobyte.ca/api/v1/brokers/WEALTHSIMPLE/callback
+      SNAPTRADE_CLIENT_ID: ${SNAPTRADE_CLIENT_ID:-}
+      SNAPTRADE_CONSUMER_KEY: ${SNAPTRADE_CONSUMER_KEY:-}
+      SNAPTRADE_REDIRECT_URI: ${SNAPTRADE_REDIRECT_URI:-https://devpc.nanobyte.ca/brokers/connections}
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:

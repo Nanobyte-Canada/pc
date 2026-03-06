@@ -3,8 +3,8 @@
   align-items: center;
   padding: 0 1.5rem;
   height: 56px;
-  background-color: #1a1a2e;
-  border-bottom: 1px solid #16213e;
+  background-color: var(--nav-bg);
+  border-bottom: none;
 }
 
 .nav-brand {
@@ -14,7 +14,7 @@
 .brand-text {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #00d9ff;
+  color: var(--nav-text);
 }
 
 .nav-links {
@@ -25,7 +25,7 @@
 
 .nav-link {
   padding: 0.5rem 1rem;
-  color: #a0aec0;
+  color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
   border-radius: 4px;
   transition: color 0.2s, background-color 0.2s;
@@ -37,8 +37,8 @@
 }
 
 .nav-link.active {
-  color: #00d9ff;
-  background-color: rgba(0, 217, 255, 0.1);
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .nav-dropdown {
@@ -60,10 +60,10 @@
   top: 100%;
   left: 0;
   min-width: 160px;
-  background-color: #1a1a2e;
-  border: 1px solid #16213e;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 100;
 }
 
@@ -74,18 +74,18 @@
 .dropdown-item {
   display: block;
   padding: 0.75rem 1rem;
-  color: #a0aec0;
+  color: var(--text-secondary);
   text-decoration: none;
   transition: background-color 0.2s, color 0.2s;
 }
 
 .dropdown-item:hover {
-  color: #fff;
-  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  background-color: rgba(42, 138, 129, 0.08);
 }
 
 .dropdown-item.active {
-  color: #00d9ff;
+  color: var(--accent);
 }
 
 /* User Menu */
@@ -108,7 +108,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6 0%, #00d9ff 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,6 +122,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--nav-text);
 }
 
 .user-menu {
@@ -132,7 +133,7 @@
 
 .dropdown-divider {
   height: 1px;
-  background-color: #16213e;
+  background-color: var(--border);
   margin: 0.5rem 0;
 }
 
@@ -144,12 +145,12 @@
   font-size: inherit;
   font-family: inherit;
   cursor: pointer;
-  color: #f87171;
+  color: var(--error);
 }
 
 .logout-item:hover {
-  color: #fca5a5;
-  background-color: rgba(248, 113, 113, 0.1);
+  color: #b91c1c;
+  background-color: rgba(220, 38, 38, 0.08);
 }
 
 /* Admin Link */

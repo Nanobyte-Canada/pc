@@ -2,7 +2,6 @@ package com.portfolio.broker.entity
 
 import com.portfolio.auth.entity.User
 import jakarta.persistence.*
-import jakarta.persistence.FetchType.LAZY
 import java.math.BigDecimal
 import java.time.OffsetDateTime
 
@@ -11,15 +10,7 @@ enum class ConnectionStatus {
 }
 
 @Entity
-@Table(
-    name = "broker_connections",
-    uniqueConstraints = [
-        UniqueConstraint(
-            name = "uq_broker_connections",
-            columnNames = ["user_id", "broker_id", "account_id_external"]
-        )
-    ]
-)
+@Table(name = "broker_connections")
 class BrokerConnection(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,8 +21,11 @@ class BrokerConnection(
     val user: User,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "broker_id", nullable = false)
-    val broker: Broker,
+    @JoinColumn(name = "broker_id")
+    val broker: Broker? = null,
+
+    @Column(name = "snaptrade_authorization_id", length = 255)
+    var snaptradeAuthorizationId: String? = null,
 
     @Column(name = "account_id_external", length = 100)
     var accountIdExternal: String? = null,
@@ -72,9 +66,6 @@ class BrokerConnection(
 
     @Column(name = "updated_at", nullable = false)
     var updatedAt: OffsetDateTime = OffsetDateTime.now(),
-
-    @OneToOne(mappedBy = "connection", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-    var token: ConnectionToken? = null,
 
     @OneToMany(mappedBy = "connection", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val positions: MutableList<BrokerPosition> = mutableListOf(),

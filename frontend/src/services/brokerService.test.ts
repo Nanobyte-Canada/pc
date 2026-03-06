@@ -3,8 +3,7 @@ import {
   getAvailableBrokers,
   getUserConnections,
   getAggregatedPositions,
-  getBrokerPreferences,
-  updateBrokerPreferences,
+  connectBroker,
   triggerPositionFetch,
   formatCurrency,
   formatPercent,
@@ -27,8 +26,8 @@ describe('Broker Service', () => {
     it('returns brokers list on success', async () => {
       const mockResponse = {
         brokers: [
-          { id: 1, code: 'QUESTRADE', name: 'Questrade', status: 'ACTIVE' },
-          { id: 2, code: 'IBKR', name: 'Interactive Brokers', status: 'ACTIVE' }
+          { name: 'Questrade', slug: 'questrade', logoUrl: null, description: 'Canadian brokerage' },
+          { name: 'Wealthsimple', slug: 'wealthsimple', logoUrl: null, description: null }
         ]
       }
       mockFetch.mockResolvedValueOnce({
@@ -56,7 +55,7 @@ describe('Broker Service', () => {
     it('returns connections list on success', async () => {
       const mockResponse = {
         connections: [
-          { id: 1, broker: { code: 'QUESTRADE', name: 'Questrade' }, status: 'ACTIVE' }
+          { id: 1, broker: { name: 'Questrade', slug: 'questrade' }, status: 'ACTIVE' }
         ]
       }
       mockFetch.mockResolvedValueOnce({
@@ -68,6 +67,50 @@ describe('Broker Service', () => {
 
       expect(result).toEqual(mockResponse)
       expect(mockFetch).toHaveBeenCalledWith('/api/v1/brokers/connections', expect.any(Object))
+    })
+  })
+
+  describe('connectBroker', () => {
+    it('sends POST request to connect endpoint', async () => {
+      const mockResponse = {
+        redirectUrl: 'https://snaptrade.com/portal?token=abc'
+      }
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse)
+      })
+
+      const result = await connectBroker({ broker: 'questrade' })
+
+      expect(result).toEqual(mockResponse)
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/v1/brokers/connect',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ broker: 'questrade' })
+        })
+      )
+    })
+
+    it('sends POST request without broker slug', async () => {
+      const mockResponse = {
+        redirectUrl: 'https://snaptrade.com/portal?token=abc'
+      }
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse)
+      })
+
+      const result = await connectBroker()
+
+      expect(result).toEqual(mockResponse)
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/v1/brokers/connect',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({})
+        })
+      )
     })
   })
 
@@ -93,52 +136,6 @@ describe('Broker Service', () => {
 
       expect(result).toEqual(mockResponse)
       expect(mockFetch).toHaveBeenCalledWith('/api/v1/brokers/positions', expect.any(Object))
-    })
-  })
-
-  describe('getBrokerPreferences', () => {
-    it('returns preferences on success', async () => {
-      const mockResponse = {
-        autoFetchEnabled: true,
-        fetchTimeUtc: '06:00'
-      }
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockResponse)
-      })
-
-      const result = await getBrokerPreferences()
-
-      expect(result).toEqual(mockResponse)
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/brokers/preferences', expect.any(Object))
-    })
-  })
-
-  describe('updateBrokerPreferences', () => {
-    it('sends PUT request with preferences', async () => {
-      const mockResponse = {
-        autoFetchEnabled: true,
-        fetchTimeUtc: '07:00',
-        message: 'Updated'
-      }
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockResponse)
-      })
-
-      const result = await updateBrokerPreferences({
-        autoFetchEnabled: true,
-        fetchTimeUtc: '07:00'
-      })
-
-      expect(result).toEqual(mockResponse)
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/brokers/preferences',
-        expect.objectContaining({
-          method: 'PUT',
-          body: JSON.stringify({ autoFetchEnabled: true, fetchTimeUtc: '07:00' })
-        })
-      )
     })
   })
 
@@ -168,7 +165,6 @@ describe('Broker Service', () => {
 describe('Formatting utilities', () => {
   describe('formatCurrency', () => {
     it('formats positive numbers', () => {
-      // CAD format uses $ sign
       expect(formatCurrency(1234.56)).toMatch(/\$1,234\.56/)
     })
 

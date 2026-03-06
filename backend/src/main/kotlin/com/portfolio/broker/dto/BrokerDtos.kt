@@ -2,24 +2,23 @@ package com.portfolio.broker.dto
 
 import com.portfolio.broker.entity.*
 import java.math.BigDecimal
-import java.time.LocalTime
 import java.time.OffsetDateTime
 
 // Request DTOs
-data class UpdateBrokerPrefsRequest(
-    val autoFetchEnabled: Boolean,
-    val fetchTimeUtc: String? = null // HH:mm format
+data class ConnectBrokerRequest(
+    val broker: String? = null,          // SnapTrade brokerage slug to pre-select
+    val reconnectAuthId: String? = null  // SnapTrade authorization UUID for reconnecting
 )
 
 // Response DTOs
 data class BrokerDto(
-    val id: Long,
-    val code: String,
+    val id: Long? = null,
+    val code: String? = null,
     val name: String,
-    val authType: String,
-    val status: String,
-    val logoUrl: String?,
-    val description: String?
+    val slug: String? = null,
+    val status: String? = null,
+    val logoUrl: String? = null,
+    val description: String? = null
 )
 
 data class BrokersResponse(
@@ -29,6 +28,7 @@ data class BrokersResponse(
 data class BrokerConnectionDto(
     val id: Long,
     val broker: BrokerDto,
+    val snaptradeAuthorizationId: String? = null,
     val accountNumber: String?,
     val accountType: String?,
     val accountName: String?,
@@ -44,9 +44,8 @@ data class BrokerConnectionsResponse(
     val connections: List<BrokerConnectionDto>
 )
 
-data class OAuthInitiateResponse(
-    val redirectUrl: String,
-    val state: String
+data class ConnectBrokerResponse(
+    val redirectUrl: String
 )
 
 data class PositionFetchResponse(
@@ -71,7 +70,7 @@ data class BrokerPositionDto(
 
 data class ConnectionPositionsResponse(
     val connectionId: Long,
-    val broker: String,
+    val broker: String?,
     val accountNumber: String?,
     val asOfDate: String,
     val positions: List<BrokerPositionDto>,
@@ -99,7 +98,7 @@ data class AggregatedPositionDto(
 )
 
 data class BrokerBreakdownDto(
-    val broker: String,
+    val broker: String?,
     val accountNumber: String?,
     val quantity: BigDecimal,
     val value: BigDecimal?
@@ -120,25 +119,12 @@ data class AggregateSummary(
     val accountCount: Int
 )
 
-data class BrokerPrefsDto(
-    val autoFetchEnabled: Boolean,
-    val fetchTimeUtc: String,
-    val notificationOnFetch: Boolean,
-    val notificationOnError: Boolean
-)
-
-data class BrokerPrefsResponse(
-    val autoFetchEnabled: Boolean,
-    val fetchTimeUtc: String,
-    val message: String? = null
-)
-
 // Mappers
 fun Broker.toDto() = BrokerDto(
     id = id,
     code = code,
     name = name,
-    authType = authType.name,
+    slug = code.lowercase(),
     status = status.name,
     logoUrl = logoUrl,
     description = description
@@ -146,7 +132,11 @@ fun Broker.toDto() = BrokerDto(
 
 fun BrokerConnection.toDto() = BrokerConnectionDto(
     id = id,
-    broker = broker.toDto(),
+    broker = broker?.toDto() ?: BrokerDto(
+        name = accountName ?: "Unknown Broker",
+        description = null
+    ),
+    snaptradeAuthorizationId = snaptradeAuthorizationId,
     accountNumber = accountNumber,
     accountType = accountType,
     accountName = accountName,
@@ -170,11 +160,4 @@ fun BrokerPosition.toDto() = BrokerPositionDto(
     totalPnl = totalPnl,
     totalPnlPercent = totalPnlPercent,
     currency = currency
-)
-
-fun UserBrokerPrefs.toDto() = BrokerPrefsDto(
-    autoFetchEnabled = autoFetchEnabled,
-    fetchTimeUtc = fetchTimeUtc.toString(),
-    notificationOnFetch = notificationOnFetch,
-    notificationOnError = notificationOnError
 )

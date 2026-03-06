@@ -7,12 +7,12 @@ interface GeographyChartProps {
 }
 
 const REGION_COLORS: Record<string, string> = {
-  'North America': '#00d9ff',
-  'Europe': '#00ff88',
-  'Asia Pacific': '#ffaa00',
-  'Latin America': '#ff6b6b',
-  'Middle East & Africa': '#9b59b6',
-  'Other': '#718096',
+  'North America': '#2a8a81',
+  'Europe': '#059669',
+  'Asia Pacific': '#d97706',
+  'Latin America': '#dc2626',
+  'Middle East & Africa': '#7c3aed',
+  'Other': '#6b7280',
 };
 
 export function GeographyChart({ data }: GeographyChartProps) {
@@ -49,7 +49,7 @@ export function GeographyChart({ data }: GeographyChartProps) {
         innerRadiusRatio: 0.5,
         fills: chartData.map((d) => d.color),
         strokeWidth: 1,
-        stroke: '#1a1a2e',
+        stroke: '#ffffff',
         calloutLabel: {
           enabled: true,
           minAngle: 20,
@@ -74,7 +74,7 @@ export function GeographyChart({ data }: GeographyChartProps) {
       position: 'bottom' as const,
       item: {
         label: {
-          color: '#a0aec0',
+          color: '#4a5568',
           fontSize: 11,
         },
       },

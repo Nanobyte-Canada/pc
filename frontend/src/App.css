@@ -4,9 +4,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
@@ -18,42 +18,44 @@
 .app-header h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
-  color: #00d9ff;
+  color: var(--accent);
 }
 
 .subtitle {
   font-size: 1.1rem;
-  color: #8892b0;
+  color: var(--text-secondary);
   margin-bottom: 2rem;
 }
 
 .version-container {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.5rem 2rem;
   min-width: 300px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .loading {
-  color: #64ffda;
+  color: var(--accent);
   font-size: 1rem;
 }
 
 .error {
-  background: rgba(255, 82, 82, 0.1);
-  border: 1px solid rgba(255, 82, 82, 0.3);
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.3);
   border-radius: 8px;
   padding: 1rem;
 }
 
 .error p {
-  color: #ff5252;
+  color: var(--error);
   margin-bottom: 0.5rem;
 }
 
 .error code {
   font-size: 0.9rem;
-  color: #ff8a80;
+  color: #b91c1c;
 }
 
 .version-info {
@@ -67,7 +69,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border);
 }
 
 .version-item:last-child {
@@ -75,12 +77,12 @@
 }
 
 .label {
-  color: #8892b0;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .value {
-  color: #64ffda;
+  color: var(--accent);
   font-family: 'Fira Code', 'Consolas', monospace;
 }
 
@@ -91,15 +93,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #ffffff;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .app-loading .loading-spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #3b82f6;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -107,7 +109,7 @@
 
 .app-loading p {
   font-size: 16px;
-  color: #8892b0;
+  color: var(--text-secondary);
 }
 
 @keyframes spin {

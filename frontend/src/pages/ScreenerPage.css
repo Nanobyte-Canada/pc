@@ -1,26 +1,27 @@
 .screener-page {
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 
 .page-title {
   font-size: 1.75rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .page-subtitle {
-  color: #a0aec0;
+  color: var(--text-secondary);
   margin-bottom: 2rem;
 }
 
 .filters-section,
 .results-section {
-  background-color: #1a1a2e;
+  background-color: var(--card-bg);
   border-radius: 8px;
   padding: 1.5rem;
-  border: 1px solid #16213e;
+  border: 1px solid var(--border);
   margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .filters-section h2,
@@ -28,11 +29,11 @@
   font-size: 1.125rem;
   font-weight: 500;
   margin-bottom: 1rem;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .placeholder-text {
-  color: #718096;
+  color: var(--text-muted);
   font-style: italic;
 }
 

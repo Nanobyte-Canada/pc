@@ -57,7 +57,7 @@ export function TopHoldingsGrid({ data }: TopHoldingsGridProps) {
   };
 
   return (
-    <div className="top-holdings-grid ag-theme-quartz-dark">
+    <div className="top-holdings-grid ag-theme-quartz">
       <AgGridReact
         rowData={data}
         columnDefs={columnDefs}

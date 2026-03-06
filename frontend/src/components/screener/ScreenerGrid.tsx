@@ -79,7 +79,7 @@ export function ScreenerGrid<T>({
   };
 
   return (
-    <div className="ag-theme-quartz-dark screener-grid">
+    <div className="ag-theme-quartz screener-grid">
       <AgGridReact
         rowData={rowData}
         columnDefs={allColumns}
