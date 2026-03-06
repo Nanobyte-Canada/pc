@@ -1,0 +1,99 @@
+.broker-connections-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.broker-connections-page .page-loading {
+  padding: 24px;
+  text-align: center;
+}
+
+.broker-connections-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.broker-connections-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Notification */
+.broker-notification {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.broker-notification.success {
+  background-color: rgba(5, 150, 105, 0.1);
+  color: #065f46;
+}
+
+.broker-notification.error {
+  background-color: rgba(220, 38, 38, 0.08);
+  color: #991b1b;
+}
+
+.broker-notification .dismiss-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: inherit;
+}
+
+/* Sections */
+.broker-section {
+  margin-bottom: 32px;
+}
+
+.broker-section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.broker-cards-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.broker-no-data {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Empty state */
+.broker-empty-state {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.broker-empty-state p {
+  margin: 0;
+}
+
+.broker-empty-state p + p {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.broker-connections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

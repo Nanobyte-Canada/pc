@@ -1,0 +1,225 @@
+.broker-positions-page {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  height: calc(100vh - 100px);
+}
+
+.broker-positions-page .page-loading {
+  padding: 24px;
+  text-align: center;
+}
+
+.positions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.positions-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.positions-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.positions-last-updated {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* View Mode Toggle */
+.view-toggle {
+  display: flex;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.view-toggle button {
+  padding: 6px 12px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background-color: var(--card-bg);
+  color: var(--text-secondary);
+}
+
+.view-toggle button + button {
+  border-left: 1px solid var(--border);
+}
+
+.view-toggle button.active {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+/* Summary Cards */
+.positions-summary {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.positions-summary-card {
+  flex: 1;
+  padding: 16px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.positions-summary-card .card-title {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.positions-summary-card .card-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.positions-summary-card .card-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Empty state */
+.positions-empty-state {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 48px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.positions-empty-state p {
+  margin: 0;
+  font-size: 16px;
+}
+
+.positions-empty-state p + p {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+/* Grid container */
+.positions-grid-container {
+  height: calc(100% - 180px);
+  width: 100%;
+}
+
+/* Broker badge in grid cells */
+.broker-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: var(--bg-primary);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Broker Accounts List */
+.broker-accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.broker-account-link {
+  text-decoration: none;
+}
+
+.broker-account-card {
+  padding: 16px 20px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.broker-account-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 4px rgba(42, 138, 129, 0.1);
+}
+
+.broker-account-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.broker-account-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.broker-account-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.broker-account-detail {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.broker-account-right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.broker-account-stat {
+  text-align: right;
+}
+
+.broker-account-stat .stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.broker-account-stat .stat-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: inherit;
+}
+
+.broker-account-stat .stat-time {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.broker-account-arrow {
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.broker-account-connect-link {
+  color: var(--accent);
+}
