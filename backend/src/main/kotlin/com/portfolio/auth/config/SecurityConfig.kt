@@ -47,7 +47,7 @@ class SecurityConfig(
                         "/auth/google/callback",
                         "/health",
                         "/actuator/**",
-                        "/api/v1/portfolio/**"
+                        "/api/**"
                     )
             }
             // Configure CORS
