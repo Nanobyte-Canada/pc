@@ -7,5 +7,8 @@ spring:
 
 logging:
   level:
-    com.portfolio: INFO
-    org.springframework.web: INFO
+    com.portfolio: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.web.csrf: TRACE
+    org.springframework.security.web.FilterChainProxy: DEBUG
+    org.springframework.web.cors: DEBUG

@@ -30,13 +30,18 @@ class JwtAuthenticationFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
+        log.info("JWT Filter: {} {} | Cookies present: {} | Auth header present: {}",
+            request.method, request.servletPath,
+            request.cookies?.any { it.name == ACCESS_TOKEN_COOKIE } ?: false,
+            request.getHeader(AUTHORIZATION_HEADER) != null)
+
         try {
             val token = extractToken(request)
 
             if (token == null) {
-                log.debug("No token found in request to ${request.servletPath}")
+                log.info("No token found in request to {} {}", request.method, request.servletPath)
             } else if (!jwtTokenProvider.isAccessToken(token)) {
-                log.debug("Token is not a valid access token for ${request.servletPath}")
+                log.info("Token is not a valid access token for {} {}", request.method, request.servletPath)
             } else {
                 val userId = jwtTokenProvider.getUserIdFromToken(token)
                 val roles = jwtTokenProvider.getRolesFromToken(token)
@@ -45,9 +50,9 @@ class JwtAuthenticationFilter(
                     val user = userRepository.findByIdWithRoles(userId)
 
                     if (user == null) {
-                        log.debug("User not found for userId: $userId")
+                        log.info("User not found for userId: {}", userId)
                     } else if (user.isLocked()) {
-                        log.debug("User $userId is locked")
+                        log.info("User {} is locked", userId)
                     } else {
                         val principal = UserPrincipal.from(user, roles)
                         val authentication = UsernamePasswordAuthenticationToken(
@@ -57,13 +62,17 @@ class JwtAuthenticationFilter(
                         )
                         authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
                         SecurityContextHolder.getContext().authentication = authentication
-                        log.debug("Successfully authenticated user $userId for ${request.servletPath}")
+                        log.info("Successfully authenticated user {} for {} {}", userId, request.method, request.servletPath)
                     }
                 }
             }
         } catch (e: Exception) {
             log.warn("Could not authenticate user: ${e.message}", e)
         }
+
+        log.info("JWT Filter result: {} {} | Authenticated: {}",
+            request.method, request.servletPath,
+            SecurityContextHolder.getContext().authentication != null)
 
         filterChain.doFilter(request, response)
     }
