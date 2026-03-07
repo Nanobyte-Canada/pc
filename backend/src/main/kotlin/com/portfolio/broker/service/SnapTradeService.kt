@@ -4,6 +4,7 @@ import com.portfolio.auth.entity.User
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.broker.config.SnapTradeConfig
 import com.portfolio.broker.security.TokenEncryptionService
+import com.snaptrade.client.ApiException
 import com.snaptrade.client.Configuration
 import com.snaptrade.client.Snaptrade
 import com.snaptrade.client.model.*
@@ -55,17 +56,35 @@ class SnapTradeService(
         val snapUserId = user.id.toString()
         log.info("Registering SnapTrade user for user {}", user.id)
 
-        val response = snaptrade.authentication.registerSnapTradeUser(snapUserId)
-            .execute()
+        val userSecret: String
+        try {
+            val response = snaptrade.authentication.registerSnapTradeUser(snapUserId)
+                .execute()
 
-        val userSecret = response.userSecret
-            ?: throw IllegalStateException("SnapTrade registration did not return userSecret")
+            userSecret = response.userSecret
+                ?: throw IllegalStateException("SnapTrade registration did not return userSecret")
+
+            log.info("SnapTrade user registered for user {}", user.id)
+        } catch (e: ApiException) {
+            if (e.code == 400 && e.responseBody?.contains("1012") == true) {
+                // Personal keys only allow one user - user already registered.
+                // Reset the user secret to recover access.
+                log.info("SnapTrade user {} already registered (code 1012), resetting user secret", snapUserId)
+                val resetResponse = snaptrade.authentication
+                    .resetSnapTradeUserSecret(snapUserId)
+                    .execute()
+
+                userSecret = resetResponse.userSecret
+                    ?: throw IllegalStateException("SnapTrade resetUserSecret did not return userSecret")
+            } else {
+                throw e
+            }
+        }
 
         user.snaptradeUserId = snapUserId
         user.snaptradeUserSecretEncrypted = encryptionService.encrypt(userSecret)
         userRepository.save(user)
 
-        log.info("SnapTrade user registered for user {}", user.id)
         return SnapTradeUserInfo(userId = snapUserId, userSecret = userSecret)
     }
 
