@@ -209,6 +209,9 @@ class EtfComEnrichmentBatchProcessor(
         etf.etfcomHoldingsCount = holdingsData.numberOfHoldings ?: holdings.size
         etf.etfcomHoldingsAsOfDate = asOfDate
 
+        // Delete existing holdings for this ETF before re-inserting
+        etfHoldingRepository.deleteByEtfId(etf.id)
+
         var holdingsProcessed = 0
 
         for ((rank, holding) in holdings.withIndex()) {
@@ -226,38 +229,22 @@ class EtfComEnrichmentBatchProcessor(
                     }
                 }
 
-            // Check if holding already exists
-            val existingHolding = if (stock != null) {
-                etfHoldingRepository.findByEtfIdAndStockIdAndAsOfDate(etf.id, stock.id, asOfDate)
-            } else {
-                etfHoldingRepository.findByEtfIdAndRawTickerAndAsOfDate(etf.id, symbol, asOfDate)
-            }
-
-            if (existingHolding != null) {
-                existingHolding.etfcomWeight = weight
-                existingHolding.etfcomLastUpdatedAt = OffsetDateTime.now()
-                if (existingHolding.dataSource != HoldingDataSource.ETF_COM) {
-                    existingHolding.dataSource = HoldingDataSource.ETF_COM
-                }
-                etfHoldingRepository.save(existingHolding)
-            } else {
-                val newHolding = EtfHolding(
-                    etf = etf,
-                    stock = stock,
-                    asOfDate = asOfDate,
-                    weight = weight,
-                    rawTicker = symbol,
-                    rawName = holding.holdingName,
-                    resolutionStatus = if (stock != null) ResolutionStatus.RESOLVED else ResolutionStatus.UNRESOLVED,
-                    holdingType = HoldingType.STOCK,
-                    rank = rank + 1,
-                    dataSource = HoldingDataSource.ETF_COM,
-                    etfcomWeight = weight,
-                    etfcomLastUpdatedAt = OffsetDateTime.now()
-                )
-                etfHoldingRepository.save(newHolding)
-                holdingsCreated.increment()
-            }
+            val newHolding = EtfHolding(
+                etf = etf,
+                stock = stock,
+                asOfDate = asOfDate,
+                weight = weight,
+                rawTicker = symbol,
+                rawName = holding.holdingName,
+                resolutionStatus = if (stock != null) ResolutionStatus.RESOLVED else ResolutionStatus.UNRESOLVED,
+                holdingType = HoldingType.STOCK,
+                rank = rank + 1,
+                dataSource = HoldingDataSource.ETF_COM,
+                etfcomWeight = weight,
+                etfcomLastUpdatedAt = OffsetDateTime.now()
+            )
+            etfHoldingRepository.save(newHolding)
+            holdingsCreated.increment()
             holdingsProcessed++
         }
 

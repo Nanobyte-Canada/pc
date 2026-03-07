@@ -3,6 +3,8 @@ package com.portfolio.broker.service
 import com.portfolio.auth.entity.AuditEventType
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
@@ -19,9 +21,11 @@ import java.time.LocalDate
 class BrokerService(
     private val connectionRepository: BrokerConnectionRepository,
     private val positionRepository: BrokerPositionRepository,
+    private val balanceRepository: BrokerBalanceRepository,
     private val userRepository: UserRepository,
     private val snapTradeService: SnapTradeService,
-    private val auditService: AuditService
+    private val auditService: AuditService,
+    private val objectMapper: ObjectMapper
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -242,6 +246,27 @@ class BrokerService(
                 brokerCount = brokerCount,
                 accountCount = accountCount
             )
+        )
+    }
+
+    // ========== Balance History ==========
+
+    fun getBalanceHistory(connectionId: Long, startDate: LocalDate, endDate: LocalDate): BalanceHistoryResponse {
+        val snapshots = balanceRepository.findByConnectionIdAndAsOfDateBetween(connectionId, startDate, endDate)
+        val cashTypeRef = object : TypeReference<Map<String, BigDecimal>>() {}
+        return BalanceHistoryResponse(
+            snapshots = snapshots.sortedByDescending { it.asOfDate }.map { snapshot ->
+                val cashMap: Map<String, BigDecimal> = snapshot.cash?.let {
+                    try { objectMapper.readValue(it, cashTypeRef) } catch (e: Exception) { emptyMap() }
+                } ?: emptyMap()
+                BalanceSnapshotDto(
+                    totalValue = snapshot.totalValue,
+                    cash = cashMap,
+                    currency = snapshot.currency,
+                    asOfDate = snapshot.asOfDate.toString()
+                )
+            },
+            connectionId = connectionId
         )
     }
 }

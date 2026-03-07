@@ -1,34 +1,39 @@
+import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { AgGridReact } from 'ag-grid-react'
 import type { ColDef, ValueFormatterParams } from 'ag-grid-community'
-import { useConnectionPositions, useBrokerConnections, useTriggerPositionFetch } from '../hooks/useBrokerConnections'
+import { useConnectionPositions, useBrokerConnections, useTriggerPositionFetch, useBalanceHistory } from '../hooks/useBrokerConnections'
 import { formatCurrency, formatPercent, formatQuantity, getRelativeTime } from '../services/brokerService'
 import { ConnectionStatus } from '../components/broker/ConnectionStatus'
+import { CashBalanceCards } from '../components/broker/CashBalanceCards'
+import { AccountActivitiesGrid } from '../components/broker/AccountActivitiesGrid'
 import type { BrokerPosition } from '../types/broker'
 
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
 import './PositionDetailsPage.css'
 
+type TabType = 'positions' | 'activities'
+
 export function PositionDetailsPage() {
   const { connectionId } = useParams<{ connectionId: string }>()
   const navigate = useNavigate()
   const id = parseInt(connectionId || '0', 10)
+  const [activeTab, setActiveTab] = useState<TabType>('positions')
 
   const { data: connectionsData } = useBrokerConnections()
   const { data: positionsData, isLoading, refetch } = useConnectionPositions(id, id > 0)
   const triggerFetch = useTriggerPositionFetch()
+  const { data: balanceData } = useBalanceHistory(id, 90, id > 0)
 
-  // Find the connection
   const connection = connectionsData?.connections.find(c => c.id === id)
-
   const positions = positionsData?.positions || []
   const summary = positionsData?.summary
+  const latestSnapshot = balanceData?.snapshots?.[0] || null
 
   const handleRefresh = () => {
     triggerFetch.mutate(id, {
       onSuccess: () => {
-        // Refetch positions after a delay
         setTimeout(() => refetch(), 2500)
       }
     })
@@ -176,6 +181,9 @@ export function PositionDetailsPage() {
         </div>
       </div>
 
+      {/* Cash Balance Cards */}
+      <CashBalanceCards latestSnapshot={latestSnapshot} />
+
       {/* Summary Cards */}
       {summary && (
         <div className="positions-summary">
@@ -210,30 +218,53 @@ export function PositionDetailsPage() {
         </div>
       )}
 
-      {/* Positions Grid */}
-      {positions.length === 0 ? (
-        <div className="position-empty-state">
-          <p>No positions found for this account.</p>
-          <p>
-            {connection?.status === 'ACTIVE'
-              ? 'Click "Refresh Positions" to fetch the latest data.'
-              : 'Please reconnect your broker to fetch positions.'}
-          </p>
-        </div>
+      {/* Tabs */}
+      <div className="position-tabs">
+        <button
+          className={`tab-btn ${activeTab === 'positions' ? 'active' : ''}`}
+          onClick={() => setActiveTab('positions')}
+        >
+          Positions
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'activities' ? 'active' : ''}`}
+          onClick={() => setActiveTab('activities')}
+        >
+          Activities
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'positions' ? (
+        positions.length === 0 ? (
+          <div className="position-empty-state">
+            <p>No positions found for this account.</p>
+            <p>
+              {connection?.status === 'ACTIVE'
+                ? 'Click "Refresh Positions" to fetch the latest data.'
+                : 'Please reconnect your broker to fetch positions.'}
+            </p>
+          </div>
+        ) : (
+          <div className="ag-theme-quartz position-grid-container">
+            <AgGridReact
+              rowData={positions}
+              columnDefs={columnDefs}
+              defaultColDef={{
+                sortable: true,
+                resizable: true
+              }}
+              animateRows={true}
+              rowSelection="single"
+              suppressCellFocus={true}
+            />
+          </div>
+        )
       ) : (
-        <div className="ag-theme-quartz position-grid-container">
-          <AgGridReact
-            rowData={positions}
-            columnDefs={columnDefs}
-            defaultColDef={{
-              sortable: true,
-              resizable: true
-            }}
-            animateRows={true}
-            rowSelection="single"
-            suppressCellFocus={true}
-          />
-        </div>
+        <AccountActivitiesGrid
+          connectionId={id}
+          connectionActive={connection?.status === 'ACTIVE'}
+        />
       )}
     </div>
   )

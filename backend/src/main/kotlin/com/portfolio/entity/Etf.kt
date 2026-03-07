@@ -17,9 +17,6 @@ class Etf(
     @Column(name = "symbol", nullable = false, length = 20)
     var symbol: String,
 
-    @Column(name = "exchange", nullable = false, length = 20)
-    var exchange: String,
-
     @Column(name = "name", nullable = false, length = 255)
     var name: String,
 
@@ -51,134 +48,11 @@ class Etf(
     @Enumerated(EnumType.STRING)
     var status: SecurityStatus = SecurityStatus.ACTIVE,
 
-    // Ingestion tracking columns
-    @Column(name = "exchange_code", length = 20)
-    var exchangeCode: String? = null,
-
     @Column(name = "is_active")
     var isActive: Boolean = true,
 
     @Column(name = "source_last_seen_at")
     var sourceLastSeenAt: OffsetDateTime? = null,
-
-    @Column(name = "raw_eodhd_payload", columnDefinition = "jsonb")
-    @JdbcTypeCode(SqlTypes.JSON)
-    var rawEodhdPayload: String? = null,
-
-    // ========================================
-    // Alpha Vantage ingestion tracking columns
-    // ========================================
-    @Column(name = "av_ingestion_status", length = 20)
-    @Enumerated(EnumType.STRING)
-    var avIngestionStatus: AVIngestionStatus = AVIngestionStatus.PENDING,
-
-    @Column(name = "av_ingestion_last_attempt_at")
-    var avIngestionLastAttemptAt: OffsetDateTime? = null,
-
-    @Column(name = "av_ingestion_last_success_at")
-    var avIngestionLastSuccessAt: OffsetDateTime? = null,
-
-    @Column(name = "av_ingestion_retry_count")
-    var avIngestionRetryCount: Int = 0,
-
-    @Column(name = "av_ingestion_error_code", length = 50)
-    var avIngestionErrorCode: String? = null,
-
-    @Column(name = "av_ingestion_error_message", length = 500)
-    var avIngestionErrorMessage: String? = null,
-
-    // ========================================
-    // Alpha Vantage enrichment tracking columns
-    // ========================================
-    @Column(name = "av_enrichment_status", length = 20)
-    @Enumerated(EnumType.STRING)
-    var avEnrichmentStatus: AVEnrichmentStatus = AVEnrichmentStatus.PENDING,
-
-    @Column(name = "av_last_attempt_at")
-    var avLastAttemptAt: OffsetDateTime? = null,
-
-    @Column(name = "av_last_success_at")
-    var avLastSuccessAt: OffsetDateTime? = null,
-
-    @Column(name = "av_error_code", length = 20)
-    var avErrorCode: String? = null,
-
-    @Column(name = "av_error_message", columnDefinition = "TEXT")
-    var avErrorMessage: String? = null,
-
-    @Column(name = "av_retry_count")
-    var avRetryCount: Int = 0,
-
-    @Column(name = "av_raw_payload", columnDefinition = "jsonb")
-    @JdbcTypeCode(SqlTypes.JSON)
-    var avRawPayload: String? = null,
-
-    // ========================================
-    // Alpha Vantage ETF_PROFILE data fields
-    // ========================================
-    @Column(name = "av_asset_type", length = 50)
-    var avAssetType: String? = null,
-
-    @Column(name = "av_description", columnDefinition = "TEXT")
-    var avDescription: String? = null,
-
-    @Column(name = "av_net_assets", precision = 20, scale = 2)
-    var avNetAssets: BigDecimal? = null,
-
-    @Column(name = "av_net_expense_ratio", precision = 18, scale = 6)
-    var avNetExpenseRatio: BigDecimal? = null,
-
-    @Column(name = "av_portfolio_turnover", precision = 18, scale = 6)
-    var avPortfolioTurnover: BigDecimal? = null,
-
-    @Column(name = "av_dividend_yield", precision = 18, scale = 6)
-    var avDividendYield: BigDecimal? = null,
-
-    @Column(name = "av_inception_date")
-    var avInceptionDate: LocalDate? = null,
-
-    @Column(name = "av_is_leveraged")
-    var avIsLeveraged: Boolean = false,
-
-    @Column(name = "av_holdings_count")
-    var avHoldingsCount: Int? = null,
-
-    @Column(name = "av_holdings_as_of_date")
-    var avHoldingsAsOfDate: LocalDate? = null,
-
-    // Sector allocations (11 GICS sectors as decimals 0.0 to 1.0)
-    @Column(name = "av_sector_info_tech", precision = 18, scale = 6)
-    var avSectorInfoTech: BigDecimal? = null,
-
-    @Column(name = "av_sector_comm_services", precision = 18, scale = 6)
-    var avSectorCommServices: BigDecimal? = null,
-
-    @Column(name = "av_sector_consumer_disc", precision = 18, scale = 6)
-    var avSectorConsumerDisc: BigDecimal? = null,
-
-    @Column(name = "av_sector_consumer_staples", precision = 18, scale = 6)
-    var avSectorConsumerStaples: BigDecimal? = null,
-
-    @Column(name = "av_sector_healthcare", precision = 18, scale = 6)
-    var avSectorHealthcare: BigDecimal? = null,
-
-    @Column(name = "av_sector_industrials", precision = 18, scale = 6)
-    var avSectorIndustrials: BigDecimal? = null,
-
-    @Column(name = "av_sector_utilities", precision = 18, scale = 6)
-    var avSectorUtilities: BigDecimal? = null,
-
-    @Column(name = "av_sector_materials", precision = 18, scale = 6)
-    var avSectorMaterials: BigDecimal? = null,
-
-    @Column(name = "av_sector_energy", precision = 18, scale = 6)
-    var avSectorEnergy: BigDecimal? = null,
-
-    @Column(name = "av_sector_financials", precision = 18, scale = 6)
-    var avSectorFinancials: BigDecimal? = null,
-
-    @Column(name = "av_sector_real_estate", precision = 18, scale = 6)
-    var avSectorRealEstate: BigDecimal? = null,
 
     // ========================================
     // etf.com universe fields

@@ -110,6 +110,106 @@ export interface AggregatedPositionsResponse {
   aggregateSummary: AggregateSummary
 }
 
+// SnapTrade Status types
+export interface SnapTradeStatus {
+  status: 'ONLINE' | 'DEGRADED' | 'OFFLINE' | 'UNKNOWN'
+  responseTimeMs: number | null
+  version: string | null
+  uptimePercent24h: number
+  lastChecked: string
+}
+
+export interface SnapTradeStatusResponse {
+  status: SnapTradeStatus
+}
+
+export interface ConnectionSyncResponse {
+  syncedCount: number
+  message: string
+}
+
+// ========== Activity Types ==========
+
+export interface BrokerActivityDto {
+  id: number
+  type: string
+  symbol: string | null
+  description: string | null
+  quantity: number | null
+  price: number | null
+  amount: number
+  fee: number | null
+  currency: string
+  tradeDate: string
+  settlementDate: string | null
+  accountName: string | null
+  optionType: string | null
+}
+
+export interface ActivitiesResponse {
+  activities: BrokerActivityDto[]
+  totalCount: number
+  page: number
+  pageSize: number
+}
+
+// ========== Balance Types ==========
+
+export interface BalanceSnapshotDto {
+  totalValue: number | null
+  cash: Record<string, number>
+  currency: string
+  asOfDate: string
+}
+
+export interface BalanceHistoryResponse {
+  snapshots: BalanceSnapshotDto[]
+  connectionId: number
+}
+
+// ========== Reporting Types ==========
+
+export interface PeriodSummary {
+  period: string
+  contributions: number
+  withdrawals: number
+  net: number
+}
+
+export interface ValuePoint {
+  date: string
+  totalValue: number
+  costBasis: number | null
+}
+
+export interface DividendPeriod {
+  period: string
+  total: number
+  bySymbol: Record<string, number>
+}
+
+export interface SymbolDividend {
+  symbol: string
+  total: number
+}
+
+export interface PerformanceKpis {
+  netContributions: number
+  monthlyAvgContributions: number
+  netChange: number
+  totalDividendIncome: number
+  avgMonthlyDividends: number
+  feesAndCommissions: number
+}
+
+export interface ReportingPerformanceResponse {
+  contributionsWithdrawals: PeriodSummary[]
+  totalValueHistory: ValuePoint[]
+  dividendHistory: DividendPeriod[]
+  totalDividendsBySymbol: SymbolDividend[]
+  kpis: PerformanceKpis
+}
+
 // Utility types
 export type ConnectionStatusType = BrokerConnection['status']
 

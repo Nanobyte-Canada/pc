@@ -1,6 +1,7 @@
 package com.portfolio.ingestion.client.etfcom
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.portfolio.ingestion.config.IngestionConfig
 import com.portfolio.ingestion.dto.etfcom.*
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
@@ -10,7 +11,6 @@ import org.springframework.http.HttpStatusCode
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
-import reactor.core.publisher.Mono
 
 sealed class EtfComApiResult<out T> {
     data class Success<T>(val data: T) : EtfComApiResult<T>()
@@ -22,6 +22,7 @@ sealed class EtfComApiResult<out T> {
 class EtfComClient(
     private val etfComWebClient: WebClient,
     private val objectMapper: ObjectMapper,
+    private val config: IngestionConfig,
     meterRegistry: MeterRegistry
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -30,6 +31,7 @@ class EtfComClient(
     private val successCounter = Counter.builder("etfcom_api_success_total").register(meterRegistry)
     private val errorCounter = Counter.builder("etfcom_api_error_total").register(meterRegistry)
     private val notFoundCounter = Counter.builder("etfcom_api_not_found_total").register(meterRegistry)
+    private val rateLimitCounter = Counter.builder("etfcom_api_rate_limited_total").register(meterRegistry)
     private val latencyTimer = Timer.builder("etfcom_api_latency_seconds").register(meterRegistry)
 
     fun fetchAllTickers(): List<EtfComTickerDto> {
@@ -127,33 +129,54 @@ class EtfComClient(
             query = queryType,
             variables = EtfComRequestVariables(ticker = ticker)
         )
+        val retryConfig = config.etfcom.retry
+        var attempt = 0
+        var backoffMs = retryConfig.initialBackoffMs
 
-        return try {
-            val response = etfComWebClient.post()
-                .uri("/fund-details")
-                .bodyValue(request)
-                .retrieve()
-                .bodyToMono(T::class.java)
-                .block()
+        while (true) {
+            try {
+                Thread.sleep(config.etfcom.requestDelayMs)
 
-            if (response == null) {
-                EtfComApiResult.NotFound
-            } else {
-                EtfComApiResult.Success(response)
-            }
-        } catch (e: WebClientResponseException) {
-            when {
-                e.statusCode == HttpStatusCode.valueOf(500) -> {
-                    log.debug("etf.com returned 500 for ticker {} query {} — treating as NotFound", ticker, queryType)
+                val response = etfComWebClient.post()
+                    .uri("/fund-details")
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(T::class.java)
+                    .block()
+
+                return if (response == null) {
                     EtfComApiResult.NotFound
+                } else {
+                    EtfComApiResult.Success(response)
                 }
-                e.statusCode.is5xxServerError -> {
-                    log.warn("etf.com server error for ticker {} query {}: {}", ticker, queryType, e.statusCode)
-                    EtfComApiResult.Error(e.statusCode.value(), e.message ?: "Server error")
+            } catch (e: WebClientResponseException) {
+                if (e.statusCode.value() == 429 && attempt < retryConfig.maxAttempts) {
+                    attempt++
+                    rateLimitCounter.increment()
+                    log.warn("429 rate limited for {} query {}, retry {}/{} after {}ms",
+                        ticker, queryType, attempt, retryConfig.maxAttempts, backoffMs)
+                    Thread.sleep(backoffMs)
+                    backoffMs = (backoffMs * retryConfig.multiplier).toLong()
+                        .coerceAtMost(retryConfig.maxBackoffMs)
+                    continue
                 }
-                else -> {
-                    log.warn("etf.com error for ticker {} query {}: {}", ticker, queryType, e.statusCode)
-                    EtfComApiResult.Error(e.statusCode.value(), e.message ?: "Client error")
+                return when {
+                    e.statusCode.value() == 429 -> {
+                        log.error("429 rate limited for {} query {} — exhausted {} retries", ticker, queryType, retryConfig.maxAttempts)
+                        EtfComApiResult.Error(429, "Rate limited after ${retryConfig.maxAttempts} retries")
+                    }
+                    e.statusCode == HttpStatusCode.valueOf(500) -> {
+                        log.debug("etf.com returned 500 for ticker {} query {} — treating as NotFound", ticker, queryType)
+                        EtfComApiResult.NotFound
+                    }
+                    e.statusCode.is5xxServerError -> {
+                        log.warn("etf.com server error for ticker {} query {}: {}", ticker, queryType, e.statusCode)
+                        EtfComApiResult.Error(e.statusCode.value(), e.message ?: "Server error")
+                    }
+                    else -> {
+                        log.warn("etf.com error for ticker {} query {}: {}", ticker, queryType, e.statusCode)
+                        EtfComApiResult.Error(e.statusCode.value(), e.message ?: "Client error")
+                    }
                 }
             }
         }

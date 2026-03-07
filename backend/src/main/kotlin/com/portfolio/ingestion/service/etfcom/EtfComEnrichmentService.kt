@@ -62,6 +62,9 @@ class EtfComEnrichmentService(
 
             log.info("Batch {} complete: processed={}, updated={}, failed={}",
                 batchNumber, result.processed, result.updated, result.failed)
+
+            // Pause between batches to avoid sustained rate limiting from etf.com
+            Thread.sleep(etfComConfig.interBatchDelayMs)
         }
 
         log.info("etf.com ETF enrichment complete: totalProcessed={}, totalUpdated={}, totalFailed={}",

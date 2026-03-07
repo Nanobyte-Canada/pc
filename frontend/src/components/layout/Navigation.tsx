@@ -51,6 +51,7 @@ export function Navigation() {
           <div className="dropdown-menu">
             <NavLink to="/brokers/connections" className="dropdown-item">Connections</NavLink>
             <NavLink to="/brokers/positions" className="dropdown-item">Positions</NavLink>
+            <NavLink to="/brokers/reporting" className="dropdown-item">Reporting</NavLink>
           </div>
         </div>
         {user?.roles.includes('ADMIN') && (

@@ -78,7 +78,6 @@ data class StockDto(
 data class EtfDto(
     val id: Long,
     val symbol: String,
-    val exchange: String,
     val name: String,
     val isin: String?,
     val cusip: String?,
@@ -95,7 +94,6 @@ data class EtfDto(
             return EtfDto(
                 id = etf.id,
                 symbol = etf.symbol,
-                exchange = etf.exchange,
                 name = etf.name,
                 isin = etf.isin,
                 cusip = etf.cusip,

@@ -17,3 +17,15 @@ data class BrokerEncryptionConfig(
 data class EncryptionConfig(
     val secretKey: String = ""
 )
+
+@ConfigurationProperties(prefix = "snaptrade.health-check")
+data class SnapTradeHealthConfig(
+    val enabled: Boolean = false,
+    val cron: String = "0 */15 * * * *"
+)
+
+@ConfigurationProperties(prefix = "broker.sync")
+data class BrokerSyncConfig(
+    val enabled: Boolean = false,
+    val cron: String = "0 30 22 * * *"
+)

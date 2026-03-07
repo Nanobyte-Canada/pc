@@ -334,7 +334,7 @@ class InstrumentSearchService(
         type = InstrumentType.ETF,
         ticker = symbol,
         name = name,
-        exchange = exchange,
+        exchange = null,
         matchType = matchType,
         status = status.name,
         isActive = isActive

@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { BrokerCard } from '../components/broker/BrokerCard'
 import { BrokerConnectionCard } from '../components/broker/BrokerConnectionCard'
+import { SnapTradeBadge } from '../components/broker/SnapTradeBadge'
 import {
   useAvailableBrokers,
   useBrokerConnections,
   useConnectBroker,
   useDisconnectBroker,
-  useTriggerPositionFetch
+  useTriggerPositionFetch,
+  useSyncConnections
 } from '../hooks/useBrokerConnections'
 import './BrokerConnectionsPage.css'
 
@@ -22,6 +24,7 @@ export function BrokerConnectionsPage() {
   const connectBroker = useConnectBroker()
   const disconnectBroker = useDisconnectBroker()
   const triggerFetch = useTriggerPositionFetch()
+  const sync = useSyncConnections()
 
   // Handle return from SnapTrade portal (query params)
   useEffect(() => {
@@ -30,8 +33,16 @@ export function BrokerConnectionsPage() {
     const status = searchParams.get('status')
 
     if (success === 'true' || status === 'SUCCESS') {
-      setNotification({ type: 'success', message: 'Broker connected successfully!' })
-      refetchConnections()
+      sync.mutate(undefined, {
+        onSuccess: () => {
+          refetchConnections()
+          setNotification({ type: 'success', message: 'Broker connected successfully!' })
+        },
+        onError: () => {
+          refetchConnections()
+          setNotification({ type: 'success', message: 'Broker connected! Sync may be delayed.' })
+        }
+      })
     } else if (error) {
       const errorMessages: Record<string, string> = {
         state_invalid: 'Connection session expired. Please try again.',
@@ -102,6 +113,7 @@ export function BrokerConnectionsPage() {
       {/* Header */}
       <div className="broker-connections-header">
         <h1>Broker Connections</h1>
+        <SnapTradeBadge />
       </div>
 
       {/* Notification */}

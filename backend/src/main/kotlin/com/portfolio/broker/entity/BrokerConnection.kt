@@ -64,6 +64,12 @@ class BrokerConnection(
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: OffsetDateTime = OffsetDateTime.now(),
 
+    @Column(name = "last_activities_fetched_at")
+    var lastActivitiesFetchedAt: OffsetDateTime? = null,
+
+    @Column(name = "last_balance_fetched_at")
+    var lastBalanceFetchedAt: OffsetDateTime? = null,
+
     @Column(name = "updated_at", nullable = false)
     var updatedAt: OffsetDateTime = OffsetDateTime.now(),
 

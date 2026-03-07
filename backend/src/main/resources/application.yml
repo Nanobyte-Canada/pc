@@ -101,9 +101,11 @@ ingestion:
   etfcom:
     enabled: ${ETFCOM_ENABLED:true}
     base-url: ${ETFCOM_BASE_URL:https://api-prod.etf.com/v2/fund}
-    batch-size: ${ETFCOM_BATCH_SIZE:100}
+    batch-size: ${ETFCOM_BATCH_SIZE:25}
     stale-threshold-days: ${ETFCOM_STALE_THRESHOLD:7}
     concurrency: ${ETFCOM_CONCURRENCY:5}
+    request-delay-ms: ${ETFCOM_REQUEST_DELAY_MS:200}
+    inter-batch-delay-ms: ${ETFCOM_INTER_BATCH_DELAY_MS:2000}
     retry:
       max-attempts: ${ETFCOM_RETRY_MAX_ATTEMPTS:3}
       initial-backoff-ms: ${ETFCOM_RETRY_INITIAL_BACKOFF:1000}
@@ -111,13 +113,19 @@ ingestion:
       multiplier: ${ETFCOM_RETRY_MULTIPLIER:2.0}
       jitter-factor: ${ETFCOM_RETRY_JITTER:0.1}
 
-# Broker encryption configuration (for encrypting SnapTrade user secrets)
+# Broker configuration
 broker:
   encryption:
     secret-key: ${BROKER_ENCRYPTION_KEY:}  # Base64-encoded 32-byte key for AES-256
+  sync:
+    enabled: ${BROKER_SYNC_ENABLED:false}
+    cron: ${BROKER_SYNC_CRON:0 30 22 * * *}
 
 # SnapTrade integration configuration
 snaptrade:
   client-id: ${SNAPTRADE_CLIENT_ID:}
   consumer-key: ${SNAPTRADE_CONSUMER_KEY:}
   redirect-uri: ${SNAPTRADE_REDIRECT_URI:http://localhost:3000/brokers/connections}
+  health-check:
+    enabled: ${SNAPTRADE_HEALTH_CHECK_ENABLED:false}
+    cron: ${SNAPTRADE_HEALTH_CHECK_CRON:0 */15 * * * *}

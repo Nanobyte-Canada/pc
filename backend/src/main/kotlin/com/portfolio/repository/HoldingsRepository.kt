@@ -102,6 +102,9 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
         @Param("asOfDate") asOfDate: LocalDate,
         @Param("sourceSection") sourceSection: HoldingSourceSection
     ): Int
+
+    @Modifying
+    fun deleteByEtfId(etfId: Long): Int
 }
 
 @Repository

@@ -1,0 +1,353 @@
+.reporting-page {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.reporting-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 20px 0;
+}
+
+/* Filters */
+.reporting-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.date-range-selector {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.preset-btn {
+  padding: 8px 16px;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.preset-btn:last-child {
+  border-right: none;
+}
+
+.preset-btn:hover {
+  background: var(--bg-primary);
+}
+
+.preset-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.custom-date-inputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.custom-date-inputs input {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.date-separator {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.apply-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Account filter */
+.account-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.account-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.account-chip {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.account-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(42, 138, 129, 0.08);
+}
+
+/* Tabs */
+.reporting-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.reporting-tab {
+  padding: 10px 24px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.reporting-tab:hover {
+  color: var(--text-secondary);
+}
+
+.reporting-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Performance content */
+.reporting-performance {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.reporting-loading,
+.reporting-empty {
+  text-align: center;
+  padding: 64px;
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+/* Chart sections */
+.reporting-chart-section {
+  display: flex;
+  gap: 24px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.reporting-chart-section.reporting-chart-full {
+  flex-direction: column;
+}
+
+.chart-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.chart-main h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+}
+
+.chart-container {
+  height: 300px;
+}
+
+.chart-container-tall {
+  height: 400px;
+}
+
+.chart-sidebar {
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* KPI Cards */
+.kpi-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.kpi-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.kpi-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Activity table */
+.activity-table-wrapper {
+  margin-top: 0;
+}
+
+.activity-table-controls {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.activity-table-controls .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activity-table-controls .filter-group label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.activity-table-controls .filter-group select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.export-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.export-btn:hover:not(:disabled) {
+  background: var(--bg-primary);
+}
+
+.export-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.activity-table-loading,
+.activity-table-empty {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.activity-grid-container {
+  width: 100%;
+}
+
+.activity-table-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding: 8px 0;
+}
+
+.activity-table-pagination .pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.activity-table-pagination .pagination-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.activity-table-pagination .pagination-controls button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.activity-table-pagination .pagination-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .reporting-chart-section {
+    flex-direction: column;
+  }
+
+  .chart-sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .chart-sidebar .kpi-card {
+    flex: 1;
+    min-width: 120px;
+  }
+}

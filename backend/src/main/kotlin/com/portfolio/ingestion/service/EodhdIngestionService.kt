@@ -178,18 +178,16 @@ class EodhdIngestionService(
         val symbol = dto.code
         val isin = dto.isin
 
-        // Check for existing record by symbol+exchange
-        val existingBySymbol = etfRepository.findBySymbolAndExchange(symbol, exchange)
+        // Check for existing record by symbol
+        val existingBySymbol = etfRepository.findBySymbolIgnoreCase(symbol)
 
         if (existingBySymbol != null) {
             existingBySymbol.apply {
                 name = dto.name ?: name
                 currency = (dto.currency ?: currency).take(3)
                 this.isin = isin ?: this.isin
-                exchangeCode = dto.exchange
                 isActive = true
                 sourceLastSeenAt = seenAt
-                this.rawEodhdPayload = rawPayload
                 updatedAt = OffsetDateTime.now()
             }
             etfRepository.save(existingBySymbol)
@@ -201,7 +199,7 @@ class EodhdIngestionService(
             val existingByIsin = etfRepository.findByIsin(isin)
             if (existingByIsin != null) {
                 val newIdentifier = "$symbol.$exchange"
-                val existingIdentifier = "${existingByIsin.symbol}.${existingByIsin.exchange}"
+                val existingIdentifier = existingByIsin.symbol
                 log.warn("ISIN conflict: $isin already belongs to ETF $existingIdentifier, skipping $newIdentifier")
                 trackingService.logDuplicateIsin(step.id, newIdentifier, existingIdentifier, isin)
                 return ProcessResult(created = false, updated = false)
@@ -210,15 +208,12 @@ class EodhdIngestionService(
 
         etfRepository.save(Etf(
             symbol = symbol,
-            exchange = exchange,
             name = dto.name ?: symbol,
             currency = (dto.currency ?: "USD").take(3),
             domicile = (dto.country ?: "USA").take(3),
             isin = isin,
-            exchangeCode = dto.exchange,
             isActive = true,
-            sourceLastSeenAt = seenAt,
-            rawEodhdPayload = rawPayload
+            sourceLastSeenAt = seenAt
         ))
         return ProcessResult(created = true, updated = false)
     }

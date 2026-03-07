@@ -15,9 +15,11 @@ class IngestionConfig {
 class EtfComProperties {
     var enabled: Boolean = true
     var baseUrl: String = "https://api-prod.etf.com/v2/fund"
-    var batchSize: Int = 100
+    var batchSize: Int = 25
     var staleThresholdDays: Int = 7
     var concurrency: Int = 5
+    var requestDelayMs: Long = 200
+    var interBatchDelayMs: Long = 2000
     var retry: RetryProperties = RetryProperties()
 }
 

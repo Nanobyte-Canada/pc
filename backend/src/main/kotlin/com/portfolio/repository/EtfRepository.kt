@@ -1,7 +1,5 @@
 package com.portfolio.repository
 
-import com.portfolio.entity.AVEnrichmentStatus
-import com.portfolio.entity.AVIngestionStatus
 import com.portfolio.entity.Etf
 import com.portfolio.entity.EtfComEnrichmentStatus
 import com.portfolio.entity.SecurityStatus
@@ -20,8 +18,6 @@ interface EtfRepository : JpaRepository<Etf, Long>, JpaSpecificationExecutor<Etf
     fun findBySymbolIgnoreCase(symbol: String): Etf?
 
     fun findBySymbolIgnoreCaseAndIsActiveTrue(symbol: String): Etf?
-
-    fun findBySymbolAndExchange(symbol: String, exchange: String): Etf?
 
     fun findByIsinAndIsActiveTrue(isin: String): Etf?
 
@@ -82,138 +78,12 @@ interface EtfRepository : JpaRepository<Etf, Long>, JpaSpecificationExecutor<Etf
 
     fun findByIsActiveTrue(): List<Etf>
 
-    // TODO: Uncomment when InstrumentIdentifier entity is implemented
-    // @Query("""
-    //     SELECT e FROM Etf e
-    //     WHERE e.isActive = true
-    //     AND NOT EXISTS (
-    //         SELECT 1 FROM com.portfolio.ingestion.entity.InstrumentIdentifier ii
-    //         WHERE ii.instrumentType = 'ETF'
-    //         AND ii.instrumentId = e.id
-    //         AND ii.identifierType IN ('FIGI', 'COMPOSITE_FIGI', 'SHARE_CLASS_FIGI')
-    //     )
-    // """)
-    // fun findMissingFigi(): List<Etf>
-
     @Query("""
         SELECT e FROM Etf e
         WHERE e.sourceLastSeenAt < :cutoff
         AND e.isActive = true
     """)
     fun findStaleEtfs(@Param("cutoff") cutoff: java.time.OffsetDateTime): List<Etf>
-
-    // Alpha Vantage enrichment query methods
-    @Query("""
-        SELECT e FROM Etf e
-        WHERE e.isActive = true
-        AND (
-            e.avEnrichmentStatus IN :statuses
-            OR (e.avEnrichmentStatus = 'SUCCESS' AND e.avLastSuccessAt < :staleThreshold)
-        )
-        AND (e.avEnrichmentStatus != 'FAILED_RETRYABLE' OR e.avRetryCount < :maxRetries)
-        AND (e.avLastAttemptAt IS NULL OR e.avLastAttemptAt < :retryAfter)
-        ORDER BY
-            CASE e.avEnrichmentStatus
-                WHEN 'PENDING' THEN 0
-                WHEN 'FAILED_RETRYABLE' THEN 1
-                WHEN 'STALE' THEN 2
-                ELSE 3
-            END,
-            e.avRetryCount ASC
-    """)
-    fun findAvEnrichmentCandidates(
-        @Param("statuses") statuses: List<AVEnrichmentStatus>,
-        @Param("maxRetries") maxRetries: Int,
-        @Param("retryAfter") retryAfter: OffsetDateTime,
-        @Param("staleThreshold") staleThreshold: OffsetDateTime,
-        pageable: Pageable
-    ): List<Etf>
-
-    /**
-     * Count ETFs pending Alpha Vantage enrichment
-     */
-    @Query("""
-        SELECT COUNT(e) FROM Etf e
-        WHERE e.isActive = true
-        AND e.avEnrichmentStatus IN ('PENDING', 'FAILED_RETRYABLE', 'STALE')
-    """)
-    fun countAvEnrichmentPending(): Long
-
-    // ========================================
-    // Alpha Vantage ingestion query methods
-    // ========================================
-
-    /**
-     * Find ETFs that are candidates for Alpha Vantage ingestion (fetching raw data).
-     * Returns ETFs where ingestion status is PENDING, FAILED_RETRYABLE, or STALE.
-     */
-    @Query("""
-        SELECT e FROM Etf e
-        WHERE e.isActive = true
-        AND (
-            e.avIngestionStatus IN :statuses
-            OR (e.avIngestionStatus = 'SUCCESS' AND e.avIngestionLastSuccessAt < :staleThreshold)
-        )
-        AND (e.avIngestionStatus != 'FAILED_RETRYABLE' OR e.avIngestionRetryCount < :maxRetries)
-        AND (e.avIngestionLastAttemptAt IS NULL OR e.avIngestionLastAttemptAt < :retryAfter)
-        ORDER BY
-            CASE e.avIngestionStatus
-                WHEN 'PENDING' THEN 0
-                WHEN 'FAILED_RETRYABLE' THEN 1
-                WHEN 'STALE' THEN 2
-                ELSE 3
-            END,
-            e.avIngestionRetryCount ASC
-    """)
-    fun findAvIngestionCandidates(
-        @Param("statuses") statuses: List<AVIngestionStatus>,
-        @Param("maxRetries") maxRetries: Int,
-        @Param("retryAfter") retryAfter: OffsetDateTime,
-        @Param("staleThreshold") staleThreshold: OffsetDateTime,
-        pageable: Pageable
-    ): List<Etf>
-
-    /**
-     * Find ETFs that have successfully ingested raw data and are ready for enrichment.
-     * Returns ETFs where ingestion is SUCCESS and enrichment status is PENDING, FAILED_RETRYABLE, or STALE.
-     */
-    @Query("""
-        SELECT e FROM Etf e
-        WHERE e.isActive = true
-        AND e.avIngestionStatus = :ingestionStatus
-        AND (
-            e.avEnrichmentStatus IN :enrichmentStatuses
-            OR (e.avEnrichmentStatus = 'SUCCESS' AND e.avLastSuccessAt < :staleThreshold)
-        )
-        AND (e.avEnrichmentStatus != 'FAILED_RETRYABLE' OR e.avRetryCount < :maxRetries)
-        AND (e.avLastAttemptAt IS NULL OR e.avLastAttemptAt < :retryAfter)
-        ORDER BY
-            CASE e.avEnrichmentStatus
-                WHEN 'PENDING' THEN 0
-                WHEN 'FAILED_RETRYABLE' THEN 1
-                WHEN 'STALE' THEN 2
-                ELSE 3
-            END,
-            e.avRetryCount ASC
-    """)
-    fun findAvEnrichmentCandidatesWithIngestionSuccess(
-        @Param("ingestionStatus") ingestionStatus: AVIngestionStatus,
-        @Param("enrichmentStatuses") enrichmentStatuses: List<AVEnrichmentStatus>,
-        @Param("maxRetries") maxRetries: Int,
-        @Param("retryAfter") retryAfter: OffsetDateTime,
-        @Param("staleThreshold") staleThreshold: OffsetDateTime,
-        pageable: Pageable
-    ): List<Etf>
-
-    /**
-     * Count ETFs pending Alpha Vantage ingestion
-     */
-    @Query("""
-        SELECT COUNT(e) FROM Etf e
-        WHERE e.isActive = true
-        AND e.avIngestionStatus IN ('PENDING', 'FAILED_RETRYABLE', 'STALE')
-    """)
-    fun countAvIngestionPending(): Long
 
     // ========================================
     // etf.com enrichment query methods

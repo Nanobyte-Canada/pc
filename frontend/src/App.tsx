@@ -25,6 +25,7 @@ import { UnauthorizedPage } from './pages/UnauthorizedPage'
 import { BrokerConnectionsPage } from './pages/BrokerConnectionsPage'
 import { BrokerPositionsPage } from './pages/BrokerPositionsPage'
 import { PositionDetailsPage } from './pages/PositionDetailsPage'
+import { ReportingPage } from './pages/ReportingPage'
 
 import './App.css'
 
@@ -70,6 +71,7 @@ function App() {
         <Route path="brokers/connections" element={<BrokerConnectionsPage />} />
         <Route path="brokers/positions" element={<BrokerPositionsPage />} />
         <Route path="brokers/positions/:connectionId" element={<PositionDetailsPage />} />
+        <Route path="brokers/reporting" element={<ReportingPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route
           path="admin"

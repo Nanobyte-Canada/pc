@@ -6,7 +6,12 @@ import {
   disconnectBroker,
   triggerPositionFetch,
   getConnectionPositions,
-  getAggregatedPositions
+  getAggregatedPositions,
+  getSnapTradeStatus,
+  syncConnections,
+  getConnectionActivities,
+  syncConnectionActivities,
+  getBalanceHistory
 } from '../services/brokerService'
 import type { ConnectBrokerRequest } from '../types/broker'
 
@@ -17,7 +22,9 @@ export const brokerKeys = {
   connections: () => [...brokerKeys.all, 'connections'] as const,
   positions: () => [...brokerKeys.all, 'positions'] as const,
   connectionPositions: (id: number) => [...brokerKeys.positions(), id] as const,
-  aggregatedPositions: () => [...brokerKeys.positions(), 'aggregated'] as const
+  aggregatedPositions: () => [...brokerKeys.positions(), 'aggregated'] as const,
+  activities: (id: number) => [...brokerKeys.all, 'activities', id] as const,
+  balanceHistory: (id: number) => [...brokerKeys.all, 'balance-history', id] as const
 }
 
 // ========== Queries ==========
@@ -91,6 +98,64 @@ export function useTriggerPositionFetch() {
         queryClient.invalidateQueries({ queryKey: brokerKeys.connectionPositions(connectionId) })
         queryClient.invalidateQueries({ queryKey: brokerKeys.aggregatedPositions() })
       }, 2000)
+    }
+  })
+}
+
+// ========== SnapTrade Status ==========
+
+export function useSnapTradeStatus() {
+  return useQuery({
+    queryKey: [...brokerKeys.all, 'snaptrade-status'] as const,
+    queryFn: getSnapTradeStatus,
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000
+  })
+}
+
+// ========== Activities & Balances ==========
+
+export function useConnectionActivities(
+  connectionId: number,
+  params: { page?: number; size?: number; startDate?: string; endDate?: string; type?: string } = {},
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: [...brokerKeys.activities(connectionId), params] as const,
+    queryFn: () => getConnectionActivities(connectionId, params),
+    enabled: enabled && connectionId > 0,
+    staleTime: 60 * 1000
+  })
+}
+
+export function useSyncActivities() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (connectionId: number) => syncConnectionActivities(connectionId),
+    onSuccess: (_, connectionId) => {
+      queryClient.invalidateQueries({ queryKey: brokerKeys.activities(connectionId) })
+    }
+  })
+}
+
+export function useBalanceHistory(connectionId: number, days: number = 90, enabled: boolean = true) {
+  return useQuery({
+    queryKey: [...brokerKeys.balanceHistory(connectionId), days] as const,
+    queryFn: () => getBalanceHistory(connectionId, days),
+    enabled: enabled && connectionId > 0,
+    staleTime: 60 * 1000
+  })
+}
+
+export function useSyncConnections() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: syncConnections,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: brokerKeys.connections() })
+      queryClient.invalidateQueries({ queryKey: brokerKeys.positions() })
     }
   })
 }

@@ -2,6 +2,7 @@ package com.portfolio.broker.dto
 
 import com.portfolio.broker.entity.*
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.OffsetDateTime
 
 // Request DTOs
@@ -160,4 +161,121 @@ fun BrokerPosition.toDto() = BrokerPositionDto(
     totalPnl = totalPnl,
     totalPnlPercent = totalPnlPercent,
     currency = currency
+)
+
+// ========== SnapTrade Status DTOs ==========
+
+data class SnapTradeStatusDto(
+    val status: String,
+    val responseTimeMs: Int?,
+    val version: String?,
+    val uptimePercent24h: Double,
+    val lastChecked: OffsetDateTime
+)
+
+data class SnapTradeStatusResponse(val status: SnapTradeStatusDto)
+
+data class ConnectionSyncResponse(
+    val syncedCount: Int,
+    val message: String
+)
+
+// ========== Activity DTOs ==========
+
+data class BrokerActivityDto(
+    val id: Long,
+    val type: String,
+    val symbol: String?,
+    val description: String?,
+    val quantity: BigDecimal?,
+    val price: BigDecimal?,
+    val amount: BigDecimal,
+    val fee: BigDecimal?,
+    val currency: String,
+    val tradeDate: String,
+    val settlementDate: String?,
+    val accountName: String?,
+    val optionType: String?
+)
+
+data class ActivitiesResponse(
+    val activities: List<BrokerActivityDto>,
+    val totalCount: Long,
+    val page: Int,
+    val pageSize: Int
+)
+
+// ========== Balance DTOs ==========
+
+data class BalanceSnapshotDto(
+    val totalValue: BigDecimal?,
+    val cash: Map<String, BigDecimal>,
+    val currency: String,
+    val asOfDate: String
+)
+
+data class BalanceHistoryResponse(
+    val snapshots: List<BalanceSnapshotDto>,
+    val connectionId: Long
+)
+
+// ========== Reporting DTOs ==========
+
+data class ReportingPerformanceResponse(
+    val contributionsWithdrawals: List<PeriodSummary>,
+    val totalValueHistory: List<ValuePoint>,
+    val dividendHistory: List<DividendPeriod>,
+    val totalDividendsBySymbol: List<SymbolDividend>,
+    val kpis: PerformanceKpis
+)
+
+data class PeriodSummary(
+    val period: String,
+    val contributions: BigDecimal,
+    val withdrawals: BigDecimal,
+    val net: BigDecimal
+)
+
+data class ValuePoint(
+    val date: String,
+    val totalValue: BigDecimal,
+    val costBasis: BigDecimal?
+)
+
+data class DividendPeriod(
+    val period: String,
+    val total: BigDecimal,
+    val bySymbol: Map<String, BigDecimal>
+)
+
+data class SymbolDividend(
+    val symbol: String,
+    val total: BigDecimal
+)
+
+data class PerformanceKpis(
+    val netContributions: BigDecimal,
+    val monthlyAvgContributions: BigDecimal,
+    val netChange: BigDecimal,
+    val totalDividendIncome: BigDecimal,
+    val avgMonthlyDividends: BigDecimal,
+    val feesAndCommissions: BigDecimal
+)
+
+// ========== Activity Mapper ==========
+
+fun BrokerActivity.toActivityDto() = BrokerActivityDto(
+    id = id,
+    type = type,
+    symbol = symbol,
+    description = description,
+    quantity = quantity,
+    price = price,
+    amount = amount,
+    fee = fee,
+    currency = currency,
+    tradeDate = tradeDate.toString(),
+    settlementDate = settlementDate?.toString(),
+    accountName = accountName,
+    optionType = optionType
 )

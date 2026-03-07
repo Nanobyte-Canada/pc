@@ -166,6 +166,35 @@ class SnapTradeService(
         return snaptrade.referenceData.listAllBrokerages().execute()
     }
 
+    /**
+     * Fetches activities (transactions) for a user from SnapTrade.
+     */
+    fun getActivities(
+        user: User,
+        startDate: String? = null,
+        endDate: String? = null,
+        accounts: String? = null,
+        type: String? = null
+    ): List<UniversalActivity> {
+        val snapUser = ensureUserRegistered(user)
+        val request = snaptrade.transactionsAndReporting.getActivities(snapUser.userId, snapUser.userSecret)
+        startDate?.let { request.startDate(it) }
+        endDate?.let { request.endDate(it) }
+        accounts?.let { request.accounts(it) }
+        type?.let { request.type(it) }
+        return request.execute()
+    }
+
+    /**
+     * Fetches account balance for a specific account.
+     */
+    fun getAccountBalance(user: User, accountId: String): List<Balance> {
+        val snapUser = ensureUserRegistered(user)
+        return snaptrade.accountInformation.getUserAccountBalance(
+            snapUser.userId, snapUser.userSecret, UUID.fromString(accountId)
+        ).execute()
+    }
+
     data class SnapTradeUserInfo(
         val userId: String,
         val userSecret: String
