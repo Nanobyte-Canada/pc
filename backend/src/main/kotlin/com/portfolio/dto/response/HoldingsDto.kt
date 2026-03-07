@@ -49,7 +49,7 @@ data class HoldingsMetadataDto(
     val unresolvedCount: Int,
     val resolvedPercent: Double,
     val primaryDataSource: String?,
-    val hasAlphaVantageData: Boolean
+    val hasEnrichmentData: Boolean
 )
 
 data class AvailableDatesResponseDto(
@@ -68,7 +68,7 @@ fun EtfHolding.toHoldingDto(): HoldingDto {
         stockId = resolvedStock?.id,
         ticker = displayTicker,
         name = displayName,
-        weight = (avWeight ?: weight)?.toDouble(),
+        weight = (etfcomWeight ?: avWeight ?: weight)?.toDouble(),
         shares = shares?.toDouble(),
         marketValue = marketValue?.toDouble(),
         sector = sector?.let { SectorDto(it.code, it.name) },
@@ -95,7 +95,7 @@ fun MutualFundHolding.toHoldingDto(): HoldingDto {
         stockId = resolvedStock?.id,
         ticker = displayTicker,
         name = displayName,
-        weight = (avWeight ?: weight)?.toDouble(),
+        weight = (etfcomWeight ?: avWeight ?: weight)?.toDouble(),
         shares = shares?.toDouble(),
         marketValue = marketValue?.toDouble(),
         sector = sector?.let { SectorDto(it.code, it.name) },
@@ -120,14 +120,16 @@ fun List<EtfHolding>.toMetadata(): HoldingsMetadataDto {
     val sourceCounts = groupBy { it.dataSource }
     val primarySource = sourceCounts.maxByOrNull { it.value.size }?.key
 
-    val hasAvData = any { it.dataSource == HoldingDataSource.ALPHA_VANTAGE }
+    val hasEnrichment = any {
+        it.dataSource == HoldingDataSource.ALPHA_VANTAGE || it.dataSource == HoldingDataSource.ETF_COM
+    }
 
     return HoldingsMetadataDto(
         resolvedCount = resolved,
         unresolvedCount = unresolved,
         resolvedPercent = resolvedPercent,
         primaryDataSource = primarySource?.name,
-        hasAlphaVantageData = hasAvData
+        hasEnrichmentData = hasEnrichment
     )
 }
 
@@ -141,13 +143,15 @@ fun List<MutualFundHolding>.toMutualFundMetadata(): HoldingsMetadataDto {
     val sourceCounts = groupBy { it.dataSource }
     val primarySource = sourceCounts.maxByOrNull { it.value.size }?.key
 
-    val hasAvData = any { it.dataSource == HoldingDataSource.ALPHA_VANTAGE }
+    val hasEnrichment = any {
+        it.dataSource == HoldingDataSource.ALPHA_VANTAGE || it.dataSource == HoldingDataSource.ETF_COM
+    }
 
     return HoldingsMetadataDto(
         resolvedCount = resolved,
         unresolvedCount = unresolved,
         resolvedPercent = resolvedPercent,
         primaryDataSource = primarySource?.name,
-        hasAlphaVantageData = hasAvData
+        hasEnrichmentData = hasEnrichment
     )
 }

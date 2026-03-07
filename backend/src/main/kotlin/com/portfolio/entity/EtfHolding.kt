@@ -21,7 +21,7 @@ enum class HoldingSourceSection {
  * Source of holdings data.
  */
 enum class HoldingDataSource {
-    EODHD, ALPHA_VANTAGE, MANUAL
+    EODHD, ALPHA_VANTAGE, MANUAL, ETF_COM
 }
 
 @Entity
@@ -104,6 +104,13 @@ class EtfHolding(
 
     @Column(name = "av_last_updated_at")
     var avLastUpdatedAt: OffsetDateTime? = null,
+
+    // etf.com specific fields
+    @Column(name = "etfcom_weight", precision = 18, scale = 6)
+    var etfcomWeight: BigDecimal? = null,
+
+    @Column(name = "etfcom_last_updated_at")
+    var etfcomLastUpdatedAt: OffsetDateTime? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ingestion_batch_id")

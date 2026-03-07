@@ -9,6 +9,16 @@ class IngestionConfig {
     var exchanges: ExchangesConfig = ExchangesConfig()
     var eodhd: EodhdConfig = EodhdConfig()
     var alphavantage: AlphaVantageProperties = AlphaVantageProperties()
+    var etfcom: EtfComProperties = EtfComProperties()
+}
+
+class EtfComProperties {
+    var enabled: Boolean = true
+    var baseUrl: String = "https://api-prod.etf.com/v2/fund"
+    var batchSize: Int = 100
+    var staleThresholdDays: Int = 7
+    var concurrency: Int = 5
+    var retry: RetryProperties = RetryProperties()
 }
 
 /**

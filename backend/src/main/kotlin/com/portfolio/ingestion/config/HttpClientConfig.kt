@@ -69,4 +69,17 @@ class HttpClientConfig(
             }
             .build()
     }
+
+    @Bean
+    fun etfComWebClient(): WebClient {
+        return WebClient.builder()
+            .baseUrl(ingestionConfig.etfcom.baseUrl)
+            .clientConnector(ReactorClientHttpConnector(createHttpClient()))
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+            .codecs { configurer ->
+                configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) // 16MB
+            }
+            .build()
+    }
 }

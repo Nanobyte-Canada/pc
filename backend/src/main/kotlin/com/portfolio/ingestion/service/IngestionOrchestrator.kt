@@ -2,10 +2,10 @@ package com.portfolio.ingestion.service
 
 import com.portfolio.ingestion.config.IngestionConfig
 import com.portfolio.ingestion.entity.*
-import com.portfolio.ingestion.service.alphavantage.AVEtfEnrichmentService
-import com.portfolio.ingestion.service.alphavantage.AVEtfIngestionService
 import com.portfolio.ingestion.service.alphavantage.AVStockEnrichmentService
 import com.portfolio.ingestion.service.alphavantage.AVStockIngestionService
+import com.portfolio.ingestion.service.etfcom.EtfComEnrichmentService
+import com.portfolio.ingestion.service.etfcom.EtfComUniverseService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,22 +15,20 @@ class IngestionOrchestrator(
     private val config: IngestionConfig,
     private val eodhdService: EodhdIngestionService,
     private val avStockIngestionService: AVStockIngestionService,
-    private val avEtfIngestionService: AVEtfIngestionService,
     private val avStockEnrichmentService: AVStockEnrichmentService,
-    private val avEtfEnrichmentService: AVEtfEnrichmentService,
+    private val etfComUniverseService: EtfComUniverseService,
+    private val etfComEnrichmentService: EtfComEnrichmentService,
     private val trackingService: IngestionTrackingService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     /**
-     * Runs the full ingestion pipeline including:
-     * 1. EODHD Universe refresh
-     * 2. Alpha Vantage Stock ingestion (fetch raw data)
-     * 3. Alpha Vantage ETF ingestion (fetch raw data)
+     * Runs the full ingestion pipeline:
+     * 1. EODHD Universe refresh (stocks & mutual funds; ETFs skipped when etf.com enabled)
+     * 2. etf.com ETF Universe refresh (when enabled)
+     * 3. Alpha Vantage Stock ingestion (fetch raw data)
      * 4. Alpha Vantage Stock enrichment (parse raw payload)
-     * 5. Alpha Vantage ETF enrichment (parse raw payload)
-     *
-     * Note: Mutual fund enrichment is skipped (not supported by Alpha Vantage)
+     * 5. etf.com ETF enrichment (when enabled)
      */
     fun runFullIngestion(triggerSource: String): IngestionRun {
         val runType = if (triggerSource == "scheduler") RunType.SCHEDULED else RunType.MANUAL
@@ -41,31 +39,31 @@ class IngestionOrchestrator(
         var overallSuccess = true
 
         try {
-            // Step 1: EODHD Universe refresh
+            // Step 1: EODHD Universe refresh (stocks & mutual funds)
             val eodhdSuccess = runEodhdUniverse(run)
-            if (!eodhdSuccess) {
-                overallSuccess = false
+            if (!eodhdSuccess) overallSuccess = false
+
+            // Step 2: etf.com ETF Universe refresh
+            if (config.etfcom.enabled) {
+                val etfComUniverseSuccess = runEtfComUniverse(run)
+                if (!etfComUniverseSuccess) overallSuccess = false
             }
 
-            // Steps 2-5: Alpha Vantage ingestion and enrichment (if enabled)
+            // Steps 3-4: Alpha Vantage stock ingestion and enrichment
             if (config.alphavantage.enabled) {
-                // Step 2: Stock ingestion (fetch raw data)
                 val avStockIngestionSuccess = runAvStockIngestion(run)
                 if (!avStockIngestionSuccess) overallSuccess = false
 
-                // Step 3: ETF ingestion (fetch raw data)
-                val avEtfIngestionSuccess = runAvEtfIngestion(run)
-                if (!avEtfIngestionSuccess) overallSuccess = false
-
-                // Step 4: Stock enrichment (parse raw payload)
                 val avStockEnrichmentSuccess = runAvStockEnrichment(run)
                 if (!avStockEnrichmentSuccess) overallSuccess = false
-
-                // Step 5: ETF enrichment (parse raw payload)
-                val avEtfEnrichmentSuccess = runAvEtfEnrichment(run)
-                if (!avEtfEnrichmentSuccess) overallSuccess = false
             } else {
                 log.info("Alpha Vantage enrichment is disabled, skipping AV steps")
+            }
+
+            // Step 5: etf.com ETF enrichment
+            if (config.etfcom.enabled) {
+                val etfComEnrichmentSuccess = runEtfComEnrichment(run)
+                if (!etfComEnrichmentSuccess) overallSuccess = false
             }
 
             val finalStatus = if (overallSuccess) RunStatus.COMPLETED else RunStatus.PARTIAL
@@ -101,7 +99,47 @@ class IngestionOrchestrator(
     }
 
     // ========================================
-    // Alpha Vantage ingestion methods (fetch raw data)
+    // etf.com methods
+    // ========================================
+
+    @Transactional
+    private fun runEtfComUniverse(run: IngestionRun): Boolean {
+        log.info("Starting etf.com ETF Universe Refresh")
+
+        val step = trackingService.startStep(run, StepName.ETFCOM_ETF_UNIVERSE)
+
+        return try {
+            val result = etfComUniverseService.refreshUniverse(step)
+            trackingService.completeStep(step, result, StepStatus.COMPLETED)
+            log.info("etf.com Universe completed: processed=${result.processed}, created=${result.created}, updated=${result.updated}, failed=${result.failed}")
+            true
+        } catch (e: Exception) {
+            log.error("etf.com Universe failed: ${e.message}", e)
+            trackingService.failStep(step, e)
+            false
+        }
+    }
+
+    @Transactional
+    private fun runEtfComEnrichment(run: IngestionRun): Boolean {
+        log.info("Starting etf.com ETF Enrichment")
+
+        val step = trackingService.startStep(run, StepName.ETFCOM_ETF_ENRICHMENT)
+
+        return try {
+            val result = etfComEnrichmentService.enrichEtfs(step)
+            trackingService.completeStep(step, result, StepStatus.COMPLETED)
+            log.info("etf.com ETF Enrichment completed: processed=${result.processed}, updated=${result.updated}, failed=${result.failed}")
+            true
+        } catch (e: Exception) {
+            log.error("etf.com ETF Enrichment failed: ${e.message}", e)
+            trackingService.failStep(step, e)
+            false
+        }
+    }
+
+    // ========================================
+    // Alpha Vantage stock methods
     // ========================================
 
     @Transactional
@@ -123,28 +161,6 @@ class IngestionOrchestrator(
     }
 
     @Transactional
-    private fun runAvEtfIngestion(run: IngestionRun): Boolean {
-        log.info("Starting Alpha Vantage ETF Ingestion")
-
-        val step = trackingService.startStep(run, StepName.AV_ETF_INGESTION)
-
-        return try {
-            val result = avEtfIngestionService.ingestEtfs(step)
-            trackingService.completeStep(step, result, StepStatus.COMPLETED)
-            log.info("AV ETF Ingestion completed: processed=${result.processed}, updated=${result.updated}, failed=${result.failed}")
-            true
-        } catch (e: Exception) {
-            log.error("AV ETF Ingestion failed: ${e.message}", e)
-            trackingService.failStep(step, e)
-            false
-        }
-    }
-
-    // ========================================
-    // Alpha Vantage enrichment methods (parse raw payload)
-    // ========================================
-
-    @Transactional
     private fun runAvStockEnrichment(run: IngestionRun): Boolean {
         log.info("Starting Alpha Vantage Stock Enrichment")
 
@@ -162,31 +178,10 @@ class IngestionOrchestrator(
         }
     }
 
-    @Transactional
-    private fun runAvEtfEnrichment(run: IngestionRun): Boolean {
-        log.info("Starting Alpha Vantage ETF Enrichment")
-
-        val step = trackingService.startStep(run, StepName.AV_ETF_ENRICHMENT)
-
-        return try {
-            val result = avEtfEnrichmentService.enrichEtfs(step)
-            trackingService.completeStep(step, result, StepStatus.COMPLETED)
-            log.info("AV ETF Enrichment completed: processed=${result.processed}, updated=${result.updated}, failed=${result.failed}")
-            true
-        } catch (e: Exception) {
-            log.error("AV ETF Enrichment failed: ${e.message}", e)
-            trackingService.failStep(step, e)
-            false
-        }
-    }
-
     // ========================================
     // Convenience methods for granular control
     // ========================================
 
-    /**
-     * Run the universe refresh only (without ingestion or enrichment)
-     */
     fun runUniverseRefreshOnly(triggerSource: String): IngestionRun {
         val runType = if (triggerSource == "scheduler") RunType.SCHEDULED else RunType.MANUAL
         val run = trackingService.startRun(runType, triggerSource)
@@ -210,9 +205,6 @@ class IngestionOrchestrator(
         return run
     }
 
-    /**
-     * Run Alpha Vantage Stock ingestion only (fetch raw data).
-     */
     fun runStockIngestionOnly(triggerSource: String): IngestionRun {
         val runType = RunType.MANUAL
         val run = trackingService.startRun(runType, triggerSource)
@@ -235,34 +227,6 @@ class IngestionOrchestrator(
         return run
     }
 
-    /**
-     * Run Alpha Vantage ETF ingestion only (fetch raw data).
-     */
-    fun runEtfIngestionOnly(triggerSource: String): IngestionRun {
-        val runType = RunType.MANUAL
-        val run = trackingService.startRun(runType, triggerSource)
-
-        log.info("Starting AV ETF-only ingestion run ${run.id}")
-
-        try {
-            val success = runAvEtfIngestion(run)
-            val finalStatus = if (success) RunStatus.COMPLETED else RunStatus.FAILED
-
-            trackingService.completeRun(run, finalStatus)
-            log.info("Completed AV ETF-only ingestion run ${run.id} with status $finalStatus")
-
-        } catch (e: Exception) {
-            log.error("Critical error during AV ETF ingestion run ${run.id}: ${e.message}", e)
-            trackingService.completeRun(run, RunStatus.FAILED)
-            throw e
-        }
-
-        return run
-    }
-
-    /**
-     * Run Alpha Vantage Stock enrichment only (parse stored raw payload).
-     */
     fun runStockEnrichmentOnly(triggerSource: String): IngestionRun {
         val runType = RunType.MANUAL
         val run = trackingService.startRun(runType, triggerSource)
@@ -285,24 +249,43 @@ class IngestionOrchestrator(
         return run
     }
 
-    /**
-     * Run Alpha Vantage ETF enrichment only (parse stored raw payload).
-     */
-    fun runEtfEnrichmentOnly(triggerSource: String): IngestionRun {
+    fun runEtfComUniverseOnly(triggerSource: String): IngestionRun {
         val runType = RunType.MANUAL
         val run = trackingService.startRun(runType, triggerSource)
 
-        log.info("Starting AV ETF-only enrichment run ${run.id}")
+        log.info("Starting etf.com universe-only run ${run.id}")
 
         try {
-            val success = runAvEtfEnrichment(run)
+            val success = runEtfComUniverse(run)
             val finalStatus = if (success) RunStatus.COMPLETED else RunStatus.FAILED
 
             trackingService.completeRun(run, finalStatus)
-            log.info("Completed AV ETF-only enrichment run ${run.id} with status $finalStatus")
+            log.info("Completed etf.com universe-only run ${run.id} with status $finalStatus")
 
         } catch (e: Exception) {
-            log.error("Critical error during AV ETF enrichment run ${run.id}: ${e.message}", e)
+            log.error("Critical error during etf.com universe run ${run.id}: ${e.message}", e)
+            trackingService.completeRun(run, RunStatus.FAILED)
+            throw e
+        }
+
+        return run
+    }
+
+    fun runEtfComEnrichmentOnly(triggerSource: String): IngestionRun {
+        val runType = RunType.MANUAL
+        val run = trackingService.startRun(runType, triggerSource)
+
+        log.info("Starting etf.com enrichment-only run ${run.id}")
+
+        try {
+            val success = runEtfComEnrichment(run)
+            val finalStatus = if (success) RunStatus.COMPLETED else RunStatus.FAILED
+
+            trackingService.completeRun(run, finalStatus)
+            log.info("Completed etf.com enrichment-only run ${run.id} with status $finalStatus")
+
+        } catch (e: Exception) {
+            log.error("Critical error during etf.com enrichment run ${run.id}: ${e.message}", e)
             trackingService.completeRun(run, RunStatus.FAILED)
             throw e
         }

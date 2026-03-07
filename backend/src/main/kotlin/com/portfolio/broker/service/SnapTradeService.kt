@@ -65,10 +65,15 @@ class SnapTradeService(
                 ?: throw IllegalStateException("SnapTrade registration did not return userSecret")
         } catch (e: ApiException) {
             if (e.message?.contains("1012") == true) {
-                // Personal keys only allow one user - user already registered but
-                // we lost the userSecret locally. Delete and re-register.
-                log.info("SnapTrade user {} already registered (code 1012), deleting and re-registering", snapUserId)
-                snaptrade.authentication.deleteSnapTradeUser(snapUserId).execute()
+                // Personal keys only allow one user. The occupied slot may belong to a
+                // different userId (e.g. after a DB reset), so we list who IS registered
+                // and delete them all before re-registering.
+                log.info("SnapTrade error 1012: personal key slot occupied, clearing existing users")
+                val existingUsers = snaptrade.authentication.listSnapTradeUsers().execute()
+                for (existingUserId in existingUsers) {
+                    log.info("Deleting existing SnapTrade user: {}", existingUserId)
+                    snaptrade.authentication.deleteSnapTradeUser(existingUserId).execute()
+                }
 
                 val retryResponse = snaptrade.authentication.registerSnapTradeUser(snapUserId)
                     .execute()

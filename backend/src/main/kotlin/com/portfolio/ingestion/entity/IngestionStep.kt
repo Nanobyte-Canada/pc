@@ -7,10 +7,12 @@ import java.time.OffsetDateTime
 
 enum class StepName {
     EODHD_UNIVERSE,
-    AV_STOCK_INGESTION,    // Fetch raw data from AV API
-    AV_ETF_INGESTION,      // Fetch raw data from AV API
-    AV_STOCK_ENRICHMENT,   // Parse raw data to entity fields
-    AV_ETF_ENRICHMENT      // Parse raw data to entity fields
+    AV_STOCK_INGESTION,       // Fetch raw data from AV API
+    AV_ETF_INGESTION,         // Fetch raw data from AV API (deprecated)
+    AV_STOCK_ENRICHMENT,      // Parse raw data to entity fields
+    AV_ETF_ENRICHMENT,        // Parse raw data to entity fields (deprecated)
+    ETFCOM_ETF_UNIVERSE,      // Fetch ETF universe from etf.com
+    ETFCOM_ETF_ENRICHMENT     // Enrich ETFs from etf.com
 }
 
 enum class StepStatus {

@@ -108,7 +108,14 @@ class EodhdIngestionService(
 
         return when {
             dto.isStock() -> processStock(dto, exchange, seenAt, rawPayload, step)
-            dto.isEtf() -> processEtf(dto, exchange, seenAt, rawPayload, step)
+            dto.isEtf() -> {
+                // Skip ETF processing when etf.com is enabled (etf.com handles ETF universe)
+                if (config.etfcom.enabled) {
+                    ProcessResult(created = false, updated = false)
+                } else {
+                    processEtf(dto, exchange, seenAt, rawPayload, step)
+                }
+            }
             dto.isMutualFund() -> processMutualFund(dto, seenAt, rawPayload, step)
             else -> ProcessResult(created = false, updated = false)
         }
@@ -278,14 +285,16 @@ class EodhdIngestionService(
         stockRepository.saveAll(staleStocks)
         staleCount += staleStocks.size
 
-        // Mark stale ETFs
-        val staleEtfs = etfRepository.findStaleEtfs(cutoff)
-        for (etf in staleEtfs) {
-            etf.isActive = false
-            etf.updatedAt = OffsetDateTime.now()
+        // Mark stale ETFs (skip when etf.com handles ETF universe)
+        if (!config.etfcom.enabled) {
+            val staleEtfs = etfRepository.findStaleEtfs(cutoff)
+            for (etf in staleEtfs) {
+                etf.isActive = false
+                etf.updatedAt = OffsetDateTime.now()
+            }
+            etfRepository.saveAll(staleEtfs)
+            staleCount += staleEtfs.size
         }
-        etfRepository.saveAll(staleEtfs)
-        staleCount += staleEtfs.size
 
         // Mark stale Mutual Funds
         val staleMutualFunds = mutualFundRepository.findStaleMutualFunds(cutoff)

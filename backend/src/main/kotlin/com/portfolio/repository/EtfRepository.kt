@@ -3,6 +3,7 @@ package com.portfolio.repository
 import com.portfolio.entity.AVEnrichmentStatus
 import com.portfolio.entity.AVIngestionStatus
 import com.portfolio.entity.Etf
+import com.portfolio.entity.EtfComEnrichmentStatus
 import com.portfolio.entity.SecurityStatus
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -213,4 +214,41 @@ interface EtfRepository : JpaRepository<Etf, Long>, JpaSpecificationExecutor<Etf
         AND e.avIngestionStatus IN ('PENDING', 'FAILED_RETRYABLE', 'STALE')
     """)
     fun countAvIngestionPending(): Long
+
+    // ========================================
+    // etf.com enrichment query methods
+    // ========================================
+
+    @Query("""
+        SELECT e FROM Etf e
+        WHERE e.isActive = true
+        AND (
+            e.etfcomEnrichmentStatus IN :statuses
+            OR (e.etfcomEnrichmentStatus = 'SUCCESS' AND e.etfcomLastSuccessAt < :staleThreshold)
+        )
+        AND (e.etfcomEnrichmentStatus != 'FAILED_RETRYABLE' OR e.etfcomRetryCount < :maxRetries)
+        AND (e.etfcomLastAttemptAt IS NULL OR e.etfcomLastAttemptAt < :retryAfter)
+        ORDER BY
+            CASE e.etfcomEnrichmentStatus
+                WHEN 'PENDING' THEN 0
+                WHEN 'FAILED_RETRYABLE' THEN 1
+                WHEN 'STALE' THEN 2
+                ELSE 3
+            END,
+            e.etfcomRetryCount ASC
+    """)
+    fun findEtfComEnrichmentCandidates(
+        @Param("statuses") statuses: List<EtfComEnrichmentStatus>,
+        @Param("maxRetries") maxRetries: Int,
+        @Param("retryAfter") retryAfter: OffsetDateTime,
+        @Param("staleThreshold") staleThreshold: OffsetDateTime,
+        pageable: Pageable
+    ): List<Etf>
+
+    @Query("""
+        SELECT COUNT(e) FROM Etf e
+        WHERE e.isActive = true
+        AND e.etfcomEnrichmentStatus IN ('PENDING', 'FAILED_RETRYABLE', 'STALE')
+    """)
+    fun countEtfComEnrichmentPending(): Long
 }

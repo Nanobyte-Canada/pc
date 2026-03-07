@@ -2,7 +2,6 @@ package com.portfolio.ingestion.client.alphavantage
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.ingestion.config.IngestionConfig
-import com.portfolio.ingestion.dto.alphavantage.AVEtfProfileResponse
 import com.portfolio.ingestion.dto.alphavantage.AVOverviewResponse
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
@@ -26,8 +25,8 @@ import java.util.concurrent.TimeUnit
  * Includes rate limiting, retry logic, and metrics.
  *
  * Supports both blocking and non-blocking (coroutine) modes:
- * - Use `getStockOverview()` / `getEtfProfile()` for blocking calls
- * - Use `getStockOverviewAsync()` / `getEtfProfileAsync()` for non-blocking coroutine-based calls
+ * - Use `getStockOverview()` for blocking calls
+ * - Use `getStockOverviewAsync()` for non-blocking coroutine-based calls
  */
 @Component
 class AlphaVantageClient(
@@ -149,109 +148,6 @@ class AlphaVantageClient(
      */
     fun getStockOverview(symbol: String): AVApiResult<AVOverviewResponse> = runBlocking {
         getStockOverviewAsync(symbol)
-    }
-
-    /**
-     * Fetches ETF profile data from the ETF_PROFILE endpoint asynchronously.
-     * Returns null if the symbol is not found or daily quota is exhausted.
-     *
-     * This is the preferred method for coroutine-based callers.
-     */
-    suspend fun getEtfProfileAsync(symbol: String): AVApiResult<AVEtfProfileResponse> {
-        // Check rate limit
-        if (!rateLimiter.acquireAsync()) {
-            log.warn("Daily quota exhausted, cannot fetch ETF profile for {}", symbol)
-            return AVApiResult.QuotaExhausted("Daily API quota exhausted")
-        }
-
-        requestsTotal.increment()
-        val startTime = System.nanoTime()
-
-        return try {
-            val response = webClient.get()
-                .uri { uriBuilder ->
-                    uriBuilder
-                        .queryParam("function", "ETF_PROFILE")
-                        .queryParam("symbol", symbol.uppercase())
-                        .queryParam("apikey", config.alphavantage.apiKey)
-                        .build()
-                }
-                .retrieve()
-                .onStatus(HttpStatusCode::isError) { clientResponse ->
-                    when (clientResponse.statusCode()) {
-                        HttpStatus.TOO_MANY_REQUESTS -> {
-                            rateLimitHits.increment()
-                            Mono.error(AlphaVantageException("Rate limited", 429))
-                        }
-                        HttpStatus.NOT_FOUND -> {
-                            Mono.error(AlphaVantageException("ETF not found: $symbol", 404))
-                        }
-                        else -> {
-                            clientResponse.createException()
-                        }
-                    }
-                }
-                .bodyToMono(AVEtfProfileResponse::class.java)
-                .timeout(Duration.ofSeconds(30))
-                .awaitSingleOrNull()  // Non-blocking await
-
-            // TODO: REMOVE AFTER DEBUGGING - Temporary logging to diagnose ETF enrichment failures
-            if (response != null) {
-                log.info("ETF {} raw response: netAssets={}, expenseRatio={}, sectors={}, holdings={}, note='{}', info='{}', isValid={}",
-                    symbol,
-                    response.netAssets,
-                    response.netExpenseRatio,
-                    response.sectors?.size ?: 0,
-                    response.holdings?.size ?: 0,
-                    response.note ?: "(null)",
-                    response.information ?: "(null)",
-                    response.isValid()
-                )
-            }
-
-            if (response == null) {
-                errorTotal.increment()
-                AVApiResult.NotFound(symbol)
-            } else if (response.isRateLimited()) {
-                rateLimitHits.increment()
-                log.warn("Rate limited response for ETF {}: {}", symbol, response.note ?: response.information)
-                AVApiResult.RateLimited(response.note ?: response.information ?: "Rate limited")
-            } else if (!response.isValid()) {
-                log.debug("Empty or invalid ETF response for symbol: {}", symbol)
-                AVApiResult.NotFound(symbol)
-            } else {
-                successTotal.increment()
-                log.debug("Successfully fetched ETF profile for {}", symbol)
-                AVApiResult.Success(response)
-            }
-        } catch (e: AlphaVantageException) {
-            errorTotal.increment()
-            when (e.statusCode) {
-                404 -> AVApiResult.NotFound(symbol)
-                429 -> AVApiResult.RateLimited("Rate limited")
-                else -> AVApiResult.Error(e, e.statusCode)
-            }
-        } catch (e: WebClientResponseException) {
-            errorTotal.increment()
-            log.error("HTTP error fetching ETF profile for {}: {} {}", symbol, e.statusCode, e.message)
-            AVApiResult.Error(e, e.statusCode.value())
-        } catch (e: Exception) {
-            errorTotal.increment()
-            log.error("Error fetching ETF profile for {}: {}", symbol, e.message)
-            AVApiResult.Error(e, null)
-        } finally {
-            apiLatency.record(System.nanoTime() - startTime, TimeUnit.NANOSECONDS)
-        }
-    }
-
-    /**
-     * Fetches ETF profile data from the ETF_PROFILE endpoint.
-     * Returns null if the symbol is not found or daily quota is exhausted.
-     *
-     * This is a blocking wrapper around getEtfProfileAsync for backward compatibility.
-     */
-    fun getEtfProfile(symbol: String): AVApiResult<AVEtfProfileResponse> = runBlocking {
-        getEtfProfileAsync(symbol)
     }
 
     /**

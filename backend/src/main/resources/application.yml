@@ -98,6 +98,19 @@ ingestion:
     stale-threshold-days: ${AV_STALE_THRESHOLD:30}
     daily-quota: ${AV_DAILY_QUOTA:-1}
 
+  etfcom:
+    enabled: ${ETFCOM_ENABLED:true}
+    base-url: ${ETFCOM_BASE_URL:https://api-prod.etf.com/v2/fund}
+    batch-size: ${ETFCOM_BATCH_SIZE:100}
+    stale-threshold-days: ${ETFCOM_STALE_THRESHOLD:7}
+    concurrency: ${ETFCOM_CONCURRENCY:5}
+    retry:
+      max-attempts: ${ETFCOM_RETRY_MAX_ATTEMPTS:3}
+      initial-backoff-ms: ${ETFCOM_RETRY_INITIAL_BACKOFF:1000}
+      max-backoff-ms: ${ETFCOM_RETRY_MAX_BACKOFF:30000}
+      multiplier: ${ETFCOM_RETRY_MULTIPLIER:2.0}
+      jitter-factor: ${ETFCOM_RETRY_JITTER:0.1}
+
 # Broker encryption configuration (for encrypting SnapTrade user secrets)
 broker:
   encryption:

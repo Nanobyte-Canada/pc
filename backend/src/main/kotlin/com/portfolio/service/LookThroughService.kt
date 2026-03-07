@@ -9,6 +9,7 @@ import com.portfolio.entity.MutualFundHolding
 import com.portfolio.entity.Stock
 import com.portfolio.repository.EtfHoldingRepository
 import com.portfolio.repository.EtfRepository
+import com.portfolio.repository.EtfSectorAllocationFactsetRepository
 import com.portfolio.repository.MutualFundHoldingRepository
 import com.portfolio.repository.MutualFundRepository
 import com.portfolio.repository.StockRepository
@@ -77,10 +78,11 @@ class LookThroughService(
     private val etfRepository: EtfRepository,
     private val mutualFundRepository: MutualFundRepository,
     private val etfHoldingRepository: EtfHoldingRepository,
-    private val mutualFundHoldingRepository: MutualFundHoldingRepository
+    private val mutualFundHoldingRepository: MutualFundHoldingRepository,
+    private val sectorAllocationFactsetRepository: EtfSectorAllocationFactsetRepository
 ) {
     companion object {
-        // GICS sector code mapping from AV field names
+        // GICS sector code mapping from AV field names (deprecated, kept for backward compat)
         val AV_SECTOR_TO_GICS = mapOf(
             "InfoTech" to "45",
             "CommServices" to "50",
@@ -93,6 +95,28 @@ class LookThroughService(
             "Energy" to "10",
             "Financials" to "40",
             "RealEstate" to "60"
+        )
+
+        // FactSet sector name to GICS sector code mapping
+        val FACTSET_SECTOR_TO_GICS = mapOf(
+            "Technology" to "45",
+            "Information Technology" to "45",
+            "Communication Services" to "50",
+            "Telecommunications" to "50",
+            "Consumer Discretionary" to "25",
+            "Consumer Cyclical" to "25",
+            "Consumer Staples" to "30",
+            "Consumer Defensive" to "30",
+            "Health Care" to "35",
+            "Healthcare" to "35",
+            "Industrials" to "20",
+            "Utilities" to "55",
+            "Materials" to "15",
+            "Basic Materials" to "15",
+            "Energy" to "10",
+            "Financials" to "40",
+            "Financial Services" to "40",
+            "Real Estate" to "60"
         )
 
         val GICS_SECTOR_NAMES = mapOf(
@@ -421,28 +445,44 @@ class LookThroughService(
     }
 
     private fun getEffectiveWeight(holding: EtfHolding): BigDecimal? {
-        // Prefer AV weight when data source is Alpha Vantage
-        return if (holding.dataSource == HoldingDataSource.ALPHA_VANTAGE && holding.avWeight != null) {
-            holding.avWeight
-        } else {
-            holding.weight
+        return when (holding.dataSource) {
+            HoldingDataSource.ETF_COM -> holding.etfcomWeight ?: holding.weight
+            HoldingDataSource.ALPHA_VANTAGE -> holding.avWeight ?: holding.weight
+            else -> holding.weight
         }
     }
 
     private fun getEffectiveWeight(holding: MutualFundHolding): BigDecimal? {
-        return if (holding.dataSource == HoldingDataSource.ALPHA_VANTAGE && holding.avWeight != null) {
-            holding.avWeight
-        } else {
-            holding.weight
+        return when (holding.dataSource) {
+            HoldingDataSource.ETF_COM -> holding.etfcomWeight ?: holding.weight
+            HoldingDataSource.ALPHA_VANTAGE -> holding.avWeight ?: holding.weight
+            else -> holding.weight
         }
     }
 
     /**
-     * Extract sector allocations from ETF Alpha Vantage data.
+     * Extract sector allocations from ETF data.
+     * Prefers etf.com FactSet sector data from the etf_sector_allocations_factset table.
+     * Falls back to Alpha Vantage GICS sector columns if no FactSet data available.
      */
     private fun extractEtfSectorAllocations(etf: Etf): Map<String, BigDecimal> {
-        val allocations = mutableMapOf<String, BigDecimal>()
+        // Try etf.com FactSet sectors first
+        val factsetSectors = sectorAllocationFactsetRepository.findLatestByEtfId(etf.id)
+        if (factsetSectors.isNotEmpty()) {
+            val allocations = mutableMapOf<String, BigDecimal>()
+            for (sector in factsetSectors) {
+                val weight = sector.weight ?: continue
+                if (weight <= BigDecimal.ZERO) continue
+                val gicsCode = FACTSET_SECTOR_TO_GICS[sector.sectorName]
+                if (gicsCode != null) {
+                    allocations[gicsCode] = (allocations[gicsCode] ?: BigDecimal.ZERO) + weight
+                }
+            }
+            if (allocations.isNotEmpty()) return allocations
+        }
 
+        // Fallback to AV GICS sector columns
+        val allocations = mutableMapOf<String, BigDecimal>()
         etf.avSectorInfoTech?.let { if (it > BigDecimal.ZERO) allocations["45"] = it }
         etf.avSectorCommServices?.let { if (it > BigDecimal.ZERO) allocations["50"] = it }
         etf.avSectorConsumerDisc?.let { if (it > BigDecimal.ZERO) allocations["25"] = it }
