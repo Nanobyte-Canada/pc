@@ -87,14 +87,14 @@ export async function triggerStockIngestion(): Promise<TriggerIngestionResponse>
   return response.json();
 }
 
-export async function triggerEtfIngestion(): Promise<TriggerIngestionResponse> {
-  const response = await apiFetch('/admin/ingestion/etfs/run', {
+export async function triggerEtfComUniverse(): Promise<TriggerIngestionResponse> {
+  const response = await apiFetch('/admin/ingestion/etfcom/universe', {
     method: 'POST',
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to trigger ETF ingestion');
+    throw new Error(error.message || 'Failed to trigger ETF universe refresh');
   }
 
   return response.json();
@@ -113,8 +113,8 @@ export async function triggerStockEnrichment(): Promise<TriggerIngestionResponse
   return response.json();
 }
 
-export async function triggerEtfEnrichment(): Promise<TriggerIngestionResponse> {
-  const response = await apiFetch('/admin/enrichment/etfs/run', {
+export async function triggerEtfComEnrichment(): Promise<TriggerIngestionResponse> {
+  const response = await apiFetch('/admin/enrichment/etfcom/run', {
     method: 'POST',
   });
 

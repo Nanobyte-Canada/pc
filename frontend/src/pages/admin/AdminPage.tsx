@@ -3,9 +3,9 @@ import {
   triggerFullIngestion,
   triggerUniverseRefresh,
   triggerStockIngestion,
-  triggerEtfIngestion,
+  triggerEtfComUniverse,
   triggerStockEnrichment,
-  triggerEtfEnrichment,
+  triggerEtfComEnrichment,
   getIngestionRuns,
   getRecentErrors,
   type IngestionRun,
@@ -146,9 +146,9 @@ export function AdminPage() {
             onTrigger={triggerStockIngestion}
           />
           <ActionButton
-            label="ETF Ingestion"
-            description="Fetch raw ETF data from Alpha Vantage"
-            onTrigger={triggerEtfIngestion}
+            label="ETF Universe"
+            description="Refresh ETF universe from etf.com"
+            onTrigger={triggerEtfComUniverse}
           />
           <ActionButton
             label="Stock Enrichment"
@@ -157,8 +157,8 @@ export function AdminPage() {
           />
           <ActionButton
             label="ETF Enrichment"
-            description="Parse and map stored ETF raw payload"
-            onTrigger={triggerEtfEnrichment}
+            description="Enrich ETFs from etf.com (holdings, sectors, performance)"
+            onTrigger={triggerEtfComEnrichment}
           />
         </div>
       </section>

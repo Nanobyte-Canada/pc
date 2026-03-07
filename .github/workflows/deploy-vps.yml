@@ -9,9 +9,12 @@ env:
   DEPLOY_PATH: /opt/portfolio
 
 jobs:
-  # Run tests before deployment
+  # Run tests before deployment (skip Docker build jobs — VPS uses prebuilt artifacts)
   test:
     uses: ./.github/workflows/ci.yml
+    with:
+      skip-docker-builds: true
+      vite-api-url: https://devpc.nanobyte.ca
 
   deploy:
     name: Deploy to VPS
@@ -23,16 +26,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: ./deploy-pkg/backend/
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: ./deploy-pkg/frontend/dist/
+
       - name: Create deployment package
         run: |
-          # Create a tarball of the application (excluding node_modules, build artifacts)
-          tar --exclude='node_modules' \
-              --exclude='frontend/dist' \
-              --exclude='backend/build' \
-              --exclude='.git' \
-              --exclude='*.log' \
-              -czf deploy.tar.gz \
-              backend frontend docker-compose.vps.yml
+          # Copy prebuilt Dockerfiles and configs alongside artifacts
+          cp backend/Dockerfile.prebuilt deploy-pkg/backend/Dockerfile
+          cp frontend/Dockerfile.prebuilt deploy-pkg/frontend/Dockerfile
+          cp frontend/nginx.conf deploy-pkg/frontend/nginx.conf
+          cp docker-compose.vps.yml deploy-pkg/docker-compose.vps.yml
+
+          # Create tarball from the deploy package
+          tar -czf deploy.tar.gz -C deploy-pkg .
 
       - name: Copy files to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -109,13 +124,13 @@ jobs:
               exit 1
             fi
 
-            if [ ! -d "backend" ]; then
-              echo "ERROR: backend directory not found after extraction!"
+            if [ ! -f "backend/app.jar" ]; then
+              echo "ERROR: backend/app.jar not found after extraction!"
               exit 1
             fi
 
-            if [ ! -d "frontend" ]; then
-              echo "ERROR: frontend directory not found after extraction!"
+            if [ ! -d "frontend/dist" ]; then
+              echo "ERROR: frontend/dist directory not found after extraction!"
               exit 1
             fi
 
@@ -146,7 +161,9 @@ jobs:
             echo "Working directory: $(pwd)"
             echo "docker-compose.vps.yml exists: $(test -f docker-compose.vps.yml && echo 'YES' || echo 'NO')"
             echo "backend/Dockerfile exists: $(test -f backend/Dockerfile && echo 'YES' || echo 'NO')"
+            echo "backend/app.jar exists: $(test -f backend/app.jar && echo 'YES' || echo 'NO')"
             echo "frontend/Dockerfile exists: $(test -f frontend/Dockerfile && echo 'YES' || echo 'NO')"
+            echo "frontend/dist exists: $(test -d frontend/dist && echo 'YES' || echo 'NO')"
 
             # Build and deploy with docker compose
             echo "=== Stopping existing containers ==="

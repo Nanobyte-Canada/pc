@@ -11,6 +11,7 @@ import com.snaptrade.client.model.*
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.security.MessageDigest
 import java.util.UUID
 
 @Service
@@ -41,6 +42,12 @@ class SnapTradeService(
         Snaptrade(configuration)
     }
 
+    private fun generateSnapTradeUserId(email: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hash = digest.digest(email.lowercase().toByteArray())
+        return hash.take(16).joinToString("") { "%02x".format(it) }
+    }
+
     /**
      * Registers a user with SnapTrade if not already registered.
      * Stores the encrypted userSecret in the users table.
@@ -53,8 +60,8 @@ class SnapTradeService(
             )
         }
 
-        val snapUserId = user.id.toString()
-        log.info("Registering SnapTrade user for user {}", user.id)
+        val snapUserId = generateSnapTradeUserId(user.email)
+        log.info("Registering SnapTrade user for user {} (snapUserId={})", user.id, snapUserId)
 
         val userSecret: String = try {
             val response = snaptrade.authentication.registerSnapTradeUser(snapUserId)
@@ -65,21 +72,15 @@ class SnapTradeService(
                 ?: throw IllegalStateException("SnapTrade registration did not return userSecret")
         } catch (e: ApiException) {
             if (e.message?.contains("1012") == true) {
-                // Personal keys only allow one user. The occupied slot may belong to a
-                // different userId (e.g. after a DB reset), so we list who IS registered
-                // and delete them all before re-registering.
-                log.info("SnapTrade error 1012: personal key slot occupied, clearing existing users")
-                val existingUsers = snaptrade.authentication.listSnapTradeUsers().execute()
-                for (existingUserId in existingUsers) {
-                    log.info("Deleting existing SnapTrade user: {}", existingUserId)
-                    snaptrade.authentication.deleteSnapTradeUser(existingUserId).execute()
-                }
-
-                val retryResponse = snaptrade.authentication.registerSnapTradeUser(snapUserId)
-                    .execute()
-
-                retryResponse.userSecret
-                    ?: throw IllegalStateException("SnapTrade re-registration did not return userSecret")
+                log.error(
+                    "SnapTrade error 1012: personal key slot occupied. " +
+                    "Another user is registered with these SnapTrade personal keys. " +
+                    "Use production keys for multi-user support, or manually clear " +
+                    "users via the SnapTrade dashboard.",
+                )
+                throw IllegalStateException(
+                    "SnapTrade personal key limit reached. Cannot register new user."
+                )
             } else {
                 throw e
             }

@@ -104,6 +104,33 @@ Copy `.env.example` and configure as needed.
 | `/health` | GET | Health check endpoint |
 | `/api/v1/version` | GET | Returns application version and environment |
 
+## Data Pipeline
+
+### Data Sources
+
+- **EODHD**: Stocks & mutual funds universe discovery
+- **etf.com**: ETF universe discovery & enrichment (holdings, sectors, performance)
+- **Alpha Vantage**: Stock enrichment (fundamentals, financials)
+
+### Pipeline Steps (Nightly)
+
+1. **Universe Refresh** — Discover new tickers from EODHD
+2. **ETF Universe** — Refresh ETF universe from etf.com
+3. **Stock Ingestion** — Fetch raw stock data from Alpha Vantage
+4. **Stock Enrichment** — Parse stock fundamentals into structured data
+5. **ETF Enrichment** — Enrich ETFs from etf.com (holdings, sectors, performance)
+
+### Admin Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/admin/ingestion/run` | POST | Run full ingestion pipeline |
+| `/admin/ingestion/universe` | POST | Refresh universe from EODHD |
+| `/admin/ingestion/stocks/run` | POST | Fetch raw stock data |
+| `/admin/ingestion/etfcom/universe` | POST | Refresh ETF universe from etf.com |
+| `/admin/enrichment/stocks/run` | POST | Enrich stocks from Alpha Vantage |
+| `/admin/enrichment/etfcom/run` | POST | Enrich ETFs from etf.com |
+
 ## Testing
 
 ### Backend Tests
