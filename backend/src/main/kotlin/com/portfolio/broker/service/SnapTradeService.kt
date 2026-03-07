@@ -12,6 +12,7 @@ import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.security.MessageDigest
+import java.time.LocalDate
 import java.util.UUID
 
 @Service
@@ -171,8 +172,8 @@ class SnapTradeService(
      */
     fun getActivities(
         user: User,
-        startDate: String? = null,
-        endDate: String? = null,
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null,
         accounts: String? = null,
         type: String? = null
     ): List<UniversalActivity> {

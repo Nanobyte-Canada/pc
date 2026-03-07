@@ -86,7 +86,7 @@ class EtfComEnrichmentBatchProcessor(
     private fun enrichEtf(etf: Etf, step: IngestionStep): Boolean {
         etf.etfcomLastAttemptAt = OffsetDateTime.now()
 
-        val result = etfComClient.fetchAllData(etf.symbol)
+        val result = etfComClient.fetchAllData(etf.symbol, etf.etfcomFundId)
 
         return when (result) {
             is EtfComApiResult.NotFound -> {

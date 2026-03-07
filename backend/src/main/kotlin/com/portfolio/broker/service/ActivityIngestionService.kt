@@ -35,7 +35,7 @@ class ActivityIngestionService(
 
         // Incremental sync: find latest trade_date in DB
         val latestDate = activityRepository.findLatestTradeDateByConnectionId(connectionId)
-        val startDate = latestDate?.minusDays(1)?.toString() // overlap by 1 day for safety
+        val startDate = latestDate?.minusDays(1) // overlap by 1 day for safety
 
         log.info("Syncing activities for connection {} (user {}), startDate={}",
             connectionId, user.id, startDate ?: "all-time")
@@ -69,13 +69,13 @@ class ActivityIngestionService(
                 connection = connection,
                 externalId = externalId,
                 type = mapActivityType(activity.type),
-                symbol = activity.symbol?.symbol?.symbol,
+                symbol = activity.symbol?.symbol,
                 description = activity.description,
                 quantity = activity.units?.let { BigDecimal(it.toString()) },
                 price = activity.price?.let { BigDecimal(it.toString()) },
                 amount = activity.amount?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO,
                 fee = activity.fee?.let { BigDecimal(it.toString()) },
-                currency = activity.currency?.id ?: "CAD",
+                currency = activity.currency?.code ?: "CAD",
                 tradeDate = tradeDate,
                 settlementDate = activity.settlementDate?.let {
                     try { LocalDate.parse(it.toString().take(10)) } catch (e: Exception) { null }
@@ -116,7 +116,7 @@ class ActivityIngestionService(
         val today = LocalDate.now()
         val cashMap = mutableMapOf<String, BigDecimal>()
         for (balance in balances) {
-            val curr = balance.currency?.id ?: "CAD"
+            val curr = balance.currency?.code ?: "CAD"
             val amount = balance.cash?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
             cashMap[curr] = (cashMap[curr] ?: BigDecimal.ZERO) + amount
         }

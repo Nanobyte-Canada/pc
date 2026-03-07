@@ -64,14 +64,14 @@ class ActivityIngestionServiceTest {
             every { id } returns "act-1"
             every { type } returns "BUY"
             every { symbol } returns mockk {
-                every { symbol } returns mockk { every { symbol } returns "AAPL" }
+                every { symbol } returns "AAPL"
             }
             every { description } returns "Buy Apple Inc"
             every { units } returns 10.0
             every { price } returns 150.25
             every { amount } returns 1502.50
             every { fee } returns 4.99
-            every { currency } returns mockk { every { id } returns "USD" }
+            every { currency } returns mockk { every { code } returns "USD" }
             every { tradeDate } returns LocalDate.of(2024, 6, 15)
             every { settlementDate } returns LocalDate.of(2024, 6, 17)
             every { optionType } returns null
@@ -110,7 +110,7 @@ class ActivityIngestionServiceTest {
         verify {
             snapTradeService.getActivities(
                 user = mockUser,
-                startDate = "2024-04-30",  // minus 1 day for safety
+                startDate = LocalDate.of(2024, 4, 30),  // minus 1 day for safety
                 endDate = null,
                 accounts = "ext-account-123",
                 type = null
@@ -128,7 +128,7 @@ class ActivityIngestionServiceTest {
             every { type } returns "SELL"
             every { amount } returns 500.0
             every { tradeDate } returns LocalDate.of(2024, 7, 1)
-            every { currency } returns mockk { every { id } returns "CAD" }
+            every { currency } returns mockk { every { code } returns "CAD" }
             every { symbol } returns null
         }
 
@@ -155,7 +155,7 @@ class ActivityIngestionServiceTest {
             every { price } returns null
             every { amount } returns 25.0
             every { fee } returns null
-            every { currency } returns mockk { every { id } returns "CAD" }
+            every { currency } returns mockk { every { code } returns "CAD" }
             every { tradeDate } returns LocalDate.of(2024, 8, 1)
             every { settlementDate } returns null
             every { optionType } returns null

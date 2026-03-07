@@ -101,11 +101,11 @@ ingestion:
   etfcom:
     enabled: ${ETFCOM_ENABLED:true}
     base-url: ${ETFCOM_BASE_URL:https://api-prod.etf.com/v2/fund}
-    batch-size: ${ETFCOM_BATCH_SIZE:25}
+    batch-size: ${ETFCOM_BATCH_SIZE:20}
     stale-threshold-days: ${ETFCOM_STALE_THRESHOLD:7}
     concurrency: ${ETFCOM_CONCURRENCY:5}
-    request-delay-ms: ${ETFCOM_REQUEST_DELAY_MS:200}
-    inter-batch-delay-ms: ${ETFCOM_INTER_BATCH_DELAY_MS:2000}
+    request-delay-ms: ${ETFCOM_REQUEST_DELAY_MS:500}
+    inter-batch-delay-ms: ${ETFCOM_INTER_BATCH_DELAY_MS:5000}
     retry:
       max-attempts: ${ETFCOM_RETRY_MAX_ATTEMPTS:3}
       initial-backoff-ms: ${ETFCOM_RETRY_INITIAL_BACKOFF:1000}
