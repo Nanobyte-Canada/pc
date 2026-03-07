@@ -56,25 +56,24 @@ class SnapTradeService(
         val snapUserId = user.id.toString()
         log.info("Registering SnapTrade user for user {}", user.id)
 
-        val userSecret: String
-        try {
+        val userSecret: String = try {
             val response = snaptrade.authentication.registerSnapTradeUser(snapUserId)
                 .execute()
 
-            userSecret = response.userSecret
-                ?: throw IllegalStateException("SnapTrade registration did not return userSecret")
-
             log.info("SnapTrade user registered for user {}", user.id)
+            response.userSecret
+                ?: throw IllegalStateException("SnapTrade registration did not return userSecret")
         } catch (e: ApiException) {
-            if (e.code == 400 && e.responseBody?.contains("1012") == true) {
+            if (e.message?.contains("1012") == true) {
                 // Personal keys only allow one user - user already registered.
                 // Reset the user secret to recover access.
                 log.info("SnapTrade user {} already registered (code 1012), resetting user secret", snapUserId)
                 val resetResponse = snaptrade.authentication
-                    .resetSnapTradeUserSecret(snapUserId)
+                    .resetSnapTradeUserSecret()
+                    .userId(snapUserId)
                     .execute()
 
-                userSecret = resetResponse.userSecret
+                resetResponse.userSecret
                     ?: throw IllegalStateException("SnapTrade resetUserSecret did not return userSecret")
             } else {
                 throw e
