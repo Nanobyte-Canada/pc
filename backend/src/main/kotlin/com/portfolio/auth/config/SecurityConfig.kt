@@ -61,15 +61,23 @@ class SecurityConfig(
             // Authorization rules
             .authorizeHttpRequests { auth ->
                 auth
-                    // Public endpoints
                     .requestMatchers("/health", "/api/v1/version").permitAll()
-                    .requestMatchers("/auth/**").permitAll()
+                    .requestMatchers(
+                        "/auth/login",
+                        "/auth/signup",
+                        "/auth/refresh",
+                        "/auth/forgot-password",
+                        "/auth/reset-password",
+                        "/auth/resend-verification",
+                        "/auth/google",
+                        "/auth/google/callback",
+                        "/auth/verify-email",
+                        "/auth/logout",
+                    ).permitAll()
                     .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                    // Admin endpoints
                     .requestMatchers("/api/v1/admin/**", "/admin/**").hasRole("ADMIN")
-                    // All other API endpoints require authentication
+                    .requestMatchers("/auth/me", "/auth/change-password", "/auth/profile").authenticated()
                     .requestMatchers("/api/**").authenticated()
-                    // Everything else is authenticated
                     .anyRequest().authenticated()
             }
             // Exception handling

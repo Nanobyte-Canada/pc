@@ -98,11 +98,21 @@ class JwtAuthenticationFilter(
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean {
         val path = request.servletPath
-        // Skip filter for public endpoints
-        return path.startsWith("/auth/") ||
+        val publicAuthPaths = setOf(
+            "/auth/login",
+            "/auth/signup",
+            "/auth/refresh",
+            "/auth/forgot-password",
+            "/auth/reset-password",
+            "/auth/resend-verification",
+            "/auth/verify-email",
+            "/auth/google",
+            "/auth/google/callback",
+        )
+        return publicAuthPaths.contains(path) ||
                path == "/health" ||
                path == "/api/v1/version" ||
                path.startsWith("/actuator/") ||
-               path.matches(Regex("/api/v1/brokers/[^/]+/callback"))  // OAuth callbacks
+               path.matches(Regex("/api/v1/brokers/[^/]+/callback"))
     }
 }
