@@ -65,16 +65,16 @@ class SnapTradeService(
                 ?: throw IllegalStateException("SnapTrade registration did not return userSecret")
         } catch (e: ApiException) {
             if (e.message?.contains("1012") == true) {
-                // Personal keys only allow one user - user already registered.
-                // Reset the user secret to recover access.
-                log.info("SnapTrade user {} already registered (code 1012), resetting user secret", snapUserId)
-                val resetResponse = snaptrade.authentication
-                    .resetSnapTradeUserSecret()
-                    .userId(snapUserId)
+                // Personal keys only allow one user - user already registered but
+                // we lost the userSecret locally. Delete and re-register.
+                log.info("SnapTrade user {} already registered (code 1012), deleting and re-registering", snapUserId)
+                snaptrade.authentication.deleteSnapTradeUser(snapUserId).execute()
+
+                val retryResponse = snaptrade.authentication.registerSnapTradeUser(snapUserId)
                     .execute()
 
-                resetResponse.userSecret
-                    ?: throw IllegalStateException("SnapTrade resetUserSecret did not return userSecret")
+                retryResponse.userSecret
+                    ?: throw IllegalStateException("SnapTrade re-registration did not return userSecret")
             } else {
                 throw e
             }
