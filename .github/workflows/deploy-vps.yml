@@ -153,7 +153,7 @@ jobs:
             docker compose -f docker-compose.vps.yml down || true
 
             echo "=== Building containers ==="
-            docker compose -f docker-compose.vps.yml build --no-cache
+            docker compose -f docker-compose.vps.yml build
 
             echo "=== Starting containers ==="
             docker compose -f docker-compose.vps.yml up -d
@@ -162,8 +162,17 @@ jobs:
             docker compose -f docker-compose.vps.yml ps
 
             # Wait for services to be healthy
-            echo "Waiting for services to start..."
-            sleep 30
+            echo "Waiting for backend to be healthy..."
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+                echo "Backend is healthy after ${i} seconds"
+                break
+              fi
+              if [ "$i" -eq 30 ]; then
+                echo "Backend failed to become healthy within 30 seconds"
+              fi
+              sleep 1
+            done
 
             # Health check
             echo "=== Health check ==="
