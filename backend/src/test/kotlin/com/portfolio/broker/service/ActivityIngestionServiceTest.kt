@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.auth.entity.User
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.broker.entity.BrokerActivity
+import com.portfolio.broker.entity.BrokerBalanceSnapshot
 import com.portfolio.broker.entity.BrokerConnection
 import com.portfolio.broker.entity.ConnectionStatus
 import com.portfolio.broker.repository.BrokerActivityRepository
@@ -46,6 +47,11 @@ class ActivityIngestionServiceTest {
             snapTradeService, userRepository, objectMapper
         )
 
+        // JpaRepository.save() has generic signature <S extends T> S save(S).
+        // MockK relaxed mocks can't resolve the generic and return Object(), causing ClassCastException.
+        every { connectionRepository.save(any<BrokerConnection>()) } answers { firstArg() }
+        every { balanceRepository.save(any<BrokerBalanceSnapshot>()) } answers { firstArg() }
+
         mockUser = mockk {
             every { id } returns 1L
         }
@@ -62,22 +68,18 @@ class ActivityIngestionServiceTest {
         every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
         every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns null
 
-        val activity = mockk<UniversalActivity>(relaxed = true) {
-            every { id } returns "act-1"
-            every { type } returns "BUY"
-            every { symbol } returns mockk {
-                every { symbol } returns "AAPL"
-            }
-            every { description } returns "Buy Apple Inc"
-            every { units } returns 10.0
-            every { price } returns 150.25
-            every { amount } returns 1502.50
-            every { fee } returns 4.99
-            every { currency } returns mockk { every { code } returns "USD" }
-            every { tradeDate } returns OffsetDateTime.of(2024, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC)
-            every { settlementDate } returns OffsetDateTime.of(2024, 6, 17, 0, 0, 0, 0, ZoneOffset.UTC)
-            every { optionType } returns null
-        }
+        val activity = UniversalActivity()
+            .id("act-1")
+            .type("BUY")
+            .symbol(SymbolNullable().symbol("AAPL"))
+            .description("Buy Apple Inc")
+            .units(10.0)
+            .price(150.25)
+            .amount(1502.50)
+            .fee(4.99)
+            .currency(AccountUniversalActivityCurrency().code("USD"))
+            .tradeDate(OffsetDateTime.of(2024, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC))
+            .settlementDate(OffsetDateTime.of(2024, 6, 17, 0, 0, 0, 0, ZoneOffset.UTC))
 
         every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "act-1") } returns null
@@ -125,14 +127,12 @@ class ActivityIngestionServiceTest {
         every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
         every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns null
 
-        val activity = mockk<UniversalActivity>(relaxed = true) {
-            every { id } returns "existing-id"
-            every { type } returns "SELL"
-            every { amount } returns 500.0
-            every { tradeDate } returns OffsetDateTime.of(2024, 7, 1, 0, 0, 0, 0, ZoneOffset.UTC)
-            every { currency } returns mockk { every { code } returns "CAD" }
-            every { symbol } returns null
-        }
+        val activity = UniversalActivity()
+            .id("existing-id")
+            .type("SELL")
+            .amount(500.0)
+            .tradeDate(OffsetDateTime.of(2024, 7, 1, 0, 0, 0, 0, ZoneOffset.UTC))
+            .currency(AccountUniversalActivityCurrency().code("CAD"))
 
         every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "existing-id") } returns mockk()
@@ -148,20 +148,12 @@ class ActivityIngestionServiceTest {
         every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
         every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns null
 
-        val activity = mockk<UniversalActivity>(relaxed = true) {
-            every { id } returns "act-null"
-            every { type } returns "DIVIDEND"
-            every { symbol } returns null
-            every { description } returns null
-            every { units } returns null
-            every { price } returns null
-            every { amount } returns 25.0
-            every { fee } returns null
-            every { currency } returns mockk { every { code } returns "CAD" }
-            every { tradeDate } returns OffsetDateTime.of(2024, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC)
-            every { settlementDate } returns null
-            every { optionType } returns null
-        }
+        val activity = UniversalActivity()
+            .id("act-null")
+            .type("DIVIDEND")
+            .amount(25.0)
+            .currency(AccountUniversalActivityCurrency().code("CAD"))
+            .tradeDate(OffsetDateTime.of(2024, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC))
 
         every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "act-null") } returns null
