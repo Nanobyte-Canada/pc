@@ -56,6 +56,7 @@ export function BrokerConnectionsPage() {
     if (success || error || status) {
       window.history.replaceState({}, '', '/brokers/connections')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, refetchConnections])
 
   // Auto-dismiss notification

@@ -15,6 +15,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.Optional
 import kotlin.test.assertEquals
 
@@ -72,8 +74,8 @@ class ActivityIngestionServiceTest {
             every { amount } returns 1502.50
             every { fee } returns 4.99
             every { currency } returns mockk { every { code } returns "USD" }
-            every { tradeDate } returns LocalDate.of(2024, 6, 15)
-            every { settlementDate } returns LocalDate.of(2024, 6, 17)
+            every { tradeDate } returns OffsetDateTime.of(2024, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC)
+            every { settlementDate } returns OffsetDateTime.of(2024, 6, 17, 0, 0, 0, 0, ZoneOffset.UTC)
             every { optionType } returns null
         }
 
@@ -127,7 +129,7 @@ class ActivityIngestionServiceTest {
             every { id } returns "existing-id"
             every { type } returns "SELL"
             every { amount } returns 500.0
-            every { tradeDate } returns LocalDate.of(2024, 7, 1)
+            every { tradeDate } returns OffsetDateTime.of(2024, 7, 1, 0, 0, 0, 0, ZoneOffset.UTC)
             every { currency } returns mockk { every { code } returns "CAD" }
             every { symbol } returns null
         }
@@ -156,7 +158,7 @@ class ActivityIngestionServiceTest {
             every { amount } returns 25.0
             every { fee } returns null
             every { currency } returns mockk { every { code } returns "CAD" }
-            every { tradeDate } returns LocalDate.of(2024, 8, 1)
+            every { tradeDate } returns OffsetDateTime.of(2024, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC)
             every { settlementDate } returns null
             every { optionType } returns null
         }

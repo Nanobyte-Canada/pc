@@ -1,5 +1,6 @@
 package com.portfolio.broker.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.auth.entity.User
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
@@ -20,14 +21,17 @@ class BrokerServiceTest {
 
     private lateinit var connectionRepository: BrokerConnectionRepository
     private lateinit var positionRepository: BrokerPositionRepository
+    private lateinit var balanceRepository: BrokerBalanceRepository
     private lateinit var userRepository: UserRepository
     private lateinit var snapTradeService: SnapTradeService
     private lateinit var auditService: AuditService
+    private val objectMapper = ObjectMapper()
 
     @BeforeEach
     fun setup() {
         connectionRepository = mockk()
         positionRepository = mockk()
+        balanceRepository = mockk()
         userRepository = mockk()
         snapTradeService = mockk()
         auditService = mockk(relaxed = true)
@@ -35,9 +39,11 @@ class BrokerServiceTest {
         service = BrokerService(
             connectionRepository = connectionRepository,
             positionRepository = positionRepository,
+            balanceRepository = balanceRepository,
             userRepository = userRepository,
             snapTradeService = snapTradeService,
-            auditService = auditService
+            auditService = auditService,
+            objectMapper = objectMapper
         )
     }
 
