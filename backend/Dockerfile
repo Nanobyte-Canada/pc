@@ -22,8 +22,19 @@ WORKDIR /app
 # Install CA certificates for HTTPS connections
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \
-    update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
+
+# Import custom CA certificates (e.g. corporate proxy CA) into JVM truststore
+COPY certs/*.crt /usr/local/share/ca-certificates/
+RUN update-ca-certificates && \
+    JAVA_CACERTS=$(find /opt -name cacerts -type f 2>/dev/null | head -1) && \
+    if [ -n "$JAVA_CACERTS" ]; then \
+      for cert in /usr/local/share/ca-certificates/*.crt; do \
+        [ -f "$cert" ] && keytool -importcert -noprompt -trustcacerts \
+          -keystore "$JAVA_CACERTS" -storepass changeit \
+          -alias "$(basename $cert .crt)" -file "$cert" 2>/dev/null || true; \
+      done; \
+    fi
 
 # Create non-root user for security
 RUN groupadd -g 1001 appgroup && \

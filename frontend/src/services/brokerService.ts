@@ -143,12 +143,13 @@ export async function getBalanceHistory(connectionId: number, days: number = 90)
 // ========== Reporting ==========
 
 export async function getReportingPerformance(
-  params: { startDate?: string; endDate?: string; accounts?: string } = {}
+  params: { startDate?: string; endDate?: string; accounts?: string; granularity?: string } = {}
 ): Promise<ReportingPerformanceResponse> {
   const searchParams = new URLSearchParams()
   if (params.startDate) searchParams.set('startDate', params.startDate)
   if (params.endDate) searchParams.set('endDate', params.endDate)
   if (params.accounts) searchParams.set('accounts', params.accounts)
+  if (params.granularity) searchParams.set('granularity', params.granularity)
 
   const response = await apiFetch(`${BROKER_API_BASE}/reporting/performance?${searchParams}`)
   if (!response.ok) throw new Error('Failed to fetch performance report')

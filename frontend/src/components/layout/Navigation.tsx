@@ -1,11 +1,16 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../../stores/authStore';
 import { logout } from '../../services/authService';
+import { NotificationBell } from './NotificationBell';
 import './Navigation.css';
 
 export function Navigation() {
   const user = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
 
   const handleLogout = async () => {
     try {
@@ -13,25 +18,63 @@ export function Navigation() {
       navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
-      // Still navigate to login even if logout fails
       navigate('/login');
     }
   };
 
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  // Close menu on click outside
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
   const displayName = user?.name || user?.email?.split('@')[0] || 'User';
 
   return (
-    <nav className="navigation">
+    <nav className="navigation" ref={navRef}>
       <div className="nav-brand">
         <span className="brand-text">Portfolio Builder</span>
       </div>
-      <div className="nav-links">
+
+      <button
+        className="hamburger-btn"
+        onClick={() => setMenuOpen(prev => !prev)}
+        aria-label="Toggle navigation menu"
+        aria-expanded={menuOpen}
+      >
+        <span className={`hamburger-icon${menuOpen ? ' open' : ''}`}>
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </button>
+
+      <div className={`nav-links${menuOpen ? ' open' : ''}`}>
         <NavLink
           to="/"
+          end
           className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
         >
-          Portfolio Builder
+          Dashboard
         </NavLink>
+        <div className="nav-dropdown">
+          <span className="nav-link dropdown-trigger">Portfolios</span>
+          <div className="dropdown-menu">
+            <NavLink to="/portfolios" className="dropdown-item">Model Portfolios</NavLink>
+            <NavLink to="/builder" className="dropdown-item">Portfolio Builder</NavLink>
+          </div>
+        </div>
         <div className="nav-dropdown">
           <span className="nav-link dropdown-trigger">Screeners</span>
           <div className="dropdown-menu">
@@ -64,6 +107,7 @@ export function Navigation() {
         )}
       </div>
       <div className="nav-user">
+        <NotificationBell />
         <div className="nav-dropdown user-dropdown">
           <span className="nav-link dropdown-trigger user-trigger">
             <span className="user-avatar">

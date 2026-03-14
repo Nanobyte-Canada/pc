@@ -84,6 +84,10 @@ Thumbs.db
 # Docker
 .docker/
 
+# Custom CA certificates (corporate proxy, etc.)
+backend/certs/*.crt
+backend/certs/*.pem
+
 # Terraform
 **/.terraform/
 *.tfstate
@@ -120,3 +124,4 @@ gradle-out.txt
 *_output.txt
 build_output.txt
 gradle_output.txt
+/tmp/*

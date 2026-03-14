@@ -1,12 +1,10 @@
 package com.portfolio.broker.service
 
-import com.portfolio.broker.config.SnapTradeConfig
+import com.portfolio.broker.adapter.SnapTradeAdapter
 import com.portfolio.broker.dto.SnapTradeStatusDto
 import com.portfolio.broker.entity.SnapTradeApiStatus
 import com.portfolio.broker.entity.SnapTradeStatusCheck
 import com.portfolio.broker.repository.SnapTradeStatusRepository
-import com.snaptrade.client.Configuration
-import com.snaptrade.client.Snaptrade
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.OffsetDateTime
@@ -15,16 +13,9 @@ import kotlin.system.measureTimeMillis
 @Service
 class SnapTradeStatusService(
     private val statusRepository: SnapTradeStatusRepository,
-    private val config: SnapTradeConfig
+    private val adapter: SnapTradeAdapter
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-
-    private val snaptrade: Snaptrade by lazy {
-        val configuration = Configuration()
-        configuration.clientId = config.clientId
-        configuration.consumerKey = config.consumerKey
-        Snaptrade(configuration)
-    }
 
     fun checkAndStoreStatus(): SnapTradeStatusCheck {
         var status: SnapTradeApiStatus
@@ -34,25 +25,15 @@ class SnapTradeStatusService(
         var rawResponse: String? = null
 
         try {
-            val result: Any?
+            val result: com.portfolio.broker.adapter.SnapTradeApiStatusDto
             val elapsed = measureTimeMillis {
-                result = snaptrade.apiStatus.check().execute()
+                result = adapter.checkApiStatus()
             }
             responseTimeMs = elapsed.toInt()
 
-            // Parse the response
-            when (result) {
-                is Map<*, *> -> {
-                    val online = result["online"] as? Boolean ?: false
-                    version = result["version"] as? String
-                    status = if (online) SnapTradeApiStatus.ONLINE else SnapTradeApiStatus.DEGRADED
-                    rawResponse = result.toString()
-                }
-                else -> {
-                    status = SnapTradeApiStatus.UNKNOWN
-                    rawResponse = result?.toString()
-                }
-            }
+            status = if (result.online) SnapTradeApiStatus.ONLINE else SnapTradeApiStatus.DEGRADED
+            version = result.version
+            rawResponse = "online=${result.online}, version=${result.version}"
         } catch (e: Exception) {
             log.error("SnapTrade health check failed: {}", e.message)
             status = SnapTradeApiStatus.OFFLINE

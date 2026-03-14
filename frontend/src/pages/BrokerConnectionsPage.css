@@ -1,7 +1,5 @@
 .broker-connections-page {
   padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
 }
 
 .broker-connections-page .page-loading {
@@ -64,9 +62,33 @@
 }
 
 .broker-cards-grid {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1400px) {
+  .broker-cards-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .broker-cards-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .broker-cards-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .broker-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .broker-no-data {
@@ -96,4 +118,16 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .broker-connections-page {
+    padding: 12px;
+  }
+
+  .broker-connections-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 }

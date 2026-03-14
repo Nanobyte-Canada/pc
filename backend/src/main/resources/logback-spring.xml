@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <turboFilter class="ch.qos.logback.classic.turbo.MDCFilter">
+        <MDCKey>skipLog</MDCKey>
+        <Value>true</Value>
+        <OnMatch>DENY</OnMatch>
+    </turboFilter>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

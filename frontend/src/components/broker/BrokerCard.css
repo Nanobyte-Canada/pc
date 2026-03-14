@@ -1,71 +1,84 @@
 .broker-card {
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   background-color: var(--card-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  min-width: 180px;
+  justify-content: center;
+  gap: 8px;
+  aspect-ratio: 1;
+  cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.broker-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border-color: var(--accent);
+}
+
+.broker-card.connected {
+  border-color: var(--success);
+}
+
+.broker-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.broker-card.disabled:hover {
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-color: var(--border);
+}
+
+.broker-card-connected-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--success);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1;
 }
 
 .broker-card-logo {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   object-fit: contain;
 }
 
 .broker-card-placeholder {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   background-color: var(--bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
   color: var(--text-muted);
 }
 
-.broker-card-info {
-  text-align: center;
-}
-
 .broker-card-name {
   font-weight: 600;
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-.broker-card-description {
   font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.broker-card-connect-btn {
-  width: 100%;
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: none;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  background-color: var(--accent);
-  color: #fff;
-  transition: background-color 0.2s;
-}
-
-.broker-card-connect-btn:hover:not(:disabled) {
-  background-color: var(--accent-hover);
-}
-
-.broker-card-connect-btn:disabled {
-  background-color: var(--bg-tertiary);
-  color: var(--text-muted);
-  cursor: not-allowed;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
 }

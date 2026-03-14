@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { login, AuthError } from '../../services/authService';
+import { useAuthStore } from '../../stores/authStore';
 import './AuthPages.css';
 
 export function LoginPage() {
@@ -8,10 +9,18 @@ export function LoginPage() {
   const location = useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
+  const { sessionExpired, setSessionExpired } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (sessionExpired) {
+      setError('Your session has expired. Please sign in again.');
+      setSessionExpired(false);
+    }
+  }, [sessionExpired, setSessionExpired]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

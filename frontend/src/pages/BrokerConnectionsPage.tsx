@@ -26,21 +26,31 @@ export function BrokerConnectionsPage() {
   const triggerFetch = useTriggerPositionFetch()
   const sync = useSyncConnections()
 
-  // Handle return from SnapTrade portal (query params)
+  // Always sync connections from SnapTrade on page load
+  useEffect(() => {
+    sync.mutate(undefined, {
+      onSuccess: () => refetchConnections()
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Handle return from SnapTrade portal (query params) — show notification + auto-fetch
   useEffect(() => {
     const success = searchParams.get('success')
     const error = searchParams.get('error')
     const status = searchParams.get('status')
 
     if (success === 'true' || status === 'SUCCESS') {
+      setNotification({ type: 'success', message: 'Broker connected successfully! Fetching positions...' })
+      // Sync first, then auto-fetch for new connections with no positions
       sync.mutate(undefined, {
         onSuccess: () => {
-          refetchConnections()
-          setNotification({ type: 'success', message: 'Broker connected successfully!' })
-        },
-        onError: () => {
-          refetchConnections()
-          setNotification({ type: 'success', message: 'Broker connected! Sync may be delayed.' })
+          refetchConnections().then(({ data }) => {
+            const conns = data?.connections || []
+            conns.filter(c => c.positionsCount === 0).forEach(c => {
+              triggerFetch.mutate(c.id)
+            })
+          })
         }
       })
     } else if (error) {
@@ -57,7 +67,7 @@ export function BrokerConnectionsPage() {
       window.history.replaceState({}, '', '/brokers/connections')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, refetchConnections])
+  }, [searchParams])
 
   // Auto-dismiss notification
   useEffect(() => {

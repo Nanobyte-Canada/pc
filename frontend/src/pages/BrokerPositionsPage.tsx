@@ -103,7 +103,7 @@ export function BrokerPositionsPage() {
         if (!params.value || params.value.length === 0) return '-'
         return params.value.map((b: { broker: string | null }) => (b.broker || '?').charAt(0)).join(', ')
       },
-      cellRenderer: (params: { value: { broker: string | null; quantity: number }[] }) => {
+      cellRenderer: (params: { value: { broker: string | null; accountType: string | null; quantity: number }[] }) => {
         if (!params.value || params.value.length === 0) return '-'
         return (
           <div style={{ display: 'flex', gap: '4px' }}>
@@ -111,7 +111,7 @@ export function BrokerPositionsPage() {
               <span
                 key={i}
                 className="broker-badge"
-                title={`${b.broker || 'Unknown'}: ${formatQuantity(b.quantity)}`}
+                title={`${b.broker || 'Unknown'}${b.accountType ? ' - ' + b.accountType : ''}: ${formatQuantity(b.quantity)}`}
               >
                 {(b.broker || '??').substring(0, 2)}
               </span>
@@ -165,14 +165,19 @@ export function BrokerPositionsPage() {
       {summary && (
         <div className="positions-summary">
           <SummaryCard title="Total Value" value={formatCurrency(summary.totalValue)} />
+          <SummaryCard title="Total Contribution" value={formatCurrency(summary.totalCost)} />
           <SummaryCard
             title="Total P&L"
             value={`${summary.totalPnl >= 0 ? '+' : ''}${formatCurrency(summary.totalPnl)}`}
             subtitle={formatPercent(summary.totalPnlPercent)}
             valueColor={summary.totalPnl >= 0 ? '#059669' : '#dc2626'}
           />
-          <SummaryCard title="Accounts" value={summary.accountCount.toString()} subtitle={`${summary.brokerCount} broker${summary.brokerCount > 1 ? 's' : ''}`} />
           <SummaryCard title="Positions" value={positions.length.toString()} />
+          <SummaryCard
+            title="Accounts"
+            value={(connectionsData?.connections.filter(c => c.status === 'ACTIVE' || c.positionsCount > 0).length ?? summary.accountCount).toString()}
+            subtitle={`${summary.brokerCount} broker${summary.brokerCount > 1 ? 's' : ''}`}
+          />
         </div>
       )}
 
@@ -288,7 +293,7 @@ function BrokerAccountsList({ connections }: BrokerAccountsListProps) {
                     : 'Never'}
                 </div>
               </div>
-              <div className="broker-account-arrow">&rarr;</div>
+              <div className="broker-account-arrow">View Positions ›</div>
             </div>
           </div>
         </Link>

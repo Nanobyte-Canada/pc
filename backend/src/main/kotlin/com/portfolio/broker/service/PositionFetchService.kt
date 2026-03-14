@@ -3,9 +3,10 @@ package com.portfolio.broker.service
 import com.portfolio.auth.entity.AuditEventType
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
+import com.portfolio.broker.adapter.SnapTradeOptionPositionDto
+import com.portfolio.broker.adapter.SnapTradePositionDto
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
-import com.snaptrade.client.model.Position
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
@@ -77,14 +78,14 @@ class PositionFetchService(
             ?: throw IllegalStateException("No account ID for connection: $connectionId")
 
         try {
-            val snapPositions: List<Position> = snapTradeService.fetchPositions(user, accountId)
+            val snapPositions: List<SnapTradePositionDto> = snapTradeService.fetchPositions(user, accountId)
 
             // Mark old positions as non-current
             positionRepository.markAllNonCurrent(connectionId)
 
             // Save new positions
             var totalValue = BigDecimal.ZERO
-            val positions = snapPositions.map { snapPos: Position ->
+            val positions = snapPositions.map { snapPos: SnapTradePositionDto ->
                 val units: BigDecimal? = snapPos.units?.let { BigDecimal.valueOf(it) }
                 val price: BigDecimal? = snapPos.price?.let { BigDecimal.valueOf(it) }
                 val currentValue = if (units != null && price != null) units.multiply(price) else null
@@ -99,19 +100,14 @@ class PositionFetchService(
                     totalPnl.divide(costBasis, 4, RoundingMode.HALF_UP).multiply(BigDecimal(100))
                 } else null
 
-                // Position.symbol is PositionSymbol, which has .symbol (UniversalSymbol)
-                val universalSymbol = snapPos.symbol?.symbol
-                // Position.currency is PositionCurrency with .code
-                val currencyCode: String = snapPos.currency?.code
-                    ?: universalSymbol?.currency?.code
-                    ?: "CAD"
+                val currencyCode: String = snapPos.currencyCode ?: "CAD"
 
                 val position = BrokerPosition(
                     connection = connection,
-                    symbol = universalSymbol?.symbol ?: "UNKNOWN",
-                    symbolIdExternal = snapPos.symbol?.id?.toString(),
-                    securityName = universalSymbol?.description,
-                    instrumentType = mapInstrumentType(universalSymbol?.type?.code),
+                    symbol = snapPos.symbol ?: "UNKNOWN",
+                    symbolIdExternal = snapPos.symbolId,
+                    securityName = snapPos.symbolDescription,
+                    instrumentType = mapInstrumentType(snapPos.symbolTypeCode),
                     quantity = qty,
                     averageCost = avgCost,
                     currentPrice = price,
@@ -128,6 +124,9 @@ class PositionFetchService(
                 position
             }
             positionRepository.saveAll(positions)
+
+            // Fetch option-specific data and merge into option positions
+            enrichOptionPositions(user, accountId, connection, positions)
 
             // Update connection
             connection.lastPositionsFetchedAt = OffsetDateTime.now()
@@ -176,6 +175,67 @@ class PositionFetchService(
                 )
             )
             throw e
+        }
+    }
+
+    private fun enrichOptionPositions(
+        user: com.portfolio.auth.entity.User,
+        accountId: String,
+        connection: BrokerConnection,
+        savedPositions: List<BrokerPosition>
+    ) {
+        try {
+            val optionHoldings = snapTradeService.fetchOptionPositions(user, accountId)
+            if (optionHoldings.isEmpty()) return
+
+            log.info("Fetched {} option holdings for connection {}", optionHoldings.size, connection.id)
+
+            for (optionDto in optionHoldings) {
+                val symbol = optionDto.symbol ?: continue
+
+                // Try to find a matching position by symbol
+                val matchingPosition = savedPositions.find {
+                    it.symbol.equals(symbol, ignoreCase = true) ||
+                    (optionDto.underlyingSymbol != null && it.symbol.equals(optionDto.underlyingSymbol, ignoreCase = true) && it.instrumentType == InstrumentType.OPTION)
+                }
+
+                if (matchingPosition != null) {
+                    // Enrich existing position with option-specific fields
+                    matchingPosition.strikePrice = optionDto.strikePrice?.let { BigDecimal.valueOf(it) }
+                    matchingPosition.expirationDate = optionDto.expirationDate
+                    matchingPosition.optionType = optionDto.optionType
+                    matchingPosition.underlyingSymbol = optionDto.underlyingSymbol
+                    positionRepository.save(matchingPosition)
+                } else {
+                    // Create a new option position not found in regular positions
+                    val units = optionDto.units?.let { BigDecimal.valueOf(it) } ?: BigDecimal.ZERO
+                    val price = optionDto.price?.let { BigDecimal.valueOf(it) }
+                    val currentValue = if (price != null) units.multiply(price) else null
+                    val avgCost = optionDto.averagePurchasePrice?.let { BigDecimal.valueOf(it) }
+
+                    val newPosition = BrokerPosition(
+                        connection = connection,
+                        symbol = symbol,
+                        instrumentType = InstrumentType.OPTION,
+                        quantity = units,
+                        averageCost = avgCost,
+                        currentPrice = price,
+                        currentValue = currentValue,
+                        currency = optionDto.currencyCode ?: "CAD",
+                        asOfDate = LocalDate.now(),
+                        asOfTimestamp = OffsetDateTime.now(),
+                        isCurrent = true,
+                        strikePrice = optionDto.strikePrice?.let { BigDecimal.valueOf(it) },
+                        expirationDate = optionDto.expirationDate,
+                        optionType = optionDto.optionType,
+                        underlyingSymbol = optionDto.underlyingSymbol
+                    )
+                    positionRepository.save(newPosition)
+                }
+            }
+        } catch (e: Exception) {
+            log.warn("Failed to enrich option positions for connection {}: {}", connection.id, e.message)
+            // Non-fatal — regular positions are already saved
         }
     }
 

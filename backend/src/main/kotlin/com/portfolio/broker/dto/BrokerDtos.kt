@@ -33,6 +33,8 @@ data class BrokerConnectionDto(
     val accountNumber: String?,
     val accountType: String?,
     val accountName: String?,
+    val accountNumberActual: String? = null,
+    val accountMetaType: String? = null,
     val status: String,
     val lastPositionsFetchedAt: OffsetDateTime?,
     val positionsCount: Int,
@@ -66,7 +68,11 @@ data class BrokerPositionDto(
     val currentValue: BigDecimal?,
     val totalPnl: BigDecimal?,
     val totalPnlPercent: BigDecimal?,
-    val currency: String
+    val currency: String,
+    val strikePrice: BigDecimal? = null,
+    val expirationDate: String? = null,
+    val optionType: String? = null,
+    val underlyingSymbol: String? = null
 )
 
 data class ConnectionPositionsResponse(
@@ -101,6 +107,7 @@ data class AggregatedPositionDto(
 data class BrokerBreakdownDto(
     val broker: String?,
     val accountNumber: String?,
+    val accountType: String?,
     val quantity: BigDecimal,
     val value: BigDecimal?
 )
@@ -134,13 +141,16 @@ fun Broker.toDto() = BrokerDto(
 fun BrokerConnection.toDto() = BrokerConnectionDto(
     id = id,
     broker = broker?.toDto() ?: BrokerDto(
-        name = accountName ?: "Unknown Broker",
+        name = brokerName ?: accountName ?: "Unknown Broker",
+        logoUrl = brokerLogoUrl,
         description = null
     ),
     snaptradeAuthorizationId = snaptradeAuthorizationId,
     accountNumber = accountNumber,
     accountType = accountType,
     accountName = accountName,
+    accountNumberActual = accountNumberActual,
+    accountMetaType = accountMetaType,
     status = status.name,
     lastPositionsFetchedAt = lastPositionsFetchedAt,
     positionsCount = positionsCount,
@@ -160,7 +170,11 @@ fun BrokerPosition.toDto() = BrokerPositionDto(
     currentValue = currentValue,
     totalPnl = totalPnl,
     totalPnlPercent = totalPnlPercent,
-    currency = currency
+    currency = currency,
+    strikePrice = strikePrice,
+    expirationDate = expirationDate?.toString(),
+    optionType = optionType,
+    underlyingSymbol = underlyingSymbol
 )
 
 // ========== SnapTrade Status DTOs ==========

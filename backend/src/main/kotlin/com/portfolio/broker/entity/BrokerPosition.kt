@@ -3,6 +3,8 @@ package com.portfolio.broker.entity
 import com.portfolio.entity.Stock
 import jakarta.persistence.*
 import jakarta.persistence.FetchType.LAZY
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -69,10 +71,23 @@ class BrokerPosition(
     @Column(name = "as_of_timestamp")
     val asOfTimestamp: OffsetDateTime? = null,
 
+    @Column(name = "strike_price", precision = 18, scale = 6)
+    var strikePrice: BigDecimal? = null,
+
+    @Column(name = "expiration_date")
+    var expirationDate: LocalDate? = null,
+
+    @Column(name = "option_type", length = 10)
+    var optionType: String? = null,
+
+    @Column(name = "underlying_symbol", length = 20)
+    var underlyingSymbol: String? = null,
+
     @Column(name = "is_current", nullable = false)
     var isCurrent: Boolean = true,
 
     @Column(name = "raw_payload", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     val rawPayload: String? = null,
 
     @Column(name = "created_at", nullable = false, updatable = false)

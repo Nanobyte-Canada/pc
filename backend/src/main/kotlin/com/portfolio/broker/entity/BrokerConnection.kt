@@ -2,6 +2,8 @@ package com.portfolio.broker.entity
 
 import com.portfolio.auth.entity.User
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.OffsetDateTime
 
@@ -39,6 +41,18 @@ class BrokerConnection(
     @Column(name = "account_name", length = 100)
     var accountName: String? = null,
 
+    @Column(name = "account_number_actual", length = 50)
+    var accountNumberActual: String? = null,
+
+    @Column(name = "account_meta_type", length = 50)
+    var accountMetaType: String? = null,
+
+    @Column(name = "broker_name", length = 200)
+    var brokerName: String? = null,
+
+    @Column(name = "broker_logo_url", length = 500)
+    var brokerLogoUrl: String? = null,
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     var status: ConnectionStatus = ConnectionStatus.PENDING,
@@ -59,6 +73,7 @@ class BrokerConnection(
     var connectionErrorMessage: String? = null,
 
     @Column(name = "metadata", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     var metadata: String? = null,
 
     @Column(name = "created_at", nullable = false, updatable = false)

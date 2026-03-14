@@ -8,9 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
-import com.snaptrade.client.model.Account
-import com.snaptrade.client.model.Brokerage
-import com.snaptrade.client.model.BrokerageAuthorization
+import com.portfolio.broker.adapter.SnapTradeAccountDto
+import com.portfolio.broker.adapter.SnapTradeConnectionDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -37,7 +36,7 @@ class BrokerService(
                 BrokerDto(
                     name = brokerage.name ?: "Unknown",
                     slug = brokerage.slug,
-                    logoUrl = brokerage.awsS3LogoUrl,
+                    logoUrl = brokerage.logoUrl,
                     description = brokerage.description
                 )
             }
@@ -53,6 +52,10 @@ class BrokerService(
         return connectionRepository.findByUserIdWithBroker(userId)
             .filter { it.status != ConnectionStatus.DISCONNECTED }
             .map { it.toDto() }
+    }
+
+    fun getUserConnectionEntities(userId: Long): List<BrokerConnection> {
+        return connectionRepository.findByUserId(userId)
     }
 
     fun getActiveConnections(userId: Long): List<BrokerConnectionDto> {
@@ -79,27 +82,35 @@ class BrokerService(
     @Transactional
     fun syncConnections(userId: Long) {
         val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
+        log.info("Starting connection sync for user {}: calling SnapTrade listConnections...", userId)
 
         val snapConnections = try {
             snapTradeService.listConnections(user)
         } catch (e: Exception) {
-            log.error("Failed to sync connections for user {}: {}", userId, e.message)
+            log.error("Failed to sync connections for user {}: {}", userId, e.message, e)
             return
         }
 
         val accounts = try {
             snapTradeService.listAccounts(user)
         } catch (e: Exception) {
-            log.error("Failed to list accounts for user {}: {}", userId, e.message)
+            log.error("Failed to list accounts for user {}: {}", userId, e.message, e)
             return
         }
 
+        log.info("SnapTrade returned {} connections and {} accounts for user {}",
+            snapConnections.size, accounts.size, userId)
+
         // Sync each SnapTrade authorization as a connection
+        var createdCount = 0
+        var updatedCount = 0
         for (auth in snapConnections) {
             val authId = auth.id?.toString() ?: continue
 
             // Find related accounts
             val relatedAccounts = accounts.filter { it.brokerageAuthorization == auth.id }
+            log.info("Processing auth {}: {} related accounts found (disabled={})",
+                authId, relatedAccounts.size, auth.disabled)
 
             for (account in relatedAccounts) {
                 val accountId = account.id?.toString() ?: continue
@@ -108,27 +119,38 @@ class BrokerService(
                 if (existingConnection != null) {
                     existingConnection.snaptradeAuthorizationId = authId
                     existingConnection.accountNumber = account.number
-                    existingConnection.accountType = account.institutionName
+                    existingConnection.accountType = account.metaType ?: account.institutionName
                     existingConnection.accountName = account.name
+                    existingConnection.accountNumberActual = account.metaAccountNumber
+                    existingConnection.accountMetaType = account.metaType
+                    existingConnection.brokerName = auth.brokerageName
+                    existingConnection.brokerLogoUrl = auth.brokerLogoUrl
                     existingConnection.status = if (auth.disabled == true) ConnectionStatus.ERROR else ConnectionStatus.ACTIVE
                     if (auth.disabled != true) existingConnection.clearError()
                     connectionRepository.save(existingConnection)
+                    updatedCount++
                 } else {
                     val connection = BrokerConnection(
                         user = user,
                         snaptradeAuthorizationId = authId,
                         accountIdExternal = accountId,
                         accountNumber = account.number,
-                        accountType = account.institutionName,
+                        accountType = account.metaType ?: account.institutionName,
                         accountName = account.name,
+                        accountNumberActual = account.metaAccountNumber,
+                        accountMetaType = account.metaType,
+                        brokerName = auth.brokerageName,
+                        brokerLogoUrl = auth.brokerLogoUrl,
                         status = if (auth.disabled == true) ConnectionStatus.ERROR else ConnectionStatus.ACTIVE
                     )
                     connectionRepository.save(connection)
+                    createdCount++
                 }
             }
         }
 
-        log.info("Synced {} connections for user {}", snapConnections.size, userId)
+        log.info("Sync complete for user {}: {} created, {} updated (from {} authorizations)",
+            userId, createdCount, updatedCount, snapConnections.size)
     }
 
     @Transactional
@@ -204,8 +226,9 @@ class BrokerService(
 
             val breakdown = positionList.map { pos ->
                 BrokerBreakdownDto(
-                    broker = pos.connection.broker?.code ?: pos.connection.accountName,
+                    broker = pos.connection.broker?.code ?: pos.connection.brokerName ?: pos.connection.accountName,
                     accountNumber = pos.connection.accountNumber,
+                    accountType = pos.connection.accountMetaType ?: pos.connection.accountType,
                     quantity = pos.quantity,
                     value = pos.currentValue
                 )

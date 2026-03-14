@@ -2,14 +2,13 @@ package com.portfolio.broker.service
 
 import com.portfolio.auth.entity.User
 import com.portfolio.auth.repository.UserRepository
+import com.portfolio.broker.adapter.SnapTradeAdapter
 import com.portfolio.broker.config.SnapTradeConfig
 import com.portfolio.broker.security.TokenEncryptionService
 import io.mockk.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 class SnapTradeServiceTest {
 
@@ -17,6 +16,7 @@ class SnapTradeServiceTest {
     private lateinit var config: SnapTradeConfig
     private lateinit var userRepository: UserRepository
     private lateinit var encryptionService: TokenEncryptionService
+    private lateinit var adapter: SnapTradeAdapter
 
     @BeforeEach
     fun setup() {
@@ -27,8 +27,9 @@ class SnapTradeServiceTest {
         )
         userRepository = mockk()
         encryptionService = mockk()
+        adapter = mockk()
 
-        service = SnapTradeService(config, userRepository, encryptionService)
+        service = SnapTradeService(config, userRepository, encryptionService, adapter)
     }
 
     @Test

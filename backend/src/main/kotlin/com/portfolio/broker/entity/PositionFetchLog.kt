@@ -2,6 +2,8 @@ package com.portfolio.broker.entity
 
 import com.portfolio.auth.entity.User
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import jakarta.persistence.FetchType as JpaFetchType
 import java.math.BigDecimal
 import java.time.OffsetDateTime
@@ -59,6 +61,7 @@ class PositionFetchLog(
     var errorMessage: String? = null,
 
     @Column(name = "raw_response", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     var rawResponse: String? = null,
 
     @Column(name = "retry_count")

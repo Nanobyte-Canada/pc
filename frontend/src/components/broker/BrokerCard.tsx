@@ -9,10 +9,24 @@ interface BrokerCardProps {
 }
 
 export function BrokerCard({ broker, onConnect, isConnecting, hasExistingConnection }: BrokerCardProps) {
-  const isDisabled = isConnecting
+  const handleClick = () => {
+    if (isConnecting) return
+    onConnect(broker.slug || undefined)
+  }
 
   return (
-    <div className="broker-card">
+    <div
+      className={`broker-card${hasExistingConnection ? ' connected' : ''}${isConnecting ? ' disabled' : ''}`}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick() }}
+      title={isConnecting ? 'Connecting...' : hasExistingConnection ? `Add another ${broker.name} account` : `Connect to ${broker.name}`}
+    >
+      {hasExistingConnection && (
+        <span className="broker-card-connected-badge">&#10003;</span>
+      )}
+
       {broker.logoUrl ? (
         <img
           src={broker.logoUrl}
@@ -25,20 +39,7 @@ export function BrokerCard({ broker, onConnect, isConnecting, hasExistingConnect
         </div>
       )}
 
-      <div className="broker-card-info">
-        <div className="broker-card-name">{broker.name}</div>
-        {broker.description && (
-          <div className="broker-card-description">{broker.description}</div>
-        )}
-      </div>
-
-      <button
-        onClick={() => onConnect(broker.slug || undefined)}
-        disabled={isDisabled}
-        className="broker-card-connect-btn"
-      >
-        {isConnecting ? 'Connecting...' : hasExistingConnection ? 'Add Account' : 'Connect'}
-      </button>
+      <div className="broker-card-name">{broker.name}</div>
     </div>
   )
 }

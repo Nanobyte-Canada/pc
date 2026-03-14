@@ -1,6 +1,8 @@
 package com.portfolio.broker.entity
 
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -20,6 +22,7 @@ class BrokerBalanceSnapshot(
     val totalValue: BigDecimal? = null,
 
     @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     val cash: String? = null,
 
     @Column(length = 3)

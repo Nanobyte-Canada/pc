@@ -188,7 +188,7 @@ export function PositionDetailsPage() {
       {summary && (
         <div className="positions-summary">
           <SummaryCard title="Total Value" value={formatCurrency(summary.totalValue)} />
-          <SummaryCard title="Total Cost" value={formatCurrency(summary.totalCost)} />
+          <SummaryCard title="Total Contribution" value={formatCurrency(summary.totalCost)} />
           <SummaryCard
             title="Total P&L"
             value={`${summary.totalPnl >= 0 ? '+' : ''}${formatCurrency(summary.totalPnl)}`}

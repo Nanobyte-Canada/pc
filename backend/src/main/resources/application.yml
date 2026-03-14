@@ -36,8 +36,8 @@ app:
 auth:
   jwt:
     signing-key: ${JWT_SIGNING_KEY:dev-signing-key-must-be-at-least-64-chars-for-hs512-algorithm-local}
-    access-token-expiration: ${JWT_ACCESS_EXPIRATION:15m}
-    refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:7d}
+    access-token-expiration: ${JWT_ACCESS_EXPIRATION:60m}
+    refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:6h}
     issuer: portfolio-app
   password:
     min-length: 12

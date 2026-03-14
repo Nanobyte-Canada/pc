@@ -26,14 +26,24 @@ interface BrokerActivityRepository : JpaRepository<BrokerActivity, Long> {
     @Query("SELECT MAX(a.tradeDate) FROM BrokerActivity a WHERE a.connection.id = :connectionId")
     fun findLatestTradeDateByConnectionId(connectionId: Long): LocalDate?
 
-    @Query("""
-        SELECT a FROM BrokerActivity a
-        WHERE a.connection.id = :connectionId
-        AND (:startDate IS NULL OR a.tradeDate >= :startDate)
-        AND (:endDate IS NULL OR a.tradeDate <= :endDate)
-        AND (:type IS NULL OR a.type = :type)
-        ORDER BY a.tradeDate DESC
-    """)
+    @Query(
+        value = """
+            SELECT * FROM broker_activities a
+            WHERE a.connection_id = :connectionId
+            AND (CAST(:startDate AS date) IS NULL OR a.trade_date >= CAST(:startDate AS date))
+            AND (CAST(:endDate AS date) IS NULL OR a.trade_date <= CAST(:endDate AS date))
+            AND (CAST(:type AS varchar) IS NULL OR a.type = CAST(:type AS varchar))
+            ORDER BY a.trade_date DESC
+        """,
+        countQuery = """
+            SELECT COUNT(*) FROM broker_activities a
+            WHERE a.connection_id = :connectionId
+            AND (CAST(:startDate AS date) IS NULL OR a.trade_date >= CAST(:startDate AS date))
+            AND (CAST(:endDate AS date) IS NULL OR a.trade_date <= CAST(:endDate AS date))
+            AND (CAST(:type AS varchar) IS NULL OR a.type = CAST(:type AS varchar))
+        """,
+        nativeQuery = true
+    )
     fun findFiltered(
         connectionId: Long,
         startDate: LocalDate?,
@@ -42,14 +52,24 @@ interface BrokerActivityRepository : JpaRepository<BrokerActivity, Long> {
         pageable: Pageable
     ): Page<BrokerActivity>
 
-    @Query("""
-        SELECT a FROM BrokerActivity a
-        WHERE a.connection.id IN :connectionIds
-        AND (:startDate IS NULL OR a.tradeDate >= :startDate)
-        AND (:endDate IS NULL OR a.tradeDate <= :endDate)
-        AND (:type IS NULL OR a.type = :type)
-        ORDER BY a.tradeDate DESC
-    """)
+    @Query(
+        value = """
+            SELECT * FROM broker_activities a
+            WHERE a.connection_id IN (:connectionIds)
+            AND (CAST(:startDate AS date) IS NULL OR a.trade_date >= CAST(:startDate AS date))
+            AND (CAST(:endDate AS date) IS NULL OR a.trade_date <= CAST(:endDate AS date))
+            AND (CAST(:type AS varchar) IS NULL OR a.type = CAST(:type AS varchar))
+            ORDER BY a.trade_date DESC
+        """,
+        countQuery = """
+            SELECT COUNT(*) FROM broker_activities a
+            WHERE a.connection_id IN (:connectionIds)
+            AND (CAST(:startDate AS date) IS NULL OR a.trade_date >= CAST(:startDate AS date))
+            AND (CAST(:endDate AS date) IS NULL OR a.trade_date <= CAST(:endDate AS date))
+            AND (CAST(:type AS varchar) IS NULL OR a.type = CAST(:type AS varchar))
+        """,
+        nativeQuery = true
+    )
     fun findFilteredMultiConnection(
         connectionIds: List<Long>,
         startDate: LocalDate?,

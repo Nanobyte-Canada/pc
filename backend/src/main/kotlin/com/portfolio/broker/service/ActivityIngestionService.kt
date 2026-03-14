@@ -22,7 +22,8 @@ class ActivityIngestionService(
     private val balanceRepository: BrokerBalanceRepository,
     private val snapTradeService: SnapTradeService,
     private val userRepository: UserRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val exchangeRateService: ExchangeRateService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -53,36 +54,39 @@ class ActivityIngestionService(
 
         var insertedCount = 0
         for (activity in activities) {
-            val externalId = activity.id?.toString()
+            val externalId = activity.id
             if (externalId != null) {
                 val existing = activityRepository.findByConnectionIdAndExternalId(connectionId, externalId)
                 if (existing != null) continue
             }
 
-            val tradeDate = try {
-                activity.tradeDate?.let { LocalDate.parse(it.toString().take(10)) }
-            } catch (e: Exception) {
-                null
-            } ?: continue
+            val tradeDate = activity.tradeDate ?: continue
+
+            val rawAmount = activity.amount?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
+            val currency = activity.currency ?: "CAD"
+            val mappedType = mapActivityType(activity.type)
+
+            // Compute CAD-equivalent amount for reporting
+            val (amountCad, exchangeRate) = computeCadAmount(rawAmount, currency, tradeDate, mappedType)
 
             val entity = BrokerActivity(
                 connection = connection,
                 externalId = externalId,
-                type = mapActivityType(activity.type),
-                symbol = activity.symbol?.symbol,
+                type = mappedType,
+                symbol = activity.symbol,
                 description = activity.description,
                 quantity = activity.units?.let { BigDecimal(it.toString()) },
                 price = activity.price?.let { BigDecimal(it.toString()) },
-                amount = activity.amount?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO,
+                amount = rawAmount,
                 fee = activity.fee?.let { BigDecimal(it.toString()) },
-                currency = activity.currency?.code ?: "CAD",
+                currency = currency,
                 tradeDate = tradeDate,
-                settlementDate = activity.settlementDate?.let {
-                    try { LocalDate.parse(it.toString().take(10)) } catch (e: Exception) { null }
-                },
+                settlementDate = activity.settlementDate,
                 accountName = connection.accountName,
                 optionType = activity.optionType,
-                rawPayload = try { objectMapper.writeValueAsString(activity) } catch (e: Exception) { null }
+                amountCad = amountCad,
+                exchangeRate = exchangeRate,
+                rawPayload = activity.rawJson
             )
             activityRepository.save(entity)
             insertedCount++
@@ -116,7 +120,7 @@ class ActivityIngestionService(
         val today = LocalDate.now()
         val cashMap = mutableMapOf<String, BigDecimal>()
         for (balance in balances) {
-            val curr = balance.currency?.code ?: "CAD"
+            val curr = balance.currency ?: "CAD"
             val amount = balance.cash?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
             cashMap[curr] = (cashMap[curr] ?: BigDecimal.ZERO) + amount
         }
@@ -171,19 +175,56 @@ class ActivityIngestionService(
             syncedCount, connections.size, activitiesAdded, balanceSnapshots)
     }
 
+    /**
+     * Maps raw SnapTrade activity type strings to normalized types.
+     *
+     * SnapTrade may send plural forms (e.g. "TRANSFERS", "WITHDRAWALS") or
+     * various synonyms. This function normalizes them to a consistent set:
+     * - TRANSFER_IN: contributions, deposits, transfers in
+     * - TRANSFER_OUT: withdrawals, transfers out
+     */
     private fun mapActivityType(type: String?): String {
         return when (type?.uppercase()) {
             "BUY" -> "BUY"
             "SELL" -> "SELL"
             "DIVIDEND" -> "DIVIDEND"
-            "CONTRIBUTION", "DEPOSIT", "TRANSFER_IN" -> "TRANSFER_IN"
-            "WITHDRAWAL", "TRANSFER_OUT" -> "TRANSFER_OUT"
+            "CONTRIBUTION", "DEPOSIT", "TRANSFER_IN", "TRANSFERS" -> "TRANSFER_IN"
+            "WITHDRAWAL", "TRANSFER_OUT", "WITHDRAWALS" -> "TRANSFER_OUT"
             "FEE", "COMMISSION" -> "FEE"
             "INTEREST" -> "INTEREST"
             "OPTIONEXPIRATION", "OPTION_EXPIRATION" -> "OPTIONEXPIRATION"
             "OPTIONASSIGNMENT", "OPTION_ASSIGNMENT" -> "OPTIONASSIGNMENT"
             "OPTIONEXERCISE", "OPTION_EXERCISE" -> "OPTIONEXERCISE"
             else -> type?.uppercase() ?: "OTHER"
+        }
+    }
+
+    /**
+     * Computes the CAD-equivalent amount and the exchange rate used.
+     *
+     * For CAD amounts or zero amounts, no FX lookup is performed.
+     * For non-CAD, calls [ExchangeRateService] and falls back to the raw amount if unavailable.
+     */
+    private fun computeCadAmount(
+        amount: BigDecimal,
+        currency: String,
+        tradeDate: LocalDate,
+        type: String
+    ): Pair<BigDecimal, BigDecimal?> {
+        if (currency.uppercase() == "CAD") {
+            return amount to BigDecimal.ONE
+        }
+        if (amount.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO to null
+        }
+
+        val rate = exchangeRateService.getRate(currency, tradeDate)
+        return if (rate != null) {
+            amount.multiply(rate) to rate
+        } else {
+            log.warn("No exchange rate for {} on {}, using raw amount as CAD fallback (type={})",
+                currency, tradeDate, type)
+            amount to null
         }
     }
 }

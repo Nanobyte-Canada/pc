@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.auth.entity.User
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
+import com.portfolio.broker.adapter.SnapTradeAccountDto
+import com.portfolio.broker.adapter.SnapTradeConnectionDto
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
-import com.snaptrade.client.model.Account
-import com.snaptrade.client.model.BrokerageAuthorization
 import io.mockk.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -51,17 +51,11 @@ class BrokerServiceSyncTest {
         val authId = UUID.randomUUID()
         val accountId = UUID.randomUUID()
 
-        val auth = mockk<BrokerageAuthorization> {
-            every { id } returns authId
-            every { disabled } returns false
-        }
-        val account = mockk<Account> {
-            every { id } returns accountId
-            every { brokerageAuthorization } returns authId
-            every { number } returns "12345"
-            every { institutionName } returns "Questrade"
-            every { name } returns "TFSA"
-        }
+        val auth = SnapTradeConnectionDto(id = authId, disabled = false, brokerageName = null, brokerLogoUrl = null, type = null)
+        val account = SnapTradeAccountDto(
+            id = accountId, brokerageAuthorization = authId,
+            number = "12345", institutionName = "Questrade", name = "TFSA", currency = null
+        )
 
         every { userRepository.findById(1L) } returns Optional.of(user)
         every { snapTradeService.listConnections(user) } returns listOf(auth)
@@ -97,17 +91,11 @@ class BrokerServiceSyncTest {
             status = ConnectionStatus.PENDING
         )
 
-        val auth = mockk<BrokerageAuthorization> {
-            every { id } returns authId
-            every { disabled } returns false
-        }
-        val account = mockk<Account> {
-            every { id } returns accountId
-            every { brokerageAuthorization } returns authId
-            every { number } returns "NEW-NUMBER"
-            every { institutionName } returns "Questrade"
-            every { name } returns "Updated TFSA"
-        }
+        val auth = SnapTradeConnectionDto(id = authId, disabled = false, brokerageName = null, brokerLogoUrl = null, type = null)
+        val account = SnapTradeAccountDto(
+            id = accountId, brokerageAuthorization = authId,
+            number = "NEW-NUMBER", institutionName = "Questrade", name = "Updated TFSA", currency = null
+        )
 
         every { userRepository.findById(1L) } returns Optional.of(user)
         every { snapTradeService.listConnections(user) } returns listOf(auth)
@@ -133,17 +121,11 @@ class BrokerServiceSyncTest {
         val authId = UUID.randomUUID()
         val accountId = UUID.randomUUID()
 
-        val auth = mockk<BrokerageAuthorization> {
-            every { id } returns authId
-            every { disabled } returns false
-        }
-        val account = mockk<Account> {
-            every { id } returns accountId
-            every { brokerageAuthorization } returns authId
-            every { number } returns "12345"
-            every { institutionName } returns "Questrade"
-            every { name } returns "TFSA"
-        }
+        val auth = SnapTradeConnectionDto(id = authId, disabled = false, brokerageName = null, brokerLogoUrl = null, type = null)
+        val account = SnapTradeAccountDto(
+            id = accountId, brokerageAuthorization = authId,
+            number = "12345", institutionName = "Questrade", name = "TFSA", currency = null
+        )
 
         every { userRepository.findById(1L) } returns Optional.of(user)
         every { snapTradeService.listConnections(user) } returns listOf(auth)
@@ -174,17 +156,11 @@ class BrokerServiceSyncTest {
         val authId = UUID.randomUUID()
         val accountId = UUID.randomUUID()
 
-        val auth = mockk<BrokerageAuthorization> {
-            every { id } returns authId
-            every { disabled } returns true
-        }
-        val account = mockk<Account> {
-            every { id } returns accountId
-            every { brokerageAuthorization } returns authId
-            every { number } returns "12345"
-            every { institutionName } returns "Questrade"
-            every { name } returns "TFSA"
-        }
+        val auth = SnapTradeConnectionDto(id = authId, disabled = true, brokerageName = null, brokerLogoUrl = null, type = null)
+        val account = SnapTradeAccountDto(
+            id = accountId, brokerageAuthorization = authId,
+            number = "12345", institutionName = "Questrade", name = "TFSA", currency = null
+        )
 
         every { userRepository.findById(1L) } returns Optional.of(user)
         every { snapTradeService.listConnections(user) } returns listOf(auth)

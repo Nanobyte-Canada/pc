@@ -26,7 +26,7 @@ export function TotalValueChart({ data, kpis }: TotalValueChartProps) {
       {
         type: 'category' as const,
         position: 'bottom' as const,
-        label: { rotation: 45, fontSize: 10 }
+        label: { rotation: 45, fontSize: 10 },
       },
       {
         type: 'number' as const,

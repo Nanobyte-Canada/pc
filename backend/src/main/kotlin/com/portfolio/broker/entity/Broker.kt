@@ -1,6 +1,8 @@
 package com.portfolio.broker.entity
 
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.OffsetDateTime
 
 enum class BrokerAuthType {
@@ -39,9 +41,11 @@ class Broker(
     val description: String? = null,
 
     @Column(name = "oauth_config", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     val oauthConfig: String? = null,
 
     @Column(name = "rate_limit_config", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     val rateLimitConfig: String? = null,
 
     @Column(name = "created_at", nullable = false, updatable = false)

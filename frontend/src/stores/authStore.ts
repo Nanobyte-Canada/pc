@@ -8,12 +8,14 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   csrfToken: string | null;
+  sessionExpired: boolean;
 
   // Actions
   setUser: (user: User | null) => void;
   setCsrfToken: (token: string | null) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
+  setSessionExpired: (expired: boolean) => void;
   checkAuth: () => Promise<void>;
 }
 
@@ -24,6 +26,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: true,
       csrfToken: null,
+      sessionExpired: false,
 
       setUser: (user) =>
         set({
@@ -42,6 +45,8 @@ export const useAuthStore = create<AuthState>()(
         }),
 
       setLoading: (loading) => set({ isLoading: loading }),
+
+      setSessionExpired: (expired) => set({ sessionExpired: expired }),
 
       checkAuth: async () => {
         try {

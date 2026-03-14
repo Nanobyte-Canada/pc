@@ -7,7 +7,7 @@ export const reportingKeys = {
   activities: (params: Record<string, string | number | undefined>) => [...reportingKeys.all, 'activities', params] as const
 }
 
-export function useReportingPerformance(params: { startDate?: string; endDate?: string; accounts?: string } = {}) {
+export function useReportingPerformance(params: { startDate?: string; endDate?: string; accounts?: string; granularity?: string } = {}) {
   return useQuery({
     queryKey: reportingKeys.performance(params),
     queryFn: () => getReportingPerformance(params),

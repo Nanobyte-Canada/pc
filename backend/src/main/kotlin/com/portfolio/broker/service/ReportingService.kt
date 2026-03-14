@@ -29,7 +29,8 @@ class ReportingService(
         userId: Long,
         startDate: LocalDate?,
         endDate: LocalDate?,
-        connectionIds: List<Long>?
+        connectionIds: List<Long>?,
+        granularity: String? = null
     ): ReportingPerformanceResponse {
         val connections = getRelevantConnectionIds(userId, connectionIds)
         if (connections.isEmpty()) return emptyPerformanceResponse()
@@ -45,18 +46,27 @@ class ReportingService(
             connections, effectiveStart, effectiveEnd
         )
 
-        // Contributions & Withdrawals by month
-        val contributionTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
-        val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL")
+        // Determine effective granularity
+        val effectiveGranularity = granularity ?: "MONTHLY"
+        val periodKeyFn: (LocalDate) -> String = when (effectiveGranularity.uppercase()) {
+            "YEARLY" -> { date -> date.year.toString() }
+            "QUARTERLY" -> { date -> "${date.year}-Q${(date.monthValue - 1) / 3 + 1}" }
+            else -> { date -> YearMonth.from(date).toString() }
+        }
+
+        // Contributions & Withdrawals — broad type sets for backward compat with pre-normalized data
+        val contributionTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT", "EFT", "CONTRIBUTION_ROOM", "TRANSFERS")
+        val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL", "WITHDRAWALS")
 
         val periodSummaries = activities
             .filter { it.type in contributionTypes || it.type in withdrawalTypes }
-            .groupBy { YearMonth.from(it.tradeDate).toString() }
+            .filter { (it.amountCad ?: it.amount).compareTo(BigDecimal.ZERO) != 0 }
+            .groupBy { periodKeyFn(it.tradeDate) }
             .map { (period, acts) ->
                 val contributions = acts.filter { it.type in contributionTypes }
-                    .sumOf { it.amount.abs() }
+                    .sumOf { (it.amountCad ?: it.amount).abs() }
                 val withdrawals = acts.filter { it.type in withdrawalTypes }
-                    .sumOf { it.amount.abs() }
+                    .sumOf { (it.amountCad ?: it.amount).abs() }
                 PeriodSummary(
                     period = period,
                     contributions = contributions,
@@ -66,19 +76,25 @@ class ReportingService(
             }
             .sortedBy { it.period }
 
-        // Total Value History from balance snapshots
+        // Total Value History from balance snapshots — sample last snapshot per period
         val totalValueHistory = balanceSnapshots
-            .groupBy { it.asOfDate.toString() }
-            .map { (date, snapshots) ->
-                val totalValue = snapshots.sumOf { it.totalValue ?: BigDecimal.ZERO }
-                ValuePoint(date = date, totalValue = totalValue, costBasis = null)
+            .groupBy { periodKeyFn(it.asOfDate) }
+            .map { (period, snapshots) ->
+                // Take the latest snapshot date within this period
+                val latestDateSnapshots = snapshots
+                    .groupBy { it.asOfDate }
+                    .maxByOrNull { it.key }
+                    ?.value ?: snapshots
+                val totalValue = latestDateSnapshots.sumOf { it.totalValue ?: BigDecimal.ZERO }
+                ValuePoint(date = period, totalValue = totalValue, costBasis = null)
             }
             .sortedBy { it.date }
 
-        // Dividend History by month + symbol
-        val dividendActivities = activities.filter { it.type == "DIVIDEND" }
+        // Dividend History — broadened types
+        val dividendTypes = setOf("DIVIDEND", "DISTRIBUTION")
+        val dividendActivities = activities.filter { it.type in dividendTypes }
         val dividendHistory = dividendActivities
-            .groupBy { YearMonth.from(it.tradeDate).toString() }
+            .groupBy { periodKeyFn(it.tradeDate) }
             .map { (period, acts) ->
                 val total = acts.sumOf { it.amount.abs() }
                 val bySymbol = acts

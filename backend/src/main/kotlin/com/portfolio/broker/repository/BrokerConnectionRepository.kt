@@ -12,6 +12,8 @@ interface BrokerConnectionRepository : JpaRepository<BrokerConnection, Long> {
 
     fun findByUserId(userId: Long): List<BrokerConnection>
 
+    fun findByStatus(status: ConnectionStatus): List<BrokerConnection>
+
     fun findByUserIdAndStatus(userId: Long, status: ConnectionStatus): List<BrokerConnection>
 
     @Query("""

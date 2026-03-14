@@ -1,5 +1,6 @@
 package com.portfolio.auth.controller
 
+import com.portfolio.auth.config.AuthConfig
 import com.portfolio.auth.dto.*
 import com.portfolio.auth.exception.*
 import com.portfolio.auth.security.UserPrincipal
@@ -23,6 +24,7 @@ import java.time.Duration
 class AuthController(
     private val authenticationService: AuthenticationService,
     private val userRepository: UserRepository,
+    private val authConfig: AuthConfig,
     @Value("\${app.environment:local}") private val appEnvironment: String
 ) {
 
@@ -258,15 +260,15 @@ class AuthController(
             .secure(isSecure)  // Secure for HTTPS sites (prod and dev)
             .sameSite("Lax")  // Lax allows cookies on same-site navigation
             .path("/")
-            .maxAge(Duration.ofMinutes(15))
+            .maxAge(authConfig.jwt.accessTokenExpiration)
             .build()
 
         val refreshCookie = ResponseCookie.from(REFRESH_TOKEN_COOKIE, refreshToken)
             .httpOnly(true)
             .secure(isSecure)
             .sameSite("Lax")
-            .path("/")  // Changed from "/auth" to "/" so refresh token is sent with all requests
-            .maxAge(Duration.ofDays(7))
+            .path("/")
+            .maxAge(authConfig.jwt.refreshTokenExpiration)
             .build()
 
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString())

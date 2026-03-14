@@ -1,6 +1,8 @@
 package com.portfolio.broker.entity
 
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.OffsetDateTime
 
 enum class SnapTradeApiStatus { ONLINE, DEGRADED, OFFLINE, UNKNOWN }
@@ -25,6 +27,7 @@ class SnapTradeStatusCheck(
     val errorMessage: String? = null,
 
     @Column(name = "raw_response", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     val rawResponse: String? = null,
 
     @Column(name = "checked_at", nullable = false)

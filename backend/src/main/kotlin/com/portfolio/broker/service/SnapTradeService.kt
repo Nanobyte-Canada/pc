@@ -2,24 +2,22 @@ package com.portfolio.broker.service
 
 import com.portfolio.auth.entity.User
 import com.portfolio.auth.repository.UserRepository
+import com.portfolio.broker.adapter.*
 import com.portfolio.broker.config.SnapTradeConfig
 import com.portfolio.broker.security.TokenEncryptionService
-import com.snaptrade.client.ApiException
-import com.snaptrade.client.Configuration
-import com.snaptrade.client.Snaptrade
-import com.snaptrade.client.model.*
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
 import java.security.MessageDigest
 import java.time.LocalDate
-import java.util.UUID
 
 @Service
 class SnapTradeService(
     private val config: SnapTradeConfig,
     private val userRepository: UserRepository,
-    private val encryptionService: TokenEncryptionService
+    private val encryptionService: TokenEncryptionService,
+    private val adapter: SnapTradeAdapter
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -34,13 +32,6 @@ class SnapTradeService(
         if (!clientIdSet || !consumerKeySet) {
             log.warn("SnapTrade credentials are not configured. Broker features will not work.")
         }
-    }
-
-    private val snaptrade: Snaptrade by lazy {
-        val configuration = Configuration()
-        configuration.clientId = config.clientId
-        configuration.consumerKey = config.consumerKey
-        Snaptrade(configuration)
     }
 
     private fun generateSnapTradeUserId(email: String): String {
@@ -65,14 +56,9 @@ class SnapTradeService(
         log.info("Registering SnapTrade user for user {} (snapUserId={})", user.id, snapUserId)
 
         val userSecret: String = try {
-            val response = snaptrade.authentication.registerSnapTradeUser(snapUserId)
-                .execute()
-
-            log.info("SnapTrade user registered for user {}", user.id)
-            response.userSecret
-                ?: throw IllegalStateException("SnapTrade registration did not return userSecret")
-        } catch (e: ApiException) {
-            if (e.message?.contains("1012") == true) {
+            adapter.registerUser(snapUserId)
+        } catch (e: SnapTradeApiException) {
+            if (e.errorCode == SnapTradeApiException.ERROR_PERSONAL_KEY_SLOT_OCCUPIED) {
                 log.error(
                     "SnapTrade error 1012: personal key slot occupied. " +
                     "Another user is registered with these SnapTrade personal keys. " +
@@ -99,53 +85,42 @@ class SnapTradeService(
      */
     fun getConnectionPortalUrl(user: User, broker: String? = null, reconnectAuthId: String? = null): String {
         val snapUser = ensureUserRegistered(user)
-
-        val request = snaptrade.authentication.loginSnapTradeUser(snapUser.userId, snapUser.userSecret)
-            .customRedirect(config.redirectUri)
-
-        if (broker != null) {
-            request.broker(broker)
-        }
-        if (reconnectAuthId != null) {
-            request.reconnect(reconnectAuthId)
-        }
-
-        val response = request.execute()
-        // loginSnapTradeUser returns Object at compile time; at runtime it's a Map or LoginRedirectURI
-        val redirectUri = when (response) {
-            is LoginRedirectURI -> response.redirectURI
-            is Map<*, *> -> (response["redirectURI"] ?: response["redirectUri"]) as? String
-            else -> null
-        } ?: throw IllegalStateException("SnapTrade login did not return redirectURI")
-        return redirectUri
+        return adapter.getLoginRedirectUrl(
+            snapUser.userId, snapUser.userSecret, config.redirectUri, broker, reconnectAuthId
+        )
     }
 
     /**
      * Lists all connected accounts for a user.
      */
-    fun listAccounts(user: User): List<Account> {
+    fun listAccounts(user: User): List<SnapTradeAccountDto> {
         val snapUser = ensureUserRegistered(user)
-        return snaptrade.accountInformation.listUserAccounts(snapUser.userId, snapUser.userSecret).execute()
+        return adapter.listAccounts(snapUser.userId, snapUser.userSecret)
     }
 
     /**
      * Lists all brokerage authorizations (connections) for a user.
      */
-    fun listConnections(user: User): List<BrokerageAuthorization> {
+    fun listConnections(user: User): List<SnapTradeConnectionDto> {
         val snapUser = ensureUserRegistered(user)
-        return snaptrade.connections.listBrokerageAuthorizations(snapUser.userId, snapUser.userSecret).execute()
+        return adapter.listConnections(snapUser.userId, snapUser.userSecret)
     }
 
     /**
      * Fetches positions for a specific account.
      */
-    fun fetchPositions(user: User, accountId: String): List<Position> {
+    fun fetchPositions(user: User, accountId: String): List<SnapTradePositionDto> {
         val snapUser = ensureUserRegistered(user)
-        return snaptrade.accountInformation.getUserAccountPositions(
-            snapUser.userId,
-            snapUser.userSecret,
-            UUID.fromString(accountId)
-        ).execute()
+        return adapter.getPositions(snapUser.userId, snapUser.userSecret, accountId)
+    }
+
+    /**
+     * Fetches option-specific position data for a specific account.
+     * Returns empty list if the broker doesn't support options.
+     */
+    fun fetchOptionPositions(user: User, accountId: String): List<SnapTradeOptionPositionDto> {
+        val snapUser = ensureUserRegistered(user)
+        return adapter.getOptionPositions(snapUser.userId, snapUser.userSecret, accountId)
     }
 
     /**
@@ -153,18 +128,14 @@ class SnapTradeService(
      */
     fun disconnectBrokerage(user: User, authorizationId: String) {
         val snapUser = ensureUserRegistered(user)
-        snaptrade.connections.removeBrokerageAuthorization(
-            UUID.fromString(authorizationId),
-            snapUser.userId,
-            snapUser.userSecret
-        ).execute()
+        adapter.disconnectBrokerage(snapUser.userId, snapUser.userSecret, authorizationId)
     }
 
     /**
      * Lists all available brokerages from SnapTrade.
      */
-    fun listAvailableBrokerages(): List<Brokerage> {
-        return snaptrade.referenceData.listAllBrokerages().execute()
+    fun listAvailableBrokerages(): List<SnapTradeBrokerageDto> {
+        return adapter.listBrokerages()
     }
 
     /**
@@ -176,24 +147,55 @@ class SnapTradeService(
         endDate: LocalDate? = null,
         accounts: String? = null,
         type: String? = null
-    ): List<UniversalActivity> {
+    ): List<SnapTradeActivityDto> {
         val snapUser = ensureUserRegistered(user)
-        val request = snaptrade.transactionsAndReporting.getActivities(snapUser.userId, snapUser.userSecret)
-        startDate?.let { request.startDate(it) }
-        endDate?.let { request.endDate(it) }
-        accounts?.let { request.accounts(it) }
-        type?.let { request.type(it) }
-        return request.execute()
+        return adapter.getActivities(snapUser.userId, snapUser.userSecret, startDate, endDate, accounts, type)
     }
 
     /**
      * Fetches account balance for a specific account.
      */
-    fun getAccountBalance(user: User, accountId: String): List<Balance> {
+    fun getAccountBalance(user: User, accountId: String): List<SnapTradeBalanceDto> {
         val snapUser = ensureUserRegistered(user)
-        return snaptrade.accountInformation.getUserAccountBalance(
-            snapUser.userId, snapUser.userSecret, UUID.fromString(accountId)
-        ).execute()
+        return adapter.getBalances(snapUser.userId, snapUser.userSecret, accountId)
+    }
+
+    /**
+     * Places an order via SnapTrade trading API.
+     */
+    fun placeOrder(
+        user: User,
+        accountId: String,
+        action: String,
+        symbol: String,
+        units: BigDecimal,
+        orderType: String = "MARKET",
+        limitPrice: BigDecimal? = null,
+        timeInForce: String = "DAY"
+    ): SnapTradeOrderDto {
+        val snapUser = ensureUserRegistered(user)
+        log.info("Placing {} order for {} units of {} in account {} for user {}",
+            action, units, symbol, accountId, user.id)
+
+        val response = adapter.placeOrder(
+            snapUser.userId, snapUser.userSecret, accountId,
+            action, symbol, units, orderType, limitPrice, timeInForce
+        )
+
+        log.info("Order placed successfully for user {}: {}", user.id, response.brokerageOrderId)
+        return response
+    }
+
+    /**
+     * Cancels an order via SnapTrade trading API.
+     */
+    fun cancelOrder(user: User, accountId: String, brokerOrderId: String) {
+        val snapUser = ensureUserRegistered(user)
+        log.info("Cancelling order {} in account {} for user {}", brokerOrderId, accountId, user.id)
+
+        adapter.cancelOrder(snapUser.userId, snapUser.userSecret, accountId, brokerOrderId)
+
+        log.info("Order {} cancelled for user {}", brokerOrderId, user.id)
     }
 
     data class SnapTradeUserInfo(

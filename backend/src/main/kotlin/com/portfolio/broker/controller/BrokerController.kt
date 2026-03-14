@@ -92,6 +92,21 @@ class BrokerController(
     ): ResponseEntity<ConnectionSyncResponse> {
         brokerService.syncConnections(principal.id)
         val connections = brokerService.getUserConnections(principal.id)
+
+        // Auto-fetch data for newly synced connections that have no data yet
+        val rawConnections = brokerService.getUserConnectionEntities(principal.id)
+        for (conn in rawConnections) {
+            if (conn.lastPositionsFetchedAt == null && conn.accountIdExternal != null) {
+                try {
+                    positionFetchService.triggerManualFetch(conn.id, principal.id)
+                    activityIngestionService.syncActivitiesForConnection(conn.id)
+                    activityIngestionService.syncBalanceForConnection(conn.id)
+                } catch (e: Exception) {
+                    log.warn("Auto-fetch failed for connection {}: {}", conn.id, e.message)
+                }
+            }
+        }
+
         return ResponseEntity.ok(
             ConnectionSyncResponse(
                 syncedCount = connections.size,
@@ -226,7 +241,8 @@ class BrokerController(
         @AuthenticationPrincipal principal: UserPrincipal,
         @RequestParam(required = false) startDate: String?,
         @RequestParam(required = false) endDate: String?,
-        @RequestParam(required = false) accounts: String?
+        @RequestParam(required = false) accounts: String?,
+        @RequestParam(required = false) granularity: String?
     ): ResponseEntity<ReportingPerformanceResponse> {
         val startLocalDate = startDate?.let { java.time.LocalDate.parse(it) }
         val endLocalDate = endDate?.let { java.time.LocalDate.parse(it) }
@@ -235,7 +251,8 @@ class BrokerController(
             userId = principal.id,
             startDate = startLocalDate,
             endDate = endLocalDate,
-            connectionIds = connectionIds
+            connectionIds = connectionIds,
+            granularity = granularity
         )
         return ResponseEntity.ok(response)
     }

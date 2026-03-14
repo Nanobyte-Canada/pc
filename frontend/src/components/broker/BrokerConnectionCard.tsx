@@ -24,24 +24,44 @@ export function BrokerConnectionCard({
   const canFetch = connection.status === 'ACTIVE' && !isFetching
   const needsReauth = connection.status === 'EXPIRED' || connection.status === 'ERROR'
 
+  // Use real account number from meta if available, fallback to accountNumber
+  const displayAccountNumber = connection.accountNumberActual || connection.accountNumber
+  // Use meta type for the badge (e.g. "TFSA", "RRSP"), fallback to accountType
+  const displayAccountType = connection.accountMetaType || connection.accountType
+
+  const [imgError, setImgError] = useState(false)
+
+  const brokerDisplayName = displayAccountType
+    ? `${connection.broker.name} - ${displayAccountType}`
+    : connection.broker.name
+
   return (
     <div className="broker-connection-card">
       {/* Left: Broker info */}
       <div className="connection-info">
-        <div className="connection-icon">
-          {connection.broker.name.charAt(0)}
-        </div>
+        {connection.broker.logoUrl && !imgError ? (
+          <img
+            src={connection.broker.logoUrl}
+            alt={connection.broker.name}
+            className="connection-logo"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="connection-icon">
+            {connection.broker.name.substring(0, 2)}
+          </div>
+        )}
 
         <div>
           <div className="connection-name-row">
-            <span className="connection-broker-name">{connection.broker.name}</span>
-            {connection.accountType && (
-              <span className="connection-account-type">- {connection.accountType}</span>
-            )}
-            {connection.accountNumber && (
-              <span className="connection-account-number">({connection.accountNumber})</span>
-            )}
+            <span className="connection-broker-name">{brokerDisplayName}</span>
           </div>
+
+          {displayAccountNumber && (
+            <div className="connection-account-number">
+              Account: {displayAccountNumber}
+            </div>
+          )}
 
           <div className="connection-status-row">
             <ConnectionStatus status={connection.status} />

@@ -17,6 +17,8 @@ describe('BrokerConnectionCard', () => {
     accountNumber: '51234567',
     accountType: 'TFSA',
     accountName: 'My TFSA',
+    accountNumberActual: '53105513',
+    accountMetaType: 'TFSA',
     status: 'ACTIVE',
     positionsCount: 5,
     totalValue: 25000.50,
@@ -25,7 +27,7 @@ describe('BrokerConnectionCard', () => {
     createdAt: new Date().toISOString()
   }
 
-  it('renders broker name', () => {
+  it('renders broker name with account type', () => {
     render(
       <BrokerConnectionCard
         connection={mockConnection}
@@ -35,7 +37,7 @@ describe('BrokerConnectionCard', () => {
         isFetching={false}
       />
     )
-    expect(screen.getByText('Questrade')).toBeInTheDocument()
+    expect(screen.getByText('Questrade - TFSA')).toBeInTheDocument()
   })
 
   it('renders account type', () => {
@@ -51,7 +53,7 @@ describe('BrokerConnectionCard', () => {
     expect(screen.getByText(/TFSA/)).toBeInTheDocument()
   })
 
-  it('renders account number in parentheses', () => {
+  it('renders actual account number', () => {
     render(
       <BrokerConnectionCard
         connection={mockConnection}
@@ -61,7 +63,7 @@ describe('BrokerConnectionCard', () => {
         isFetching={false}
       />
     )
-    expect(screen.getByText('(51234567)')).toBeInTheDocument()
+    expect(screen.getByText('Account: 53105513')).toBeInTheDocument()
   })
 
   it('renders total value', () => {
@@ -259,7 +261,7 @@ describe('BrokerConnectionCard', () => {
     expect(screen.getByText('Token refresh failed')).toBeInTheDocument()
   })
 
-  it('renders broker initial as avatar', () => {
+  it('renders broker initials as avatar', () => {
     render(
       <BrokerConnectionCard
         connection={mockConnection}
@@ -269,6 +271,6 @@ describe('BrokerConnectionCard', () => {
         isFetching={false}
       />
     )
-    expect(screen.getByText('Q')).toBeInTheDocument()
+    expect(screen.getByText('Qu')).toBeInTheDocument()
   })
 })

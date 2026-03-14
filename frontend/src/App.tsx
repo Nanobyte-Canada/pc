@@ -1,8 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AppLayout } from './components/layout/AppLayout'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { SessionTimeoutWarning } from './components/auth/SessionTimeoutWarning'
 import { useAuthStore } from './stores/authStore'
+import { useSessionManager } from './hooks/useSessionManager'
 
 // Auth pages
 import { LoginPage } from './pages/auth/LoginPage'
@@ -27,14 +29,28 @@ import { BrokerPositionsPage } from './pages/BrokerPositionsPage'
 import { PositionDetailsPage } from './pages/PositionDetailsPage'
 import { ReportingPage } from './pages/ReportingPage'
 
+// Portfolio Group pages
+import { PortfolioGroupsPage } from './pages/PortfolioGroupsPage'
+import { PortfolioGroupDetailPage } from './pages/PortfolioGroupDetailPage'
+
+// Dashboard
+import { DashboardPage } from './pages/DashboardPage'
+
 import './App.css'
 
 function App() {
-  const { checkAuth, isLoading } = useAuthStore()
+  const { checkAuth, isLoading, isAuthenticated, logout, setSessionExpired } = useAuthStore()
+  const { extendSession } = useSessionManager()
 
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
+
+  const handleSessionLogout = useCallback(() => {
+    logout()
+    setSessionExpired(true)
+    window.location.href = '/login'
+  }, [logout, setSessionExpired])
 
   if (isLoading) {
     return (
@@ -46,6 +62,13 @@ function App() {
   }
 
   return (
+    <>
+    {isAuthenticated && (
+      <SessionTimeoutWarning
+        onExtendSession={extendSession}
+        onLogout={handleSessionLogout}
+      />
+    )}
     <Routes>
       {/* Public auth routes */}
       <Route path="/login" element={<LoginPage />} />
@@ -63,7 +86,10 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<PortfolioBuilderPage />} />
+        <Route index element={<DashboardPage />} />
+        <Route path="builder" element={<PortfolioBuilderPage />} />
+        <Route path="portfolios" element={<PortfolioGroupsPage />} />
+        <Route path="portfolios/:groupId" element={<PortfolioGroupDetailPage />} />
         <Route path="screener/stocks" element={<StockScreenerPage />} />
         <Route path="screener/etfs" element={<EtfScreenerPage />} />
         <Route path="screener/mutual-funds" element={<MutualFundScreenerPage />} />
@@ -89,6 +115,7 @@ function App() {
       {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }
 

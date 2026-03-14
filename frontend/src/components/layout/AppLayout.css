@@ -3,12 +3,17 @@
   flex-direction: column;
   min-height: 100vh;
   background-color: var(--bg-primary);
+  overflow-x: hidden;
 }
 
 .main-content {
   flex: 1;
   padding: 1.5rem;
-  max-width: 1400px;
   width: 100%;
-  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 0.75rem;
+  }
 }

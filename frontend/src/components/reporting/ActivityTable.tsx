@@ -32,7 +32,7 @@ export function ActivityTable({ startDate, endDate, accounts }: ActivityTablePro
   const [typeFilter, setTypeFilter] = useState('')
   const pageSize = 50
 
-  const { data, isLoading } = useReportingActivities({
+  const { data, isLoading, isError, error } = useReportingActivities({
     page,
     size: pageSize,
     startDate: startDate || undefined,
@@ -51,7 +51,7 @@ export function ActivityTable({ startDate, endDate, accounts }: ActivityTablePro
     const rows = activities.map(a => [
       a.tradeDate, a.type, a.symbol || '', a.description || '',
       a.quantity?.toString() || '', a.price?.toString() || '',
-      a.amount.toString(), a.fee?.toString() || '', a.currency, a.accountName || ''
+      (a.amount ?? '').toString(), a.fee?.toString() || '', a.currency, a.accountName || ''
     ])
     const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -83,15 +83,19 @@ export function ActivityTable({ startDate, endDate, accounts }: ActivityTablePro
       width: 120,
       cellRenderer: (params: { value: string }) => {
         const color = typeColors[params.value] || typeColors.OTHER
-        return `<span style="
-          display: inline-block;
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: 500;
-          color: ${color};
-          background: ${color}15;
-        ">${params.value}</span>`
+        return (
+          <span style={{
+            display: 'inline-block',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: '500',
+            color: color,
+            background: `${color}15`
+          }}>
+            {params.value}
+          </span>
+        )
       }
     },
     {
@@ -115,9 +119,10 @@ export function ActivityTable({ startDate, endDate, accounts }: ActivityTablePro
       type: 'rightAligned',
       cellStyle: (params) => ({
         fontWeight: 600,
-        color: params.value >= 0 ? '#059669' : '#dc2626'
+        color: (params.value ?? 0) >= 0 ? '#059669' : '#dc2626'
       }),
       valueFormatter: (params: ValueFormatterParams) => {
+        if (params.value == null) return '-'
         const sign = params.value >= 0 ? '+' : ''
         return sign + formatCurrency(params.value)
       }
@@ -144,7 +149,11 @@ export function ActivityTable({ startDate, endDate, accounts }: ActivityTablePro
         </button>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <div className="activity-table-empty">
+          Failed to load activities. {error instanceof Error ? error.message : 'An unexpected error occurred.'}
+        </div>
+      ) : isLoading ? (
         <div className="activity-table-loading">Loading activities...</div>
       ) : activities.length === 0 ? (
         <div className="activity-table-empty">No activities found for the selected filters.</div>

@@ -23,10 +23,23 @@ export function ReportingPage() {
 
   const accountsParam = selectedAccounts.length > 0 ? selectedAccounts.join(',') : undefined
 
+  // Calculate dynamic granularity based on date range
+  const granularity = (() => {
+    const start = startDate ? new Date(startDate) : null
+    const end = endDate ? new Date(endDate) : new Date()
+    if (!start) return 'MONTHLY'
+    const diffMs = end.getTime() - start.getTime()
+    const diffYears = diffMs / (365.25 * 24 * 60 * 60 * 1000)
+    if (diffYears > 3) return 'YEARLY'
+    if (diffYears > 1) return 'QUARTERLY'
+    return 'MONTHLY'
+  })()
+
   const { data: performanceData, isLoading } = useReportingPerformance({
     startDate: startDate || undefined,
     endDate: endDate || undefined,
-    accounts: accountsParam
+    accounts: accountsParam,
+    granularity
   })
 
   const handleDateChange = (start: string, end: string) => {

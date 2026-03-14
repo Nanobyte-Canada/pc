@@ -1,6 +1,6 @@
 package com.portfolio.broker.service
 
-import com.portfolio.broker.config.SnapTradeConfig
+import com.portfolio.broker.adapter.SnapTradeAdapter
 import com.portfolio.broker.entity.SnapTradeApiStatus
 import com.portfolio.broker.entity.SnapTradeStatusCheck
 import com.portfolio.broker.repository.SnapTradeStatusRepository
@@ -16,13 +16,13 @@ class SnapTradeStatusServiceTest {
 
     private lateinit var service: SnapTradeStatusService
     private lateinit var statusRepository: SnapTradeStatusRepository
-    private lateinit var config: SnapTradeConfig
+    private lateinit var adapter: SnapTradeAdapter
 
     @BeforeEach
     fun setup() {
         statusRepository = mockk()
-        config = SnapTradeConfig(clientId = "test-id", consumerKey = "test-key")
-        service = SnapTradeStatusService(statusRepository, config)
+        adapter = mockk()
+        service = SnapTradeStatusService(statusRepository, adapter)
     }
 
     // ========== getLatestStatus Tests ==========

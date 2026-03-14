@@ -34,13 +34,13 @@ export function AccountActivitiesGrid({ connectionId, connectionActive }: Accoun
   const [typeFilter, setTypeFilter] = useState('')
   const pageSize = 50
 
-  const { data, isLoading } = useConnectionActivities(connectionId, {
+  const { data, isLoading, isError, error } = useConnectionActivities(connectionId, {
     page,
     size: pageSize,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
     type: typeFilter || undefined
-  })
+  }, connectionId > 0)
 
   const syncActivities = useSyncActivities()
 
@@ -64,15 +64,19 @@ export function AccountActivitiesGrid({ connectionId, connectionActive }: Accoun
       width: 120,
       cellRenderer: (params: { value: string }) => {
         const color = typeColors[params.value] || typeColors.OTHER
-        return `<span style="
-          display: inline-block;
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: 500;
-          color: ${color};
-          background: ${color}15;
-        ">${params.value}</span>`
+        return (
+          <span style={{
+            display: 'inline-block',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: '500',
+            color: color,
+            background: `${color}15`
+          }}>
+            {params.value}
+          </span>
+        )
       }
     },
     {
@@ -110,9 +114,10 @@ export function AccountActivitiesGrid({ connectionId, connectionActive }: Accoun
       type: 'rightAligned',
       cellStyle: (params) => ({
         fontWeight: 600,
-        color: params.value >= 0 ? '#059669' : '#dc2626'
+        color: (params.value ?? 0) >= 0 ? '#059669' : '#dc2626'
       }),
       valueFormatter: (params: ValueFormatterParams) => {
+        if (params.value == null) return '-'
         const sign = params.value >= 0 ? '+' : ''
         return sign + formatCurrency(params.value)
       }
@@ -151,7 +156,12 @@ export function AccountActivitiesGrid({ connectionId, connectionActive }: Accoun
         </button>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <div className="activities-empty">
+          <p>Failed to load activities.</p>
+          <p>{error instanceof Error ? error.message : 'An unexpected error occurred.'}</p>
+        </div>
+      ) : isLoading ? (
         <div className="activities-loading">Loading activities...</div>
       ) : activities.length === 0 ? (
         <div className="activities-empty">

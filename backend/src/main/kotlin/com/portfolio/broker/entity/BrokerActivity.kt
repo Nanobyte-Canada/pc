@@ -1,6 +1,8 @@
 package com.portfolio.broker.entity
 
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -55,7 +57,14 @@ class BrokerActivity(
     @Column(name = "option_type", length = 20)
     val optionType: String? = null,
 
+    @Column(name = "amount_cad", precision = 18, scale = 2)
+    val amountCad: BigDecimal? = null,
+
+    @Column(name = "exchange_rate", precision = 18, scale = 6)
+    val exchangeRate: BigDecimal? = null,
+
     @Column(name = "raw_payload", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     val rawPayload: String? = null,
 
     @Column(name = "created_at", nullable = false, updatable = false)

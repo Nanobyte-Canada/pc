@@ -18,6 +18,8 @@ export interface BrokerConnection {
   accountNumber: string | null
   accountType: string | null
   accountName: string | null
+  accountNumberActual: string | null
+  accountMetaType: string | null
   status: 'PENDING' | 'ACTIVE' | 'EXPIRED' | 'ERROR' | 'DISCONNECTED'
   lastPositionsFetchedAt: string | null
   positionsCount: number
@@ -57,6 +59,10 @@ export interface BrokerPosition {
   totalPnl: number | null
   totalPnlPercent: number | null
   currency: string
+  strikePrice: number | null
+  expirationDate: string | null
+  optionType: string | null
+  underlyingSymbol: string | null
 }
 
 export interface PositionsSummary {
@@ -78,6 +84,7 @@ export interface ConnectionPositionsResponse {
 export interface BrokerBreakdown {
   broker: string | null
   accountNumber: string | null
+  accountType: string | null
   quantity: number
   value: number | null
 }
