@@ -1,0 +1,40 @@
+.pv-widget {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.pv-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.pv-change-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.pv-change {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.pv-change-positive { color: var(--success-text); }
+.pv-change-negative { color: var(--danger-text); }
+
+.pv-icon-box {
+  padding: 0.625rem;
+  border-radius: 0.5rem;
+  background-color: rgba(42, 138, 129, 0.1);
+}
+
+.pv-icon-box svg {
+  color: var(--accent);
+}

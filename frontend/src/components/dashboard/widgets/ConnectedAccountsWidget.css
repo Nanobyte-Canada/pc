@@ -1,0 +1,125 @@
+.ca-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0;
+  color: var(--text-muted);
+}
+
+.ca-empty svg {
+  margin-bottom: 0.5rem;
+  opacity: 0.4;
+}
+
+.ca-empty p {
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.ca-list > * + * {
+  margin-top: 0.625rem;
+}
+
+.ca-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  transition: background-color 0.15s;
+  cursor: pointer;
+}
+
+.ca-item:hover {
+  background-color: var(--muted-bg);
+}
+
+.ca-status-active { border-left-color: var(--success-text); }
+.ca-status-needs-reconnection { border-left-color: var(--warning-text); }
+.ca-status-error { border-left-color: var(--danger-text); }
+.ca-status-default { border-left-color: var(--gray-text); }
+
+.ca-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.ca-broker-icon {
+  height: 2.25rem;
+  width: 2.25rem;
+  border-radius: 9999px;
+  background-color: rgba(42, 138, 129, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ca-broker-icon span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.ca-account-info {
+  min-width: 0;
+}
+
+.ca-account-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ca-account-detail {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ca-item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.ca-value-info {
+  text-align: right;
+}
+
+.ca-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.ca-positions-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.ca-accuracy-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.25rem;
+  width: 2.25rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 2px solid;
+}
+
+.ca-external-icon {
+  height: 0.875rem;
+  width: 0.875rem;
+  color: var(--text-muted);
+}

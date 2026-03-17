@@ -35,6 +35,7 @@ import { PortfolioGroupDetailPage } from './pages/PortfolioGroupDetailPage'
 
 // Dashboard
 import { DashboardPage } from './pages/DashboardPage'
+import { AccountDetailPage } from './pages/AccountDetailPage'
 
 import './App.css'
 
@@ -97,6 +98,7 @@ function App() {
         <Route path="brokers/connections" element={<BrokerConnectionsPage />} />
         <Route path="brokers/positions" element={<BrokerPositionsPage />} />
         <Route path="brokers/positions/:connectionId" element={<PositionDetailsPage />} />
+        <Route path="brokers/accounts/:connectionId" element={<AccountDetailPage />} />
         <Route path="brokers/reporting" element={<ReportingPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route

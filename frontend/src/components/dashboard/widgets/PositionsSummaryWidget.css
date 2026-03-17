@@ -1,0 +1,46 @@
+.ps-total {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-bottom: 0.75rem;
+}
+
+.ps-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.ps-type-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.5rem;
+}
+
+.ps-type-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.ps-type-icon {
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.ps-bg-blue { background-color: var(--blue-light); }
+.ps-text-blue { color: var(--blue-text); }
+.ps-bg-teal { background-color: var(--teal-light); }
+.ps-text-teal { color: var(--teal-text); }
+.ps-bg-purple { background-color: var(--purple-light); }
+.ps-text-purple { color: var(--purple-text); }
+.ps-bg-orange { background-color: var(--orange-light); }
+.ps-text-orange { color: var(--orange-text); }
+.ps-bg-indigo { background-color: var(--indigo-light); }
+.ps-text-indigo { color: var(--indigo-text); }
+.ps-bg-green { background-color: var(--green-light); }
+.ps-text-green { color: var(--green-text); }
+.ps-bg-gray { background-color: var(--gray-light); }
+.ps-text-gray { color: var(--gray-text); }

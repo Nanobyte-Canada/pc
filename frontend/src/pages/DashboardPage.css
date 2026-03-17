@@ -244,6 +244,78 @@
   margin-left: 0.5rem;
 }
 
+/* Hero Header */
+.dashboard-hero {
+  margin-bottom: 1.5rem;
+  border-radius: 1rem;
+  background: linear-gradient(to right, #2a8a81, #1a6b63);
+  padding: 1.5rem;
+  color: #ffffff;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+}
+
+.dashboard-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dashboard-hero-greeting {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-hero-date {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dashboard-hero-value-section {
+  margin-top: 1rem;
+}
+
+.dashboard-hero-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-hero-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.dashboard-hero-change {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.dashboard-hero-change-positive {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #86efac;
+}
+
+.dashboard-hero-change-negative {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #fca5a5;
+}
+
+.dashboard-hero-change-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-left: 0.25rem;
+}
+
 @media (max-width: 768px) {
   .dashboard-page {
     padding: 0.75rem;

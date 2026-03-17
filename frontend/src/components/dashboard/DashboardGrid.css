@@ -1,0 +1,94 @@
+.dashboard-grid-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ===== Zoned layout ===== */
+.dashboard-zones-top {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+/* Mobile: natural DOM order gives A -> C -> B -> D vertical stack */
+
+@media (min-width: 1024px) {
+  .dashboard-zones-top {
+    grid-template-columns: 3fr 1fr;
+    grid-template-areas:
+      "zone-a zone-b"
+      "zone-c zone-b"
+      "zone-d zone-d";
+  }
+
+  .dashboard-zone-a {
+    grid-area: zone-a;
+  }
+
+  .dashboard-zone-b {
+    grid-area: zone-b;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .dashboard-zone-c {
+    grid-area: zone-c;
+  }
+
+  .dashboard-zone-d {
+    grid-area: zone-d;
+  }
+}
+
+/* Zone A inner grid */
+.zone-a-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .zone-a-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .zone-a-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Zone B stacked (mobile fallback) */
+.dashboard-zone-b {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ===== Loading skeleton ===== */
+.dashboard-grid-loading {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard-grid-loading {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid-loading {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.dashboard-grid-loading-full {
+  grid-column: 1 / -1;
+}

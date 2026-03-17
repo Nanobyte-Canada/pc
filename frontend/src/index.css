@@ -21,6 +21,108 @@
   --error: #dc2626;
   --success: #059669;
   --warning: #d97706;
+  --input-bg: #ffffff;
+  --input-border: #cbd4d9;
+  --ring: #2a8a81;
+  --popover-bg: #ffffff;
+  --popover-text: #303030;
+  --destructive: #dc2626;
+  --secondary-bg: #f1f5f9;
+  --secondary-text: #303030;
+  --muted-bg: #f1f5f9;
+
+  --success-light: #dcfce7;
+  --success-text: #059669;
+  --danger-light: #fee2e2;
+  --danger-text: #dc2626;
+  --warning-light: #fef3c7;
+  --warning-text: #d97706;
+  --info-light: #dbeafe;
+  --info-text: #2563eb;
+  --cyan-light: #cffafe;
+  --cyan-text: #0891b2;
+  --purple-light: #f3e8ff;
+  --purple-text: #7c3aed;
+  --orange-light: #ffedd5;
+  --orange-text: #ea580c;
+  --indigo-light: #e0e7ff;
+  --indigo-text: #4f46e5;
+  --amber-light: #fef3c7;
+  --amber-text: #d97706;
+  --red-light: #fee2e2;
+  --red-text: #dc2626;
+  --blue-light: #dbeafe;
+  --blue-text: #2563eb;
+  --teal-light: #ccfbf1;
+  --teal-text: #0d9488;
+  --green-light: #dcfce7;
+  --green-text: #059669;
+  --yellow-light: #fef9c3;
+  --yellow-text: #ca8a04;
+  --gray-light: #f3f4f6;
+  --gray-text: #6b7280;
+  --gray-stroke: #e5e7eb;
+}
+
+/* ====== Dark theme ====== */
+html.dark {
+  --bg-primary: #09090b;
+  --bg-secondary: #0c0c0e;
+  --bg-tertiary: #18181b;
+  --card-bg: #0c0c0e;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --accent: #2a8a81;
+  --accent-hover: #34a69c;
+  --accent-light: #1a5c56;
+  --border: #27272a;
+  --nav-bg: #0c0c0e;
+  --nav-text: #fafafa;
+  --error: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --input-bg: #0c0c0e;
+  --input-border: #27272a;
+  --ring: #2a8a81;
+  --popover-bg: #0c0c0e;
+  --popover-text: #fafafa;
+  --destructive: #dc2626;
+  --secondary-bg: #1c1c22;
+  --secondary-text: #fafafa;
+  --muted-bg: #18181b;
+
+  --success-light: rgba(5,150,105,0.15);
+  --success-text: #34d399;
+  --danger-light: rgba(220,38,38,0.15);
+  --danger-text: #f87171;
+  --warning-light: rgba(217,119,6,0.15);
+  --warning-text: #fbbf24;
+  --info-light: rgba(37,99,235,0.15);
+  --info-text: #60a5fa;
+  --cyan-light: rgba(8,145,178,0.15);
+  --cyan-text: #22d3ee;
+  --purple-light: rgba(124,58,237,0.15);
+  --purple-text: #a78bfa;
+  --orange-light: rgba(234,88,12,0.15);
+  --orange-text: #fb923c;
+  --indigo-light: rgba(79,70,229,0.15);
+  --indigo-text: #818cf8;
+  --amber-light: rgba(217,119,6,0.15);
+  --amber-text: #fcd34d;
+  --red-light: rgba(220,38,38,0.15);
+  --red-text: #f87171;
+  --blue-light: rgba(37,99,235,0.15);
+  --blue-text: #60a5fa;
+  --teal-light: rgba(13,148,136,0.15);
+  --teal-text: #5eead4;
+  --green-light: rgba(5,150,105,0.15);
+  --green-text: #34d399;
+  --yellow-light: rgba(202,138,4,0.15);
+  --yellow-text: #facc15;
+  --gray-light: rgba(107,114,128,0.15);
+  --gray-text: #9ca3af;
+  --gray-stroke: #374151;
 }
 
 body {
@@ -49,4 +151,79 @@ code {
   --ag-border-color: var(--border);
   --ag-header-foreground-color: var(--text-secondary);
   --ag-foreground-color: var(--text-primary);
+  --ag-font-size: 13px;
+  --ag-header-height: 40px;
+  --ag-row-height: 40px;
+  --ag-border-radius: 8px;
+  --ag-wrapper-border-radius: 8px;
+  --ag-cell-horizontal-padding: 12px;
+}
+
+.ag-theme-quartz .ag-header-cell {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+.ag-theme-quartz .ag-row {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* AG Grid dark mode overrides */
+html.dark .ag-theme-quartz {
+  --ag-background-color: var(--bg-secondary);
+  --ag-header-background-color: #18181b;
+  --ag-odd-row-background-color: #111113;
+  --ag-row-hover-color: rgba(42, 138, 129, 0.12);
+  --ag-selected-row-background-color: rgba(42, 138, 129, 0.18);
+  --ag-border-color: #27272a;
+  --ag-header-foreground-color: #a1a1aa;
+  --ag-foreground-color: #fafafa;
+}
+
+html.dark .ag-theme-quartz .ag-row {
+  border-bottom: 1px solid #1e1e22;
+}
+
+/* Widget card transitions */
+.widget-card {
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.widget-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+html.dark .widget-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* NotificationBell overrides for sidebar context */
+html.dark .notification-bell-btn {
+  color: var(--text-secondary);
+}
+
+html.dark .notification-dropdown {
+  background-color: var(--card-bg);
+  border-color: var(--border);
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }

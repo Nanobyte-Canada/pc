@@ -1,57 +1,56 @@
-import { useDashboard } from '../hooks/useDashboard'
-import { DashboardKpiCards } from '../components/dashboard/DashboardKpiCards'
-import { PortfolioGroupsList } from '../components/dashboard/PortfolioGroupsList'
-import { RecentOrdersList } from '../components/dashboard/RecentOrdersList'
-import { AlertsList } from '../components/dashboard/AlertsList'
+import { useDashboardSummary } from '@/hooks/useDashboardWidgets'
+import { DashboardGrid } from '../components/dashboard/DashboardGrid'
+import { TrendingUp, TrendingDown } from 'lucide-react'
 import './DashboardPage.css'
 
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(value)
+}
+
+function getGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  return 'Good evening'
+}
+
 export function DashboardPage() {
-  const { data: dashboard, isLoading } = useDashboard()
-
-  if (isLoading) {
-    return (
-      <div className="dashboard-page">
-        <div className="loading-state">
-          <div className="loading-spinner" />
-          <p>Loading dashboard...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!dashboard) {
-    return (
-      <div className="dashboard-page">
-        <div className="empty-state">
-          <h2>Welcome to Portfolio Builder</h2>
-          <p>Connect your broker accounts and create portfolio groups to get started.</p>
-        </div>
-      </div>
-    )
-  }
+  const { data } = useDashboardSummary()
+  const pv = data?.portfolioValue
+  const isPositive = (pv?.totalChange ?? 0) >= 0
 
   return (
     <div className="dashboard-page">
-      <div className="dashboard-header">
-        <h1>Dashboard</h1>
+      {/* Hero Header */}
+      <div className="dashboard-hero">
+        <div className="dashboard-hero-top">
+          <div>
+            <p className="dashboard-hero-greeting">{getGreeting()}</p>
+            <p className="dashboard-hero-date">
+              {new Date().toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+        </div>
+        {pv && (
+          <div className="dashboard-hero-value-section">
+            <p className="dashboard-hero-label">Total Portfolio Value</p>
+            <p className="dashboard-hero-value">{formatCurrency(pv.totalValue)}</p>
+            <div className="dashboard-hero-change">
+              {isPositive ? (
+                <TrendingUp style={{ height: '1rem', width: '1rem', color: '#86efac' }} />
+              ) : (
+                <TrendingDown style={{ height: '1rem', width: '1rem', color: '#fca5a5' }} />
+              )}
+              <span className={isPositive ? 'dashboard-hero-change-positive' : 'dashboard-hero-change-negative'}>
+                {isPositive ? '+' : ''}{formatCurrency(pv.totalChange)} ({isPositive ? '+' : ''}{pv.totalChangePercent.toFixed(2)}%)
+              </span>
+              <span className="dashboard-hero-change-label">today</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      <DashboardKpiCards
-        totalValue={dashboard.totalPortfolioValue}
-        dayChange={dashboard.dayChange}
-        dayChangePercent={dashboard.dayChangePercent}
-        averageAccuracy={dashboard.averageAccuracy}
-      />
-
-      <div className="dashboard-grid">
-        <div className="dashboard-main">
-          <PortfolioGroupsList groups={dashboard.portfolioGroups} />
-        </div>
-        <div className="dashboard-sidebar">
-          <RecentOrdersList orders={dashboard.recentOrders} />
-          <AlertsList alerts={dashboard.activeAlerts} />
-        </div>
-      </div>
+      <DashboardGrid />
     </div>
   )
 }

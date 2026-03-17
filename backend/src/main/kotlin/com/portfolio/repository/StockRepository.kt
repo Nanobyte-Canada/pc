@@ -18,6 +18,8 @@ interface StockRepository : JpaRepository<Stock, Long>, JpaSpecificationExecutor
 
     fun findByTickerIgnoreCase(ticker: String): Stock?
 
+    fun findFirstByTickerIgnoreCase(ticker: String): Stock?
+
     fun findAllByTickerIgnoreCase(ticker: String): List<Stock>
 
     fun findByTickerIgnoreCaseAndIsActiveTrue(ticker: String): Stock?
