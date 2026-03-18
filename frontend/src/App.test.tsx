@@ -56,7 +56,7 @@ describe('App', () => {
   it('renders the portfolio builder page by default', async () => {
     renderWithProviders(<App />)
     await waitFor(() => {
-      expect(screen.getByText('Build and analyze your portfolio with stocks, ETFs, and mutual funds')).toBeInTheDocument()
+      expect(screen.getByText('Build and analyze your portfolio with stocks and ETFs')).toBeInTheDocument()
     })
   })
 

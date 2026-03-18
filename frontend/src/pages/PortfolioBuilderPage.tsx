@@ -14,7 +14,7 @@ export function PortfolioBuilderPage() {
   const handleWeightChange = (instrumentType: string, instrumentId: number, value: string) => {
     const weight = parseFloat(value) / 100;
     if (!isNaN(weight)) {
-      updateWeight(instrumentType as 'STOCK' | 'ETF' | 'MUTUAL_FUND', instrumentId, weight);
+      updateWeight(instrumentType as 'STOCK' | 'ETF', instrumentId, weight);
     }
   };
 
@@ -49,7 +49,7 @@ export function PortfolioBuilderPage() {
   return (
     <div className="portfolio-builder-page">
       <h1 className="page-title">Portfolio Builder</h1>
-      <p className="page-subtitle">Build and analyze your portfolio with stocks, ETFs, and mutual funds</p>
+      <p className="page-subtitle">Build and analyze your portfolio with stocks and ETFs</p>
 
       <div className="builder-sections">
         <section className="search-section">
@@ -68,7 +68,7 @@ export function PortfolioBuilderPage() {
           </div>
 
           {positions.length === 0 ? (
-            <p className="empty-basket">No instruments added. Use the search above to add stocks, ETFs, or mutual funds.</p>
+            <p className="empty-basket">No instruments added. Use the search above to add stocks or ETFs.</p>
           ) : (
             <>
               <table className="basket-table">
@@ -86,7 +86,7 @@ export function PortfolioBuilderPage() {
                     <tr key={`${pos.instrumentType}-${pos.instrumentId}`}>
                       <td>
                         <span className={`type-badge type-${pos.instrumentType.toLowerCase()}`}>
-                          {pos.instrumentType === 'MUTUAL_FUND' ? 'MF' : pos.instrumentType}
+                          {pos.instrumentType}
                         </span>
                       </td>
                       <td className="symbol-cell">{pos.symbol}</td>

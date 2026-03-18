@@ -14,7 +14,6 @@ describe('analysisStore', () => {
       totalPositions: 2,
       directStockCount: 1,
       etfCount: 1,
-      mutualFundCount: 0,
       lookThroughStockCount: 100,
       analysisDate: '2024-01-15',
     },

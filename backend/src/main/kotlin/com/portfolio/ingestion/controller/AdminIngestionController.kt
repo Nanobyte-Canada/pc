@@ -1,5 +1,7 @@
 package com.portfolio.ingestion.controller
 
+import com.portfolio.entity.AVIngestionStatus
+import com.portfolio.entity.EtfComEnrichmentStatus
 import com.portfolio.ingestion.entity.IngestionError
 import com.portfolio.ingestion.entity.IngestionRun
 import com.portfolio.ingestion.entity.IngestionStep
@@ -7,12 +9,17 @@ import com.portfolio.ingestion.repository.IngestionErrorRepository
 import com.portfolio.ingestion.repository.IngestionRunRepository
 import com.portfolio.ingestion.service.IngestionOrchestrator
 import com.portfolio.ingestion.service.IngestionTrackingService
+import com.portfolio.repository.EtfRepository
+import com.portfolio.repository.StockRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.time.OffsetDateTime
 
-// DTOs for API responses
+// ─────────────────────────────────────────────
+// DTOs
+// ─────────────────────────────────────────────
+
 data class IngestionRunDto(
     val id: Long,
     val runType: String,
@@ -55,8 +62,24 @@ data class IngestionErrorDto(
     val createdAt: OffsetDateTime
 )
 
+data class ErrorSummaryDto(
+    val errorType: String,
+    val count: Long,
+    val lastOccurredAt: OffsetDateTime?
+)
+
+data class IngestionStatsDto(
+    val totalStocks: Long,
+    val stocksWithRawData: Long,
+    val stocksPendingIngestion: Long,
+    val totalEtfs: Long,
+    val etfsEnriched: Long,
+    val etfsPendingEnrichment: Long,
+    val errorsLast24h: Long
+)
+
 data class TriggerIngestionRequest(
-    val steps: List<String>? = null // null = run full ingestion (EODHD universe refresh)
+    val steps: List<String>? = null
 )
 
 data class TriggerIngestionResponse(
@@ -65,81 +88,52 @@ data class TriggerIngestionResponse(
     val message: String
 )
 
+// ─────────────────────────────────────────────
+// Controller
+// ─────────────────────────────────────────────
+
 @RestController
 @RequestMapping("/admin/ingestion")
 class AdminIngestionController(
     private val orchestrator: IngestionOrchestrator,
     private val trackingService: IngestionTrackingService,
     private val runRepository: IngestionRunRepository,
-    private val errorRepository: IngestionErrorRepository
+    private val errorRepository: IngestionErrorRepository,
+    private val stockRepository: StockRepository,
+    private val etfRepository: EtfRepository
 ) {
 
-    /**
-     * Trigger a full ingestion run.
-     * Runs the complete pipeline:
-     * 1. EODHD Universe refresh
-     * 2. AV Stock ingestion (fetch raw data)
-     * 3. AV ETF ingestion (fetch raw data)
-     * 4. AV Stock enrichment (parse raw payload)
-     * 5. AV ETF enrichment (parse raw payload)
-     *
-     * POST /admin/ingestion/run
-     */
+    /** POST /admin/ingestion/run — full pipeline */
     @PostMapping("/run")
     fun triggerIngestion(
         @RequestBody(required = false) request: TriggerIngestionRequest?
     ): ResponseEntity<TriggerIngestionResponse> {
         val run = orchestrator.runFullIngestion("api:/admin/ingestion/run")
-
-        return ResponseEntity.ok(TriggerIngestionResponse(
-            runId = run.id,
-            status = run.status.name,
-            message = "Full ingestion run triggered successfully"
-        ))
+        return ResponseEntity.ok(TriggerIngestionResponse(run.id, run.status.name, "Full ingestion run triggered successfully"))
     }
 
-    /**
-     * Trigger universe refresh only (without AV ingestion/enrichment)
-     * POST /admin/ingestion/run/universe
-     */
-    @PostMapping("/run/universe")
-    fun triggerUniverseRefresh(): ResponseEntity<TriggerIngestionResponse> {
-        val run = orchestrator.runUniverseRefreshOnly("api:/admin/ingestion/run/universe")
-
-        return ResponseEntity.ok(TriggerIngestionResponse(
-            runId = run.id,
-            status = run.status.name,
-            message = "Universe refresh triggered successfully"
-        ))
-    }
-
-    /**
-     * Get list of recent ingestion runs
-     * GET /admin/ingestion/runs?limit=10
-     */
+    /** GET /admin/ingestion/runs?limit=10 */
     @GetMapping("/runs")
-    fun getRecentRuns(
-        @RequestParam(defaultValue = "10") limit: Int
-    ): ResponseEntity<List<IngestionRunDto>> {
+    fun getRecentRuns(@RequestParam(defaultValue = "10") limit: Int): ResponseEntity<List<IngestionRunDto>> {
         val runs = trackingService.getRecentRuns(limit)
         return ResponseEntity.ok(runs.map { it.toDto() })
     }
 
-    /**
-     * Get details of a specific run
-     * GET /admin/ingestion/runs/{id}
-     */
+    /** GET /admin/ingestion/runs/{id} */
     @GetMapping("/runs/{id}")
     fun getRunDetails(@PathVariable id: Long): ResponseEntity<IngestionRunDetailDto> {
-        val run = trackingService.getRunWithDetails(id)
-            ?: return ResponseEntity.notFound().build()
+        val run = trackingService.getRunWithDetails(id) ?: return ResponseEntity.notFound().build()
         return ResponseEntity.ok(run.toDetailDto())
     }
 
-    /**
-     * Get errors for a specific run
-     * GET /admin/ingestion/runs/{id}/errors
-     */
+    /** GET /admin/ingestion/runs/{id}/steps — lazy-loadable step breakdown for a run */
+    @GetMapping("/runs/{id}/steps")
+    fun getRunSteps(@PathVariable id: Long): ResponseEntity<List<IngestionStepDto>> {
+        val run = trackingService.getRunWithDetails(id) ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(run.steps.map { it.toDto() })
+    }
+
+    /** GET /admin/ingestion/runs/{id}/errors */
     @GetMapping("/runs/{id}/errors")
     fun getRunErrors(@PathVariable id: Long): ResponseEntity<List<IngestionErrorDto>> {
         val errors = errorRepository.findByRunId(id)
@@ -147,18 +141,64 @@ class AdminIngestionController(
     }
 
     /**
-     * Get recent errors across all runs
-     * GET /admin/ingestion/errors?limit=50
+     * GET /admin/ingestion/errors?stepName=X&errorType=Y&limit=100
+     * Filterable errors endpoint with optional query params.
      */
     @GetMapping("/errors")
     fun getRecentErrors(
-        @RequestParam(defaultValue = "50") limit: Int
+        @RequestParam(required = false) stepName: String?,
+        @RequestParam(required = false) errorType: String?,
+        @RequestParam(defaultValue = "100") limit: Int
     ): ResponseEntity<List<IngestionErrorDto>> {
-        val errors = errorRepository.findRecentErrors(PageRequest.of(0, limit))
+        val errors = if (stepName == null && errorType == null) {
+            errorRepository.findRecentErrors(PageRequest.of(0, limit))
+        } else {
+            errorRepository.findFilteredErrors(stepName, errorType, PageRequest.of(0, limit))
+        }
         return ResponseEntity.ok(errors.map { it.toDto() })
     }
 
-    // Extension functions for DTO conversion
+    /**
+     * GET /admin/ingestion/errors/summary
+     * Error counts grouped by errorType, last 24 hours.
+     */
+    @GetMapping("/errors/summary")
+    fun getErrorSummary(): ResponseEntity<List<ErrorSummaryDto>> {
+        val since = OffsetDateTime.now().minusHours(24)
+        val raw = errorRepository.getErrorSummaryRaw(since)
+        val summary = raw.map { row ->
+            ErrorSummaryDto(
+                errorType = row[0].toString(),
+                count = (row[1] as Number).toLong(),
+                lastOccurredAt = row[2]?.let { it as? OffsetDateTime }
+            )
+        }
+        return ResponseEntity.ok(summary)
+    }
+
+    /**
+     * GET /admin/ingestion/stats
+     * Aggregate pipeline statistics across stocks and ETFs.
+     */
+    @GetMapping("/stats")
+    fun getIngestionStats(): ResponseEntity<IngestionStatsDto> {
+        val since = OffsetDateTime.now().minusHours(24)
+
+        return ResponseEntity.ok(IngestionStatsDto(
+            totalStocks = stockRepository.count(),
+            stocksWithRawData = stockRepository.countByAvIngestionStatus(AVIngestionStatus.SUCCESS),
+            stocksPendingIngestion = stockRepository.countAvIngestionPending(),
+            totalEtfs = etfRepository.count(),
+            etfsEnriched = etfRepository.countByEtfcomEnrichmentStatus(EtfComEnrichmentStatus.SUCCESS),
+            etfsPendingEnrichment = etfRepository.countEtfsPendingEnrichment(),
+            errorsLast24h = errorRepository.countErrorsSince(since)
+        ))
+    }
+
+    // ─────────────────────────────────────────────
+    // DTO conversions
+    // ─────────────────────────────────────────────
+
     private fun IngestionRun.toDto() = IngestionRunDto(
         id = id,
         runType = runType.name,

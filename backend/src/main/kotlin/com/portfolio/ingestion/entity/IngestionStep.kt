@@ -7,12 +7,9 @@ import java.time.OffsetDateTime
 
 enum class StepName {
     EODHD_UNIVERSE,
-    AV_STOCK_INGESTION,       // Fetch raw data from AV API
-    AV_ETF_INGESTION,         // Fetch raw data from AV API (deprecated)
-    AV_STOCK_ENRICHMENT,      // Parse raw data to entity fields
-    AV_ETF_ENRICHMENT,        // Parse raw data to entity fields (deprecated)
-    ETFCOM_ETF_UNIVERSE,      // Fetch ETF universe from etf.com
-    ETFCOM_ETF_ENRICHMENT     // Enrich ETFs from etf.com
+    AV_STOCK_INGESTION,
+    ETFCOM_ETF_UNIVERSE,
+    ETFCOM_ETF_ENRICHMENT
 }
 
 enum class StepStatus {
@@ -61,6 +58,7 @@ class IngestionStep(
     var metadata: String? = null,
 
     @OneToMany(mappedBy = "step", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @org.hibernate.annotations.BatchSize(size = 50)
     val errors: MutableList<IngestionError> = mutableListOf()
 ) {
     fun complete(finalStatus: StepStatus) {

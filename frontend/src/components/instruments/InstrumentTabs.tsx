@@ -14,7 +14,6 @@ const TABS: Tab[] = [
   { id: 'all', label: 'All' },
   { id: 'STOCK', label: 'Stocks' },
   { id: 'ETF', label: 'ETFs' },
-  { id: 'MUTUAL_FUND', label: 'Mutual Funds' },
 ];
 
 export function InstrumentTabs() {

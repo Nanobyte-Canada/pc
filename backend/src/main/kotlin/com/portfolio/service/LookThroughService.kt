@@ -5,22 +5,16 @@ import com.portfolio.dto.response.ExposureSourceDto
 import com.portfolio.entity.Etf
 import com.portfolio.entity.EtfHolding
 import com.portfolio.entity.HoldingDataSource
-import com.portfolio.entity.MutualFundHolding
 import com.portfolio.entity.Stock
 import com.portfolio.repository.EtfHoldingRepository
 import com.portfolio.repository.EtfRepository
 import com.portfolio.repository.EtfSectorAllocationFactsetRepository
-import com.portfolio.repository.MutualFundHoldingRepository
-import com.portfolio.repository.MutualFundRepository
 import com.portfolio.repository.StockRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 
-/**
- * Represents a resolved stock exposure in the portfolio.
- */
 data class LookThroughExposure(
     val stockId: Long,
     val stock: Stock,
@@ -28,9 +22,6 @@ data class LookThroughExposure(
     val sources: MutableList<ExposureSourceDto>
 )
 
-/**
- * Represents an unresolved holding that couldn't be mapped to a stock.
- */
 data class UnresolvedExposure(
     val rawTicker: String?,
     val rawName: String?,
@@ -40,9 +31,6 @@ data class UnresolvedExposure(
     val sourceSymbol: String
 )
 
-/**
- * Quality metrics for the look-through analysis.
- */
 data class LookThroughQuality(
     val totalHoldingsCount: Int,
     val resolvedCount: Int,
@@ -52,9 +40,6 @@ data class LookThroughQuality(
     val coveragePercent: BigDecimal
 )
 
-/**
- * Complete result of look-through analysis including quality metrics.
- */
 data class LookThroughResult(
     val exposures: Map<Long, LookThroughExposure>,
     val unresolvedExposures: List<UnresolvedExposure>,
@@ -62,27 +47,21 @@ data class LookThroughResult(
     val etfDirectSectorExposures: Map<Long, EtfSectorExposure>
 )
 
-/**
- * ETF sector exposure from Alpha Vantage sector allocation data.
- */
 data class EtfSectorExposure(
     val etfId: Long,
     val etfSymbol: String,
     val portfolioWeight: BigDecimal,
-    val sectorAllocations: Map<String, BigDecimal>  // sectorCode -> allocation
+    val sectorAllocations: Map<String, BigDecimal>
 )
 
 @Service
 class LookThroughService(
     private val stockRepository: StockRepository,
     private val etfRepository: EtfRepository,
-    private val mutualFundRepository: MutualFundRepository,
     private val etfHoldingRepository: EtfHoldingRepository,
-    private val mutualFundHoldingRepository: MutualFundHoldingRepository,
     private val sectorAllocationFactsetRepository: EtfSectorAllocationFactsetRepository
 ) {
     companion object {
-        // FactSet sector name to GICS sector code mapping
         val FACTSET_SECTOR_TO_GICS = mapOf(
             "Technology" to "45",
             "Information Technology" to "45",
@@ -121,10 +100,6 @@ class LookThroughService(
         const val MAX_NESTED_DEPTH = 2
     }
 
-    /**
-     * Compute look-through exposures with quality metrics.
-     * This is the enhanced version that handles unresolved holdings and ETF direct sector exposure.
-     */
     fun computeLookThroughWithQuality(
         positions: List<PortfolioPositionRequest>,
         analysisDate: LocalDate
@@ -143,7 +118,7 @@ class LookThroughService(
 
             when (position.instrumentType.uppercase()) {
                 "STOCK" -> {
-                    val stock = stockRepository.findByIdWithGics(position.instrumentId) ?: continue
+                    val stock = stockRepository.findById(position.instrumentId).orElse(null) ?: continue
                     addStockExposure(exposureMap, stock, weight, "DIRECT", null, null)
                     totalHoldingsCount++
                     resolvedCount++
@@ -153,7 +128,6 @@ class LookThroughService(
                 "ETF" -> {
                     val etf = etfRepository.findById(position.instrumentId).orElse(null) ?: continue
 
-                    // Extract ETF direct sector allocations if available
                     val sectorAllocs = extractEtfSectorAllocations(etf)
                     if (sectorAllocs.isNotEmpty()) {
                         etfSectorExposures[etf.id] = EtfSectorExposure(
@@ -164,7 +138,6 @@ class LookThroughService(
                         )
                     }
 
-                    // Process holdings
                     val holdings = etfHoldingRepository.findLatestHoldingsIncludingUnresolved(
                         position.instrumentId, analysisDate
                     )
@@ -184,23 +157,13 @@ class LookThroughService(
                                 resolvedWeight += effectiveContribution
                             }
                             holding.heldEtf != null -> {
-                                // Nested ETF - process recursively (limited depth)
                                 processNestedEtf(
                                     exposureMap, unresolvedExposures,
                                     holding.heldEtf!!, effectiveContribution,
                                     analysisDate, 1
                                 )
                             }
-                            holding.heldMutualFund != null -> {
-                                // Nested Mutual Fund
-                                processNestedMutualFund(
-                                    exposureMap, unresolvedExposures,
-                                    holding.heldMutualFund!!, effectiveContribution,
-                                    analysisDate, 1
-                                )
-                            }
                             else -> {
-                                // Unresolved holding
                                 unresolvedExposures.add(UnresolvedExposure(
                                     rawTicker = holding.rawTicker,
                                     rawName = holding.rawName,
@@ -208,55 +171,6 @@ class LookThroughService(
                                     sourceType = "ETF",
                                     sourceInstrumentId = position.instrumentId,
                                     sourceSymbol = etf.symbol
-                                ))
-                                unresolvedWeight += effectiveContribution
-                            }
-                        }
-                    }
-                }
-
-                "MUTUAL_FUND" -> {
-                    val fund = mutualFundRepository.findById(position.instrumentId).orElse(null) ?: continue
-                    val holdings = mutualFundHoldingRepository.findLatestHoldingsIncludingUnresolved(
-                        position.instrumentId, analysisDate
-                    )
-
-                    for (holding in holdings) {
-                        totalHoldingsCount++
-                        val holdingWeight = getEffectiveWeight(holding) ?: continue
-                        val effectiveContribution = weight * holdingWeight
-
-                        when {
-                            holding.stock != null -> {
-                                addStockExposure(
-                                    exposureMap, holding.stock!!, effectiveContribution,
-                                    "MUTUAL_FUND", position.instrumentId, fund.symbol
-                                )
-                                resolvedCount++
-                                resolvedWeight += effectiveContribution
-                            }
-                            holding.heldEtf != null -> {
-                                processNestedEtf(
-                                    exposureMap, unresolvedExposures,
-                                    holding.heldEtf!!, effectiveContribution,
-                                    analysisDate, 1
-                                )
-                            }
-                            holding.heldMutualFund != null -> {
-                                processNestedMutualFund(
-                                    exposureMap, unresolvedExposures,
-                                    holding.heldMutualFund!!, effectiveContribution,
-                                    analysisDate, 1
-                                )
-                            }
-                            else -> {
-                                unresolvedExposures.add(UnresolvedExposure(
-                                    rawTicker = holding.rawTicker,
-                                    rawName = holding.rawName,
-                                    effectiveWeight = effectiveContribution,
-                                    sourceType = "MUTUAL_FUND",
-                                    sourceInstrumentId = position.instrumentId,
-                                    sourceSymbol = fund.symbol
                                 ))
                                 unresolvedWeight += effectiveContribution
                             }
@@ -288,9 +202,6 @@ class LookThroughService(
         )
     }
 
-    /**
-     * Legacy method for backward compatibility.
-     */
     fun computeLookThroughExposure(
         positions: List<PortfolioPositionRequest>,
         analysisDate: LocalDate
@@ -336,7 +247,6 @@ class LookThroughService(
         depth: Int
     ) {
         if (depth >= MAX_NESTED_DEPTH) {
-            // Max depth reached, treat as unresolved
             unresolvedExposures.add(UnresolvedExposure(
                 rawTicker = nestedEtf.symbol,
                 rawName = nestedEtf.name,
@@ -382,53 +292,6 @@ class LookThroughService(
         }
     }
 
-    private fun processNestedMutualFund(
-        exposureMap: MutableMap<Long, LookThroughExposure>,
-        unresolvedExposures: MutableList<UnresolvedExposure>,
-        nestedFund: com.portfolio.entity.MutualFund,
-        parentWeight: BigDecimal,
-        analysisDate: LocalDate,
-        depth: Int
-    ) {
-        if (depth >= MAX_NESTED_DEPTH) {
-            unresolvedExposures.add(UnresolvedExposure(
-                rawTicker = nestedFund.symbol,
-                rawName = nestedFund.name,
-                effectiveWeight = parentWeight,
-                sourceType = "NESTED_MF",
-                sourceInstrumentId = nestedFund.id,
-                sourceSymbol = nestedFund.symbol
-            ))
-            return
-        }
-
-        val holdings = mutualFundHoldingRepository.findLatestHoldingsIncludingUnresolved(nestedFund.id, analysisDate)
-
-        for (holding in holdings) {
-            val holdingWeight = getEffectiveWeight(holding) ?: continue
-            val effectiveContribution = parentWeight * holdingWeight
-
-            when {
-                holding.stock != null -> {
-                    addStockExposure(
-                        exposureMap, holding.stock!!, effectiveContribution,
-                        "NESTED_MF", nestedFund.id, nestedFund.symbol
-                    )
-                }
-                else -> {
-                    unresolvedExposures.add(UnresolvedExposure(
-                        rawTicker = holding.rawTicker,
-                        rawName = holding.rawName,
-                        effectiveWeight = effectiveContribution,
-                        sourceType = "NESTED_MF",
-                        sourceInstrumentId = nestedFund.id,
-                        sourceSymbol = nestedFund.symbol
-                    ))
-                }
-            }
-        }
-    }
-
     private fun getEffectiveWeight(holding: EtfHolding): BigDecimal? {
         return when (holding.dataSource) {
             HoldingDataSource.ETF_COM -> holding.etfcomWeight ?: holding.weight
@@ -437,17 +300,6 @@ class LookThroughService(
         }
     }
 
-    private fun getEffectiveWeight(holding: MutualFundHolding): BigDecimal? {
-        return when (holding.dataSource) {
-            HoldingDataSource.ETF_COM -> holding.etfcomWeight ?: holding.weight
-            HoldingDataSource.ALPHA_VANTAGE -> holding.avWeight ?: holding.weight
-            else -> holding.weight
-        }
-    }
-
-    /**
-     * Extract sector allocations from ETF data using etf.com FactSet sector data.
-     */
     private fun extractEtfSectorAllocations(etf: Etf): Map<String, BigDecimal> {
         val factsetSectors = sectorAllocationFactsetRepository.findLatestByEtfId(etf.id)
         if (factsetSectors.isEmpty()) return emptyMap()

@@ -6,7 +6,6 @@ import {
   Hammer,
   TrendingUp,
   PieChart,
-  Layers,
   Link2,
   Wallet,
   FileText,
@@ -58,7 +57,6 @@ const navSections: NavSection[] = [
     items: [
       { to: '/screener/stocks', icon: TrendingUp, label: 'Stocks' },
       { to: '/screener/etfs', icon: PieChart, label: 'ETFs' },
-      { to: '/screener/mutual-funds', icon: Layers, label: 'Mutual Funds' },
     ],
   },
   {

@@ -1,121 +1,106 @@
-import { useState, useCallback } from 'react';
-import { ColDef } from 'ag-grid-community';
-import { ScreenerGrid } from '../components/screener/ScreenerGrid';
-import { ScreenerFilters, FilterInput, FilterSelect } from '../components/screener/ScreenerFilters';
-import { useStockScreener } from '../hooks/useScreener';
-import { Stock } from '../types/instrument';
-import { StockFilter } from '../services/instrumentService';
-import './ScreenerPage.css';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '../services/api';
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'All Statuses' },
-  { value: 'ACTIVE', label: 'Active' },
-  { value: 'DELISTED', label: 'Delisted' },
-  { value: 'SUSPENDED', label: 'Suspended' },
-];
+interface StockRow {
+  id: number;
+  ticker: string;
+  name: string;
+  currency: string;
+  country: string;
+  status: string;
+}
 
-const COUNTRY_OPTIONS = [
-  { value: '', label: 'All Countries' },
-  { value: 'USA', label: 'United States' },
-  { value: 'CAN', label: 'Canada' },
-  { value: 'GBR', label: 'United Kingdom' },
-  { value: 'DEU', label: 'Germany' },
-  { value: 'JPN', label: 'Japan' },
-  { value: 'CHN', label: 'China' },
-];
+interface PagedResponse {
+  data: StockRow[];
+  meta: { totalElements: number; totalPages: number; page: number; size: number };
+}
 
-const EXCHANGE_OPTIONS = [
-  { value: '', label: 'All Exchanges' },
-  { value: 'NYSE', label: 'NYSE' },
-  { value: 'NASDAQ', label: 'NASDAQ' },
-  { value: 'AMEX', label: 'AMEX' },
-];
+const PAGE_SIZE = 50;
 
-const columnDefs: ColDef<Stock>[] = [
-  { field: 'ticker', headerName: 'Ticker', width: 100 },
-  { field: 'name', headerName: 'Company Name', flex: 1, minWidth: 200 },
-  { field: 'exchange', headerName: 'Exchange', width: 100 },
-  {
-    field: 'sector',
-    headerName: 'Sector',
-    width: 150,
-    valueGetter: (params) => params.data?.sector?.name || '-'
-  },
-  { field: 'country', headerName: 'Country', width: 80 },
-  { field: 'status', headerName: 'Status', width: 100 },
-];
+async function fetchStocks(page: number): Promise<PagedResponse> {
+  const res = await apiFetch(`/api/v1/stocks?page=${page}&size=${PAGE_SIZE}&sort=ticker:asc`);
+  if (!res.ok) throw new Error('Failed to fetch stocks');
+  return res.json();
+}
 
 export function StockScreenerPage() {
-  const [appliedFilter, setAppliedFilter] = useState<StockFilter>({});
-  const [draftFilter, setDraftFilter] = useState<StockFilter>({});
+  const navigate = useNavigate();
+  const [page, setPage] = useState(0);
 
-  const { data, isLoading } = useStockScreener(appliedFilter);
+  const { data, isLoading } = useQuery({
+    queryKey: ['stocks-list', page],
+    queryFn: () => fetchStocks(page),
+  });
 
-  const handleApply = useCallback(() => {
-    setAppliedFilter({ ...draftFilter });
-  }, [draftFilter]);
-
-  const handleReset = useCallback(() => {
-    setDraftFilter({});
-    setAppliedFilter({});
-  }, []);
+  const totalPages = data?.meta.totalPages ?? 0;
 
   return (
-    <div className="screener-page">
-      <h1 className="page-title">Stock Screener</h1>
-      <p className="page-subtitle">Filter and search stocks by sector, country, exchange, and more</p>
+    <div style={{ padding: '1.5rem', maxWidth: '1280px', margin: '0 auto' }}>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>Stocks</h1>
+      <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+        {data ? `${data.meta.totalElements.toLocaleString()} stocks` : '—'}
+      </p>
 
-      <section className="filters-section">
-        <h2>Filters</h2>
-        <ScreenerFilters onApply={handleApply} onReset={handleReset}>
-          <FilterInput
-            label="Ticker Contains"
-            value={draftFilter.tickerContains || ''}
-            onChange={(v) => setDraftFilter({ ...draftFilter, tickerContains: v || undefined })}
-            placeholder="e.g. AAP"
-          />
-          <FilterInput
-            label="Name Contains"
-            value={draftFilter.nameContains || ''}
-            onChange={(v) => setDraftFilter({ ...draftFilter, nameContains: v || undefined })}
-            placeholder="e.g. Apple"
-          />
-          <FilterSelect
-            label="Country"
-            value={draftFilter.country || ''}
-            onChange={(v) => setDraftFilter({ ...draftFilter, country: v || undefined })}
-            options={COUNTRY_OPTIONS}
-          />
-          <FilterSelect
-            label="Exchange"
-            value={draftFilter.exchange || ''}
-            onChange={(v) => setDraftFilter({ ...draftFilter, exchange: v || undefined })}
-            options={EXCHANGE_OPTIONS}
-          />
-          <FilterSelect
-            label="Status"
-            value={draftFilter.status || ''}
-            onChange={(v) => setDraftFilter({ ...draftFilter, status: v || undefined })}
-            options={STATUS_OPTIONS}
-          />
-        </ScreenerFilters>
-      </section>
+      {isLoading ? (
+        <div style={{ color: 'var(--color-text-muted)' }}>Loading…</div>
+      ) : (
+        <>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--color-border)', color: 'var(--color-text-muted)', textAlign: 'left' }}>
+                  <th style={{ padding: '0.625rem 0.75rem' }}>Ticker</th>
+                  <th style={{ padding: '0.625rem 0.75rem' }}>Name</th>
+                  <th style={{ padding: '0.625rem 0.75rem' }}>Country</th>
+                  <th style={{ padding: '0.625rem 0.75rem' }}>Currency</th>
+                  <th style={{ padding: '0.625rem 0.75rem' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data?.data ?? []).map((stock) => (
+                  <tr
+                    key={stock.id}
+                    style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
+                    onClick={() => navigate(`/stocks/${stock.ticker}`)}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-secondary)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                  >
+                    <td style={{ padding: '0.625rem 0.75rem', fontWeight: 600, fontFamily: 'monospace' }}>{stock.ticker}</td>
+                    <td style={{ padding: '0.625rem 0.75rem' }}>{stock.name}</td>
+                    <td style={{ padding: '0.625rem 0.75rem' }}>{stock.country}</td>
+                    <td style={{ padding: '0.625rem 0.75rem' }}>{stock.currency}</td>
+                    <td style={{ padding: '0.625rem 0.75rem' }}>{stock.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-      <section className="results-section">
-        <div className="results-header">
-          <h2>Results</h2>
-          {data && <span className="results-count">{data.meta.totalElements} stocks found</span>}
-        </div>
-        <ScreenerGrid
-          rowData={data?.data || []}
-          columnDefs={columnDefs}
-          loading={isLoading}
-          instrumentType="STOCK"
-          getRowId={(d) => d.id}
-          getTicker={(d) => d.ticker}
-          getName={(d) => d.name}
-        />
-      </section>
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                style={{ padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: page === 0 ? 'not-allowed' : 'pointer' }}
+              >
+                Prev
+              </button>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
+                Page {page + 1} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                style={{ padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer' }}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

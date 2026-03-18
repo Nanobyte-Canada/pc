@@ -1,7 +1,6 @@
 package com.portfolio.ingestion.service.alphavantage
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.portfolio.entity.AVEnrichmentStatus
 import com.portfolio.entity.AVIngestionStatus
 import com.portfolio.entity.Stock
 import com.portfolio.ingestion.client.alphavantage.AVApiResult
@@ -10,6 +9,7 @@ import com.portfolio.ingestion.config.IngestionConfig
 import com.portfolio.ingestion.entity.ErrorType
 import com.portfolio.ingestion.entity.IngestionStep
 import com.portfolio.ingestion.service.BatchResult
+import com.portfolio.ingestion.service.IngestionHashCacheService
 import com.portfolio.ingestion.service.IngestionTrackingService
 import com.portfolio.repository.StockRepository
 import io.micrometer.core.instrument.Counter
@@ -42,6 +42,7 @@ class AVStockIngestionBatchProcessor(
     private val avClient: AlphaVantageClient,
     private val stockRepository: StockRepository,
     private val trackingService: IngestionTrackingService,
+    private val hashCacheService: IngestionHashCacheService,
     private val objectMapper: ObjectMapper,
     meterRegistry: MeterRegistry
 ) {
@@ -130,7 +131,7 @@ class AVStockIngestionBatchProcessor(
 
         return when (result) {
             is AVApiResult.Success -> {
-                stock.avRawPayload = try {
+                val rawJson = try {
                     objectMapper.writeValueAsString(result.data)
                 } catch (e: Exception) {
                     log.error("Failed to serialize response for {}: {}", stock.ticker, e.message)
@@ -142,7 +143,14 @@ class AVStockIngestionBatchProcessor(
                 stock.avIngestionRetryCount = 0
                 stock.avIngestionErrorCode = null
                 stock.avIngestionErrorMessage = null
-                stock.avEnrichmentStatus = AVEnrichmentStatus.PENDING
+
+                if (rawJson != null && !hashCacheService.isChanged("stock", stock.ticker, rawJson)) {
+                    // Payload unchanged — update ingestion timestamp only
+                    log.debug("Payload unchanged for stock {} — skipping raw payload update", stock.ticker)
+                } else {
+                    // New or changed payload — store raw data as JsonNode
+                    stock.avRawPayload = rawJson?.let { objectMapper.readTree(it) }
+                }
 
                 stockRepository.save(stock)
                 log.debug("Successfully ingested raw data for stock {}", stock.ticker)

@@ -38,12 +38,9 @@ export default function HoldingsCountWidget({ connectionId }: { connectionId?: n
         </div>
       </div>
 
-      {(h.etfsDecomposed > 0 || h.mutualFundsDecomposed > 0) && (
+      {h.etfsDecomposed > 0 && (
         <div className="hc-decomposed">
-          {h.etfsDecomposed > 0 && <span>{h.etfsDecomposed} ETFs</span>}
-          {h.etfsDecomposed > 0 && h.mutualFundsDecomposed > 0 && <span> + </span>}
-          {h.mutualFundsDecomposed > 0 && <span>{h.mutualFundsDecomposed} MFs</span>}
-          <span> decomposed</span>
+          <span>{h.etfsDecomposed} ETFs decomposed</span>
         </div>
       )}
     </div>

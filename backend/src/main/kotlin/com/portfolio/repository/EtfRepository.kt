@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
-import java.time.OffsetDateTime
 
 @Repository
 interface EtfRepository : JpaRepository<Etf, Long>, JpaSpecificationExecutor<Etf> {
@@ -90,35 +89,18 @@ interface EtfRepository : JpaRepository<Etf, Long>, JpaSpecificationExecutor<Etf
     // ========================================
 
     @Query("""
-        SELECT e FROM Etf e
+        SELECT COUNT(e) FROM Etf e
         WHERE e.isActive = true
-        AND (
-            e.etfcomEnrichmentStatus IN :statuses
-            OR (e.etfcomEnrichmentStatus = 'SUCCESS' AND e.etfcomLastSuccessAt < :staleThreshold)
-        )
-        AND (e.etfcomEnrichmentStatus != 'FAILED_RETRYABLE' OR e.etfcomRetryCount < :maxRetries)
-        AND (e.etfcomLastAttemptAt IS NULL OR e.etfcomLastAttemptAt < :retryAfter)
-        ORDER BY
-            CASE e.etfcomEnrichmentStatus
-                WHEN 'PENDING' THEN 0
-                WHEN 'FAILED_RETRYABLE' THEN 1
-                WHEN 'STALE' THEN 2
-                ELSE 3
-            END,
-            e.etfcomRetryCount ASC
+        AND e.etfcomEnrichmentStatus IN ('PENDING', 'FAILED_RETRYABLE', 'STALE')
     """)
-    fun findEtfComEnrichmentCandidates(
-        @Param("statuses") statuses: List<EtfComEnrichmentStatus>,
-        @Param("maxRetries") maxRetries: Int,
-        @Param("retryAfter") retryAfter: OffsetDateTime,
-        @Param("staleThreshold") staleThreshold: OffsetDateTime,
-        pageable: Pageable
-    ): List<Etf>
+    fun countEtfComEnrichmentPending(): Long
 
     @Query("""
         SELECT COUNT(e) FROM Etf e
         WHERE e.isActive = true
         AND e.etfcomEnrichmentStatus IN ('PENDING', 'FAILED_RETRYABLE', 'STALE')
     """)
-    fun countEtfComEnrichmentPending(): Long
+    fun countEtfsPendingEnrichment(): Long
+
+    fun countByEtfcomEnrichmentStatus(status: EtfComEnrichmentStatus): Long
 }

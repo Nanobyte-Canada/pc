@@ -6,7 +6,6 @@ data class PortfolioSummaryDto(
     val totalPositions: Int,
     val directStockCount: Int,
     val etfCount: Int,
-    val mutualFundCount: Int,
     val lookThroughStockCount: Int,
     val analysisDate: String
 )

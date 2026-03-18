@@ -17,10 +17,11 @@ import { VerifyEmailPage } from './pages/auth/VerifyEmailPage'
 import { PortfolioBuilderPage } from './pages/PortfolioBuilderPage'
 import { StockScreenerPage } from './pages/StockScreenerPage'
 import { EtfScreenerPage } from './pages/EtfScreenerPage'
-import { MutualFundScreenerPage } from './pages/MutualFundScreenerPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { AdminPage } from './pages/admin/AdminPage'
+import { StockDetailPage } from './pages/StockDetailPage'
+import { EtfDetailPage } from './pages/EtfDetailPage'
 import { UnauthorizedPage } from './pages/UnauthorizedPage'
 
 // Broker pages
@@ -93,7 +94,8 @@ function App() {
         <Route path="portfolios/:groupId" element={<PortfolioGroupDetailPage />} />
         <Route path="screener/stocks" element={<StockScreenerPage />} />
         <Route path="screener/etfs" element={<EtfScreenerPage />} />
-        <Route path="screener/mutual-funds" element={<MutualFundScreenerPage />} />
+        <Route path="stocks/:ticker" element={<StockDetailPage />} />
+        <Route path="etfs/:symbol" element={<EtfDetailPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="brokers/connections" element={<BrokerConnectionsPage />} />
         <Route path="brokers/positions" element={<BrokerPositionsPage />} />

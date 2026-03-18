@@ -23,7 +23,6 @@ interface IngestionRunRepository : JpaRepository<IngestionRun, Long> {
     @Query("""
         SELECT r FROM IngestionRun r
         LEFT JOIN FETCH r.steps s
-        LEFT JOIN FETCH s.errors
         WHERE r.id = :id
     """)
     fun findByIdWithStepsAndErrors(id: Long): IngestionRun?

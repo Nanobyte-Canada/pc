@@ -11,7 +11,6 @@ import com.portfolio.dto.request.PortfolioPositionRequest
 import com.portfolio.entity.Country
 import com.portfolio.repository.CountryRepository
 import com.portfolio.repository.EtfRepository
-import com.portfolio.repository.MutualFundRepository
 import com.portfolio.repository.StockRepository
 import com.portfolio.service.LookThroughService
 import org.slf4j.LoggerFactory
@@ -31,7 +30,6 @@ class DashboardDataService(
     private val portfolioGroupAccountRepository: PortfolioGroupAccountRepository,
     private val stockRepository: StockRepository,
     private val etfRepository: EtfRepository,
-    private val mutualFundRepository: MutualFundRepository,
     private val countryRepository: CountryRepository,
     private val lookThroughService: LookThroughService,
     private val driftCalculationService: DriftCalculationService,
@@ -97,7 +95,6 @@ class DashboardDataService(
 
         val lookThroughPositions = mutableListOf<PortfolioPositionRequest>()
         var etfsDecomposed = 0
-        var mutualFundsDecomposed = 0
         val directStockSymbols = mutableSetOf<String>()
 
         for (position in positions) {
@@ -120,14 +117,7 @@ class DashboardDataService(
                         etfsDecomposed++
                     }
                 }
-                InstrumentType.MUTUAL_FUND -> {
-                    val fund = mutualFundRepository.findBySymbolIgnoreCase(position.symbol)
-                    if (fund != null) {
-                        lookThroughPositions.add(PortfolioPositionRequest("MUTUAL_FUND", fund.id, weight))
-                        mutualFundsDecomposed++
-                    }
-                }
-                else -> { /* skip options, bonds, cash for look-through */ }
+                else -> { /* skip mutual funds, options, bonds, cash for look-through */ }
             }
         }
 
@@ -137,7 +127,7 @@ class DashboardDataService(
                 lookThroughStocks = 0,
                 totalUniqueHoldings = directStockSymbols.size,
                 etfsDecomposed = 0,
-                mutualFundsDecomposed = 0,
+                mutualFundsDecomposed = 0,  // always 0, mutual funds removed
                 coveragePercent = BigDecimal(100)
             )
         }
@@ -149,7 +139,7 @@ class DashboardDataService(
                 lookThroughStocks = result.exposures.size,
                 totalUniqueHoldings = result.exposures.size,
                 etfsDecomposed = etfsDecomposed,
-                mutualFundsDecomposed = mutualFundsDecomposed,
+                mutualFundsDecomposed = 0,
                 coveragePercent = result.quality.coveragePercent
             )
         } catch (e: Exception) {
@@ -159,7 +149,7 @@ class DashboardDataService(
                 lookThroughStocks = 0,
                 totalUniqueHoldings = directStockSymbols.size,
                 etfsDecomposed = 0,
-                mutualFundsDecomposed = 0,
+                mutualFundsDecomposed = 0,  // always 0, mutual funds removed
                 coveragePercent = BigDecimal.ZERO
             )
         }
@@ -243,25 +233,7 @@ class DashboardDataService(
         var unmappedWeight = BigDecimal.ZERO
 
         for ((_, exposure) in result.exposures) {
-            val stock = exposure.stock
-            val gicsSub = stock.gicsSubIndustry
-            if (gicsSub == null) {
-                unmappedWeight += exposure.effectiveWeight
-                continue
-            }
-
-            val industry = gicsSub.industry
-            val industryGroup = industry.industryGroup
-            val sector = industryGroup.sector
-
-            sectorNames[sector.code] = sector.name
-            val acc = sectorMap.getOrPut(sector.code) { SectorAccumulator() }
-            acc.weight += exposure.effectiveWeight
-            val existing = acc.industryGroups[industryGroup.code]
-            acc.industryGroups[industryGroup.code] = Pair(
-                industryGroup.name,
-                (existing?.second ?: BigDecimal.ZERO) + exposure.effectiveWeight
-            )
+            unmappedWeight += exposure.effectiveWeight
         }
 
         // Also add ETF direct sector exposures for ETFs without holdings data
@@ -497,18 +469,7 @@ class DashboardDataService(
         val totalFees = feeActivities.filter { it.type.uppercase() == "FEE" }.sumOf { it.amount.abs() }
         val totalCommissions = feeActivities.filter { it.type.uppercase() == "COMMISSION" }.sumOf { it.amount.abs() }
 
-        // Calculate management expense from ETF expense ratios
-        val positions = getPositions(userId, connectionId)
-        var totalMER = BigDecimal.ZERO
-        for (pos in positions) {
-            if (pos.instrumentType == InstrumentType.ETF) {
-                val etf = etfRepository.findBySymbolIgnoreCase(pos.symbol)
-                val expenseRatio = etf?.expenseRatio ?: continue
-                val posValue = pos.currentValue ?: BigDecimal.ZERO
-                totalMER += posValue * expenseRatio.divide(BigDecimal(100), 6, RoundingMode.HALF_UP)
-            }
-        }
-        val managementExpensePerMonth = totalMER.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
+        val managementExpensePerMonth = BigDecimal.ZERO
 
         val monthlyBreakdown = feeActivities
             .groupBy { YearMonth.from(it.tradeDate).toString() }
@@ -520,13 +481,13 @@ class DashboardDataService(
                 )
             }.sortedBy { it.month }
 
-        val total = totalFees + totalCommissions + totalMER
+        val total = totalFees + totalCommissions + managementExpensePerMonth
 
         return FeesResponse(
             last12Months = FeesTotalDto(
                 totalFees = totalFees.setScale(2, RoundingMode.HALF_UP),
                 totalCommissions = totalCommissions.setScale(2, RoundingMode.HALF_UP),
-                totalManagementExpense = totalMER.setScale(2, RoundingMode.HALF_UP),
+                totalManagementExpense = managementExpensePerMonth.setScale(2, RoundingMode.HALF_UP),
                 total = total.setScale(2, RoundingMode.HALF_UP)
             ),
             monthlyBreakdown = monthlyBreakdown,
@@ -595,7 +556,6 @@ class DashboardDataService(
 
         val holdings = result.exposures.values.map { exposure ->
             val stock = exposure.stock
-            val gicsSub = stock.gicsSubIndustry
             val country = countryCache.getOrPut(stock.country) {
                 countryRepository.findByCodeWithRegion(stock.country)
             }
@@ -604,8 +564,8 @@ class DashboardDataService(
                 symbol = stock.ticker,
                 name = stock.name,
                 effectiveWeight = exposure.effectiveWeight.setScale(6, RoundingMode.HALF_UP),
-                sector = gicsSub?.industry?.industryGroup?.sector?.name,
-                industryGroup = gicsSub?.industry?.industryGroup?.name,
+                sector = null,
+                industryGroup = null,
                 country = country?.name,
                 sources = exposure.sources.map { src ->
                     HoldingSourceDto(
@@ -720,10 +680,6 @@ class DashboardDataService(
                 InstrumentType.ETF -> {
                     val etf = etfRepository.findBySymbolIgnoreCase(pos.symbol) ?: return@mapNotNull null
                     PortfolioPositionRequest("ETF", etf.id, weight)
-                }
-                InstrumentType.MUTUAL_FUND -> {
-                    val fund = mutualFundRepository.findBySymbolIgnoreCase(pos.symbol) ?: return@mapNotNull null
-                    PortfolioPositionRequest("MUTUAL_FUND", fund.id, weight)
                 }
                 else -> null
             }

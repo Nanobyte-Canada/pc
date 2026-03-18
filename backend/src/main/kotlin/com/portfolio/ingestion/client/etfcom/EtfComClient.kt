@@ -3,7 +3,10 @@ package com.portfolio.ingestion.client.etfcom
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.ingestion.config.IngestionConfig
-import com.portfolio.ingestion.dto.etfcom.*
+import com.portfolio.ingestion.dto.etfcom.EtfComEnrichmentData
+import com.portfolio.ingestion.dto.etfcom.EtfComRequest
+import com.portfolio.ingestion.dto.etfcom.EtfComRequestVariables
+import com.portfolio.ingestion.dto.etfcom.EtfComTickerDto
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
@@ -23,7 +26,6 @@ class EtfComClient(
     private val etfComWebClient: WebClient,
     private val objectMapper: ObjectMapper,
     private val config: IngestionConfig,
-    private val responseParser: EtfComResponseParser,
     meterRegistry: MeterRegistry
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -61,7 +63,7 @@ class EtfComClient(
     fun fetchAllData(ticker: String, fundId: Int? = null): EtfComApiResult<EtfComEnrichmentData> {
         requestCounter.increment()
         val sample = Timer.start()
-        val rawPayloads = mutableMapOf<String, String>()
+        val rawPayloads = mutableMapOf<String, JsonNode>()
         val fundIdStr = fundId?.toString() ?: "0"
 
         try {
@@ -78,54 +80,36 @@ class EtfComClient(
                 return summaryResult
             }
             val summarySuccess = summaryResult as EtfComApiResult.Success
-            rawPayloads["fundSummaryData"] = summarySuccess.rawJson
-            val summary = responseParser.parseFundSummary(summarySuccess.data)
+            rawPayloads["fundSummaryData"] = objectMapper.readTree(summarySuccess.rawJson)
 
             // 2. Top Holdings
             val holdingsResult = fetchQuery(ticker, "topHoldings", fundIdStr)
-            var holdings: EtfComTopHoldingsResponse? = null
             if (holdingsResult is EtfComApiResult.Success) {
-                rawPayloads["topHoldings"] = holdingsResult.rawJson
-                holdings = responseParser.parseTopHoldings(holdingsResult.data)
+                rawPayloads["topHoldings"] = objectMapper.readTree(holdingsResult.rawJson)
             }
 
             // 3. Sector Breakdown
             val sectorResult = fetchQuery(ticker, "sectorIndustryBreakdown", fundIdStr)
-            var sectors: EtfComSectorBreakdownResponse? = null
             if (sectorResult is EtfComApiResult.Success) {
-                rawPayloads["sectorIndustryBreakdown"] = sectorResult.rawJson
-                sectors = responseParser.parseSectorBreakdown(sectorResult.data)
+                rawPayloads["sectorIndustryBreakdown"] = objectMapper.readTree(sectorResult.rawJson)
             }
 
             // 4. Performance
             val perfResult = fetchQuery(ticker, "performanceData", fundIdStr)
-            var performance: EtfComPerformanceResponse? = null
             if (perfResult is EtfComApiResult.Success) {
-                rawPayloads["performanceData"] = perfResult.rawJson
-                performance = responseParser.parsePerformance(perfResult.data)
+                rawPayloads["performanceData"] = objectMapper.readTree(perfResult.rawJson)
             }
 
             // 5. Portfolio Data
             val portfolioResult = fetchQuery(ticker, "fundPortfolioData", fundIdStr)
-            var portfolio: EtfComPortfolioDataResponse? = null
             if (portfolioResult is EtfComApiResult.Success) {
-                rawPayloads["fundPortfolioData"] = portfolioResult.rawJson
-                portfolio = responseParser.parsePortfolioData(portfolioResult.data)
+                rawPayloads["fundPortfolioData"] = objectMapper.readTree(portfolioResult.rawJson)
             }
 
             successCounter.increment()
             sample.stop(latencyTimer)
 
-            return EtfComApiResult.Success(
-                EtfComEnrichmentData(
-                    summary = summary,
-                    holdings = holdings,
-                    sectors = sectors,
-                    performance = performance,
-                    portfolio = portfolio,
-                    rawPayloads = rawPayloads
-                )
-            )
+            return EtfComApiResult.Success(EtfComEnrichmentData(rawPayloads = rawPayloads))
         } catch (e: Exception) {
             errorCounter.increment()
             sample.stop(latencyTimer)
@@ -161,7 +145,6 @@ class EtfComClient(
                 log.debug("etf.com response for {} query {}: {}", ticker, queryType, rawJson.take(500))
 
                 val rootNode = objectMapper.readTree(rawJson)
-                // Extract inner data node from wrapper: data.{queryType}
                 val innerNode = rootNode.path("data").path(queryType)
                 if (innerNode.isMissingNode || innerNode.isNull) {
                     log.warn("etf.com response for {} query {} has no data.{} node", ticker, queryType, queryType)

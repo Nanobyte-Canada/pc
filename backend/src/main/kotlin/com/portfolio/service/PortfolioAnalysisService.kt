@@ -4,7 +4,7 @@ import com.portfolio.dto.request.PortfolioAnalyzeRequest
 import com.portfolio.dto.request.PortfolioNormalizeRequest
 import com.portfolio.dto.request.PortfolioValidateRequest
 import com.portfolio.dto.response.*
-import com.portfolio.entity.AVEnrichmentStatus
+import com.portfolio.entity.AVIngestionStatus
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -169,16 +169,6 @@ class PortfolioAnalysisService(
             }
         }
 
-        // If we have ETF direct allocations, we may not need lookthrough for those ETFs
-        // For now, we'll use lookthrough for all resolved exposures to get complete picture
-        for (exposure in exposures.values) {
-            val sector = exposure.stock.gicsSubIndustry?.industry?.industryGroup?.sector
-            if (sector != null) {
-                sectorWeights[sector.code] = sectorWeights.getOrDefault(sector.code, BigDecimal.ZERO) + exposure.effectiveWeight
-                sectorNames[sector.code] = sector.name
-            }
-        }
-
         // Add unresolved holdings as "OTHER" sector
         val unresolvedWeight = lookThroughResult.unresolvedExposures.sumOf { it.effectiveWeight }
         if (unresolvedWeight > BigDecimal.ZERO) {
@@ -276,7 +266,7 @@ class PortfolioAnalysisService(
             val weight = exposure.effectiveWeight
 
             // P/E ratio
-            stock.avPeRatio?.let { pe ->
+            stock.avDecimal("PERatio")?.let { pe ->
                 if (pe > BigDecimal.ZERO && pe < BigDecimal(1000)) {
                     weightedPeSum += weight * pe
                     peWeightSum += weight
@@ -284,7 +274,7 @@ class PortfolioAnalysisService(
             }
 
             // Dividend yield
-            stock.avDividendYield?.let { dy ->
+            stock.avDecimal("DividendYield")?.let { dy ->
                 if (dy >= BigDecimal.ZERO) {
                     weightedDividendSum += weight * dy
                     dividendWeightSum += weight
@@ -292,7 +282,7 @@ class PortfolioAnalysisService(
             }
 
             // Beta
-            stock.avBeta?.let { beta ->
+            stock.avDecimal("Beta")?.let { beta ->
                 if (beta > BigDecimal.ZERO && beta < BigDecimal(10)) {
                     weightedBetaSum += weight * beta
                     betaWeightSum += weight
@@ -300,7 +290,7 @@ class PortfolioAnalysisService(
             }
 
             // Market cap breakdown
-            stock.avMarketCap?.let { marketCap ->
+            stock.avDecimal("MarketCapitalization")?.let { marketCap ->
                 when {
                     marketCap >= tenBillion -> largeCapWeight += weight
                     marketCap >= twoBillion -> midCapWeight += weight
@@ -352,7 +342,7 @@ class PortfolioAnalysisService(
 
         // Calculate enrichment coverage (% of stocks with Alpha Vantage data)
         val enrichedCount = exposures.values.count { exposure ->
-            exposure.stock.avEnrichmentStatus == AVEnrichmentStatus.SUCCESS
+            exposure.stock.avIngestionStatus == AVIngestionStatus.SUCCESS
         }
         val enrichmentCoverage = if (exposures.isNotEmpty()) {
             (enrichedCount.toDouble() / exposures.size * 100)
@@ -382,13 +372,11 @@ class PortfolioAnalysisService(
     ): PortfolioSummaryDto {
         val stockCount = request.positions.count { it.instrumentType.uppercase() == "STOCK" }
         val etfCount = request.positions.count { it.instrumentType.uppercase() == "ETF" }
-        val mfCount = request.positions.count { it.instrumentType.uppercase() == "MUTUAL_FUND" }
 
         return PortfolioSummaryDto(
             totalPositions = request.positions.size,
             directStockCount = stockCount,
             etfCount = etfCount,
-            mutualFundCount = mfCount,
             lookThroughStockCount = exposures.size,
             analysisDate = analysisDate.toString()
         )

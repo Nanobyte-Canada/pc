@@ -43,10 +43,6 @@ class EtfHolding(
     @JoinColumn(name = "held_etf_id")
     var heldEtf: Etf? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "held_mutual_fund_id")
-    var heldMutualFund: MutualFund? = null,
-
     @Column(name = "as_of_date", nullable = false)
     val asOfDate: LocalDate,
 

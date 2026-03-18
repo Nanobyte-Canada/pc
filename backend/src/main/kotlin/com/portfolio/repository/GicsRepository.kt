@@ -8,6 +8,7 @@ import com.portfolio.entity.gics.GicsSubIndustry
 import com.portfolio.entity.gics.GicsSubIndustryAlias
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -56,4 +57,7 @@ interface GicsSectorAliasRepository : JpaRepository<GicsSectorAlias, Long> {
 interface GicsSubIndustryAliasRepository : JpaRepository<GicsSubIndustryAlias, Long> {
     fun findByAliasCodeAndSource(aliasCode: String, source: String): GicsSubIndustryAlias?
     fun findBySource(source: String): List<GicsSubIndustryAlias>
+
+    @Query("SELECT a FROM GicsSubIndustryAlias a WHERE LOWER(a.aliasName) = LOWER(:aliasName) AND a.source = :source")
+    fun findByAliasNameIgnoreCaseAndSource(aliasName: String, source: String): GicsSubIndustryAlias?
 }

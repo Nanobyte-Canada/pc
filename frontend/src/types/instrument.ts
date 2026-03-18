@@ -1,9 +1,9 @@
-export type InstrumentType = 'STOCK' | 'ETF' | 'MUTUAL_FUND';
+export type InstrumentType = 'STOCK' | 'ETF';
 
 export interface Stock {
   id: number;
   ticker: string;
-  exchange: string;
+  exchange?: string;
   name: string;
   isin?: string;
   cusip?: string;
@@ -30,23 +30,6 @@ export interface Etf {
   inceptionDate?: string;
   expenseRatio?: number;
   assetClass?: string;
-  status: string;
-}
-
-export interface MutualFund {
-  id: number;
-  symbol: string;
-  name: string;
-  isin?: string;
-  cusip?: string;
-  issuer?: string;
-  currency: string;
-  domicile: string;
-  inceptionDate?: string;
-  expenseRatio?: number;
-  fundType?: string;
-  assetClass?: string;
-  minimumInvestment?: number;
   status: string;
 }
 

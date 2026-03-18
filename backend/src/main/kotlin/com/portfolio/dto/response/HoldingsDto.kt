@@ -2,8 +2,6 @@ package com.portfolio.dto.response
 
 import com.portfolio.entity.EtfHolding
 import com.portfolio.entity.HoldingDataSource
-import com.portfolio.entity.HoldingType
-import com.portfolio.entity.MutualFundHolding
 import com.portfolio.entity.ResolutionStatus
 import java.time.LocalDate
 
@@ -17,7 +15,6 @@ data class HoldingDto(
     val sector: SectorDto?,
     val country: String?,
     val isResolved: Boolean = true,
-    // Enhanced fields
     val rawTicker: String? = null,
     val rawName: String? = null,
     val dataSource: String? = null,
@@ -29,15 +26,6 @@ data class HoldingDto(
 data class EtfHoldingsResponseDto(
     val etfId: Long,
     val etfSymbol: String,
-    val asOfDate: LocalDate,
-    val holdingsCount: Int,
-    val holdings: List<HoldingDto>,
-    val metadata: HoldingsMetadataDto? = null
-)
-
-data class MutualFundHoldingsResponseDto(
-    val mutualFundId: Long,
-    val fundSymbol: String,
     val asOfDate: LocalDate,
     val holdingsCount: Int,
     val holdings: List<HoldingDto>,
@@ -58,9 +46,6 @@ data class AvailableDatesResponseDto(
 
 fun EtfHolding.toHoldingDto(): HoldingDto {
     val resolvedStock = stock
-    val sector = resolvedStock?.gicsSubIndustry?.industry?.industryGroup?.sector
-
-    // Use raw fields for unresolved holdings, not "UNKNOWN"
     val displayTicker = resolvedStock?.ticker ?: rawTicker ?: "UNKNOWN"
     val displayName = resolvedStock?.name ?: rawName ?: "Unknown Holding"
 
@@ -71,34 +56,7 @@ fun EtfHolding.toHoldingDto(): HoldingDto {
         weight = (etfcomWeight ?: avWeight ?: weight)?.toDouble(),
         shares = shares?.toDouble(),
         marketValue = marketValue?.toDouble(),
-        sector = sector?.let { SectorDto(it.code, it.name) },
-        country = resolvedStock?.country,
-        isResolved = resolvedStock != null,
-        rawTicker = rawTicker,
-        rawName = rawName,
-        dataSource = dataSource.name,
-        holdingType = holdingType.name,
-        rank = rank,
-        resolutionStatus = resolutionStatus.name
-    )
-}
-
-fun MutualFundHolding.toHoldingDto(): HoldingDto {
-    val resolvedStock = stock
-    val sector = resolvedStock?.gicsSubIndustry?.industry?.industryGroup?.sector
-
-    // Use raw fields for unresolved holdings, not "UNKNOWN"
-    val displayTicker = resolvedStock?.ticker ?: rawTicker ?: "UNKNOWN"
-    val displayName = resolvedStock?.name ?: rawName ?: "Unknown Holding"
-
-    return HoldingDto(
-        stockId = resolvedStock?.id,
-        ticker = displayTicker,
-        name = displayName,
-        weight = (etfcomWeight ?: avWeight ?: weight)?.toDouble(),
-        shares = shares?.toDouble(),
-        marketValue = marketValue?.toDouble(),
-        sector = sector?.let { SectorDto(it.code, it.name) },
+        sector = null,
         country = resolvedStock?.country,
         isResolved = resolvedStock != null,
         rawTicker = rawTicker,
@@ -116,30 +74,6 @@ fun List<EtfHolding>.toMetadata(): HoldingsMetadataDto {
     val total = size
     val resolvedPercent = if (total > 0) (resolved.toDouble() / total * 100) else 0.0
 
-    // Determine primary data source
-    val sourceCounts = groupBy { it.dataSource }
-    val primarySource = sourceCounts.maxByOrNull { it.value.size }?.key
-
-    val hasEnrichment = any {
-        it.dataSource == HoldingDataSource.ALPHA_VANTAGE || it.dataSource == HoldingDataSource.ETF_COM
-    }
-
-    return HoldingsMetadataDto(
-        resolvedCount = resolved,
-        unresolvedCount = unresolved,
-        resolvedPercent = resolvedPercent,
-        primaryDataSource = primarySource?.name,
-        hasEnrichmentData = hasEnrichment
-    )
-}
-
-fun List<MutualFundHolding>.toMutualFundMetadata(): HoldingsMetadataDto {
-    val resolved = count { it.resolutionStatus == ResolutionStatus.RESOLVED }
-    val unresolved = count { it.resolutionStatus != ResolutionStatus.RESOLVED }
-    val total = size
-    val resolvedPercent = if (total > 0) (resolved.toDouble() / total * 100) else 0.0
-
-    // Determine primary data source
     val sourceCounts = groupBy { it.dataSource }
     val primarySource = sourceCounts.maxByOrNull { it.value.size }?.key
 

@@ -2,6 +2,7 @@ package com.portfolio.controller
 
 import com.portfolio.dto.request.EtfFilterRequest
 import com.portfolio.dto.response.AvailableDatesResponseDto
+import com.portfolio.dto.response.EtfDetailDto
 import com.portfolio.dto.response.EtfDto
 import com.portfolio.dto.response.EtfHoldingsResponseDto
 import com.portfolio.dto.response.PagedResponseDto
@@ -52,6 +53,13 @@ class EtfController(
         val etf = etfRepository.findById(id).orElse(null)
             ?: return ResponseEntity.notFound().build()
         return ResponseEntity.ok(EtfDto.from(etf))
+    }
+
+    @GetMapping("/symbol/{symbol}")
+    fun getEtfBySymbol(@PathVariable symbol: String): ResponseEntity<EtfDetailDto> {
+        val etf = etfRepository.findBySymbolIgnoreCase(symbol)
+            ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(EtfDetailDto.from(etf))
     }
 
     @GetMapping("/{id}/holdings")

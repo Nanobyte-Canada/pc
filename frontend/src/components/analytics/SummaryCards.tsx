@@ -14,7 +14,7 @@ export function SummaryCards({ analysis }: SummaryCardsProps) {
         <span className="stat-value">{summary.totalPositions}</span>
         <span className="stat-label">Positions</span>
         <span className="stat-detail">
-          {summary.directStockCount} stocks, {summary.etfCount} ETFs, {summary.mutualFundCount} MFs
+          {summary.directStockCount} stocks, {summary.etfCount} ETFs
         </span>
       </div>
 

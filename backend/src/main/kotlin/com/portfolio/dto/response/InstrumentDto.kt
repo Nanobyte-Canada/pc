@@ -1,11 +1,11 @@
 package com.portfolio.dto.response
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.portfolio.entity.Etf
-import com.portfolio.entity.MutualFund
 import com.portfolio.entity.Stock
 
 enum class InstrumentType {
-    STOCK, ETF, MUTUAL_FUND
+    STOCK, ETF
 }
 
 enum class MatchType {
@@ -45,7 +45,7 @@ data class SectorDto(
 data class StockDto(
     val id: Long,
     val ticker: String,
-    val exchange: String,
+    val exchange: String?,
     val name: String,
     val isin: String?,
     val cusip: String?,
@@ -56,22 +56,67 @@ data class StockDto(
     val status: String
 ) {
     companion object {
-        fun from(stock: Stock): StockDto {
-            val sector = stock.gicsSubIndustry?.industry?.industryGroup?.sector
-            return StockDto(
-                id = stock.id,
-                ticker = stock.ticker,
-                exchange = stock.exchange,
-                name = stock.name,
-                isin = stock.isin,
-                cusip = stock.cusip,
-                sedol = stock.sedol,
-                currency = stock.currency,
-                country = stock.country,
-                sector = sector?.let { SectorDto(it.code, it.name) },
-                status = stock.status.name
-            )
-        }
+        fun from(stock: Stock) = StockDto(
+            id = stock.id,
+            ticker = stock.ticker,
+            exchange = stock.exchangeCode,
+            name = stock.name,
+            isin = stock.isin,
+            cusip = stock.cusip,
+            sedol = stock.sedol,
+            currency = stock.currency,
+            country = stock.country,
+            sector = null,
+            status = stock.status.name
+        )
+    }
+}
+
+data class StockDetailDto(
+    val id: Long,
+    val ticker: String,
+    val name: String,
+    val currency: String,
+    val country: String,
+    val isin: String?,
+    val avIngestionStatus: String,
+    val avRawPayload: JsonNode?
+) {
+    companion object {
+        fun from(stock: Stock) = StockDetailDto(
+            id = stock.id,
+            ticker = stock.ticker,
+            name = stock.name,
+            currency = stock.currency,
+            country = stock.country,
+            isin = stock.isin,
+            avIngestionStatus = stock.avIngestionStatus.name,
+            avRawPayload = stock.avRawPayload
+        )
+    }
+}
+
+data class EtfDetailDto(
+    val id: Long,
+    val symbol: String,
+    val name: String,
+    val issuer: String?,
+    val assetClass: String?,
+    val inceptionDate: String?,
+    val etfcomEnrichmentStatus: String,
+    val etfcomRawPayload: String?
+) {
+    companion object {
+        fun from(etf: Etf) = EtfDetailDto(
+            id = etf.id,
+            symbol = etf.symbol,
+            name = etf.name,
+            issuer = etf.issuer,
+            assetClass = etf.assetClass,
+            inceptionDate = etf.inceptionDate?.toString(),
+            etfcomEnrichmentStatus = etf.etfcomEnrichmentStatus.name,
+            etfcomRawPayload = etf.etfcomRawPayload
+        )
     }
 }
 
@@ -85,7 +130,6 @@ data class EtfDto(
     val currency: String,
     val domicile: String,
     val inceptionDate: String?,
-    val expenseRatio: Double?,
     val assetClass: String?,
     val status: String
 ) {
@@ -101,7 +145,6 @@ data class EtfDto(
                 currency = etf.currency,
                 domicile = etf.domicile,
                 inceptionDate = etf.inceptionDate?.toString(),
-                expenseRatio = etf.expenseRatio?.toDouble(),
                 assetClass = etf.assetClass,
                 status = etf.status.name
             )
@@ -109,40 +152,3 @@ data class EtfDto(
     }
 }
 
-data class MutualFundDto(
-    val id: Long,
-    val symbol: String,
-    val name: String,
-    val isin: String?,
-    val cusip: String?,
-    val issuer: String?,
-    val currency: String,
-    val domicile: String,
-    val inceptionDate: String?,
-    val expenseRatio: Double?,
-    val fundType: String?,
-    val assetClass: String?,
-    val minimumInvestment: Double?,
-    val status: String
-) {
-    companion object {
-        fun from(fund: MutualFund): MutualFundDto {
-            return MutualFundDto(
-                id = fund.id,
-                symbol = fund.symbol,
-                name = fund.name,
-                isin = fund.isin,
-                cusip = fund.cusip,
-                issuer = fund.issuer,
-                currency = fund.currency,
-                domicile = fund.domicile,
-                inceptionDate = fund.inceptionDate?.toString(),
-                expenseRatio = fund.expenseRatio?.toDouble(),
-                fundType = fund.fundType,
-                assetClass = fund.assetClass,
-                minimumInvestment = fund.minimumInvestment?.toDouble(),
-                status = fund.status.name
-            )
-        }
-    }
-}

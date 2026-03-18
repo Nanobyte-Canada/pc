@@ -59,7 +59,7 @@ class RetryProperties {
 }
 
 class ExchangesConfig {
-    var northAmerica: List<String> = listOf("US", "TO", "V", "MX")
+    var northAmerica: List<String> = listOf("US", "TO", "V")
 }
 
 class EodhdConfig {

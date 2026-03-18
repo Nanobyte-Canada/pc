@@ -1,114 +1,106 @@
-import { useState, useCallback } from 'react';
-import { ColDef } from 'ag-grid-community';
-import { ScreenerGrid } from '../components/screener/ScreenerGrid';
-import { ScreenerFilters, FilterInput, FilterSelect } from '../components/screener/ScreenerFilters';
-import { useEtfScreener } from '../hooks/useScreener';
-import { Etf } from '../types/instrument';
-import { EtfFilter } from '../services/instrumentService';
-import './ScreenerPage.css';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '../services/api';
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'All Statuses' },
-  { value: 'ACTIVE', label: 'Active' },
-  { value: 'DELISTED', label: 'Delisted' },
-  { value: 'SUSPENDED', label: 'Suspended' },
-];
+interface EtfRow {
+  id: number;
+  symbol: string;
+  name: string;
+  issuer: string | null;
+  assetClass: string | null;
+  status: string;
+}
 
-const ASSET_CLASS_OPTIONS = [
-  { value: '', label: 'All Asset Classes' },
-  { value: 'Equity', label: 'Equity' },
-  { value: 'Fixed Income', label: 'Fixed Income' },
-  { value: 'Commodity', label: 'Commodity' },
-  { value: 'Multi-Asset', label: 'Multi-Asset' },
-  { value: 'Alternative', label: 'Alternative' },
-];
+interface PagedResponse {
+  data: EtfRow[];
+  meta: { totalElements: number; totalPages: number; page: number; size: number };
+}
 
-const columnDefs: ColDef<Etf>[] = [
-  { field: 'symbol', headerName: 'Symbol', width: 100 },
-  { field: 'name', headerName: 'ETF Name', flex: 1, minWidth: 200 },
-  { field: 'exchange', headerName: 'Exchange', width: 100 },
-  { field: 'issuer', headerName: 'Issuer', width: 150 },
-  { field: 'assetClass', headerName: 'Asset Class', width: 120 },
-  {
-    field: 'expenseRatio',
-    headerName: 'Expense Ratio',
-    width: 120,
-    valueFormatter: (params) => params.value ? `${(params.value * 100).toFixed(2)}%` : '-'
-  },
-  { field: 'status', headerName: 'Status', width: 100 },
-];
+const PAGE_SIZE = 50;
+
+async function fetchEtfs(page: number): Promise<PagedResponse> {
+  const res = await apiFetch(`/api/v1/etfs?page=${page}&size=${PAGE_SIZE}&sort=symbol:asc`);
+  if (!res.ok) throw new Error('Failed to fetch ETFs');
+  return res.json();
+}
 
 export function EtfScreenerPage() {
-  const [appliedFilter, setAppliedFilter] = useState<EtfFilter>({});
-  const [draftFilter, setDraftFilter] = useState<EtfFilter>({});
+  const navigate = useNavigate();
+  const [page, setPage] = useState(0);
 
-  const { data, isLoading } = useEtfScreener(appliedFilter);
+  const { data, isLoading } = useQuery({
+    queryKey: ['etfs-list', page],
+    queryFn: () => fetchEtfs(page),
+  });
 
-  const handleApply = useCallback(() => {
-    setAppliedFilter({ ...draftFilter });
-  }, [draftFilter]);
-
-  const handleReset = useCallback(() => {
-    setDraftFilter({});
-    setAppliedFilter({});
-  }, []);
+  const totalPages = data?.meta.totalPages ?? 0;
 
   return (
-    <div className="screener-page">
-      <h1 className="page-title">ETF Screener</h1>
-      <p className="page-subtitle">Filter and search ETFs by issuer, asset class, expense ratio, and more</p>
+    <div style={{ padding: '1.5rem', maxWidth: '1280px', margin: '0 auto' }}>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>ETFs</h1>
+      <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+        {data ? `${data.meta.totalElements.toLocaleString()} ETFs` : '—'}
+      </p>
 
-      <section className="filters-section">
-        <h2>Filters</h2>
-        <ScreenerFilters onApply={handleApply} onReset={handleReset}>
-          <FilterInput
-            label="Symbol Contains"
-            value={draftFilter.symbolContains || ''}
-            onChange={(v) => setDraftFilter({ ...draftFilter, symbolContains: v || undefined })}
-            placeholder="e.g. SPY"
-          />
-          <FilterInput
-            label="Name Contains"
-            value={draftFilter.nameContains || ''}
-            onChange={(v) => setDraftFilter({ ...draftFilter, nameContains: v || undefined })}
-            placeholder="e.g. S&P 500"
-          />
-          <FilterInput
-            label="Issuer"
-            value={draftFilter.issuer || ''}
-            onChange={(v) => setDraftFilter({ ...draftFilter, issuer: v || undefined })}
-            placeholder="e.g. Vanguard"
-          />
-          <FilterSelect
-            label="Asset Class"
-            value={draftFilter.assetClass || ''}
-            onChange={(v) => setDraftFilter({ ...draftFilter, assetClass: v || undefined })}
-            options={ASSET_CLASS_OPTIONS}
-          />
-          <FilterSelect
-            label="Status"
-            value={draftFilter.status || ''}
-            onChange={(v) => setDraftFilter({ ...draftFilter, status: v || undefined })}
-            options={STATUS_OPTIONS}
-          />
-        </ScreenerFilters>
-      </section>
+      {isLoading ? (
+        <div style={{ color: 'var(--color-text-muted)' }}>Loading…</div>
+      ) : (
+        <>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--color-border)', color: 'var(--color-text-muted)', textAlign: 'left' }}>
+                  <th style={{ padding: '0.625rem 0.75rem' }}>Symbol</th>
+                  <th style={{ padding: '0.625rem 0.75rem' }}>Name</th>
+                  <th style={{ padding: '0.625rem 0.75rem' }}>Issuer</th>
+                  <th style={{ padding: '0.625rem 0.75rem' }}>Asset Class</th>
+                  <th style={{ padding: '0.625rem 0.75rem' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data?.data ?? []).map((etf) => (
+                  <tr
+                    key={etf.id}
+                    style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
+                    onClick={() => navigate(`/etfs/${etf.symbol}`)}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-secondary)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                  >
+                    <td style={{ padding: '0.625rem 0.75rem', fontWeight: 600, fontFamily: 'monospace' }}>{etf.symbol}</td>
+                    <td style={{ padding: '0.625rem 0.75rem' }}>{etf.name}</td>
+                    <td style={{ padding: '0.625rem 0.75rem' }}>{etf.issuer ?? '—'}</td>
+                    <td style={{ padding: '0.625rem 0.75rem' }}>{etf.assetClass ?? '—'}</td>
+                    <td style={{ padding: '0.625rem 0.75rem' }}>{etf.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-      <section className="results-section">
-        <div className="results-header">
-          <h2>Results</h2>
-          {data && <span className="results-count">{data.meta.totalElements} ETFs found</span>}
-        </div>
-        <ScreenerGrid
-          rowData={data?.data || []}
-          columnDefs={columnDefs}
-          loading={isLoading}
-          instrumentType="ETF"
-          getRowId={(d) => d.id}
-          getTicker={(d) => d.symbol}
-          getName={(d) => d.name}
-        />
-      </section>
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                style={{ padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: page === 0 ? 'not-allowed' : 'pointer' }}
+              >
+                Prev
+              </button>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
+                Page {page + 1} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                style={{ padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer' }}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

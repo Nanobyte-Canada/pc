@@ -2,6 +2,7 @@ package com.portfolio.controller
 
 import com.portfolio.dto.request.StockFilterRequest
 import com.portfolio.dto.response.PagedResponseDto
+import com.portfolio.dto.response.StockDetailDto
 import com.portfolio.dto.response.StockDto
 import com.portfolio.repository.StockRepository
 import com.portfolio.service.ScreenerService
@@ -20,7 +21,6 @@ class StockController(
     fun getStocks(
         @RequestParam(required = false) sector: String?,
         @RequestParam(required = false) country: String?,
-        @RequestParam(required = false) exchange: String?,
         @RequestParam(required = false) status: String?,
         @RequestParam(required = false) tickerContains: String?,
         @RequestParam(required = false) nameContains: String?,
@@ -31,7 +31,6 @@ class StockController(
         val filter = StockFilterRequest(
             sector = sector,
             country = country,
-            exchange = exchange,
             status = status,
             tickerContains = tickerContains,
             nameContains = nameContains
@@ -43,9 +42,16 @@ class StockController(
 
     @GetMapping("/{id}")
     fun getStockById(@PathVariable id: Long): ResponseEntity<StockDto> {
-        val stock = stockRepository.findByIdWithGics(id)
+        val stock = stockRepository.findById(id).orElse(null)
             ?: return ResponseEntity.notFound().build()
         return ResponseEntity.ok(StockDto.from(stock))
+    }
+
+    @GetMapping("/ticker/{ticker}")
+    fun getStockByTicker(@PathVariable ticker: String): ResponseEntity<StockDetailDto> {
+        val stock = stockRepository.findByTickerIgnoreCase(ticker)
+            ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(StockDetailDto.from(stock))
     }
 
     private fun createPageable(page: Int, size: Int, sort: String): PageRequest {

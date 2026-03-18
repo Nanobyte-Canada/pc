@@ -1,5 +1,5 @@
 .dashboard-page {
-  padding: 1.5rem;
+  padding: 0;
 }
 
 .dashboard-header {
@@ -317,10 +317,6 @@
 }
 
 @media (max-width: 768px) {
-  .dashboard-page {
-    padding: 0.75rem;
-  }
-
   .dashboard-kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }

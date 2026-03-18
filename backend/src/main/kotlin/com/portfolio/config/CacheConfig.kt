@@ -15,6 +15,7 @@ class CacheConfig {
         return ConcurrentMapCacheManager(
             "gics-hierarchy",
             "gics-sectors",
+            "gicsLookup",
             "countries",
             "exchanges",
             "regions",

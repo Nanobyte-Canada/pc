@@ -33,7 +33,6 @@ class InstrumentController(
                 when (t.trim().uppercase()) {
                     "STOCK" -> InstrumentType.STOCK
                     "ETF" -> InstrumentType.ETF
-                    "MUTUAL_FUND", "MF" -> InstrumentType.MUTUAL_FUND
                     else -> null
                 }
             }

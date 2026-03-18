@@ -90,7 +90,7 @@ export function InstrumentSearchAutocomplete({ filterType = 'all' }: InstrumentS
     switch (type) {
       case 'STOCK': return 'Stock';
       case 'ETF': return 'ETF';
-      case 'MUTUAL_FUND': return 'MF';
+      default: return type;
     }
   };
 
@@ -98,7 +98,7 @@ export function InstrumentSearchAutocomplete({ filterType = 'all' }: InstrumentS
     switch (type) {
       case 'STOCK': return 'type-stock';
       case 'ETF': return 'type-etf';
-      case 'MUTUAL_FUND': return 'type-mf';
+      default: return 'type-other';
     }
   };
 

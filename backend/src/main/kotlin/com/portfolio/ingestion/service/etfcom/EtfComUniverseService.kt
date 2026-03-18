@@ -8,9 +8,7 @@ import com.portfolio.ingestion.entity.ErrorType
 import com.portfolio.ingestion.entity.IngestionStep
 import com.portfolio.ingestion.service.IngestionTrackingService
 import com.portfolio.ingestion.service.StepResult
-import com.portfolio.repository.EtfHoldingRepository
 import com.portfolio.repository.EtfRepository
-import com.portfolio.repository.EtfSectorAllocationFactsetRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,8 +20,6 @@ import java.time.format.DateTimeFormatter
 class EtfComUniverseService(
     private val etfComClient: EtfComClient,
     private val etfRepository: EtfRepository,
-    private val etfHoldingRepository: EtfHoldingRepository,
-    private val sectorRepository: EtfSectorAllocationFactsetRepository,
     private val trackingService: IngestionTrackingService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -36,17 +32,17 @@ class EtfComUniverseService(
         val tickers = etfComClient.fetchAllTickers()
         log.info("Fetched {} tickers from etf.com", tickers.size)
 
-        // Delete all existing ETF data for clean re-insert
-        etfHoldingRepository.deleteAllInBatch()
-        sectorRepository.deleteAllInBatch()
-        etfRepository.deleteAllInBatch()
-        log.info("Cleared existing ETF data for clean re-insert")
-
         var created = 0
+        var skipped = 0
         var failed = 0
 
         for (tickerDto in tickers) {
             try {
+                val symbol = tickerDto.ticker.uppercase().trim()
+                if (etfRepository.findBySymbolIgnoreCase(symbol) != null) {
+                    skipped++
+                    continue
+                }
                 processEtfTicker(tickerDto, now)
                 created++
             } catch (e: Exception) {
@@ -56,7 +52,7 @@ class EtfComUniverseService(
             }
         }
 
-        log.info("etf.com universe refresh complete: created={}, failed={}", created, failed)
+        log.info("etf.com universe refresh complete: created={}, skipped={}, failed={}", created, skipped, failed)
 
         return StepResult(
             processed = tickers.size,
@@ -64,7 +60,8 @@ class EtfComUniverseService(
             updated = 0,
             failed = failed,
             metadata = mapOf(
-                "totalTickers" to tickers.size
+                "totalTickers" to tickers.size,
+                "skipped" to skipped
             )
         )
     }

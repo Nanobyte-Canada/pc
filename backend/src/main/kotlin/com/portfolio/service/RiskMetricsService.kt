@@ -108,7 +108,7 @@ class RiskMetricsService {
         for (exposure in exposures.values) {
             totalWeight += exposure.effectiveWeight
 
-            val beta = exposure.stock.avBeta
+            val beta = exposure.stock.avDecimal("Beta")
             if (beta != null && beta > BigDecimal.ZERO && beta < BigDecimal(10)) {
                 weightedBetaSum += exposure.effectiveWeight * beta
                 betaWeightSum += exposure.effectiveWeight
@@ -134,7 +134,7 @@ class RiskMetricsService {
         var dividendWeightSum = BigDecimal.ZERO
 
         for (exposure in exposures.values) {
-            val dividendYield = exposure.stock.avDividendYield
+            val dividendYield = exposure.stock.avDecimal("DividendYield")
             if (dividendYield != null && dividendYield >= BigDecimal.ZERO) {
                 weightedDividendSum += exposure.effectiveWeight * dividendYield
                 dividendWeightSum += exposure.effectiveWeight
@@ -154,7 +154,7 @@ class RiskMetricsService {
         var peWeightSum = BigDecimal.ZERO
 
         for (exposure in exposures.values) {
-            val peRatio = exposure.stock.avPeRatio ?: exposure.stock.avTrailingPe
+            val peRatio = exposure.stock.avDecimal("PERatio") ?: exposure.stock.avDecimal("TrailingPE")
             if (peRatio != null && peRatio > BigDecimal.ZERO && peRatio < BigDecimal(1000)) {
                 weightedPeSum += exposure.effectiveWeight * peRatio
                 peWeightSum += exposure.effectiveWeight
