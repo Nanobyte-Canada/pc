@@ -56,7 +56,13 @@ export default function ConnectedAccountsWidget(_props: { connectionId?: number 
           <div className="ca-item-right">
             <div className="ca-value-info">
               <div className="ca-value">{fmtCurrency(account.totalValue)}</div>
-              <div className="ca-positions-count">{account.positionsCount} positions</div>
+              <div className="ca-value-breakdown">
+                <span>Inv: {fmtCurrency(account.investmentValue)}</span>
+                <span>Cash: {fmtCurrency(account.cash)}</span>
+                {account.buyingPower != null && account.buyingPower > 0 && (
+                  <span>BP: {fmtCurrency(account.buyingPower)}</span>
+                )}
+              </div>
             </div>
             {account.linkedGroup ? (
               <div>

@@ -9,6 +9,7 @@ import com.portfolio.broker.entity.OrderStatus
 import com.portfolio.broker.repository.*
 import com.portfolio.dto.request.PortfolioPositionRequest
 import com.portfolio.entity.Country
+import com.portfolio.entity.Etf
 import com.portfolio.repository.CountryRepository
 import com.portfolio.repository.EtfRepository
 import com.portfolio.repository.StockRepository
@@ -34,6 +35,7 @@ class DashboardDataService(
     private val lookThroughService: LookThroughService,
     private val driftCalculationService: DriftCalculationService,
     private val positionFetchService: PositionFetchService,
+    private val exchangeRateService: ExchangeRateService,
     private val objectMapper: ObjectMapper
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -48,14 +50,32 @@ class DashboardDataService(
             positionRepository.findCurrentPositionsByUserIdFromActiveConnections(userId)
         }
 
-        val totalValue = positions.sumOf { it.currentValue ?: BigDecimal.ZERO }
-        val totalDayPnl = positions.sumOf { it.dayPnl ?: BigDecimal.ZERO }
-        val totalDayPnlPercent = if (totalValue > BigDecimal.ZERO && totalDayPnl != BigDecimal.ZERO) {
-            val previousValue = totalValue - totalDayPnl
+        // Portfolio Value from connection.totalValue (SnapTrade's FX-converted total, includes cash)
+        val connections = if (connectionId != null) {
+            connectionRepository.findById(connectionId).map { listOf(it) }.orElse(emptyList())
+        } else {
+            connectionRepository.findByUserIdAndStatus(userId, ConnectionStatus.ACTIVE)
+        }
+        val portfolioValue = connections.sumOf { it.totalValue ?: BigDecimal.ZERO }
+
+        // Cash from balance snapshots
+        val cashResponse = getCash(userId, connectionId)
+        val cashValue = cashResponse.totalCashCAD
+
+        // Investment = Portfolio Value - Cash
+        val investmentValue = portfolioValue - cashValue
+
+        // Day P&L from positions
+        val anyDayPnlAvailable = positions.any { it.dayPnl != null }
+        val totalDayPnl = if (anyDayPnlAvailable) {
+            positions.sumOf { it.dayPnl ?: BigDecimal.ZERO }
+        } else null
+        val totalDayPnlPercent = if (totalDayPnl != null && portfolioValue > BigDecimal.ZERO && totalDayPnl != BigDecimal.ZERO) {
+            val previousValue = portfolioValue - totalDayPnl
             if (previousValue > BigDecimal.ZERO) {
                 (totalDayPnl / previousValue * BigDecimal(100)).setScale(2, RoundingMode.HALF_UP)
             } else BigDecimal.ZERO
-        } else BigDecimal.ZERO
+        } else if (totalDayPnl != null) BigDecimal.ZERO else null
 
         // Positions summary by type
         val byType = positions.groupBy { it.instrumentType ?: InstrumentType.OTHER }
@@ -70,13 +90,16 @@ class DashboardDataService(
             total = positions.size
         )
 
-        // Holdings look-through count
-        val holdingsCount = calculateHoldingsCount(positions, totalValue)
+        // Holdings look-through count (use investmentValue for weight calculations)
+        val positionsTotalValue = positions.sumOf { it.currentValue ?: BigDecimal.ZERO }
+        val holdingsCount = calculateHoldingsCount(positions, positionsTotalValue)
 
         return DashboardSummaryResponse(
             portfolioValue = PortfolioValueDto(
-                totalValue = totalValue.setScale(2, RoundingMode.HALF_UP),
-                totalChange = totalDayPnl.setScale(2, RoundingMode.HALF_UP),
+                totalValue = portfolioValue.setScale(2, RoundingMode.HALF_UP),
+                investmentValue = investmentValue.setScale(2, RoundingMode.HALF_UP),
+                cashValue = cashValue.setScale(2, RoundingMode.HALF_UP),
+                totalChange = totalDayPnl?.setScale(2, RoundingMode.HALF_UP),
                 totalChangePercent = totalDayPnlPercent,
                 currency = "CAD"
             ),
@@ -160,7 +183,7 @@ class DashboardDataService(
     fun getCash(userId: Long, connectionId: Long? = null): DashboardCashResponse {
         val connectionIds = getConnectionIds(userId, connectionId)
         if (connectionIds.isEmpty()) {
-            return DashboardCashResponse(emptyList(), emptyList(), BigDecimal.ZERO)
+            return DashboardCashResponse(emptyList(), emptyList(), BigDecimal.ZERO, BigDecimal.ZERO)
         }
 
         val cashByDurrency = mutableMapOf<String, BigDecimal>()
@@ -190,14 +213,23 @@ class DashboardDataService(
             }
         }
 
-        val totalCashCAD = cashByDurrency.values.fold(BigDecimal.ZERO) { acc, v -> acc + v }
+        val today = LocalDate.now()
+        val totalCashCAD = cashByDurrency.entries.fold(BigDecimal.ZERO) { acc, (currency, amount) ->
+            val rate = exchangeRateService.getRate(currency, today) ?: BigDecimal.ONE
+            acc + amount * rate
+        }
+        val totalBuyingPowerCAD = buyingPowerByCurrency.entries.fold(BigDecimal.ZERO) { acc, (currency, amount) ->
+            val rate = exchangeRateService.getRate(currency, today) ?: BigDecimal.ONE
+            acc + amount * rate
+        }
 
         return DashboardCashResponse(
             availableCash = cashByDurrency.map { CurrencyAmountDto(it.key, it.value.setScale(2, RoundingMode.HALF_UP)) }
                 .sortedByDescending { it.amount },
             buyingPower = buyingPowerByCurrency.map { CurrencyAmountDto(it.key, it.value.setScale(2, RoundingMode.HALF_UP)) }
                 .sortedByDescending { it.amount },
-            totalCashCAD = totalCashCAD.setScale(2, RoundingMode.HALF_UP)
+            totalCashCAD = totalCashCAD.setScale(2, RoundingMode.HALF_UP),
+            totalBuyingPowerCAD = totalBuyingPowerCAD.setScale(2, RoundingMode.HALF_UP)
         )
     }
 
@@ -233,7 +265,21 @@ class DashboardDataService(
         var unmappedWeight = BigDecimal.ZERO
 
         for ((_, exposure) in result.exposures) {
-            unmappedWeight += exposure.effectiveWeight
+            val sectorCode = exposure.stock.gicsSectorCode
+            if (sectorCode != null) {
+                val sectorName = LookThroughService.GICS_SECTOR_NAMES[sectorCode] ?: "Unknown"
+                sectorNames[sectorCode] = sectorName
+                val acc = sectorMap.getOrPut(sectorCode) { SectorAccumulator() }
+                acc.weight += exposure.effectiveWeight
+                val igCode = exposure.stock.gicsIndustryGroupCode
+                if (igCode != null) {
+                    val igName = LookThroughService.GICS_INDUSTRY_GROUP_NAMES[igCode] ?: "Unknown"
+                    val existing = acc.industryGroups[igCode]
+                    acc.industryGroups[igCode] = Pair(igName, (existing?.second ?: BigDecimal.ZERO) + exposure.effectiveWeight)
+                }
+            } else {
+                unmappedWeight += exposure.effectiveWeight
+            }
         }
 
         // Also add ETF direct sector exposures for ETFs without holdings data
@@ -376,13 +422,36 @@ class DashboardDataService(
         val top10Weight = weights.sortedDescending().take(10).fold(BigDecimal.ZERO) { acc, w -> acc + w }
             .setScale(4, RoundingMode.HALF_UP)
 
-        // Sector concentration (from sector exposure)
-        val sectorExposure = getSectorExposure(userId, connectionId)
-        val sectorHHI = sectorExposure.sectors.sumOf { it.weight * it.weight }.setScale(4, RoundingMode.HALF_UP)
+        // Sector concentration - computed from the same look-through result
+        val sectorWeights = mutableMapOf<String, BigDecimal>()
+        if (result != null) {
+            for ((_, exposure) in result.exposures) {
+                val sectorCode = exposure.stock.gicsSectorCode ?: continue
+                sectorWeights[sectorCode] = (sectorWeights[sectorCode] ?: BigDecimal.ZERO) + exposure.effectiveWeight
+            }
+            // Include ETF direct sector exposures
+            for ((_, etfSector) in result.etfDirectSectorExposures) {
+                for ((gicsCode, alloc) in etfSector.sectorAllocations) {
+                    val effectiveWeight = etfSector.portfolioWeight * alloc
+                    sectorWeights[gicsCode] = (sectorWeights[gicsCode] ?: BigDecimal.ZERO) + effectiveWeight
+                }
+            }
+        }
+        val sectorHHI = sectorWeights.values.sumOf { it * it }.setScale(4, RoundingMode.HALF_UP)
 
-        // Geographic concentration
-        val geoExposure = getGeographyExposure(userId, connectionId)
-        val maxRegionWeight = geoExposure.regions.maxOfOrNull { it.weight } ?: BigDecimal.ZERO
+        // Geographic concentration - computed from the same look-through result
+        val regionWeights = mutableMapOf<String, BigDecimal>()
+        if (result != null) {
+            val countryCache = mutableMapOf<String, Country?>()
+            for ((_, exposure) in result.exposures) {
+                val country = countryCache.getOrPut(exposure.stock.country) {
+                    countryRepository.findByCodeWithRegion(exposure.stock.country)
+                } ?: continue
+                val regionName = country.region.name
+                regionWeights[regionName] = (regionWeights[regionName] ?: BigDecimal.ZERO) + exposure.effectiveWeight
+            }
+        }
+        val maxRegionWeight = regionWeights.values.maxOrNull() ?: BigDecimal.ZERO
 
         // Asset type distribution
         val byType = positions.groupBy { it.instrumentType ?: InstrumentType.OTHER }
@@ -467,9 +536,16 @@ class DashboardDataService(
         val feeActivities = activities.filter { it.type.uppercase() in feeTypes }
 
         val totalFees = feeActivities.filter { it.type.uppercase() == "FEE" }.sumOf { it.amount.abs() }
-        val totalCommissions = feeActivities.filter { it.type.uppercase() == "COMMISSION" }.sumOf { it.amount.abs() }
 
-        val managementExpensePerMonth = BigDecimal.ZERO
+        // Commissions come from both COMMISSION-typed activities and per-trade fee columns on BUY/SELL
+        val explicitCommissions = feeActivities.filter { it.type.uppercase() == "COMMISSION" }.sumOf { it.amount.abs() }
+        val tradeTypes = setOf("BUY", "SELL")
+        val perTradeFees = activities.filter { it.type.uppercase() in tradeTypes }
+            .sumOf { it.fee?.abs() ?: BigDecimal.ZERO }
+        val totalCommissions = explicitCommissions + perTradeFees
+
+        // Compute MER from ETF expense ratios
+        val managementExpensePerMonth = computeWeightedMER(userId, connectionId)
 
         val monthlyBreakdown = feeActivities
             .groupBy { YearMonth.from(it.tradeDate).toString() }
@@ -481,13 +557,14 @@ class DashboardDataService(
                 )
             }.sortedBy { it.month }
 
-        val total = totalFees + totalCommissions + managementExpensePerMonth
+        val annualMER = (managementExpensePerMonth * BigDecimal(12)).setScale(2, RoundingMode.HALF_UP)
+        val total = totalFees + totalCommissions + annualMER
 
         return FeesResponse(
             last12Months = FeesTotalDto(
                 totalFees = totalFees.setScale(2, RoundingMode.HALF_UP),
                 totalCommissions = totalCommissions.setScale(2, RoundingMode.HALF_UP),
-                totalManagementExpense = managementExpensePerMonth.setScale(2, RoundingMode.HALF_UP),
+                totalManagementExpense = annualMER,
                 total = total.setScale(2, RoundingMode.HALF_UP)
             ),
             monthlyBreakdown = monthlyBreakdown,
@@ -564,8 +641,8 @@ class DashboardDataService(
                 symbol = stock.ticker,
                 name = stock.name,
                 effectiveWeight = exposure.effectiveWeight.setScale(6, RoundingMode.HALF_UP),
-                sector = null,
-                industryGroup = null,
+                sector = stock.gicsSectorCode?.let { LookThroughService.GICS_SECTOR_NAMES[it] },
+                industryGroup = stock.gicsIndustryGroupCode?.let { LookThroughService.GICS_INDUSTRY_GROUP_NAMES[it] },
                 country = country?.name,
                 sources = exposure.sources.map { src ->
                     HoldingSourceDto(
@@ -607,6 +684,10 @@ class DashboardDataService(
                 )
             } else null
 
+            val portfolioValue = conn.totalValue ?: BigDecimal.ZERO
+            val cash = getTotalCashFromSnapshot(conn.id)
+            val investmentValue = portfolioValue - cash
+
             DashboardAccountDto(
                 connectionId = conn.id,
                 brokerName = conn.broker?.code ?: conn.brokerName ?: "Unknown",
@@ -615,7 +696,10 @@ class DashboardDataService(
                 accountType = conn.accountMetaType ?: conn.accountType,
                 accountNumber = conn.accountNumberActual?.let { maskAccountNumber(it) },
                 status = conn.status.name,
-                totalValue = conn.totalValue,
+                totalValue = portfolioValue.setScale(2, RoundingMode.HALF_UP),
+                investmentValue = investmentValue.setScale(2, RoundingMode.HALF_UP),
+                cash = cash.setScale(2, RoundingMode.HALF_UP),
+                buyingPower = getBuyingPowerFromSnapshot(conn.id)?.setScale(2, RoundingMode.HALF_UP),
                 positionsCount = conn.positionsCount ?: 0,
                 lastFetchedAt = conn.lastPositionsFetchedAt,
                 linkedGroup = linkedGroup,
@@ -624,6 +708,48 @@ class DashboardDataService(
         }
 
         return DashboardAccountsResponse(accounts = accounts)
+    }
+
+    private fun getTotalCashFromSnapshot(connId: Long): BigDecimal {
+        val snapshot = balanceRepository.findLatestByConnectionId(connId) ?: return BigDecimal.ZERO
+        val cashJson = snapshot.cash ?: return BigDecimal.ZERO
+        return try {
+            val parsed = objectMapper.readValue(cashJson, cashTypeRef)
+            val today = LocalDate.now()
+            parsed.entries
+                .filter { !it.key.startsWith("buying_power_") }
+                .fold(BigDecimal.ZERO) { acc, (key, value) ->
+                    val currency = when {
+                        key.startsWith("cash_") -> key.removePrefix("cash_").uppercase()
+                        key.length == 3 && key == key.uppercase() -> key
+                        else -> return@fold acc
+                    }
+                    val rate = exchangeRateService.getRate(currency, today) ?: BigDecimal.ONE
+                    acc + value * rate
+                }
+        } catch (e: Exception) {
+            log.warn("Failed to parse cash for connection {}", connId, e)
+            BigDecimal.ZERO
+        }
+    }
+
+    private fun getBuyingPowerFromSnapshot(connId: Long): BigDecimal? {
+        val snapshot = balanceRepository.findLatestByConnectionId(connId) ?: return null
+        val cashJson = snapshot.cash ?: return null
+        return try {
+            val parsed = objectMapper.readValue(cashJson, cashTypeRef)
+            val today = LocalDate.now()
+            val bpEntries = parsed.entries.filter { it.key.startsWith("buying_power_") }
+            if (bpEntries.isEmpty()) return null
+            bpEntries.fold(BigDecimal.ZERO) { acc, (key, value) ->
+                val currency = key.removePrefix("buying_power_").uppercase()
+                val rate = exchangeRateService.getRate(currency, today) ?: BigDecimal.ONE
+                acc + value * rate
+            }
+        } catch (e: Exception) {
+            log.warn("Failed to parse buying power for connection {}", connId, e)
+            null
+        }
     }
 
     // ========== Refresh All ==========
@@ -643,6 +769,79 @@ class DashboardDataService(
             connectionsRefreshed = count,
             message = "Refreshing data for $count accounts..."
         )
+    }
+
+    // ========== GICS Backfill ==========
+
+    fun backfillStockGicsCodes(): Int {
+        val stocks = stockRepository.findAll().filter { it.avRawPayload != null && it.gicsSectorCode == null }
+        var updated = 0
+        for (stock in stocks) {
+            val sector = stock.avField("Sector") ?: continue
+            val industry = stock.avField("Industry")
+
+            val gicsSectorCode = LookThroughService.FACTSET_SECTOR_TO_GICS[sector]
+            if (gicsSectorCode != null) {
+                stock.gicsSectorCode = gicsSectorCode
+                val gicsIgCode = industry?.uppercase()?.let { LookThroughService.AV_INDUSTRY_TO_GICS_IG[it] }
+                if (gicsIgCode != null) {
+                    stock.gicsIndustryGroupCode = gicsIgCode
+                }
+                stockRepository.save(stock)
+                updated++
+            }
+        }
+        log.info("Backfilled GICS codes for {} stocks", updated)
+        return updated
+    }
+
+    // ========== MER Calculation ==========
+
+    private fun computeWeightedMER(userId: Long, connectionId: Long?): BigDecimal {
+        val positions = getPositions(userId, connectionId)
+        val totalValue = positions.sumOf { it.currentValue ?: BigDecimal.ZERO }
+        if (totalValue <= BigDecimal.ZERO) return BigDecimal.ZERO
+
+        var weightedExpenseRatio = BigDecimal.ZERO
+
+        for (pos in positions) {
+            if (pos.instrumentType != InstrumentType.ETF) continue
+            val posValue = pos.currentValue ?: BigDecimal.ZERO
+            if (posValue <= BigDecimal.ZERO) continue
+
+            val etf = etfRepository.findBySymbolIgnoreCase(pos.symbol) ?: continue
+            val expenseRatio = extractExpenseRatio(etf) ?: continue
+
+            val weight = posValue.divide(totalValue, 8, RoundingMode.HALF_UP)
+            weightedExpenseRatio += weight * expenseRatio
+        }
+
+        // MER per month = totalValue * weightedExpenseRatio / 12
+        return (totalValue * weightedExpenseRatio / BigDecimal(12)).setScale(2, RoundingMode.HALF_UP)
+    }
+
+    private fun extractExpenseRatio(etf: Etf): BigDecimal? {
+        val json = etf.etfcomRawPayload ?: return null
+        return try {
+            // Navigate to fundSummaryData section (handle both old and new format)
+            val summary = json.path("fundSummaryData").let { node ->
+                if (node.isMissingNode || node.isNull) json
+                else if (node.has("data")) node.path("data").path("fundSummaryData")
+                else node
+            }
+            val ratioNode = summary.path("expenseRatio").takeIf { !it.isMissingNode && !it.isNull }
+                ?: summary.path("netExpenseRatio").takeIf { !it.isMissingNode && !it.isNull }
+                ?: summary.path("Expense Ratio").takeIf { !it.isMissingNode && !it.isNull }
+                ?: return null
+            val ratioStr = ratioNode.asText()
+            val ratio = BigDecimal(ratioStr.replace("%", "").trim())
+            // If value > 1, it's already in percentage (e.g. 0.03 = 0.03%, 3.0 = 3%)
+            // Normalize to decimal form
+            if (ratio > BigDecimal.ONE) ratio.divide(BigDecimal(100), 6, RoundingMode.HALF_UP) else ratio
+        } catch (e: Exception) {
+            log.debug("Failed to extract expense ratio for ETF {}: {}", etf.symbol, e.message)
+            null
+        }
     }
 
     // ========== Helpers ==========

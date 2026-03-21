@@ -1,0 +1,197 @@
+.etf-detail-page {
+  padding: 1.5rem;
+}
+
+.etf-detail-back {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  padding: 0;
+}
+
+.etf-detail-back:hover {
+  color: var(--text-primary);
+}
+
+.etf-detail-header {
+  margin-bottom: 1.5rem;
+}
+
+.etf-detail-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.etf-detail-header p {
+  color: var(--text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.etf-section {
+  margin-top: 2rem;
+}
+
+.etf-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.etf-section-subtitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+  color: var(--text-muted);
+}
+
+.etf-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.etf-summary-card {
+  background: var(--secondary-bg);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.etf-summary-card-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.etf-summary-value-lg {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+
+.etf-summary-value {
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.etf-description {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.etf-holdings-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .etf-holdings-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.etf-holdings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.etf-holdings-table th {
+  padding: 0.375rem 0.5rem;
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-bottom: 2px solid var(--border);
+}
+
+.etf-holdings-table td {
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.etf-holdings-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding: 8px 0;
+}
+
+.etf-holdings-pagination .pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.etf-holdings-pagination .pagination-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.etf-holdings-pagination .pagination-controls button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.etf-holdings-pagination .pagination-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.etf-holdings-pagination .pagination-controls button:hover:not(:disabled) {
+  background: var(--bg-primary);
+}
+
+.etf-legend {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1rem;
+  row-gap: 0.375rem;
+  padding: 0 0.25rem;
+}
+
+.etf-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.etf-legend-dot {
+  height: 0.625rem;
+  width: 0.625rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.etf-legend-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.etf-legend-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.etf-empty-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}

@@ -20,7 +20,7 @@ export default function BuyingPowerWidget({ connectionId }: { connectionId?: num
     )
   }
 
-  const total = data.buyingPower.reduce((sum, c) => sum + c.amount, 0)
+  const total = data.totalBuyingPowerCAD ?? data.buyingPower.reduce((sum: number, c: { amount: number }) => sum + c.amount, 0)
 
   return (
     <div>

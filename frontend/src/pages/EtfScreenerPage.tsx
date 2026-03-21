@@ -1,13 +1,24 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { AgGridReact } from 'ag-grid-react';
+import type { ColDef } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { apiFetch } from '../services/api';
+import { Pagination } from '../components/ui/Pagination';
+import './ScreenerPage.css';
 
 interface EtfRow {
   id: number;
   symbol: string;
   name: string;
+  isin: string | null;
+  cusip: string | null;
   issuer: string | null;
+  currency: string;
+  domicile: string;
+  inceptionDate: string | null;
   assetClass: string | null;
   status: string;
 }
@@ -35,68 +46,49 @@ export function EtfScreenerPage() {
   });
 
   const totalPages = data?.meta.totalPages ?? 0;
+  const totalElements = data?.meta.totalElements ?? 0;
+
+  const columnDefs = useMemo<ColDef<EtfRow>[]>(() => [
+    { field: 'symbol', headerName: 'Symbol', width: 100, pinned: 'left', cellStyle: { fontWeight: 600, fontFamily: 'monospace' } },
+    { field: 'name', headerName: 'Name', flex: 1, minWidth: 200 },
+    { field: 'issuer', headerName: 'Issuer', width: 140, valueFormatter: p => p.value ?? '—' },
+    { field: 'assetClass', headerName: 'Asset Class', width: 120, valueFormatter: p => p.value ?? '—' },
+    { field: 'currency', headerName: 'Currency', width: 90 },
+    { field: 'domicile', headerName: 'Domicile', width: 90 },
+  ], []);
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1280px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>ETFs</h1>
-      <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-        {data ? `${data.meta.totalElements.toLocaleString()} ETFs` : '—'}
+    <div className="screener-page">
+      <h1>ETFs</h1>
+      <p className="screener-subtitle">
+        {data ? `${totalElements.toLocaleString()} ETFs` : '—'}
       </p>
 
       {isLoading ? (
-        <div style={{ color: 'var(--color-text-muted)' }}>Loading…</div>
+        <div style={{ color: 'var(--text-muted)' }}>Loading…</div>
       ) : (
         <>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid var(--color-border)', color: 'var(--color-text-muted)', textAlign: 'left' }}>
-                  <th style={{ padding: '0.625rem 0.75rem' }}>Symbol</th>
-                  <th style={{ padding: '0.625rem 0.75rem' }}>Name</th>
-                  <th style={{ padding: '0.625rem 0.75rem' }}>Issuer</th>
-                  <th style={{ padding: '0.625rem 0.75rem' }}>Asset Class</th>
-                  <th style={{ padding: '0.625rem 0.75rem' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data?.data ?? []).map((etf) => (
-                  <tr
-                    key={etf.id}
-                    style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
-                    onClick={() => navigate(`/etfs/${etf.symbol}`)}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-secondary)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
-                  >
-                    <td style={{ padding: '0.625rem 0.75rem', fontWeight: 600, fontFamily: 'monospace' }}>{etf.symbol}</td>
-                    <td style={{ padding: '0.625rem 0.75rem' }}>{etf.name}</td>
-                    <td style={{ padding: '0.625rem 0.75rem' }}>{etf.issuer ?? '—'}</td>
-                    <td style={{ padding: '0.625rem 0.75rem' }}>{etf.assetClass ?? '—'}</td>
-                    <td style={{ padding: '0.625rem 0.75rem' }}>{etf.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="ag-theme-quartz screener-grid-container">
+            <AgGridReact
+              rowData={data?.data ?? []}
+              columnDefs={columnDefs}
+              defaultColDef={{ sortable: true, resizable: true, filter: true, floatingFilter: true }}
+              domLayout="autoHeight"
+              animateRows={true}
+              suppressCellFocus={true}
+              onRowClicked={(event) => {
+                if (event.data) navigate(`/etfs/${event.data.symbol}`);
+              }}
+              rowStyle={{ cursor: 'pointer' }}
+            />
           </div>
 
           {totalPages > 1 && (
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
-                style={{ padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: page === 0 ? 'not-allowed' : 'pointer' }}
-              >
-                Prev
-              </button>
-              <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
-                Page {page + 1} of {totalPages}
+            <div className="screener-pagination">
+              <span className="pagination-info">
+                Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalElements)} of {totalElements.toLocaleString()}
               </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
-                style={{ padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer' }}
-              >
-                Next
-              </button>
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
           )}
         </>

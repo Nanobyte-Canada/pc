@@ -115,6 +115,15 @@ class SnapTradeService(
     }
 
     /**
+     * Fetches complete holdings (positions + balances + total_value) for a specific account.
+     * The total_value is FX-converted by the broker.
+     */
+    fun getHoldings(user: User, accountId: String): SnapTradeHoldingsDto {
+        val snapUser = ensureUserRegistered(user)
+        return adapter.getHoldings(snapUser.userId, snapUser.userSecret, accountId)
+    }
+
+    /**
      * Fetches option-specific position data for a specific account.
      * Returns empty list if the broker doesn't support options.
      */

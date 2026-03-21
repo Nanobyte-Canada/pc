@@ -1,8 +1,10 @@
 package com.portfolio.broker.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.auth.entity.AuditEventType
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
+import com.portfolio.broker.adapter.SnapTradeBalanceDto
 import com.portfolio.broker.adapter.SnapTradeOptionPositionDto
 import com.portfolio.broker.adapter.SnapTradePositionDto
 import com.portfolio.broker.entity.*
@@ -21,9 +23,11 @@ class PositionFetchService(
     private val connectionRepository: BrokerConnectionRepository,
     private val positionRepository: BrokerPositionRepository,
     private val fetchLogRepository: PositionFetchLogRepository,
+    private val balanceRepository: BrokerBalanceRepository,
     private val userRepository: UserRepository,
     private val snapTradeService: SnapTradeService,
-    private val auditService: AuditService
+    private val auditService: AuditService,
+    private val objectMapper: ObjectMapper
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -78,13 +82,14 @@ class PositionFetchService(
             ?: throw IllegalStateException("No account ID for connection: $connectionId")
 
         try {
-            val snapPositions: List<SnapTradePositionDto> = snapTradeService.fetchPositions(user, accountId)
+            // Use holdings endpoint: positions + balances + total_value in one call
+            val holdings = snapTradeService.getHoldings(user, accountId)
+            val snapPositions: List<SnapTradePositionDto> = holdings.positions
 
             // Mark old positions as non-current
             positionRepository.markAllNonCurrent(connectionId)
 
             // Save new positions
-            var totalValue = BigDecimal.ZERO
             val positions = snapPositions.map { snapPos: SnapTradePositionDto ->
                 val units: BigDecimal? = snapPos.units?.let { BigDecimal.valueOf(it) }
                 val price: BigDecimal? = snapPos.price?.let { BigDecimal.valueOf(it) }
@@ -102,7 +107,7 @@ class PositionFetchService(
 
                 val currencyCode: String = snapPos.currencyCode ?: "CAD"
 
-                val position = BrokerPosition(
+                BrokerPosition(
                     connection = connection,
                     symbol = snapPos.symbol ?: "UNKNOWN",
                     symbolIdExternal = snapPos.symbolId,
@@ -120,23 +125,28 @@ class PositionFetchService(
                     asOfTimestamp = OffsetDateTime.now(),
                     isCurrent = true
                 )
-                totalValue += currentValue ?: BigDecimal.ZERO
-                position
             }
             positionRepository.saveAll(positions)
 
             // Fetch option-specific data and merge into option positions
             enrichOptionPositions(user, accountId, connection, positions)
 
+            // Use SnapTrade's FX-converted total_value as the portfolio value
+            val portfolioValue = holdings.totalValue?.let { BigDecimal.valueOf(it) }
+
+            // Save balance snapshot from the same holdings response
+            saveBalanceSnapshot(connection, holdings.balances, portfolioValue)
+
             // Update connection
             connection.lastPositionsFetchedAt = OffsetDateTime.now()
             connection.positionsCount = positions.size
-            connection.totalValue = totalValue
+            connection.totalValue = portfolioValue
             connection.status = ConnectionStatus.ACTIVE
             connection.clearError()
             connectionRepository.save(connection)
 
             // Update fetch log
+            val totalValue = portfolioValue ?: BigDecimal.ZERO
             fetchLog.markSuccess(positions.size, totalValue)
             fetchLogRepository.save(fetchLog)
 
@@ -237,6 +247,46 @@ class PositionFetchService(
             log.warn("Failed to enrich option positions for connection {}: {}", connection.id, e.message)
             // Non-fatal — regular positions are already saved
         }
+    }
+
+    private fun saveBalanceSnapshot(
+        connection: BrokerConnection,
+        balances: List<SnapTradeBalanceDto>,
+        portfolioValue: BigDecimal?
+    ) {
+        val cashMap = mutableMapOf<String, BigDecimal>()
+        val buyingPowerMap = mutableMapOf<String, BigDecimal>()
+
+        for (balance in balances) {
+            val curr = balance.currency ?: "CAD"
+            val amount = balance.cash?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
+            cashMap["cash_$curr"] = (cashMap["cash_$curr"] ?: BigDecimal.ZERO) + amount
+
+            val bp = balance.buyingPower?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
+            if (bp > BigDecimal.ZERO) {
+                buyingPowerMap["buying_power_$curr"] = (buyingPowerMap["buying_power_$curr"] ?: BigDecimal.ZERO) + bp
+            }
+        }
+
+        val combined = cashMap + buyingPowerMap
+        val today = LocalDate.now()
+
+        val existing = balanceRepository.findByConnectionIdAndAsOfDate(connection.id, today)
+        if (existing != null) {
+            balanceRepository.delete(existing)
+            balanceRepository.flush()
+        }
+
+        val snapshot = BrokerBalanceSnapshot(
+            connection = connection,
+            totalValue = portfolioValue,
+            cash = objectMapper.writeValueAsString(combined),
+            currency = "CAD",
+            asOfDate = today
+        )
+        balanceRepository.save(snapshot)
+
+        connection.lastBalanceFetchedAt = OffsetDateTime.now()
     }
 
     private fun mapInstrumentType(typeCode: String?): InstrumentType? {

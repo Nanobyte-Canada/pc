@@ -103,3 +103,31 @@ export async function getEtfById(id: number): Promise<Etf> {
   }
   return response.json();
 }
+
+export interface EtfHoldingDto {
+  stockId: number | null;
+  ticker: string;
+  name: string;
+  weight: number | null;
+  shares: number | null;
+  marketValue: number | null;
+  sector: { code: string; name: string } | null;
+  country: string | null;
+  holdingType: string | null;
+  rank: number | null;
+}
+
+export interface EtfHoldingsResponse {
+  etfId: number;
+  etfSymbol: string;
+  asOfDate: string;
+  holdingsCount: number;
+  holdings: EtfHoldingDto[];
+  metadata: { resolvedCount: number; unresolvedCount: number; resolvedPercent: number } | null;
+}
+
+export async function getEtfHoldings(etfId: number): Promise<EtfHoldingsResponse> {
+  const res = await apiFetch(`/api/v1/etfs/${etfId}/holdings`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}

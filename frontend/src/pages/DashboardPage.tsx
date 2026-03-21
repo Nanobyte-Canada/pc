@@ -42,9 +42,19 @@ export function DashboardPage() {
                 <TrendingDown style={{ height: '1rem', width: '1rem', color: '#fca5a5' }} />
               )}
               <span className={isPositive ? 'dashboard-hero-change-positive' : 'dashboard-hero-change-negative'}>
-                {isPositive ? '+' : ''}{formatCurrency(pv.totalChange)} ({isPositive ? '+' : ''}{pv.totalChangePercent.toFixed(2)}%)
+                {isPositive ? '+' : ''}{formatCurrency(pv.totalChange ?? 0)} ({isPositive ? '+' : ''}{(pv.totalChangePercent ?? 0).toFixed(2)}%)
               </span>
               <span className="dashboard-hero-change-label">today</span>
+            </div>
+            <div className="dashboard-hero-breakdown">
+              <div className="dashboard-hero-breakdown-item">
+                <span className="dashboard-hero-breakdown-label">Investment</span>
+                <span className="dashboard-hero-breakdown-value">{formatCurrency(pv.investmentValue)}</span>
+              </div>
+              <div className="dashboard-hero-breakdown-item">
+                <span className="dashboard-hero-breakdown-label">Cash</span>
+                <span className="dashboard-hero-breakdown-value">{formatCurrency(pv.cashValue)}</span>
+              </div>
             </div>
           </div>
         )}

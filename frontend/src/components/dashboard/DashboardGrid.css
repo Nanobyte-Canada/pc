@@ -42,6 +42,12 @@
   .dashboard-zone-d {
     grid-area: zone-d;
   }
+
+  .dashboard-zones-top.dashboard-zones-no-c {
+    grid-template-areas:
+      "zone-a zone-b"
+      "zone-d zone-d";
+  }
 }
 
 /* Zone A inner grid */

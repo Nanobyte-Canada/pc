@@ -1,54 +1,33 @@
 .screener-page {
-  color: var(--text-primary);
+  padding: 24px;
 }
 
-.page-title {
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: var(--text-primary);
+.screener-page h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
 }
 
-.page-subtitle {
-  color: var(--text-secondary);
-  margin-bottom: 2rem;
-}
-
-.filters-section,
-.results-section {
-  background-color: var(--card-bg);
-  border-radius: 8px;
-  padding: 1.5rem;
-  border: 1px solid var(--border);
-  margin-bottom: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-}
-
-.filters-section h2,
-.results-section h2 {
-  font-size: 1.125rem;
-  font-weight: 500;
-  margin-bottom: 1rem;
-  color: var(--text-primary);
-}
-
-.placeholder-text {
+.screener-subtitle {
   color: var(--text-muted);
-  font-style: italic;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
 }
 
-.results-header {
+.screener-grid-container {
+  width: 100%;
+}
+
+.screener-pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-top: 12px;
+  padding: 8px 0;
 }
 
-.results-header h2 {
-  margin-bottom: 0;
+.screener-pagination .pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
-.results-count {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}

@@ -80,30 +80,38 @@ class EtfComClient(
                 return summaryResult
             }
             val summarySuccess = summaryResult as EtfComApiResult.Success
-            rawPayloads["fundSummaryData"] = objectMapper.readTree(summarySuccess.rawJson)
+            rawPayloads["fundSummaryData"] = summarySuccess.data
 
             // 2. Top Holdings
             val holdingsResult = fetchQuery(ticker, "topHoldings", fundIdStr)
             if (holdingsResult is EtfComApiResult.Success) {
-                rawPayloads["topHoldings"] = objectMapper.readTree(holdingsResult.rawJson)
+                rawPayloads["topHoldings"] = (holdingsResult as EtfComApiResult.Success).data
+            } else {
+                log.info("etf.com: topHoldings not available for {}", ticker)
             }
 
             // 3. Sector Breakdown
             val sectorResult = fetchQuery(ticker, "sectorIndustryBreakdown", fundIdStr)
             if (sectorResult is EtfComApiResult.Success) {
-                rawPayloads["sectorIndustryBreakdown"] = objectMapper.readTree(sectorResult.rawJson)
+                rawPayloads["sectorIndustryBreakdown"] = (sectorResult as EtfComApiResult.Success).data
+            } else {
+                log.info("etf.com: sectorIndustryBreakdown not available for {}", ticker)
             }
 
             // 4. Performance
             val perfResult = fetchQuery(ticker, "performanceData", fundIdStr)
             if (perfResult is EtfComApiResult.Success) {
-                rawPayloads["performanceData"] = objectMapper.readTree(perfResult.rawJson)
+                rawPayloads["performanceData"] = (perfResult as EtfComApiResult.Success).data
+            } else {
+                log.info("etf.com: performanceData not available for {}", ticker)
             }
 
             // 5. Portfolio Data
             val portfolioResult = fetchQuery(ticker, "fundPortfolioData", fundIdStr)
             if (portfolioResult is EtfComApiResult.Success) {
-                rawPayloads["fundPortfolioData"] = objectMapper.readTree(portfolioResult.rawJson)
+                rawPayloads["fundPortfolioData"] = (portfolioResult as EtfComApiResult.Success).data
+            } else {
+                log.info("etf.com: fundPortfolioData not available for {}", ticker)
             }
 
             successCounter.increment()

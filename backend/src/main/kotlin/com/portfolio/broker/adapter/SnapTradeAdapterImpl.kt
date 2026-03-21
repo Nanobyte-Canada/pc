@@ -126,6 +126,23 @@ class SnapTradeAdapterImpl(
         }
     }
 
+    override fun getHoldings(userId: String, userSecret: String, accountId: String): SnapTradeHoldingsDto {
+        return try {
+            val response = snaptrade.accountInformation.getUserHoldings(
+                UUID.fromString(accountId), userId, userSecret
+            ).execute()
+
+            val totalValue = response.totalValue?.value
+            val totalValueCurrency = response.totalValue?.currency
+            val positions = response.positions?.map { it.toDto() } ?: emptyList()
+            val balances = response.balances?.map { it.toDto() } ?: emptyList()
+
+            SnapTradeHoldingsDto(totalValue, totalValueCurrency, positions, balances)
+        } catch (e: ApiException) {
+            throw mapApiException(e)
+        }
+    }
+
     // ========== Activities ==========
 
     override fun getActivities(
@@ -324,7 +341,8 @@ class SnapTradeAdapterImpl(
 
     private fun Balance.toDto() = SnapTradeBalanceDto(
         currency = currency?.code,
-        cash = cash
+        cash = cash,
+        buyingPower = buyingPower
     )
 
     private fun UniversalActivity.toDto(): SnapTradeActivityDto {

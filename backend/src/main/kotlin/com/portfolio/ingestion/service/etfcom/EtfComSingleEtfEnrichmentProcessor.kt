@@ -86,7 +86,7 @@ class EtfComSingleEtfEnrichmentProcessor(
                     return true
                 }
 
-                etf.etfcomRawPayload = sanitized
+                etf.etfcomRawPayload = objectMapper.readTree(sanitized)
                 etf.etfcomEnrichmentStatus = EtfComEnrichmentStatus.SUCCESS
                 etf.etfcomLastSuccessAt = OffsetDateTime.now()
                 etf.etfcomRetryCount = 0

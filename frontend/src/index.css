@@ -191,6 +191,41 @@ html.dark .ag-theme-quartz .ag-row {
   border-bottom: 1px solid #1e1e22;
 }
 
+/* AG Grid pagination – light mode */
+.ag-theme-quartz .ag-paging-panel {
+  border-top: 1px solid var(--border);
+}
+
+/* AG Grid pagination – dark mode */
+html.dark .ag-theme-quartz .ag-paging-panel {
+  background-color: #18181b;
+  color: #a1a1aa;
+  border-top: 1px solid #27272a;
+}
+
+html.dark .ag-theme-quartz .ag-paging-button {
+  color: #a1a1aa;
+}
+
+html.dark .ag-theme-quartz .ag-paging-button:hover {
+  color: #fafafa;
+}
+
+html.dark .ag-theme-quartz .ag-disabled .ag-paging-button {
+  color: #3f3f46;
+}
+
+/* Screener pagination buttons – dark mode */
+html.dark .screener-pagination .pagination-controls button {
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+
+html.dark .screener-pagination .pagination-controls button:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+}
+
 /* Widget card transitions */
 .widget-card {
   transition: box-shadow 0.2s ease, transform 0.15s ease;

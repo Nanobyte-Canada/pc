@@ -150,7 +150,13 @@ class DashboardController(
                             totalPnl = pos.totalPnl,
                             totalPnlPercent = pos.totalPnlPercent,
                             currency = pos.currency,
-                            brokerBreakdown = emptyList()
+                            brokerBreakdown = listOf(BrokerBreakdownDto(
+                                broker = connResp.broker,
+                                accountNumber = connResp.accountNumber,
+                                accountType = null,
+                                quantity = pos.quantity,
+                                value = pos.currentValue
+                            ))
                         )
                     },
                     aggregateSummary = connResp.summary.let { s ->
@@ -183,5 +189,13 @@ class DashboardController(
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<RefreshAllResponse> {
         return ResponseEntity.ok(dashboardDataService.refreshAll(principal.id))
+    }
+
+    @PostMapping("/admin/backfill-gics")
+    fun backfillGics(
+        @AuthenticationPrincipal principal: UserPrincipal
+    ): ResponseEntity<Map<String, Int>> {
+        val count = dashboardDataService.backfillStockGicsCodes()
+        return ResponseEntity.ok(mapOf("updated" to count))
     }
 }

@@ -19,8 +19,10 @@ export interface UpdateDashboardPreferencesRequest {
 
 export interface PortfolioValueData {
   totalValue: number
-  totalChange: number
-  totalChangePercent: number
+  investmentValue: number
+  cashValue: number
+  totalChange: number | null
+  totalChangePercent: number | null
   currency: string
 }
 
@@ -61,6 +63,7 @@ export interface DashboardCashResponse {
   availableCash: CurrencyAmount[]
   buyingPower: CurrencyAmount[]
   totalCashCAD: number
+  totalBuyingPowerCAD?: number
 }
 
 // ========== Sector Exposure ==========
@@ -218,6 +221,9 @@ export interface DashboardAccount {
   accountNumber: string | null
   status: string
   totalValue: number | null
+  investmentValue: number | null
+  cash: number | null
+  buyingPower: number | null
   positionsCount: number
   lastFetchedAt: string | null
   linkedGroup: LinkedGroupInfo | null

@@ -31,6 +31,8 @@ interface SnapTradeAdapter {
 
     fun getBalances(userId: String, userSecret: String, accountId: String): List<SnapTradeBalanceDto>
 
+    fun getHoldings(userId: String, userSecret: String, accountId: String): SnapTradeHoldingsDto
+
     fun getActivities(
         userId: String,
         userSecret: String,

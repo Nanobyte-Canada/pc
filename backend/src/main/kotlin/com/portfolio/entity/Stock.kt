@@ -79,6 +79,12 @@ class Stock(
     @JdbcTypeCode(SqlTypes.JSON)
     var avRawPayload: JsonNode? = null,
 
+    @Column(name = "gics_sector_code", length = 10)
+    var gicsSectorCode: String? = null,
+
+    @Column(name = "gics_industry_group_code", length = 10)
+    var gicsIndustryGroupCode: String? = null,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: OffsetDateTime = OffsetDateTime.now(),
 

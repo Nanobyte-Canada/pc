@@ -96,7 +96,7 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
         </Button>
       </div>
 
-      <div className="dashboard-zones-top">
+      <div className={`dashboard-zones-top${contextType === 'ACCOUNT' ? ' dashboard-zones-no-c' : ''}`}>
         {/* Zone A: Category 1 widgets (top-left 2/3) */}
         {zoneAWidgets.length > 0 && (
           <div className="dashboard-zone-a">
@@ -123,18 +123,20 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
           </div>
         )}
 
-        {/* Zone C: Connected Accounts (always visible, below A) */}
-        <div className="dashboard-zone-c">
-          <WidgetWrapper
-            title="Connected Accounts"
-            columnSpan={1}
-            accentColor={ACCENT_COLORS.CONNECTED_ACCOUNTS}
-          >
-            <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
-              <ConnectedAccountsComponent connectionId={connectionId} />
-            </Suspense>
-          </WidgetWrapper>
-        </div>
+        {/* Zone C: Connected Accounts (hidden on account dashboards) */}
+        {contextType !== 'ACCOUNT' && (
+          <div className="dashboard-zone-c">
+            <WidgetWrapper
+              title="Connected Accounts"
+              columnSpan={1}
+              accentColor={ACCENT_COLORS.CONNECTED_ACCOUNTS}
+            >
+              <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
+                <ConnectedAccountsComponent connectionId={connectionId} />
+              </Suspense>
+            </WidgetWrapper>
+          </div>
+        )}
 
         {/* Zone B: Category 2 widgets (right 1/3) */}
         {zoneBWidgets.length > 0 && (

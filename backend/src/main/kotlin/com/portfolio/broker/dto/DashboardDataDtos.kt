@@ -25,8 +25,10 @@ data class UpdateDashboardPreferencesRequest(
 
 data class PortfolioValueDto(
     val totalValue: BigDecimal,
-    val totalChange: BigDecimal,
-    val totalChangePercent: BigDecimal,
+    val investmentValue: BigDecimal,
+    val cashValue: BigDecimal,
+    val totalChange: BigDecimal?,
+    val totalChangePercent: BigDecimal?,
     val currency: String = "CAD"
 )
 
@@ -66,7 +68,8 @@ data class CurrencyAmountDto(
 data class DashboardCashResponse(
     val availableCash: List<CurrencyAmountDto>,
     val buyingPower: List<CurrencyAmountDto>,
-    val totalCashCAD: BigDecimal
+    val totalCashCAD: BigDecimal,
+    val totalBuyingPowerCAD: BigDecimal = BigDecimal.ZERO
 )
 
 // ========== Sector Exposure ==========
@@ -224,6 +227,9 @@ data class DashboardAccountDto(
     val accountNumber: String?,
     val status: String,
     val totalValue: BigDecimal?,
+    val investmentValue: BigDecimal?,
+    val cash: BigDecimal?,
+    val buyingPower: BigDecimal?,
     val positionsCount: Int,
     val lastFetchedAt: OffsetDateTime?,
     val linkedGroup: LinkedGroupInfoDto?,

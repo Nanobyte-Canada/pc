@@ -316,6 +316,33 @@
   margin-left: 0.25rem;
 }
 
+.dashboard-hero-breakdown {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.dashboard-hero-breakdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.dashboard-hero-breakdown-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dashboard-hero-breakdown-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .dashboard-kpi-grid {
     grid-template-columns: repeat(2, 1fr);

@@ -56,11 +56,21 @@ data class SnapTradeOptionPositionDto(
     val currencyCode: String?
 )
 
+// ========== Holdings (positions + balances + total) ==========
+
+data class SnapTradeHoldingsDto(
+    val totalValue: Double?,
+    val totalValueCurrency: String?,
+    val positions: List<SnapTradePositionDto>,
+    val balances: List<SnapTradeBalanceDto>
+)
+
 // ========== Balance ==========
 
 data class SnapTradeBalanceDto(
     val currency: String?,
-    val cash: Double?
+    val cash: Double?,
+    val buyingPower: Double? = null
 )
 
 // ========== Activity ==========

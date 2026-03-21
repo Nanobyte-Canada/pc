@@ -1,5 +1,6 @@
 package com.portfolio.entity
 
+import com.fasterxml.jackson.databind.JsonNode
 import jakarta.persistence.*
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
@@ -83,7 +84,7 @@ class Etf(
 
     @Column(name = "etfcom_raw_payload", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    var etfcomRawPayload: String? = null,
+    var etfcomRawPayload: JsonNode? = null,
 
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: OffsetDateTime = OffsetDateTime.now(),
