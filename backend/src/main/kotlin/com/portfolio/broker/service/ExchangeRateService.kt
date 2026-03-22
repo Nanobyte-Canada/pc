@@ -2,18 +2,18 @@ package com.portfolio.broker.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Fetches foreign exchange rates from the Bank of Canada Valet API (free, no key required).
  *
  * Supports major currencies via BoC series names (e.g. FXUSDCAD for USD→CAD).
- * Includes walk-back logic (up to 5 days) for weekends/holidays and an in-memory cache
- * to avoid redundant calls during bulk syncs.
+ * Includes walk-back logic (up to 5 days) for weekends/holidays. Results are cached
+ * in Redis via Spring @Cacheable to avoid redundant API calls during bulk syncs.
  */
 @Service
 class ExchangeRateService(
@@ -26,9 +26,6 @@ class ExchangeRateService(
     private val webClient = webClientBuilder
         .baseUrl(baseUrl)
         .build()
-
-    /** Cache keyed by (currency, date) to avoid repeated API calls during bulk syncs. */
-    private val cache = ConcurrentHashMap<Pair<String, LocalDate>, BigDecimal?>()
 
     companion object {
         /** BoC Valet series names for currency→CAD conversion. */
@@ -71,6 +68,7 @@ class ExchangeRateService(
      * - Returns `null` for unsupported currencies or when the API fails for all attempted dates.
      * - Walks back up to 5 days to handle weekends/holidays when BoC doesn't publish rates.
      */
+    @Cacheable(value = ["exchange-rates"], key = "#currency + '-' + #date", condition = "#currency.toUpperCase() != 'CAD'")
     fun getRate(currency: String, date: LocalDate): BigDecimal? {
         val upper = currency.uppercase()
         if (upper == "CAD") return BigDecimal.ONE
@@ -81,9 +79,7 @@ class ExchangeRateService(
             return null
         }
 
-        return cache.getOrPut(upper to date) {
-            fetchRateWithWalkback(series, date)
-        }
+        return fetchRateWithWalkback(series, date)
     }
 
     private fun fetchRateWithWalkback(series: String, date: LocalDate): BigDecimal? {
