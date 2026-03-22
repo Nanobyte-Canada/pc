@@ -197,12 +197,4 @@ class PortfolioGroupController(
         return ResponseEntity.noContent().build()
     }
 
-    // ========== Exception Handlers ==========
-
-    @ExceptionHandler(IllegalArgumentException::class)
-    fun handleIllegalArgument(e: IllegalArgumentException): ResponseEntity<Map<String, String>> {
-        return ResponseEntity.badRequest().body(
-            mapOf("error" to "BAD_REQUEST", "message" to (e.message ?: "Invalid request"))
-        )
-    }
 }

@@ -9,7 +9,6 @@ import com.portfolio.broker.service.PositionFetchService
 import com.portfolio.broker.service.ReportingService
 import com.portfolio.broker.service.SnapTradeStatusService
 import org.slf4j.LoggerFactory
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -263,31 +262,4 @@ class BrokerController(
         return ResponseEntity.ok(response)
     }
 
-    // ========== Exception Handlers ==========
-
-    @ExceptionHandler(IllegalArgumentException::class)
-    fun handleIllegalArgument(e: IllegalArgumentException): ResponseEntity<ErrorResponse> {
-        return ResponseEntity.badRequest().body(
-            ErrorResponse(
-                error = "BAD_REQUEST",
-                message = e.message ?: "Invalid request"
-            )
-        )
-    }
-
-    @ExceptionHandler(IllegalStateException::class)
-    fun handleIllegalState(e: IllegalStateException): ResponseEntity<ErrorResponse> {
-        log.error("Broker operation error: ${e.message}", e)
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-            ErrorResponse(
-                error = "BROKER_ERROR",
-                message = e.message ?: "Broker operation failed"
-            )
-        )
-    }
 }
-
-data class ErrorResponse(
-    val error: String,
-    val message: String
-)
