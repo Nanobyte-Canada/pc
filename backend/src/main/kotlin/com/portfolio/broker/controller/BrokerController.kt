@@ -8,13 +8,11 @@ import com.portfolio.broker.service.BrokerService
 import com.portfolio.broker.service.PositionFetchService
 import com.portfolio.broker.service.ReportingService
 import com.portfolio.broker.service.SnapTradeStatusService
-import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -46,23 +44,6 @@ class BrokerController(
             "redirectUri" to snapTradeConfig.redirectUri
         )
         return ResponseEntity.ok(status)
-    }
-
-    // ========== Diagnostic (temporary - remove after debugging) ==========
-
-    @PostMapping("/debug-post")
-    fun debugPost(request: HttpServletRequest): ResponseEntity<Map<String, Any?>> {
-        val auth = SecurityContextHolder.getContext().authentication
-        return ResponseEntity.ok(mapOf(
-            "method" to request.method,
-            "path" to request.servletPath,
-            "authenticated" to (auth != null && auth.isAuthenticated),
-            "principalType" to auth?.principal?.javaClass?.simpleName,
-            "cookiesReceived" to (request.cookies?.map { it.name } ?: emptyList<String>()),
-            "csrfHeader" to request.getHeader("X-XSRF-TOKEN"),
-            "contentType" to request.contentType,
-            "origin" to request.getHeader("Origin")
-        ))
     }
 
     // ========== SnapTrade Status ==========
