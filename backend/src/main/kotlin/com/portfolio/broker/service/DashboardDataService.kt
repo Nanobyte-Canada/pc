@@ -1,7 +1,5 @@
 package com.portfolio.broker.service
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.ConnectionStatus
 import com.portfolio.broker.entity.InstrumentType
@@ -25,7 +23,6 @@ import java.time.YearMonth
 class DashboardDataService(
     private val positionRepository: BrokerPositionRepository,
     private val connectionRepository: BrokerConnectionRepository,
-    private val balanceRepository: BrokerBalanceRepository,
     private val activityRepository: BrokerActivityRepository,
     private val tradeOrderRepository: TradeOrderRepository,
     private val portfolioGroupAccountRepository: PortfolioGroupAccountRepository,
@@ -35,11 +32,21 @@ class DashboardDataService(
     private val lookThroughService: LookThroughService,
     private val driftCalculationService: DriftCalculationService,
     private val positionFetchService: PositionFetchService,
-    private val exchangeRateService: ExchangeRateService,
-    private val objectMapper: ObjectMapper
+    private val cashService: DashboardCashService,
+    private val exposureService: DashboardExposureService,
+    private val riskService: DashboardRiskService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val cashTypeRef = object : TypeReference<Map<String, BigDecimal>>() {}
+
+    // ========== Delegated methods ==========
+
+    fun getCash(userId: Long, connectionId: Long? = null) = cashService.getCash(userId, connectionId)
+
+    fun getSectorExposure(userId: Long, connectionId: Long? = null) = exposureService.getSectorExposure(userId, connectionId)
+
+    fun getGeographyExposure(userId: Long, connectionId: Long? = null) = exposureService.getGeographyExposure(userId, connectionId)
+
+    fun getRiskProfile(userId: Long, connectionId: Long? = null) = riskService.getRiskProfile(userId, connectionId)
 
     // ========== Summary (Portfolio Value + Positions + Holdings) ==========
 
@@ -181,322 +188,6 @@ class DashboardDataService(
                 coveragePercent = BigDecimal.ZERO
             ), listOf("Holdings count may be incomplete due to a calculation error"))
         }
-    }
-
-    // ========== Cash & Buying Power ==========
-
-    fun getCash(userId: Long, connectionId: Long? = null): DashboardCashResponse {
-        val connectionIds = getConnectionIds(userId, connectionId)
-        if (connectionIds.isEmpty()) {
-            return DashboardCashResponse(emptyList(), emptyList(), BigDecimal.ZERO, BigDecimal.ZERO)
-        }
-
-        val cashByDurrency = mutableMapOf<String, BigDecimal>()
-        val buyingPowerByCurrency = mutableMapOf<String, BigDecimal>()
-
-        for (connId in connectionIds) {
-            val snapshot = balanceRepository.findLatestByConnectionId(connId) ?: continue
-            val cashJson = snapshot.cash ?: continue
-
-            try {
-                val parsed = objectMapper.readValue(cashJson, cashTypeRef)
-                // SnapTrade stores cash and buying_power in the JSONB
-                for ((key, value) in parsed) {
-                    if (key.startsWith("buying_power_")) {
-                        val currency = key.removePrefix("buying_power_").uppercase()
-                        buyingPowerByCurrency[currency] = (buyingPowerByCurrency[currency] ?: BigDecimal.ZERO) + value
-                    } else if (key.startsWith("cash_")) {
-                        val currency = key.removePrefix("cash_").uppercase()
-                        cashByDurrency[currency] = (cashByDurrency[currency] ?: BigDecimal.ZERO) + value
-                    } else if (key.length == 3 && key == key.uppercase()) {
-                        // Simple currency code key (e.g., "CAD": 5000)
-                        cashByDurrency[key] = (cashByDurrency[key] ?: BigDecimal.ZERO) + value
-                    }
-                }
-            } catch (e: Exception) {
-                log.warn("Failed to parse cash JSONB for connection {}", connId, e)
-            }
-        }
-
-        val today = LocalDate.now()
-        val totalCashCAD = cashByDurrency.entries.fold(BigDecimal.ZERO) { acc, (currency, amount) ->
-            val rate = exchangeRateService.getRate(currency, today) ?: BigDecimal.ONE
-            acc + amount * rate
-        }
-        val totalBuyingPowerCAD = buyingPowerByCurrency.entries.fold(BigDecimal.ZERO) { acc, (currency, amount) ->
-            val rate = exchangeRateService.getRate(currency, today) ?: BigDecimal.ONE
-            acc + amount * rate
-        }
-
-        return DashboardCashResponse(
-            availableCash = cashByDurrency.map { CurrencyAmountDto(it.key, it.value.setScale(2, RoundingMode.HALF_UP)) }
-                .sortedByDescending { it.amount },
-            buyingPower = buyingPowerByCurrency.map { CurrencyAmountDto(it.key, it.value.setScale(2, RoundingMode.HALF_UP)) }
-                .sortedByDescending { it.amount },
-            totalCashCAD = totalCashCAD.setScale(2, RoundingMode.HALF_UP),
-            totalBuyingPowerCAD = totalBuyingPowerCAD.setScale(2, RoundingMode.HALF_UP)
-        )
-    }
-
-    // ========== Sector Exposure ==========
-
-    fun getSectorExposure(userId: Long, connectionId: Long? = null): SectorExposureResponse {
-        val positions = getPositions(userId, connectionId)
-        val totalValue = positions.sumOf { it.currentValue ?: BigDecimal.ZERO }
-        if (positions.isEmpty() || totalValue <= BigDecimal.ZERO) {
-            return SectorExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO)
-        }
-
-        val lookThroughPositions = buildLookThroughPositions(positions, totalValue)
-        if (lookThroughPositions.isEmpty()) {
-            return SectorExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal(100))
-        }
-
-        val result = try {
-            lookThroughService.computeLookThroughWithQuality(lookThroughPositions, LocalDate.now())
-        } catch (e: Exception) {
-            log.warn("Failed to compute sector exposure", e)
-            return SectorExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO,
-                warnings = listOf("Sector exposure data unavailable due to a calculation error"))
-        }
-
-        // Aggregate by sector -> industry group
-        data class SectorAccumulator(
-            var weight: BigDecimal = BigDecimal.ZERO,
-            val industryGroups: MutableMap<String, Pair<String, BigDecimal>> = mutableMapOf() // code -> (name, weight)
-        )
-
-        val sectorMap = mutableMapOf<String, SectorAccumulator>() // sectorCode -> accumulator
-        val sectorNames = mutableMapOf<String, String>()
-        var unmappedWeight = BigDecimal.ZERO
-
-        for ((_, exposure) in result.exposures) {
-            val sectorCode = exposure.stock.gicsSectorCode
-            if (sectorCode != null) {
-                val sectorName = LookThroughService.GICS_SECTOR_NAMES[sectorCode] ?: "Unknown"
-                sectorNames[sectorCode] = sectorName
-                val acc = sectorMap.getOrPut(sectorCode) { SectorAccumulator() }
-                acc.weight += exposure.effectiveWeight
-                val igCode = exposure.stock.gicsIndustryGroupCode
-                if (igCode != null) {
-                    val igName = LookThroughService.GICS_INDUSTRY_GROUP_NAMES[igCode] ?: "Unknown"
-                    val existing = acc.industryGroups[igCode]
-                    acc.industryGroups[igCode] = Pair(igName, (existing?.second ?: BigDecimal.ZERO) + exposure.effectiveWeight)
-                }
-            } else {
-                unmappedWeight += exposure.effectiveWeight
-            }
-        }
-
-        // Also add ETF direct sector exposures for ETFs without holdings data
-        for ((_, etfSector) in result.etfDirectSectorExposures) {
-            for ((gicsCode, alloc) in etfSector.sectorAllocations) {
-                val effectiveWeight = etfSector.portfolioWeight * alloc
-                val sectorName = LookThroughService.GICS_SECTOR_NAMES[gicsCode] ?: "Unknown"
-                sectorNames[gicsCode] = sectorName
-                val acc = sectorMap.getOrPut(gicsCode) { SectorAccumulator() }
-                acc.weight += effectiveWeight
-            }
-        }
-
-        val sectors = sectorMap.entries.map { (code, acc) ->
-            SectorExposureDto(
-                sectorCode = code,
-                sectorName = sectorNames[code] ?: "Unknown",
-                weight = acc.weight.setScale(4, RoundingMode.HALF_UP),
-                industryGroups = acc.industryGroups.entries.map { (igCode, pair) ->
-                    IndustryGroupExposureDto(
-                        code = igCode,
-                        name = pair.first,
-                        weight = pair.second.setScale(4, RoundingMode.HALF_UP)
-                    )
-                }.sortedByDescending { it.weight }
-            )
-        }.sortedByDescending { it.weight }
-
-        return SectorExposureResponse(
-            sectors = sectors,
-            coveragePercent = result.quality.coveragePercent,
-            unmappedWeight = unmappedWeight.setScale(4, RoundingMode.HALF_UP)
-        )
-    }
-
-    // ========== Geography Exposure ==========
-
-    fun getGeographyExposure(userId: Long, connectionId: Long? = null): GeographyExposureResponse {
-        val positions = getPositions(userId, connectionId)
-        val totalValue = positions.sumOf { it.currentValue ?: BigDecimal.ZERO }
-        if (positions.isEmpty() || totalValue <= BigDecimal.ZERO) {
-            return GeographyExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO)
-        }
-
-        val lookThroughPositions = buildLookThroughPositions(positions, totalValue)
-        if (lookThroughPositions.isEmpty()) {
-            return GeographyExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal(100))
-        }
-
-        val result = try {
-            lookThroughService.computeLookThroughWithQuality(lookThroughPositions, LocalDate.now())
-        } catch (e: Exception) {
-            log.warn("Failed to compute geography exposure", e)
-            return GeographyExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO,
-                warnings = listOf("Geography exposure data unavailable due to a calculation error"))
-        }
-
-        // Cache country lookups
-        val countryCache = mutableMapOf<String, Country?>()
-        data class RegionAccumulator(
-            var weight: BigDecimal = BigDecimal.ZERO,
-            val countries: MutableMap<String, Pair<String, BigDecimal>> = mutableMapOf()
-        )
-        val regionMap = mutableMapOf<String, RegionAccumulator>()
-        var unmappedWeight = BigDecimal.ZERO
-
-        for ((_, exposure) in result.exposures) {
-            val countryCode = exposure.stock.country
-            val country = countryCache.getOrPut(countryCode) {
-                countryRepository.findByCodeWithRegion(countryCode)
-            }
-
-            if (country == null) {
-                unmappedWeight += exposure.effectiveWeight
-                continue
-            }
-
-            val regionName = country.region.name
-            val acc = regionMap.getOrPut(regionName) { RegionAccumulator() }
-            acc.weight += exposure.effectiveWeight
-            val existing = acc.countries[countryCode]
-            acc.countries[countryCode] = Pair(
-                country.name,
-                (existing?.second ?: BigDecimal.ZERO) + exposure.effectiveWeight
-            )
-        }
-
-        val regions = regionMap.entries.map { (name, acc) ->
-            RegionExposureDto(
-                name = name,
-                weight = acc.weight.setScale(4, RoundingMode.HALF_UP),
-                countries = acc.countries.entries.map { (code, pair) ->
-                    CountryExposureDto(
-                        code = code,
-                        name = pair.first,
-                        weight = pair.second.setScale(4, RoundingMode.HALF_UP)
-                    )
-                }.sortedByDescending { it.weight }
-            )
-        }.sortedByDescending { it.weight }
-
-        return GeographyExposureResponse(
-            regions = regions,
-            coveragePercent = result.quality.coveragePercent,
-            unmappedWeight = unmappedWeight.setScale(4, RoundingMode.HALF_UP)
-        )
-    }
-
-    // ========== Risk Profile ==========
-
-    fun getRiskProfile(userId: Long, connectionId: Long? = null): RiskProfileResponse {
-        val positions = getPositions(userId, connectionId)
-        val totalValue = positions.sumOf { it.currentValue ?: BigDecimal.ZERO }
-        if (positions.isEmpty() || totalValue <= BigDecimal.ZERO) {
-            return RiskProfileResponse(0, "LOW", RiskFactorsDto(
-                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, emptyMap()
-            ))
-        }
-
-        val lookThroughPositions = buildLookThroughPositions(positions, totalValue)
-        val result = try {
-            if (lookThroughPositions.isNotEmpty()) {
-                lookThroughService.computeLookThroughWithQuality(lookThroughPositions, LocalDate.now())
-            } else null
-        } catch (e: Exception) {
-            log.warn("Failed to compute look-through for risk profile", e)
-            null
-        }
-
-        // Concentration HHI (sum of squared weights)
-        val weights = if (result != null) {
-            result.exposures.values.map { it.effectiveWeight }
-        } else {
-            positions.map {
-                (it.currentValue ?: BigDecimal.ZERO).divide(totalValue, 8, RoundingMode.HALF_UP)
-            }
-        }
-        val concentrationHHI = weights.sumOf { it * it }.setScale(4, RoundingMode.HALF_UP)
-
-        // Top-10 concentration
-        val top10Weight = weights.sortedDescending().take(10).fold(BigDecimal.ZERO) { acc, w -> acc + w }
-            .setScale(4, RoundingMode.HALF_UP)
-
-        // Sector concentration - computed from the same look-through result
-        val sectorWeights = mutableMapOf<String, BigDecimal>()
-        if (result != null) {
-            for ((_, exposure) in result.exposures) {
-                val sectorCode = exposure.stock.gicsSectorCode ?: continue
-                sectorWeights[sectorCode] = (sectorWeights[sectorCode] ?: BigDecimal.ZERO) + exposure.effectiveWeight
-            }
-            // Include ETF direct sector exposures
-            for ((_, etfSector) in result.etfDirectSectorExposures) {
-                for ((gicsCode, alloc) in etfSector.sectorAllocations) {
-                    val effectiveWeight = etfSector.portfolioWeight * alloc
-                    sectorWeights[gicsCode] = (sectorWeights[gicsCode] ?: BigDecimal.ZERO) + effectiveWeight
-                }
-            }
-        }
-        val sectorHHI = sectorWeights.values.sumOf { it * it }.setScale(4, RoundingMode.HALF_UP)
-
-        // Geographic concentration - computed from the same look-through result
-        val regionWeights = mutableMapOf<String, BigDecimal>()
-        if (result != null) {
-            val countryCache = mutableMapOf<String, Country?>()
-            for ((_, exposure) in result.exposures) {
-                val country = countryCache.getOrPut(exposure.stock.country) {
-                    countryRepository.findByCodeWithRegion(exposure.stock.country)
-                } ?: continue
-                val regionName = country.region.name
-                regionWeights[regionName] = (regionWeights[regionName] ?: BigDecimal.ZERO) + exposure.effectiveWeight
-            }
-        }
-        val maxRegionWeight = regionWeights.values.maxOrNull() ?: BigDecimal.ZERO
-
-        // Asset type distribution
-        val byType = positions.groupBy { it.instrumentType ?: InstrumentType.OTHER }
-        val assetTypeDist = byType.mapValues { (_, posGroup) ->
-            posGroup.sumOf { it.currentValue ?: BigDecimal.ZERO }
-                .divide(totalValue, 4, RoundingMode.HALF_UP)
-        }.mapKeys { it.key.name }
-
-        // Calculate risk score
-        val heldCount = (result?.exposures?.size ?: positions.size).coerceAtLeast(1)
-        var riskScore = 0
-        riskScore += (concentrationHHI.toDouble() * 250).toInt().coerceIn(0, 25)         // HHI -> 0-25
-        riskScore += (top10Weight.toDouble() * 20).toInt().coerceIn(0, 20)                // top10 -> 0-20
-        riskScore += (sectorHHI.toDouble() * 200).toInt().coerceIn(0, 20)                 // sector HHI -> 0-20
-        riskScore += (maxRegionWeight.toDouble() * 15).toInt().coerceIn(0, 15)            // geo -> 0-15
-        riskScore += if (assetTypeDist.size <= 1) 10 else (10 - assetTypeDist.size * 2).coerceIn(0, 10) // diversity -> 0-10
-        riskScore += (50.0 / heldCount).toInt().coerceIn(0, 10)                           // holdings count -> 0-10
-        riskScore = riskScore.coerceIn(0, 100)
-
-        val riskLevel = when {
-            riskScore <= 25 -> "LOW"
-            riskScore <= 40 -> "MODERATE_LOW"
-            riskScore <= 55 -> "MODERATE"
-            riskScore <= 75 -> "MODERATE_HIGH"
-            else -> "HIGH"
-        }
-
-        return RiskProfileResponse(
-            riskScore = riskScore,
-            riskLevel = riskLevel,
-            factors = RiskFactorsDto(
-                concentrationHHI = concentrationHHI,
-                top10Concentration = top10Weight,
-                sectorConcentrationHHI = sectorHHI,
-                geographicConcentration = maxRegionWeight.setScale(4, RoundingMode.HALF_UP),
-                assetTypeDistribution = assetTypeDist
-            )
-        )
     }
 
     // ========== Open Orders ==========
@@ -692,7 +383,7 @@ class DashboardDataService(
             } else null
 
             val portfolioValue = conn.totalValue ?: BigDecimal.ZERO
-            val cash = getTotalCashFromSnapshot(conn.id)
+            val cash = cashService.getTotalCashFromSnapshot(conn.id)
             val investmentValue = portfolioValue - cash
 
             DashboardAccountDto(
@@ -706,7 +397,7 @@ class DashboardDataService(
                 totalValue = portfolioValue.setScale(2, RoundingMode.HALF_UP),
                 investmentValue = investmentValue.setScale(2, RoundingMode.HALF_UP),
                 cash = cash.setScale(2, RoundingMode.HALF_UP),
-                buyingPower = getBuyingPowerFromSnapshot(conn.id)?.setScale(2, RoundingMode.HALF_UP),
+                buyingPower = cashService.getBuyingPowerFromSnapshot(conn.id)?.setScale(2, RoundingMode.HALF_UP),
                 positionsCount = conn.positionsCount ?: 0,
                 lastFetchedAt = conn.lastPositionsFetchedAt,
                 linkedGroup = linkedGroup,
@@ -715,48 +406,6 @@ class DashboardDataService(
         }
 
         return DashboardAccountsResponse(accounts = accounts)
-    }
-
-    private fun getTotalCashFromSnapshot(connId: Long): BigDecimal {
-        val snapshot = balanceRepository.findLatestByConnectionId(connId) ?: return BigDecimal.ZERO
-        val cashJson = snapshot.cash ?: return BigDecimal.ZERO
-        return try {
-            val parsed = objectMapper.readValue(cashJson, cashTypeRef)
-            val today = LocalDate.now()
-            parsed.entries
-                .filter { !it.key.startsWith("buying_power_") }
-                .fold(BigDecimal.ZERO) { acc, (key, value) ->
-                    val currency = when {
-                        key.startsWith("cash_") -> key.removePrefix("cash_").uppercase()
-                        key.length == 3 && key == key.uppercase() -> key
-                        else -> return@fold acc
-                    }
-                    val rate = exchangeRateService.getRate(currency, today) ?: BigDecimal.ONE
-                    acc + value * rate
-                }
-        } catch (e: Exception) {
-            log.warn("Failed to parse cash for connection {}", connId, e)
-            BigDecimal.ZERO
-        }
-    }
-
-    private fun getBuyingPowerFromSnapshot(connId: Long): BigDecimal? {
-        val snapshot = balanceRepository.findLatestByConnectionId(connId) ?: return null
-        val cashJson = snapshot.cash ?: return null
-        return try {
-            val parsed = objectMapper.readValue(cashJson, cashTypeRef)
-            val today = LocalDate.now()
-            val bpEntries = parsed.entries.filter { it.key.startsWith("buying_power_") }
-            if (bpEntries.isEmpty()) return null
-            bpEntries.fold(BigDecimal.ZERO) { acc, (key, value) ->
-                val currency = key.removePrefix("buying_power_").uppercase()
-                val rate = exchangeRateService.getRate(currency, today) ?: BigDecimal.ONE
-                acc + value * rate
-            }
-        } catch (e: Exception) {
-            log.warn("Failed to parse buying power for connection {}", connId, e)
-            null
-        }
     }
 
     // ========== Refresh All ==========
