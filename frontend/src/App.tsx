@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AppLayout } from './components/layout/AppLayout'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
@@ -6,37 +6,37 @@ import { SessionTimeoutWarning } from './components/auth/SessionTimeoutWarning'
 import { useAuthStore } from './stores/authStore'
 import { useSessionManager } from './hooks/useSessionManager'
 
-// Auth pages
-import { LoginPage } from './pages/auth/LoginPage'
-import { SignupPage } from './pages/auth/SignupPage'
-import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage'
-import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
-import { VerifyEmailPage } from './pages/auth/VerifyEmailPage'
+// Auth pages (lazy loaded)
+const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })))
+const SignupPage = lazy(() => import('./pages/auth/SignupPage').then(m => ({ default: m.SignupPage })))
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })))
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })))
+const VerifyEmailPage = lazy(() => import('./pages/auth/VerifyEmailPage').then(m => ({ default: m.VerifyEmailPage })))
 
-// Protected pages
-import { PortfolioBuilderPage } from './pages/PortfolioBuilderPage'
-import { StockScreenerPage } from './pages/StockScreenerPage'
-import { EtfScreenerPage } from './pages/EtfScreenerPage'
-import { AnalyticsPage } from './pages/AnalyticsPage'
-import { ProfilePage } from './pages/ProfilePage'
-import { AdminPage } from './pages/admin/AdminPage'
-import { StockDetailPage } from './pages/StockDetailPage'
-import { EtfDetailPage } from './pages/EtfDetailPage'
-import { UnauthorizedPage } from './pages/UnauthorizedPage'
+// Protected pages (lazy loaded)
+const PortfolioBuilderPage = lazy(() => import('./pages/PortfolioBuilderPage').then(m => ({ default: m.PortfolioBuilderPage })))
+const StockScreenerPage = lazy(() => import('./pages/StockScreenerPage').then(m => ({ default: m.StockScreenerPage })))
+const EtfScreenerPage = lazy(() => import('./pages/EtfScreenerPage').then(m => ({ default: m.EtfScreenerPage })))
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
+const AdminPage = lazy(() => import('./pages/admin/AdminPage').then(m => ({ default: m.AdminPage })))
+const StockDetailPage = lazy(() => import('./pages/StockDetailPage').then(m => ({ default: m.StockDetailPage })))
+const EtfDetailPage = lazy(() => import('./pages/EtfDetailPage').then(m => ({ default: m.EtfDetailPage })))
+const UnauthorizedPage = lazy(() => import('./pages/UnauthorizedPage').then(m => ({ default: m.UnauthorizedPage })))
 
-// Broker pages
-import { BrokerConnectionsPage } from './pages/BrokerConnectionsPage'
-import { BrokerPositionsPage } from './pages/BrokerPositionsPage'
-import { PositionDetailsPage } from './pages/PositionDetailsPage'
-import { ReportingPage } from './pages/ReportingPage'
+// Broker pages (lazy loaded)
+const BrokerConnectionsPage = lazy(() => import('./pages/BrokerConnectionsPage').then(m => ({ default: m.BrokerConnectionsPage })))
+const BrokerPositionsPage = lazy(() => import('./pages/BrokerPositionsPage').then(m => ({ default: m.BrokerPositionsPage })))
+const PositionDetailsPage = lazy(() => import('./pages/PositionDetailsPage').then(m => ({ default: m.PositionDetailsPage })))
+const ReportingPage = lazy(() => import('./pages/ReportingPage').then(m => ({ default: m.ReportingPage })))
 
-// Portfolio Group pages
-import { PortfolioGroupsPage } from './pages/PortfolioGroupsPage'
-import { PortfolioGroupDetailPage } from './pages/PortfolioGroupDetailPage'
+// Portfolio Group pages (lazy loaded)
+const PortfolioGroupsPage = lazy(() => import('./pages/PortfolioGroupsPage').then(m => ({ default: m.PortfolioGroupsPage })))
+const PortfolioGroupDetailPage = lazy(() => import('./pages/PortfolioGroupDetailPage').then(m => ({ default: m.PortfolioGroupDetailPage })))
 
-// Dashboard
-import { DashboardPage } from './pages/DashboardPage'
-import { AccountDetailPage } from './pages/AccountDetailPage'
+// Dashboard (lazy loaded)
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const AccountDetailPage = lazy(() => import('./pages/AccountDetailPage').then(m => ({ default: m.AccountDetailPage })))
 
 import './App.css'
 
@@ -71,54 +71,56 @@ function App() {
         onLogout={handleSessionLogout}
       />
     )}
-    <Routes>
-      {/* Public auth routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
+    <Suspense fallback={<div className="page-loading">Loading...</div>}>
+      <Routes>
+        {/* Public auth routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-      {/* Protected routes */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<DashboardPage />} />
-        <Route path="builder" element={<PortfolioBuilderPage />} />
-        <Route path="portfolios" element={<PortfolioGroupsPage />} />
-        <Route path="portfolios/:groupId" element={<PortfolioGroupDetailPage />} />
-        <Route path="screener/stocks" element={<StockScreenerPage />} />
-        <Route path="screener/etfs" element={<EtfScreenerPage />} />
-        <Route path="stocks/:ticker" element={<StockDetailPage />} />
-        <Route path="etfs/:symbol" element={<EtfDetailPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="brokers/connections" element={<BrokerConnectionsPage />} />
-        <Route path="brokers/positions" element={<BrokerPositionsPage />} />
-        <Route path="brokers/positions/:connectionId" element={<PositionDetailsPage />} />
-        <Route path="brokers/accounts/:connectionId" element={<AccountDetailPage />} />
-        <Route path="brokers/reporting" element={<ReportingPage />} />
-        <Route path="profile" element={<ProfilePage />} />
+        {/* Protected routes */}
         <Route
-          path="admin"
+          path="/"
           element={
-            <ProtectedRoute requiredRoles={['ADMIN']}>
-              <AdminPage />
+            <ProtectedRoute>
+              <AppLayout />
             </ProtectedRoute>
           }
-        />
-      </Route>
+        >
+          <Route index element={<DashboardPage />} />
+          <Route path="builder" element={<PortfolioBuilderPage />} />
+          <Route path="portfolios" element={<PortfolioGroupsPage />} />
+          <Route path="portfolios/:groupId" element={<PortfolioGroupDetailPage />} />
+          <Route path="screener/stocks" element={<StockScreenerPage />} />
+          <Route path="screener/etfs" element={<EtfScreenerPage />} />
+          <Route path="stocks/:ticker" element={<StockDetailPage />} />
+          <Route path="etfs/:symbol" element={<EtfDetailPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="brokers/connections" element={<BrokerConnectionsPage />} />
+          <Route path="brokers/positions" element={<BrokerPositionsPage />} />
+          <Route path="brokers/positions/:connectionId" element={<PositionDetailsPage />} />
+          <Route path="brokers/accounts/:connectionId" element={<AccountDetailPage />} />
+          <Route path="brokers/reporting" element={<ReportingPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route
+            path="admin"
+            element={
+              <ProtectedRoute requiredRoles={['ADMIN']}>
+                <AdminPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
 
-      {/* Unauthorized page */}
-      <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        {/* Unauthorized page */}
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-      {/* Catch-all redirect */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
     </>
   )
 }
