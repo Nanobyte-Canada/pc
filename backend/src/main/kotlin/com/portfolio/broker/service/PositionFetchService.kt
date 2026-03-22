@@ -9,6 +9,8 @@ import com.portfolio.broker.adapter.SnapTradeOptionPositionDto
 import com.portfolio.broker.adapter.SnapTradePositionDto
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
+import com.portfolio.repository.EtfRepository
+import com.portfolio.repository.StockRepository
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
@@ -27,7 +29,9 @@ class PositionFetchService(
     private val userRepository: UserRepository,
     private val snapTradeService: SnapTradeService,
     private val auditService: AuditService,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val stockRepository: StockRepository,
+    private val etfRepository: EtfRepository
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -112,7 +116,7 @@ class PositionFetchService(
                     symbol = snapPos.symbol ?: "UNKNOWN",
                     symbolIdExternal = snapPos.symbolId,
                     securityName = snapPos.symbolDescription,
-                    instrumentType = mapInstrumentType(snapPos.symbolTypeCode),
+                    instrumentType = resolveInstrumentType(snapPos.symbol ?: "UNKNOWN", snapPos.symbolTypeCode),
                     quantity = qty,
                     averageCost = avgCost,
                     currentPrice = price,
@@ -287,6 +291,22 @@ class PositionFetchService(
         balanceRepository.save(snapshot)
 
         connection.lastBalanceFetchedAt = OffsetDateTime.now()
+    }
+
+    private fun resolveInstrumentType(symbol: String, snapTradeTypeCode: String?): InstrumentType {
+        val mappedType = mapInstrumentType(snapTradeTypeCode)
+
+        // DB takes priority: check if symbol is a known ETF (fixes STOCK → ETF)
+        if (mappedType == InstrumentType.STOCK || mappedType == InstrumentType.OTHER) {
+            if (etfRepository.findBySymbolIgnoreCase(symbol) != null) return InstrumentType.ETF
+        }
+
+        // Check if symbol is a known stock (fixes OTHER → STOCK)
+        if (mappedType == InstrumentType.OTHER) {
+            if (stockRepository.findFirstByTickerIgnoreCase(symbol) != null) return InstrumentType.STOCK
+        }
+
+        return mappedType ?: InstrumentType.OTHER
     }
 
     private fun mapInstrumentType(typeCode: String?): InstrumentType? {

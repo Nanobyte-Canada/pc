@@ -823,20 +823,23 @@ class DashboardDataService(
     private fun extractExpenseRatio(etf: Etf): BigDecimal? {
         val json = etf.etfcomRawPayload ?: return null
         return try {
-            // Navigate to fundSummaryData section (handle both old and new format)
-            val summary = json.path("fundSummaryData").let { node ->
-                if (node.isMissingNode || node.isNull) json
-                else if (node.has("data")) node.path("data").path("fundSummaryData")
-                else node
+            val summary = json.path("fundSummaryData")
+            if (summary.isMissingNode || summary.isNull) return null
+            val fieldsArr = summary.path("fields")
+            if (!fieldsArr.isArray) return null
+
+            var ratioStr: String? = null
+            for (item in fieldsArr) {
+                val name = item.path("name").asText()
+                if (name == "expenseRatio" || name == "netExpenseRatio") {
+                    ratioStr = item.path("value").asText(null)
+                    break
+                }
             }
-            val ratioNode = summary.path("expenseRatio").takeIf { !it.isMissingNode && !it.isNull }
-                ?: summary.path("netExpenseRatio").takeIf { !it.isMissingNode && !it.isNull }
-                ?: summary.path("Expense Ratio").takeIf { !it.isMissingNode && !it.isNull }
-                ?: return null
-            val ratioStr = ratioNode.asText()
+            if (ratioStr == null) return null
+
             val ratio = BigDecimal(ratioStr.replace("%", "").trim())
-            // If value > 1, it's already in percentage (e.g. 0.03 = 0.03%, 3.0 = 3%)
-            // Normalize to decimal form
+            // Normalize to decimal form (e.g. 0.75 → 0.0075)
             if (ratio > BigDecimal.ONE) ratio.divide(BigDecimal(100), 6, RoundingMode.HALF_UP) else ratio
         } catch (e: Exception) {
             log.debug("Failed to extract expense ratio for ETF {}: {}", etf.symbol, e.message)

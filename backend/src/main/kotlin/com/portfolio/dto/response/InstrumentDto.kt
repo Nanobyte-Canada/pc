@@ -278,33 +278,16 @@ data class EtfDetailDto(
     val sectorBreakdown: SectorBreakdownDto?
 ) {
     companion object {
-        private val SKIP_FIELDS = setOf("__typename", "fundName", "ticker", "symbol", "name", "label", "fundTicker")
         private val DESCRIPTION_FIELDS = setOf("description", "fundDescription", "investmentStrategy")
-        private val LARGE_FIELDS = setOf(
-            "expenseRatio", "aum", "peRatio", "weightedAvgMarketCap",
-            "netExpenseRatio", "totalAssets", "assetsUnderManagement"
+
+        private val PERIOD_LABELS = mapOf(
+            "return1M" to "1 Month", "return3M" to "3 Months", "return6M" to "6 Months",
+            "return1Y" to "1 Year", "return3Y" to "3 Years", "return5Y" to "5 Years",
+            "return10Y" to "10 Years", "returnYTD" to "YTD"
         )
-        private val FIELD_LABELS = mapOf(
-            "issuer" to "Issuer",
-            "inceptionDate" to "Inception Date",
-            "expenseRatio" to "Expense Ratio",
-            "netExpenseRatio" to "Net Expense Ratio",
-            "aum" to "AUM",
-            "totalAssets" to "Total Assets",
-            "assetsUnderManagement" to "AUM",
-            "indexTracked" to "Index Tracked",
-            "segment" to "Segment",
-            "assetClass" to "Asset Class",
-            "legalStructure" to "Legal Structure",
-            "fundFamily" to "Fund Family",
-            "weightedAvgMarketCap" to "Wtd Avg Market Cap",
-            "peRatio" to "P/E Ratio",
-            "pbRatio" to "P/B Ratio",
-            "dividendYield" to "Dividend Yield",
-            "numberOfHoldings" to "Number of Holdings",
-            "avgDailyVolume" to "Avg Daily Volume",
-            "avgDailyDollarVolume" to "Avg Daily $ Volume",
-            "spread" to "Spread"
+        private val PERIOD_ORDER = listOf(
+            "return1M", "return3M", "return6M", "returnYTD",
+            "return1Y", "return3Y", "return5Y", "return10Y"
         )
 
         fun from(etf: Etf): EtfDetailDto {
@@ -328,7 +311,7 @@ data class EtfDetailDto(
                 portfolio = parseLabeledFields(fundPortfolio),
                 performance = parsePerformance(perfData),
                 topHoldings = parseHoldings(holdingsData),
-                holdingsCount = extractHoldingsCount(fundSummary),
+                holdingsCount = extractHoldingsCount(holdingsData),
                 sectorBreakdown = parseSectorBreakdown(sectorData)
             )
         }
@@ -337,33 +320,38 @@ data class EtfDetailDto(
             if (payload == null) return null
             val section = payload.path(key)
             if (section.isMissingNode || section.isNull) return null
-            // Old format: section has data wrapper
-            val nested = section.path("data").path(key)
-            if (!nested.isMissingNode && !nested.isNull) return nested
             return section
         }
 
+        // fundSummaryData and fundPortfolioData use: { fields: [{name, label, value}, ...] }
         private fun parseLabeledFields(node: JsonNode?): List<LabeledField>? {
-            if (node == null || !node.isObject) return null
-            val fields = mutableListOf<LabeledField>()
-            val iter = node.fields()
-            while (iter.hasNext()) {
-                val (key, value) = iter.next()
-                if (key in SKIP_FIELDS || key in DESCRIPTION_FIELDS) continue
-                if (value.isNull || value.isMissingNode) continue
-                if (value.isObject || value.isArray) continue
-                val text = value.asText()
-                if (text.isBlank() || text == "N/A" || text == "None") continue
-                fields.add(LabeledField(
-                    label = FIELD_LABELS[key] ?: formatCamelCase(key),
-                    value = formatEtfFieldValue(key, text)
-                ))
+            if (node == null) return null
+            val fieldsArr = node.path("fields")
+            if (!fieldsArr.isArray || fieldsArr.size() == 0) return null
+            val result = mutableListOf<LabeledField>()
+            for (item in fieldsArr) {
+                val label = item.path("label").asText(null) ?: continue
+                val value = item.path("value").asText(null) ?: continue
+                if (value.isBlank() || value == "None" || value == "N/A" || value == "None%" || value == "null") continue
+                result.add(LabeledField(label = label, value = value))
             }
-            return fields.ifEmpty { null }
+            return result.ifEmpty { null }
         }
 
         private fun extractDescription(node: JsonNode?): String? {
             if (node == null) return null
+            // Check fields array for description entries
+            val fieldsArr = node.path("fields")
+            if (fieldsArr.isArray) {
+                for (item in fieldsArr) {
+                    val name = item.path("name").asText("")
+                    if (name in DESCRIPTION_FIELDS) {
+                        val text = item.path("value").asText(null)
+                        if (!text.isNullOrBlank() && text != "None" && text != "N/A") return text
+                    }
+                }
+            }
+            // Fallback: check direct fields
             for (key in DESCRIPTION_FIELDS) {
                 val desc = node.path(key)
                 if (!desc.isMissingNode && !desc.isNull) {
@@ -374,236 +362,103 @@ data class EtfDetailDto(
             return null
         }
 
+        // performanceData: { data: [{ nav_data: {return1M, ...}, price_data: {return1M, ...} }] }
         private fun parsePerformance(node: JsonNode?): List<PerformancePeriodDto>? {
-            if (node == null || !node.isObject) return null
-            val periodMap = mutableMapOf<String, Pair<Double?, Double?>>()
+            if (node == null) return null
+            val dataArr = node.path("data")
+            if (!dataArr.isArray || dataArr.size() == 0) return null
+            val entry = dataArr[0] ?: return null
+            val navData = entry.path("nav_data")
+            val priceData = entry.path("price_data")
+            if ((navData.isMissingNode || navData.isNull) && (priceData.isMissingNode || priceData.isNull)) return null
 
-            val iter = node.fields()
-            while (iter.hasNext()) {
-                val (key, value) = iter.next()
-                if (key in SKIP_FIELDS || value.isObject || value.isArray) continue
-                val num = value.asDouble(Double.NaN)
-                if (num.isNaN()) continue
+            val periodKeys = mutableSetOf<String>()
+            navData.fieldNames()?.let { while (it.hasNext()) periodKeys.add(it.next()) }
+            priceData.fieldNames()?.let { while (it.hasNext()) periodKeys.add(it.next()) }
 
-                val lower = key.lowercase()
-                val type = when {
-                    lower.contains("nav") -> "nav"
-                    lower.contains("price") || lower.contains("mkt") -> "price"
-                    else -> continue
+            val results = periodKeys
+                .sortedBy { PERIOD_ORDER.indexOf(it).let { i -> if (i < 0) 99 else i } }
+                .mapNotNull { key ->
+                    val nav = navData.path(key).let { if (it.isNumber) it.asDouble() else null }
+                    val price = priceData.path(key).let { if (it.isNumber) it.asDouble() else null }
+                    if (nav == null && price == null) return@mapNotNull null
+                    PerformancePeriodDto(
+                        period = PERIOD_LABELS[key] ?: key,
+                        navReturn = nav,
+                        priceReturn = price
+                    )
                 }
-
-                val period = key
-                    .replace(Regex("(?i)nav|price|mkt|return"), "")
-                    .replace(Regex("([A-Z])"), " $1")
-                    .trim()
-                    .ifEmpty { key }
-
-                val existing = periodMap[period] ?: Pair(null, null)
-                periodMap[period] = if (type == "nav") {
-                    existing.copy(first = num)
-                } else {
-                    existing.copy(second = num)
-                }
-            }
-
-            if (periodMap.isEmpty()) return null
-
-            return periodMap.map { (period, values) ->
-                PerformancePeriodDto(
-                    period = period.trimStart(),
-                    navReturn = values.first,
-                    priceReturn = values.second
-                )
-            }
+            return results.ifEmpty { null }
         }
 
+        // topHoldings: { data: [ {name:"all_holdings", data:[{symbol, name, weight}, ...]}, ... ] }
         private fun parseHoldings(node: JsonNode?): List<EtfTopHoldingDto>? {
             if (node == null) return null
-            // If it's an array directly
-            val arr = if (node.isArray) node else {
-                // Try to find an array inside the object
-                val iter = node.fields()
-                var found: JsonNode? = null
-                while (iter.hasNext()) {
-                    val (_, v) = iter.next()
-                    if (v.isArray && v.size() > 0) { found = v; break }
+            val dataArr = node.path("data")
+            if (!dataArr.isArray) return null
+
+            // Find the "all_holdings" entry
+            var holdingsArr: JsonNode? = null
+            for (item in dataArr) {
+                if (item.path("name").asText() == "all_holdings") {
+                    holdingsArr = item.path("data")
+                    break
                 }
-                found
             }
-            if (arr == null || !arr.isArray || arr.size() == 0) return null
+            if (holdingsArr == null || !holdingsArr.isArray || holdingsArr.size() == 0) return null
 
             val holdings = mutableListOf<EtfTopHoldingDto>()
-            for (item in arr) {
+            for (item in holdingsArr) {
                 if (!item.isObject) continue
-                val ticker = item.path("ticker").asText(null)
-                    ?: item.path("symbol").asText(null)
-                    ?: item.path("holding").asText(null)
-                    ?: "\u2014"
-                val name = item.path("name").asText(null)
-                    ?: item.path("holdingName").asText(null)
-                    ?: item.path("description").asText(null)
-                    ?: "\u2014"
-                val weight = parseWeight(
-                    item.path("weighting").asText(null)
-                        ?: item.path("weight").asText(null)
-                        ?: item.path("percentOfFund").asText(null)
-                        ?: "0"
-                )
-                holdings.add(EtfTopHoldingDto(ticker = ticker, name = name, weight = weight))
+                val symbol = item.path("symbol").asText(null)
+                val name = item.path("name").asText(null) ?: "\u2014"
+                val weight = parseWeight(item.path("weight").asText("0"))
+                holdings.add(EtfTopHoldingDto(ticker = symbol ?: "\u2014", name = name, weight = weight))
             }
             return holdings.sortedByDescending { it.weight }.ifEmpty { null }
         }
 
-        private fun extractHoldingsCount(summaryNode: JsonNode?): Int? {
-            if (summaryNode == null) return null
-            val node = summaryNode.path("numberOfHoldings")
-            if (node.isMissingNode || node.isNull) return null
-            return node.asInt(0).takeIf { it > 0 }
-        }
-
-        private fun parseSectorBreakdown(node: JsonNode?): SectorBreakdownDto? {
+        // topHoldings: { data: [ {name:"numberOfHoldings", value: 102}, ... ] }
+        private fun extractHoldingsCount(node: JsonNode?): Int? {
             if (node == null) return null
-
-            val sectors = mutableListOf<SectorEntryDto>()
-            val industries = mutableListOf<IndustryEntryDto>()
-
-            if (node.isArray) {
-                // Array of sector objects
-                for (item in node) {
-                    if (!item.isObject) continue
-                    val name = item.path("sectorName").asText(null)
-                        ?: item.path("name").asText(null)
-                        ?: item.path("sector").asText(null)
-                        ?: continue
-                    val weight = parseWeight(
-                        item.path("weight").asText(null)
-                            ?: item.path("sectorWeight").asText(null)
-                            ?: item.path("percentage").asText(null)
-                            ?: "0"
-                    )
-                    sectors.add(SectorEntryDto(name = name, weight = weight))
-
-                    // Check for nested industries
-                    val nested = when {
-                        item.has("industries") -> item.path("industries")
-                        item.has("industryGroups") -> item.path("industryGroups")
-                        item.has("subSectors") -> item.path("subSectors")
-                        else -> null
-                    }
-                    if (nested != null && nested.isArray) {
-                        for (ind in nested) {
-                            val indName = ind.path("name").asText(null)
-                                ?: ind.path("industryName").asText(null)
-                                ?: continue
-                            val indWeight = parseWeight(
-                                ind.path("weight").asText(null)
-                                    ?: ind.path("percentage").asText(null)
-                                    ?: "0"
-                            )
-                            industries.add(IndustryEntryDto(name = indName, weight = indWeight, parentSector = name))
-                        }
-                    }
-                }
-            } else if (node.isObject) {
-                // Try to find sector/industry arrays
-                val sectorArr = findArray(node, "sectors", "sectorBreakdown", "sectorWeights")
-                val industryArr = findArray(node, "industries", "industryBreakdown", "industryWeights")
-
-                if (sectorArr != null) {
-                    for (item in sectorArr) {
-                        if (!item.isObject) continue
-                        val name = item.path("sectorName").asText(null)
-                            ?: item.path("name").asText(null)
-                            ?: item.path("sector").asText(null)
-                            ?: continue
-                        val weight = parseWeight(
-                            item.path("weight").asText(null)
-                                ?: item.path("sectorWeight").asText(null)
-                                ?: item.path("percentage").asText(null)
-                                ?: "0"
-                        )
-                        sectors.add(SectorEntryDto(name = name, weight = weight))
-                    }
-                }
-
-                if (industryArr != null) {
-                    for (item in industryArr) {
-                        if (!item.isObject) continue
-                        val name = item.path("industryName").asText(null)
-                            ?: item.path("name").asText(null)
-                            ?: continue
-                        val weight = parseWeight(
-                            item.path("weight").asText(null)
-                                ?: item.path("industryWeight").asText(null)
-                                ?: item.path("percentage").asText(null)
-                                ?: "0"
-                        )
-                        val parent = item.path("sectorName").asText(null)
-                            ?: item.path("sector").asText(null)
-                        industries.add(IndustryEntryDto(name = name, weight = weight, parentSector = parent))
-                    }
-                }
-
-                // Flat key-value object fallback
-                if (sectors.isEmpty()) {
-                    val iter = node.fields()
-                    while (iter.hasNext()) {
-                        val (key, value) = iter.next()
-                        if (key in SKIP_FIELDS) continue
-                        if (value.isNumber) {
-                            sectors.add(SectorEntryDto(name = formatCamelCase(key), weight = value.asDouble()))
-                        }
-                    }
+            val dataArr = node.path("data")
+            if (!dataArr.isArray) return null
+            for (item in dataArr) {
+                if (item.path("name").asText() == "numberOfHoldings") {
+                    val v = item.path("value")
+                    if (v.isInt) return v.asInt().takeIf { it > 0 }
+                    return v.asText().toIntOrNull()?.takeIf { it > 0 }
                 }
             }
+            return null
+        }
 
+        // sectorIndustryBreakdown: { fields: [{name, weight}, ...] }
+        private fun parseSectorBreakdown(node: JsonNode?): SectorBreakdownDto? {
+            if (node == null) return null
+            val fieldsArr = node.path("fields")
+            if (!fieldsArr.isArray || fieldsArr.size() == 0) return null
+
+            val sectors = mutableListOf<SectorEntryDto>()
+            for (item in fieldsArr) {
+                val name = item.path("name").asText(null) ?: continue
+                val weight = parseWeight(item.path("weight").asText("0"))
+                if (weight > 0) {
+                    sectors.add(SectorEntryDto(name = name, weight = weight))
+                }
+            }
             return if (sectors.isNotEmpty()) {
                 SectorBreakdownDto(
                     sectors = sectors.sortedByDescending { it.weight },
-                    industries = industries.sortedByDescending { it.weight }
+                    industries = emptyList()
                 )
             } else null
-        }
-
-        private fun findArray(node: JsonNode, vararg names: String): JsonNode? {
-            for (name in names) {
-                val child = node.path(name)
-                if (child.isArray && child.size() > 0) return child
-            }
-            // Fallback: find first array in the object
-            val iter = node.fields()
-            while (iter.hasNext()) {
-                val (_, v) = iter.next()
-                if (v.isArray && v.size() > 0 && v[0].isObject) return v
-            }
-            return null
         }
 
         private fun parseWeight(str: String): Double {
             val cleaned = str.replace("%", "").trim()
             val num = cleaned.toDoubleOrNull() ?: return 0.0
-            // If original had %, the value is already in percentage form
             return if (str.contains("%")) num / 100.0 else num
-        }
-
-        private fun formatCamelCase(key: String): String {
-            return key.replace(Regex("([A-Z])"), " $1")
-                .replaceFirstChar { it.uppercase() }
-                .trim()
-        }
-
-        private fun formatEtfFieldValue(key: String, value: String): String {
-            val num = value.toDoubleOrNull()
-            if (num != null && key in LARGE_FIELDS) {
-                val abs = kotlin.math.abs(num)
-                return when {
-                    abs >= 1e12 -> "$${String.format("%.2f", num / 1e12)}T"
-                    abs >= 1e9 -> "$${String.format("%.2f", num / 1e9)}B"
-                    abs >= 1e6 -> "$${String.format("%.2f", num / 1e6)}M"
-                    else -> value
-                }
-            }
-            return value
         }
     }
 }

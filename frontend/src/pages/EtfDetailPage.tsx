@@ -113,8 +113,8 @@ function PerformanceSection({ performance }: { performance: PerformancePeriod[] 
     if (!performance || performance.length === 0) return null;
     return performance.map(p => ({
       period: p.period,
-      nav: p.navReturn != null ? Number((p.navReturn * 100).toFixed(2)) : null,
-      price: p.priceReturn != null ? Number((p.priceReturn * 100).toFixed(2)) : null,
+      nav: p.navReturn != null ? Number(p.navReturn.toFixed(2)) : null,
+      price: p.priceReturn != null ? Number(p.priceReturn.toFixed(2)) : null,
     }));
   }, [performance]);
 
