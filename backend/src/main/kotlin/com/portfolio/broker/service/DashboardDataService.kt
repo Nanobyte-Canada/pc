@@ -91,8 +91,10 @@ class DashboardDataService(
         )
 
         // Holdings look-through count (use investmentValue for weight calculations)
+        val warnings = mutableListOf<String>()
         val positionsTotalValue = positions.sumOf { it.currentValue ?: BigDecimal.ZERO }
-        val holdingsCount = calculateHoldingsCount(positions, positionsTotalValue)
+        val (holdingsCount, holdingsWarnings) = calculateHoldingsCount(positions, positionsTotalValue)
+        warnings.addAll(holdingsWarnings)
 
         return DashboardSummaryResponse(
             portfolioValue = PortfolioValueDto(
@@ -104,16 +106,17 @@ class DashboardDataService(
                 currency = "CAD"
             ),
             positionsSummary = positionsSummary,
-            holdingsCount = holdingsCount
+            holdingsCount = holdingsCount,
+            warnings = warnings
         )
     }
 
     private fun calculateHoldingsCount(
         positions: List<com.portfolio.broker.entity.BrokerPosition>,
         totalValue: BigDecimal
-    ): HoldingsCountDto {
+    ): Pair<HoldingsCountDto, List<String>> {
         if (positions.isEmpty() || totalValue <= BigDecimal.ZERO) {
-            return HoldingsCountDto(0, 0, 0, 0, 0, BigDecimal.ZERO)
+            return Pair(HoldingsCountDto(0, 0, 0, 0, 0, BigDecimal.ZERO), emptyList())
         }
 
         val lookThroughPositions = mutableListOf<PortfolioPositionRequest>()
@@ -145,36 +148,38 @@ class DashboardDataService(
         }
 
         if (lookThroughPositions.isEmpty()) {
-            return HoldingsCountDto(
+            return Pair(HoldingsCountDto(
                 directStocks = directStockSymbols.size,
                 lookThroughStocks = 0,
                 totalUniqueHoldings = directStockSymbols.size,
                 etfsDecomposed = 0,
                 mutualFundsDecomposed = 0,  // always 0, mutual funds removed
                 coveragePercent = BigDecimal(100)
-            )
+            ), emptyList())
         }
 
         return try {
-            val result = lookThroughService.computeLookThroughWithQuality(lookThroughPositions, LocalDate.now())
-            HoldingsCountDto(
-                directStocks = directStockSymbols.size,
-                lookThroughStocks = result.exposures.size,
-                totalUniqueHoldings = result.exposures.size,
-                etfsDecomposed = etfsDecomposed,
-                mutualFundsDecomposed = 0,
-                coveragePercent = result.quality.coveragePercent
-            )
+            Pair(run {
+                val result = lookThroughService.computeLookThroughWithQuality(lookThroughPositions, LocalDate.now())
+                HoldingsCountDto(
+                    directStocks = directStockSymbols.size,
+                    lookThroughStocks = result.exposures.size,
+                    totalUniqueHoldings = result.exposures.size,
+                    etfsDecomposed = etfsDecomposed,
+                    mutualFundsDecomposed = 0,
+                    coveragePercent = result.quality.coveragePercent
+                )
+            }, emptyList())
         } catch (e: Exception) {
             log.warn("Failed to calculate look-through holdings count", e)
-            HoldingsCountDto(
+            Pair(HoldingsCountDto(
                 directStocks = directStockSymbols.size,
                 lookThroughStocks = 0,
                 totalUniqueHoldings = directStockSymbols.size,
                 etfsDecomposed = 0,
                 mutualFundsDecomposed = 0,  // always 0, mutual funds removed
                 coveragePercent = BigDecimal.ZERO
-            )
+            ), listOf("Holdings count may be incomplete due to a calculation error"))
         }
     }
 
@@ -251,7 +256,8 @@ class DashboardDataService(
             lookThroughService.computeLookThroughWithQuality(lookThroughPositions, LocalDate.now())
         } catch (e: Exception) {
             log.warn("Failed to compute sector exposure", e)
-            return SectorExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO)
+            return SectorExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO,
+                warnings = listOf("Sector exposure data unavailable due to a calculation error"))
         }
 
         // Aggregate by sector -> industry group
@@ -333,7 +339,8 @@ class DashboardDataService(
             lookThroughService.computeLookThroughWithQuality(lookThroughPositions, LocalDate.now())
         } catch (e: Exception) {
             log.warn("Failed to compute geography exposure", e)
-            return GeographyExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO)
+            return GeographyExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO,
+                warnings = listOf("Geography exposure data unavailable due to a calculation error"))
         }
 
         // Cache country lookups

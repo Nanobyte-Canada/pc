@@ -55,7 +55,8 @@ data class HoldingsCountDto(
 data class DashboardSummaryResponse(
     val portfolioValue: PortfolioValueDto,
     val positionsSummary: PositionsSummaryDto,
-    val holdingsCount: HoldingsCountDto
+    val holdingsCount: HoldingsCountDto,
+    val warnings: List<String> = emptyList()
 )
 
 // ========== Cash & Buying Power ==========
@@ -90,7 +91,8 @@ data class SectorExposureDto(
 data class SectorExposureResponse(
     val sectors: List<SectorExposureDto>,
     val coveragePercent: BigDecimal,
-    val unmappedWeight: BigDecimal
+    val unmappedWeight: BigDecimal,
+    val warnings: List<String> = emptyList()
 )
 
 // ========== Geography Exposure ==========
@@ -110,7 +112,8 @@ data class RegionExposureDto(
 data class GeographyExposureResponse(
     val regions: List<RegionExposureDto>,
     val coveragePercent: BigDecimal,
-    val unmappedWeight: BigDecimal
+    val unmappedWeight: BigDecimal,
+    val warnings: List<String> = emptyList()
 )
 
 // ========== Risk Profile ==========
