@@ -2,6 +2,7 @@ import { Suspense, useState } from 'react'
 import { Settings, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { WidgetWrapper } from './WidgetWrapper'
 import { DashboardEditMode } from './DashboardEditMode'
 import { PositionsHoldingsTabs } from './PositionsHoldingsTabs'
@@ -113,9 +114,11 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
                     columnSpan={1}
                     accentColor={ACCENT_COLORS[widgetKey]}
                   >
-                    <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
-                      <Component connectionId={connectionId} />
-                    </Suspense>
+                    <ErrorBoundary>
+                      <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
+                        <Component connectionId={connectionId} />
+                      </Suspense>
+                    </ErrorBoundary>
                   </WidgetWrapper>
                 )
               })}
@@ -131,9 +134,11 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
               columnSpan={1}
               accentColor={ACCENT_COLORS.CONNECTED_ACCOUNTS}
             >
-              <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
-                <ConnectedAccountsComponent connectionId={connectionId} />
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
+                  <ConnectedAccountsComponent connectionId={connectionId} />
+                </Suspense>
+              </ErrorBoundary>
             </WidgetWrapper>
           </div>
         )}
@@ -153,9 +158,11 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
                   columnSpan={1}
                   accentColor={ACCENT_COLORS[widgetKey]}
                 >
-                  <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
-                    <Component connectionId={connectionId} />
-                  </Suspense>
+                  <ErrorBoundary>
+                    <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
+                      <Component connectionId={connectionId} />
+                    </Suspense>
+                  </ErrorBoundary>
                 </WidgetWrapper>
               )
             })}
@@ -164,7 +171,11 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
 
         {/* Zone D: Positions/Holdings tabs (always visible, full width) */}
         <div className="dashboard-zone-d">
-          <PositionsHoldingsTabs connectionId={connectionId} />
+          <ErrorBoundary>
+            <Suspense fallback={<Skeleton style={{ height: '12rem', width: '100%' }} />}>
+              <PositionsHoldingsTabs connectionId={connectionId} />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
 
