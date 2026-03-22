@@ -8,7 +8,6 @@ import com.portfolio.entity.HoldingDataSource
 import com.portfolio.entity.Stock
 import com.portfolio.repository.EtfHoldingRepository
 import com.portfolio.repository.EtfRepository
-import com.portfolio.repository.EtfSectorAllocationFactsetRepository
 import com.portfolio.repository.StockRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -59,7 +58,7 @@ class LookThroughService(
     private val stockRepository: StockRepository,
     private val etfRepository: EtfRepository,
     private val etfHoldingRepository: EtfHoldingRepository,
-    private val sectorAllocationFactsetRepository: EtfSectorAllocationFactsetRepository
+    private val cachedLookupService: CachedLookupService
 ) {
     companion object {
         val FACTSET_SECTOR_TO_GICS = mapOf(
@@ -399,7 +398,7 @@ class LookThroughService(
     }
 
     private fun extractEtfSectorAllocations(etf: Etf): Map<String, BigDecimal> {
-        val factsetSectors = sectorAllocationFactsetRepository.findLatestByEtfId(etf.id)
+        val factsetSectors = cachedLookupService.getSectorAllocations(etf.id)
         if (factsetSectors.isEmpty()) return emptyMap()
 
         val allocations = mutableMapOf<String, BigDecimal>()
