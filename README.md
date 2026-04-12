@@ -1,238 +1,82 @@
-# Portfolio Construction Application
+# Portfolio Construction App
 
-A full-stack application for portfolio construction using public ETFs and Mutual Funds.
+A full-stack application for constructing and analyzing investment portfolios using public ETFs and mutual funds. Built for individual investors who want to build diversified portfolios, track drift from target allocations, and monitor performance across connected brokerage accounts.
+
+## What It Does
+
+- **Portfolio Construction** — Define target allocations using ETFs and mutual funds, then track how your actual holdings compare
+- **Broker Integration** — Connect brokerage accounts via SnapTrade to sync positions automatically
+- **Look-Through Analysis** — Decompose ETFs into underlying stock holdings to see true sector, geographic, and risk exposure
+- **Drift & Rebalancing** — Monitor portfolio drift from targets and generate trade orders to rebalance
+- **Instrument Screener** — Browse and filter 190k+ instruments across stocks, ETFs, mutual funds, preferred stocks, indices, and bonds
+- **Dashboard** — Customizable widget-based dashboard with portfolio value, performance, risk metrics, and activity feeds
 
 ## Tech Stack
 
-- **Backend**: Kotlin + Spring Boot 3
-- **Frontend**: React + TypeScript + Vite
-- **Database**: PostgreSQL 16
-- **Migrations**: Flyway
-- **Containerization**: Docker + Docker Compose
-- **CI/CD**: GitHub Actions
-- **Cloud**: GCP (Cloud Run, Cloud SQL, Cloud Storage, HTTPS Load Balancer)
+| Layer | Technology |
+|-------|-----------|
+| Backend | Kotlin 2.0 + Spring Boot 3.3 + JDK 21 |
+| Frontend | React 18 + TypeScript 5.6 + Vite 5 |
+| Database | PostgreSQL 16 + Flyway migrations |
+| Cache | Redis 7 |
+| Broker SDK | SnapTrade |
+| Data Sources | EODHD, Alpha Vantage |
+| Containerization | Docker + Docker Compose |
 
 ## Project Structure
 
 ```
-portfolio-app/
-├── backend/
-│   ├── portfolio/    # Kotlin Spring Boot API (main service)
-│   └── ingestion/    # Data ingestion microservice
-├── frontend/         # React TypeScript SPA
-├── config/           # Environment configuration (.env.example)
-├── infra/            # Terraform infrastructure
-├── scripts/          # Utility scripts
-├── docs/             # Documentation
-└── docker-compose.yml
+backend/portfolio/     — Main Spring Boot API (port 8080)
+backend/ingestion/     — Data ingestion microservice (port 8081)
+frontend/              — React SPA (port 3000)
+config/                — Environment template (.env.example)
+docs/reference/        — Technical reference documentation
+docs/business-context.html — Architecture and module overview
+.archive/              — Completed design specs and plans
 ```
-
-## Prerequisites
-
-- Docker and Docker Compose
-- JDK 21 (for local backend development)
-- Node.js 20 (for local frontend development)
 
 ## Quick Start
 
-### Using Docker Compose (Recommended)
+```bash
+# 1. Set up environment
+cp config/.env.example .env
+# Edit .env — fill in API keys (SNAPTRADE, EODHD, etc.)
+
+# 2. Start all services
+docker compose up --build
+
+# 3. Access the app
+# Frontend:  http://localhost:3000
+# Backend:   http://localhost:8080
+# Health:    http://localhost:8080/health
+```
+
+## Development
+
+**No JDK is installed locally** — all backend work runs inside Docker containers.
 
 ```bash
-# Start all services
-docker-compose up -d
+# Backend tests (inside container)
+docker compose exec backend ./gradlew test
 
-# View logs
-docker-compose logs -f
+# Frontend dev server (local npm)
+cd frontend && npm run dev
 
-# Stop services
-docker-compose down
+# Frontend validation
+npm run build && npm run lint && npm run test:run
 ```
 
-### Access Points
+## Environment Variables
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8080
-- **Health Check**: http://localhost:8080/health
-- **Version**: http://localhost:8080/api/v1/version
+Copy `config/.env.example` to `.env` at the project root. Key variables:
 
-## Local Development
-
-### Backend
-
-```bash
-cd backend/portfolio
-
-# Run with Gradle
-./gradlew bootRun
-
-# Run tests
-./gradlew test
-
-# Build JAR
-./gradlew build
-```
-
-### Frontend
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start dev server
-npm run dev
-
-# Run tests
-npm test
-
-# Build for production
-npm run build
-```
-
-## Environment Configuration
-
-Environment variables are configured per environment:
-
-- `config/.env.example` - Template for all environments
-
-Copy `config/.env.example` to `.env` and configure as needed.
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check endpoint |
-| `/api/v1/version` | GET | Returns application version and environment |
-| `/api/v1/model-portfolios` | GET, POST | Model portfolio management |
-| `/api/v1/brokers/connections` | GET | List connected broker accounts |
-
-See `docs/api.md` for complete API documentation.
-
-## Data Pipeline
-
-### Data Sources
-
-- **EODHD**: Stocks & mutual funds universe discovery
-- **etf.com**: ETF universe discovery & enrichment (holdings, sectors, performance)
-- **Alpha Vantage**: Stock enrichment (fundamentals, financials)
-
-### Pipeline Steps (Nightly)
-
-1. **Universe Refresh** — Discover new tickers from EODHD
-2. **ETF Universe** — Refresh ETF universe from etf.com
-3. **Stock Ingestion** — Fetch raw stock data from Alpha Vantage
-4. **Stock Enrichment** — Parse stock fundamentals into structured data
-5. **ETF Enrichment** — Enrich ETFs from etf.com (holdings, sectors, performance)
-
-### Admin Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/admin/ingestion/run` | POST | Run full ingestion pipeline |
-| `/admin/ingestion/universe` | POST | Refresh universe from EODHD |
-| `/admin/ingestion/stocks/run` | POST | Fetch raw stock data |
-| `/admin/ingestion/etfcom/universe` | POST | Refresh ETF universe from etf.com |
-| `/admin/enrichment/stocks/run` | POST | Enrich stocks from Alpha Vantage |
-| `/admin/enrichment/etfcom/run` | POST | Enrich ETFs from etf.com |
-
-## Features
-
-### Portfolio Management
-- **Model Portfolios**: Create and manage target allocation models with automatic rebalancing
-- **Broker Integration**: Connect brokerage accounts via SnapTrade
-- **Portfolio Analysis**: Sector exposure, risk metrics, and performance tracking
-- **Drift Detection**: Automatic monitoring of portfolio deviation from target allocations
-- **Rebalancing Automation**: Scheduled rebalancing with customizable frequency and drift thresholds
-
-### Data Pipeline
-- Multi-source data enrichment (EODHD, Alpha Vantage, ETF.com)
-- Automated nightly ingestion and enrichment jobs
-- ETF look-through analysis for true portfolio exposure
-- Historical performance calculation
-
-### Dashboard & Analytics
-- Customizable widget-based dashboard
-- Real-time portfolio metrics
-- Connected accounts overview with model accuracy tracking
-- Performance charts and reporting
-
-## Testing
-
-### Backend Tests
-
-```bash
-cd backend/portfolio
-./gradlew test                    # All tests
-./gradlew test --tests "*Unit*"   # Unit tests only
-./gradlew test --tests "*Integration*"  # Integration tests
-```
-
-### Frontend Tests
-
-```bash
-cd frontend
-npm test              # Run tests in watch mode
-npm run test:coverage # Run with coverage report
-```
-
-## Docker
-
-### Build Images
-
-```bash
-# Backend
-docker build -t portfolio-backend ./backend/portfolio
-
-# Frontend
-docker build -t portfolio-frontend ./frontend
-```
-
-### Run Containers
-
-```bash
-# Using docker-compose (recommended)
-docker-compose up -d
-
-# Or run individually
-docker run -p 8080:8080 portfolio-backend
-docker run -p 3000:80 portfolio-frontend
-```
-
-## CI/CD
-
-GitHub Actions workflows:
-
-- **ci.yml**: Runs on PRs - lint, test, build
-- **deploy.yml**: Runs on main branch - deploy to GCP
-
-### Required GitHub Secrets
-
-- `GCP_PROJECT_NUMBER`: GCP project number for Workload Identity
-- Environment-specific secrets configured in GitHub Environments
-
-## GCP Deployment
-
-### Architecture
-
-```
-HTTPS Load Balancer
-├── /* → Cloud Storage (React SPA)
-└── /api/* → Cloud Run (Spring Boot)
-           └── Cloud SQL (PostgreSQL)
-```
-
-### Resources
-
-- **Cloud Run**: Backend API with autoscaling
-- **Cloud SQL**: PostgreSQL database (private IP)
-- **Cloud Storage**: Static frontend hosting
-- **HTTPS Load Balancer**: TLS termination + routing
-- **Secret Manager**: Secure credential storage
-- **Artifact Registry**: Docker image storage
-
-See `docs/deployment.md` for detailed deployment instructions.
+| Variable | Description |
+|----------|-------------|
+| `SNAPTRADE_CLIENT_ID` / `SNAPTRADE_CONSUMER_KEY` | SnapTrade broker integration |
+| `EODHD_API_KEY` | Market data provider |
+| `BROKER_ENCRYPTION_KEY` | AES-256 key for token encryption |
+| `JWT_SIGNING_KEY` | HS512 signing key (min 64 chars) |
 
 ## License
 
-Private - All rights reserved
+Private — All rights reserved
