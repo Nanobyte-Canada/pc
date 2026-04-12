@@ -114,6 +114,8 @@ coverage/
 # Claude Code
 .claude/
 tmpclaude-*-cwd
+[Cc][Ll][Aa][Uu][Dd][Ee].[Mm][Dd]
+.archive/
 
 # Temporary output files
 gradle-out.txt
