@@ -75,7 +75,7 @@ export function BrokerPositionsPage() {
       width: 120,
       type: 'rightAligned',
       cellStyle: (params) => ({
-        color: params.value >= 0 ? '#059669' : '#dc2626',
+        color: params.value >= 0 ? 'var(--success)' : 'var(--error)',
         fontWeight: 500
       }),
       valueFormatter: (params: ValueFormatterParams) => {
@@ -90,7 +90,7 @@ export function BrokerPositionsPage() {
       width: 100,
       type: 'rightAligned',
       cellStyle: (params) => ({
-        color: params.value >= 0 ? '#059669' : '#dc2626',
+        color: params.value >= 0 ? 'var(--success)' : 'var(--error)',
         fontWeight: 500
       }),
       valueFormatter: (params: ValueFormatterParams) => formatPercent(params.value)
@@ -170,7 +170,7 @@ export function BrokerPositionsPage() {
             title="Total P&L"
             value={`${summary.totalPnl >= 0 ? '+' : ''}${formatCurrency(summary.totalPnl)}`}
             subtitle={formatPercent(summary.totalPnlPercent)}
-            valueColor={summary.totalPnl >= 0 ? '#059669' : '#dc2626'}
+            valueColor={summary.totalPnl >= 0 ? 'var(--success)' : 'var(--error)'}
           />
           <SummaryCard title="Positions" value={positions.length.toString()} />
           <SummaryCard

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { InstrumentType } from '../../types/instrument';
+import { InstrumentType } from '../../types/screener';
 import { InstrumentSearchAutocomplete } from './InstrumentSearchAutocomplete';
 import './InstrumentTabs.css';
 

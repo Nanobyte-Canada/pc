@@ -47,7 +47,7 @@ export function PerformanceTab({ groupId }: PerformanceTabProps) {
         {chartData.benchmarkComparison && (
           <span>
             Alpha: <strong style={{
-              color: chartData.benchmarkComparison.alpha >= 0 ? '#059669' : '#dc2626'
+              color: chartData.benchmarkComparison.alpha >= 0 ? 'var(--success)' : 'var(--error)'
             }}>
               {chartData.benchmarkComparison.alpha >= 0 ? '+' : ''}{chartData.benchmarkComparison.alpha.toFixed(2)}%
             </strong>

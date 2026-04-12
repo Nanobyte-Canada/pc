@@ -2,7 +2,7 @@
 
 export interface TradeOrder {
   id: number
-  groupId: number
+  groupId: number | null
   connectionId: number
   batchId: string | null
   symbol: string

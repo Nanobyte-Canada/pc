@@ -22,7 +22,7 @@ const getColor = (status: string) => {
     case 'high':
       return '#dc2626';
     default:
-      return '#2a8a81';
+      return '#846b54';
   }
 };
 
@@ -64,7 +64,7 @@ export function RiskProfileChart({ metrics }: RiskProfileChartProps) {
         xKey: 'metric',
         yKey: 'value',
         yName: 'Current Value',
-        fill: '#2a8a81',
+        fill: '#846b54',
         stroke: 'transparent',
         cornerRadius: 4,
         formatter: (params: { itemId: number }) => ({
@@ -88,7 +88,7 @@ export function RiskProfileChart({ metrics }: RiskProfileChartProps) {
         type: 'category' as const,
         position: 'left' as const,
         label: {
-          color: '#4a5568',
+          color: '#6e7182',
           fontSize: 12,
         },
         line: {
@@ -99,11 +99,11 @@ export function RiskProfileChart({ metrics }: RiskProfileChartProps) {
         type: 'number' as const,
         position: 'bottom' as const,
         label: {
-          color: '#6b7280',
+          color: '#6e7182',
           formatter: ({ value }: { value: number }) => `${value}%`,
         },
         gridLine: {
-          style: [{ stroke: '#cbd4d9', lineDash: [4, 4] }],
+          style: [{ stroke: '#9b9da8', lineDash: [4, 4] }],
         },
       },
     ],

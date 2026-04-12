@@ -6,7 +6,7 @@ import type { AgChartOptions } from 'ag-charts-community'
 import { PieChart } from 'lucide-react'
 import './SectorExposureWidget.css'
 
-const SECTOR_COLORS = ['#2a8a81', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1', '#14b8a6']
+const SECTOR_COLORS = ['#546d84', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1', '#14b8a6']
 
 export default function SectorExposureWidget({ connectionId }: { connectionId?: number }) {
   const { data, isLoading } = useSectorExposure(connectionId)

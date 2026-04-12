@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { LayoutGrid, Table } from 'lucide-react'
 import { BrokerCard } from '../components/broker/BrokerCard'
+import { BrokerageMatrix } from '../components/broker/BrokerageMatrix'
 import { BrokerConnectionCard } from '../components/broker/BrokerConnectionCard'
 import { SnapTradeBadge } from '../components/broker/SnapTradeBadge'
 import {
@@ -17,6 +19,7 @@ export function BrokerConnectionsPage() {
   const [searchParams] = useSearchParams()
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [fetchingConnectionId, setFetchingConnectionId] = useState<number | null>(null)
+  const [brokerView, setBrokerView] = useState<'cards' | 'matrix'>('cards')
 
   const { data: brokersData, isLoading: brokersLoading } = useAvailableBrokers()
   const { data: connectionsData, isLoading: connectionsLoading, refetch: refetchConnections } = useBrokerConnections()
@@ -109,7 +112,7 @@ export function BrokerConnectionsPage() {
   const connections = connectionsData?.connections || []
 
   // Check which brokers have existing connections
-  const connectedBrokerSlugs = new Set(connections.map(c => c.broker.slug).filter(Boolean))
+  const connectedBrokerSlugs = new Set(connections.map(c => c.broker.slug).filter((s): s is string => !!s))
 
   if (brokersLoading || connectionsLoading) {
     return (
@@ -139,24 +142,52 @@ export function BrokerConnectionsPage() {
 
       {/* Available Brokers */}
       <section className="broker-section">
-        <h2>Available Brokers</h2>
-        <div className="broker-cards-grid">
-          {brokers.length > 0 ? (
-            brokers.map((broker, index) => (
-              <BrokerCard
-                key={broker.slug || index}
-                broker={broker}
-                onConnect={handleConnect}
-                isConnecting={connectBroker.isPending}
-                hasExistingConnection={connectedBrokerSlugs.has(broker.slug || '')}
-              />
-            ))
-          ) : (
-            <div className="broker-no-data">
-              No brokerages available. Check your SnapTrade configuration.
-            </div>
-          )}
+        <div className="broker-section-header">
+          <h2>Available Brokers</h2>
+          <div className="broker-view-toggle">
+            <button
+              className={`view-toggle-btn${brokerView === 'cards' ? ' active' : ''}`}
+              onClick={() => setBrokerView('cards')}
+              title="Card view"
+            >
+              <LayoutGrid size={16} />
+            </button>
+            <button
+              className={`view-toggle-btn${brokerView === 'matrix' ? ' active' : ''}`}
+              onClick={() => setBrokerView('matrix')}
+              title="Matrix view"
+            >
+              <Table size={16} />
+            </button>
+          </div>
         </div>
+
+        {brokers.length > 0 ? (
+          brokerView === 'cards' ? (
+            <div className="broker-cards-grid">
+              {brokers.map((broker, index) => (
+                <BrokerCard
+                  key={broker.slug || index}
+                  broker={broker}
+                  onConnect={handleConnect}
+                  isConnecting={connectBroker.isPending}
+                  hasExistingConnection={connectedBrokerSlugs.has(broker.slug || '')}
+                />
+              ))}
+            </div>
+          ) : (
+            <BrokerageMatrix
+              brokers={brokers}
+              onConnect={handleConnect}
+              connectedSlugs={connectedBrokerSlugs}
+              isConnecting={connectBroker.isPending}
+            />
+          )
+        ) : (
+          <div className="broker-no-data">
+            No brokerages available. Check your SnapTrade configuration.
+          </div>
+        )}
       </section>
 
       {/* Connected Accounts */}

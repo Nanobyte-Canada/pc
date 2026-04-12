@@ -56,12 +56,12 @@ export default function PositionsTableWidget({ connectionId }: { connectionId?: 
     {
       field: 'totalPnl', headerName: 'P&L', width: 110, type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => fmtCurrency(p.value),
-      cellStyle: (p: any) => ({ color: (p.value ?? 0) >= 0 ? '#059669' : '#dc2626' }),
+      cellStyle: (p: any) => ({ color: (p.value ?? 0) >= 0 ? 'var(--success)' : 'var(--error)' }),
     },
     {
       field: 'totalPnlPercent', headerName: 'P&L %', width: 90, type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => fmtPercent(p.value),
-      cellStyle: (p: any) => ({ color: (p.value ?? 0) >= 0 ? '#059669' : '#dc2626' }),
+      cellStyle: (p: any) => ({ color: (p.value ?? 0) >= 0 ? 'var(--success)' : 'var(--error)' }),
     },
   ]
 

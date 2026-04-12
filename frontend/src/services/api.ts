@@ -44,6 +44,36 @@ async function attemptTokenRefresh(): Promise<boolean> {
   return refreshPromise;
 }
 
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+    public detail: string,
+    public title?: string
+  ) {
+    super(detail)
+    this.name = 'ApiError'
+  }
+}
+
+export async function parseErrorResponse(response: Response): Promise<ApiError> {
+  try {
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('application/problem+json') || contentType.includes('application/json')) {
+      const body = await response.json()
+      return new ApiError(
+        body.status || response.status,
+        body.code || body.errorCode || 'UNKNOWN',
+        body.detail || body.message || response.statusText,
+        body.title
+      )
+    }
+  } catch {
+    // Failed to parse body
+  }
+  return new ApiError(response.status, 'UNKNOWN', response.statusText)
+}
+
 /**
  * Authenticated fetch wrapper that includes credentials, CSRF token,
  * and automatic 401 retry via token refresh.

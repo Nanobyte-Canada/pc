@@ -7,7 +7,7 @@ interface SectorChartProps {
 }
 
 const SECTOR_COLORS: Record<string, string> = {
-  '45': '#2a8a81', // Information Technology
+  '45': '#546d84', // Information Technology
   '35': '#059669', // Health Care
   '40': '#d97706', // Financials
   '25': '#dc2626', // Consumer Discretionary
@@ -66,7 +66,7 @@ export function SectorChart({ data }: SectorChartProps) {
       position: 'bottom' as const,
       item: {
         label: {
-          color: '#4a5568',
+          color: '#6e7182',
           fontSize: 11,
         },
       },

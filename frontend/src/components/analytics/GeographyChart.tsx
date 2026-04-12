@@ -7,7 +7,7 @@ interface GeographyChartProps {
 }
 
 const REGION_COLORS: Record<string, string> = {
-  'North America': '#2a8a81',
+  'North America': '#546d84',
   'Europe': '#059669',
   'Asia Pacific': '#d97706',
   'Latin America': '#dc2626',
@@ -74,7 +74,7 @@ export function GeographyChart({ data }: GeographyChartProps) {
       position: 'bottom' as const,
       item: {
         label: {
-          color: '#4a5568',
+          color: '#6e7182',
           fontSize: 11,
         },
       },

@@ -9,7 +9,6 @@ interface WidgetWrapperProps {
   children: React.ReactNode
   className?: string
   headerAction?: React.ReactNode
-  accentColor?: string
   noPadding?: boolean
 }
 
@@ -23,18 +22,16 @@ function WidgetLoadingSkeleton() {
   )
 }
 
-export function WidgetWrapper({ title, columnSpan, children, className, headerAction, accentColor, noPadding }: WidgetWrapperProps) {
+export function WidgetWrapper({ title, columnSpan, children, className, headerAction, noPadding }: WidgetWrapperProps) {
   return (
     <div className={cn(
       'widget-card widget-wrapper',
-      columnSpan === 2 ? 'widget-col-span-1 widget-col-span-2' :
+      columnSpan === 4 ? 'widget-col-span-1 widget-col-span-2 widget-col-span-4' :
       columnSpan === 3 ? 'widget-col-span-1 widget-col-span-2 widget-col-span-3' :
+      columnSpan === 2 ? 'widget-col-span-1 widget-col-span-2' :
       'widget-col-span-1',
       className
     )}>
-      {accentColor && (
-        <div className="widget-accent-bar" style={{ background: accentColor }} />
-      )}
       <div className="widget-header">
         <h3 className="widget-title">{title}</h3>
         {headerAction}

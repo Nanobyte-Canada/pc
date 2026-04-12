@@ -6,74 +6,52 @@
   margin-bottom: 1.25rem;
 }
 
-/* ===== Zoned layout ===== */
-.dashboard-zones-top {
+/* ===== Unified 4-column grid (both dashboard and account contexts) ===== */
+.dashboard-grid-4col {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
 }
 
-/* Mobile: natural DOM order gives A -> C -> B -> D vertical stack */
-
-@media (min-width: 1024px) {
-  .dashboard-zones-top {
-    grid-template-columns: 3fr 1fr;
-    grid-template-areas:
-      "zone-a zone-b"
-      "zone-c zone-b"
-      "zone-d zone-d";
-  }
-
-  .dashboard-zone-a {
-    grid-area: zone-a;
-  }
-
-  .dashboard-zone-b {
-    grid-area: zone-b;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .dashboard-zone-c {
-    grid-area: zone-c;
-  }
-
-  .dashboard-zone-d {
-    grid-area: zone-d;
-  }
-
-  .dashboard-zones-top.dashboard-zones-no-c {
-    grid-template-areas:
-      "zone-a zone-b"
-      "zone-d zone-d";
-  }
-}
-
-/* Zone A inner grid */
-.zone-a-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-}
-
-@media (min-width: 768px) {
-  .zone-a-grid {
+@media (max-width: 1023px) {
+  .dashboard-grid-4col {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (min-width: 1200px) {
-  .zone-a-grid {
-    grid-template-columns: repeat(3, 1fr);
+@media (max-width: 640px) {
+  .dashboard-grid-4col {
+    grid-template-columns: 1fr;
   }
 }
 
-/* Zone B stacked (mobile fallback) */
-.dashboard-zone-b {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+/* Widget span classes */
+.widget-col-span-2 {
+  grid-column: span 2;
+}
+
+.widget-col-span-4 {
+  grid-column: span 4;
+}
+
+@media (max-width: 1023px) {
+  .widget-col-span-2 {
+    grid-column: span 2;
+  }
+
+  .widget-col-span-4 {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .widget-col-span-2 {
+    grid-column: span 1;
+  }
+
+  .widget-col-span-4 {
+    grid-column: span 1;
+  }
 }
 
 /* ===== Loading skeleton ===== */

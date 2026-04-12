@@ -35,7 +35,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./backend/portfolio
       dockerfile: Dockerfile
     container_name: portfolio-backend
     environment:
@@ -69,6 +69,29 @@ services:
     networks:
       - portfolio-network
 
+  ingestion-service:
+    build:
+      context: ./backend/ingestion
+      dockerfile: Dockerfile
+    container_name: portfolio-ingestion
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
+      DATABASE_USERNAME: ${POSTGRES_USER:-portfolio}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EODHD_API_KEY: ${EODHD_API_KEY:-}
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - portfolio-network
+
   frontend:
     build:
       context: ./frontend
@@ -77,6 +100,8 @@ services:
     container_name: portfolio-frontend
     environment:
       VITE_API_URL: http://localhost:8080
+      VITE_PROXY_BACKEND_URL: http://backend:8080
+      VITE_PROXY_INGESTION_URL: http://ingestion-service:8081
     ports:
       - "3000:3000"
     volumes:
@@ -85,6 +110,7 @@ services:
       - ./frontend/index.html:/app/index.html:ro
     depends_on:
       - backend
+      - ingestion-service
     networks:
       - portfolio-network
 

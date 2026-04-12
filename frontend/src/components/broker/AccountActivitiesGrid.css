@@ -37,7 +37,7 @@
   border-radius: 6px;
   border: 1px solid var(--accent);
   background-color: var(--accent);
-  color: #fff;
+  color: var(--nav-text);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;

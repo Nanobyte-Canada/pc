@@ -14,14 +14,11 @@ const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage').th
 const VerifyEmailPage = lazy(() => import('./pages/auth/VerifyEmailPage').then(m => ({ default: m.VerifyEmailPage })))
 
 // Protected pages (lazy loaded)
-const PortfolioBuilderPage = lazy(() => import('./pages/PortfolioBuilderPage').then(m => ({ default: m.PortfolioBuilderPage })))
-const StockScreenerPage = lazy(() => import('./pages/StockScreenerPage').then(m => ({ default: m.StockScreenerPage })))
-const EtfScreenerPage = lazy(() => import('./pages/EtfScreenerPage').then(m => ({ default: m.EtfScreenerPage })))
+const ScreenerPage = lazy(() => import('./pages/ScreenerPage').then(m => ({ default: m.ScreenerPage })))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const AdminPage = lazy(() => import('./pages/admin/AdminPage').then(m => ({ default: m.AdminPage })))
-const StockDetailPage = lazy(() => import('./pages/StockDetailPage').then(m => ({ default: m.StockDetailPage })))
-const EtfDetailPage = lazy(() => import('./pages/EtfDetailPage').then(m => ({ default: m.EtfDetailPage })))
+const InstrumentDetailPage = lazy(() => import('./pages/InstrumentDetailPage').then(m => ({ default: m.InstrumentDetailPage })))
 const UnauthorizedPage = lazy(() => import('./pages/UnauthorizedPage').then(m => ({ default: m.UnauthorizedPage })))
 
 // Broker pages (lazy loaded)
@@ -30,9 +27,8 @@ const BrokerPositionsPage = lazy(() => import('./pages/BrokerPositionsPage').the
 const PositionDetailsPage = lazy(() => import('./pages/PositionDetailsPage').then(m => ({ default: m.PositionDetailsPage })))
 const ReportingPage = lazy(() => import('./pages/ReportingPage').then(m => ({ default: m.ReportingPage })))
 
-// Portfolio Group pages (lazy loaded)
-const PortfolioGroupsPage = lazy(() => import('./pages/PortfolioGroupsPage').then(m => ({ default: m.PortfolioGroupsPage })))
-const PortfolioGroupDetailPage = lazy(() => import('./pages/PortfolioGroupDetailPage').then(m => ({ default: m.PortfolioGroupDetailPage })))
+// Portfolio pages (lazy loaded)
+const PortfolioPage = lazy(() => import('./pages/PortfolioPage'))
 
 // Dashboard (lazy loaded)
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
@@ -90,13 +86,9 @@ function App() {
           }
         >
           <Route index element={<DashboardPage />} />
-          <Route path="builder" element={<PortfolioBuilderPage />} />
-          <Route path="portfolios" element={<PortfolioGroupsPage />} />
-          <Route path="portfolios/:groupId" element={<PortfolioGroupDetailPage />} />
-          <Route path="screener/stocks" element={<StockScreenerPage />} />
-          <Route path="screener/etfs" element={<EtfScreenerPage />} />
-          <Route path="stocks/:ticker" element={<StockDetailPage />} />
-          <Route path="etfs/:symbol" element={<EtfDetailPage />} />
+          <Route path="portfolios" element={<PortfolioPage />} />
+          <Route path="screener/:type" element={<ScreenerPage />} />
+          <Route path="instruments/:type/:ticker" element={<InstrumentDetailPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="brokers/connections" element={<BrokerConnectionsPage />} />
           <Route path="brokers/positions" element={<BrokerPositionsPage />} />

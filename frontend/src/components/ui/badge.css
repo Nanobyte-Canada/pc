@@ -16,7 +16,7 @@
 
 .badge-default {
   background-color: var(--accent);
-  color: #ffffff;
+  color: var(--nav-text);
 }
 .badge-default:hover {
   opacity: 0.8;
@@ -32,7 +32,7 @@
 
 .badge-destructive {
   background-color: var(--destructive);
-  color: #ffffff;
+  color: var(--nav-text);
 }
 .badge-destructive:hover {
   opacity: 0.8;
@@ -46,10 +46,10 @@
 
 .badge-success {
   background-color: var(--success);
-  color: #ffffff;
+  color: var(--nav-text);
 }
 
 .badge-warning {
   background-color: var(--warning);
-  color: #ffffff;
+  color: var(--nav-text);
 }

@@ -1,0 +1,15 @@
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.log
+test-results/
+*.local
+.env*
+.DS_Store
+Thumbs.db

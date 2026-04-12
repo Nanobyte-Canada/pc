@@ -16,37 +16,37 @@
 
 .snaptrade-badge.online {
   background-color: rgba(5, 150, 105, 0.12);
-  color: #059669;
+  color: var(--success);
 }
 
 .snaptrade-badge.online .snaptrade-badge-dot {
-  background-color: #059669;
+  background-color: var(--success);
 }
 
 .snaptrade-badge.degraded {
   background-color: rgba(217, 119, 6, 0.12);
-  color: #d97706;
+  color: var(--warning);
 }
 
 .snaptrade-badge.degraded .snaptrade-badge-dot {
-  background-color: #d97706;
+  background-color: var(--warning);
 }
 
 .snaptrade-badge.offline {
   background-color: rgba(220, 38, 38, 0.12);
-  color: #dc2626;
+  color: var(--error);
 }
 
 .snaptrade-badge.offline .snaptrade-badge-dot {
-  background-color: #dc2626;
+  background-color: var(--error);
 }
 
 .snaptrade-badge.unknown,
 .snaptrade-badge.loading {
   background-color: rgba(107, 114, 128, 0.12);
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .snaptrade-badge.unknown .snaptrade-badge-dot {
-  background-color: #6b7280;
+  background-color: var(--text-muted);
 }

@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { AppSidebar } from './AppSidebar'
 import { MobileHeader } from './MobileHeader'
+import { ToastContainer } from '@/components/ui/toast'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import './AppLayout.css'
 
@@ -22,6 +23,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <ToastContainer />
     </div>
   )
 }

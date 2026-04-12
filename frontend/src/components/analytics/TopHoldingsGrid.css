@@ -1,9 +1,9 @@
 .top-holdings-grid {
   width: 100%;
   --ag-background-color: transparent;
-  --ag-header-background-color: #f1f5f9;
-  --ag-odd-row-background-color: #f8fafc;
-  --ag-row-hover-color: rgba(42, 138, 129, 0.08);
+  --ag-header-background-color: #ededf1;
+  --ag-odd-row-background-color: #f8f8fa;
+  --ag-row-hover-color: rgba(132, 107, 84, 0.06);
   --ag-border-color: var(--border);
   --ag-header-foreground-color: var(--text-secondary);
   --ag-foreground-color: var(--text-primary);

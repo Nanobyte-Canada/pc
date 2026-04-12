@@ -125,7 +125,7 @@
 
 .action-button.primary {
   background-color: var(--accent);
-  color: #fff;
+  color: var(--nav-text);
 }
 
 .action-button.primary:hover {
@@ -139,7 +139,7 @@
 }
 
 .action-button.secondary:hover {
-  background-color: rgba(42, 138, 129, 0.08);
+  background-color: rgba(132, 107, 84, 0.08);
 }
 
 @media (max-width: 768px) {

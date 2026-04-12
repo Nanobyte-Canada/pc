@@ -28,7 +28,7 @@
 /* Variants */
 .btn-default {
   background-color: var(--accent);
-  color: #ffffff;
+  color: var(--nav-text);
 }
 .btn-default:hover {
   background-color: var(--accent-hover);
@@ -36,7 +36,7 @@
 
 .btn-destructive {
   background-color: var(--destructive);
-  color: #ffffff;
+  color: var(--nav-text);
 }
 .btn-destructive:hover {
   opacity: 0.9;

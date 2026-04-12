@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Construction App - Business Context & Architecture</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-card: #1c2128;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --border: #30363d;
+  --accent: #58a6ff;
+  --accent-hover: #79c0ff;
+  --accent-bg: rgba(56,139,253,0.1);
+  --success: #3fb950;
+  --warning: #d29922;
+  --danger: #f85149;
+  --info: #58a6ff;
+  --tag-bg: rgba(56,139,253,0.15);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --radius: 8px;
+  --sidebar-width: 280px;
+  --header-height: 60px;
+}
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-tertiary: #eaeef2;
+  --bg-card: #ffffff;
+  --text-primary: #1f2328;
+  --text-secondary: #656d76;
+  --text-muted: #8b949e;
+  --border: #d0d7de;
+  --accent: #0969da;
+  --accent-hover: #0550ae;
+  --accent-bg: rgba(9,105,218,0.08);
+  --tag-bg: rgba(9,105,218,0.1);
+  --shadow: 0 1px 3px rgba(31,35,40,0.12);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+/* Header */
+.header {
+  position: fixed; top:0; left:0; right:0; z-index:100;
+  height: var(--header-height);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+}
+.header h1 { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+.header h1 span { color: var(--accent); }
+.header-actions { display: flex; gap: 12px; align-items: center; }
+.theme-toggle {
+  background: var(--bg-tertiary); border: 1px solid var(--border);
+  color: var(--text-primary); cursor: pointer; padding: 6px 12px;
+  border-radius: 6px; font-size: 13px;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+.search-box {
+  background: var(--bg-tertiary); border: 1px solid var(--border);
+  color: var(--text-primary); padding: 6px 12px; border-radius: 6px;
+  font-size: 13px; width: 220px; outline: none;
+}
+.search-box:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+/* Sidebar */
+.sidebar {
+  position: fixed; top: var(--header-height); left: 0; bottom: 0;
+  width: var(--sidebar-width); background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 16px 0; z-index: 50;
+}
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.nav-section { padding: 8px 16px; }
+.nav-section-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px;
+}
+.nav-link {
+  display: block; padding: 6px 16px; font-size: 13px;
+  color: var(--text-secondary); text-decoration: none;
+  border-radius: 6px; margin: 1px 8px; transition: all 0.15s;
+}
+.nav-link:hover { background: var(--accent-bg); color: var(--text-primary); }
+.nav-link.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+/* Main content */
+.main {
+  margin-left: var(--sidebar-width);
+  margin-top: var(--header-height);
+  padding: 32px 48px 80px;
+  max-width: 960px;
+}
+/* Sections */
+.section { margin-bottom: 48px; scroll-margin-top: 80px; }
+.section-title {
+  font-size: 28px; font-weight: 700; margin-bottom: 8px;
+  padding-bottom: 12px; border-bottom: 2px solid var(--border);
+}
+.section-subtitle { font-size: 20px; font-weight: 600; margin: 24px 0 12px; }
+.section-desc { color: var(--text-secondary); margin-bottom: 20px; font-size: 15px; }
+/* Cards */
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.card-desc { color: var(--text-secondary); font-size: 14px; }
+/* Collapsible */
+.collapsible { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
+.collapsible-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; cursor: pointer; background: var(--bg-secondary);
+  font-weight: 500; font-size: 15px; user-select: none; transition: background 0.15s;
+}
+.collapsible-header:hover { background: var(--bg-tertiary); }
+.collapsible-header .arrow { transition: transform 0.2s; font-size: 12px; color: var(--text-muted); }
+.collapsible.open .collapsible-header .arrow { transform: rotate(90deg); }
+.collapsible-body {
+  max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+  background: var(--bg-primary);
+}
+.collapsible.open .collapsible-body { max-height: 5000px; }
+.collapsible-content { padding: 16px 20px; }
+/* Tags */
+.tag {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 500; margin-right: 6px;
+}
+.tag-blue { background: var(--tag-bg); color: var(--accent); }
+.tag-green { background: rgba(63,185,80,0.15); color: var(--success); }
+.tag-orange { background: rgba(210,153,34,0.15); color: var(--warning); }
+.tag-red { background: rgba(248,81,73,0.15); color: var(--danger); }
+/* Tables */
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0; }
+th { text-align: left; padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); font-weight: 600; font-size: 13px; }
+td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; }
+tr:hover td { background: var(--accent-bg); }
+/* Grid */
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+/* KPI */
+.kpi { text-align: center; padding: 24px; }
+.kpi-value { font-size: 36px; font-weight: 700; color: var(--accent); }
+.kpi-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+/* Stat bar */
+.stat-bar { display: flex; gap: 24px; margin: 16px 0; flex-wrap: wrap; }
+.stat-item { }
+.stat-value { font-size: 24px; font-weight: 700; }
+.stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+/* Diagram container */
+.diagram-container {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin: 16px 0;
+  overflow-x: auto;
+}
+.diagram-container .mermaid { display: flex; justify-content: center; }
+/* Legacy warning */
+.legacy-item {
+  border-left: 3px solid var(--warning); padding: 12px 16px;
+  background: rgba(210,153,34,0.05); border-radius: 0 var(--radius) var(--radius) 0;
+  margin-bottom: 12px;
+}
+.legacy-item-title { font-weight: 600; font-size: 14px; }
+.legacy-item-desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+/* Code block */
+code { background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'SF Mono', Monaco, Consolas, monospace; }
+pre { background: var(--bg-tertiary); padding: 16px; border-radius: var(--radius); overflow-x: auto; font-size: 13px; line-height: 1.5; border: 1px solid var(--border); }
+pre code { background: none; padding: 0; }
+/* List */
+ul, ol { padding-left: 24px; margin: 8px 0; }
+li { margin: 4px 0; font-size: 14px; }
+/* Responsive */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding: 24px 16px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+/* Highlight for search */
+.highlight { background: rgba(210,153,34,0.3); border-radius: 2px; }
+/* Flow list */
+.flow-list { list-style: none; padding: 0; counter-reset: flow; }
+.flow-list li { position: relative; padding: 12px 0 12px 48px; border-left: 2px solid var(--border); margin-left: 16px; }
+.flow-list li:last-child { border-left-color: transparent; }
+.flow-list li::before {
+  counter-increment: flow; content: counter(flow);
+  position: absolute; left: -13px; top: 12px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); color: #fff; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <h1><span>Portfolio</span> Construction App</h1>
+  <div class="header-actions">
+    <input type="text" class="search-box" placeholder="Search sections..." id="search" oninput="filterSections(this.value)">
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="nav-section">
+    <div class="nav-section-title">Overview</div>
+    <a class="nav-link" href="#executive-summary">Executive Summary</a>
+    <a class="nav-link" href="#tech-stack">Tech Stack</a>
+    <a class="nav-link" href="#system-architecture">System Architecture</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Core Modules</div>
+    <a class="nav-link" href="#authentication">Authentication & Security</a>
+    <a class="nav-link" href="#brokerage">Brokerage Integration</a>
+    <a class="nav-link" href="#portfolio">Portfolio Management</a>
+    <a class="nav-link" href="#dashboard">Dashboard System</a>
+    <a class="nav-link" href="#trading">Trading Engine</a>
+    <a class="nav-link" href="#performance">Performance & Analytics</a>
+    <a class="nav-link" href="#ingestion">Data Ingestion Pipeline</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Technical</div>
+    <a class="nav-link" href="#data-model">Data Model</a>
+    <a class="nav-link" href="#api-surface">API Surface</a>
+    <a class="nav-link" href="#infrastructure">Infrastructure & Deployment</a>
+    <a class="nav-link" href="#frontend-arch">Frontend Architecture</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Audit</div>
+    <a class="nav-link" href="#unused-legacy">Unused & Legacy Items</a>
+    <a class="nav-link" href="#module-deps">Module Dependencies</a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main" id="main-content">
+
+<!-- ═══════════════ EXECUTIVE SUMMARY ═══════════════ -->
+<section class="section" id="executive-summary">
+  <h2 class="section-title">Executive Summary</h2>
+  <p class="section-desc">
+    The Portfolio Construction App is a full-stack platform for managing investment portfolios using public ETFs and stocks.
+    It connects to real brokerage accounts via SnapTrade, syncs positions and activities, enables portfolio grouping
+    with target allocations, calculates drift, automates rebalancing, and provides rich analytics through a customizable dashboard.
+  </p>
+
+  <div class="grid grid-3">
+    <div class="card kpi">
+      <div class="kpi-value">49</div>
+      <div class="kpi-label">Database Tables</div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-value">70+</div>
+      <div class="kpi-label">API Endpoints</div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-value">160+</div>
+      <div class="kpi-label">Backend Kotlin Files</div>
+    </div>
+  </div>
+  <div class="grid grid-3">
+    <div class="card kpi">
+      <div class="kpi-value">100+</div>
+      <div class="kpi-label">Frontend Components</div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-value">14</div>
+      <div class="kpi-label">Custom React Hooks</div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-value">3</div>
+      <div class="kpi-label">Deployment Targets</div>
+    </div>
+  </div>
+
+  <h3 class="section-subtitle">Who Is This For?</h3>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">Individual Investors</div>
+      <div class="card-desc">Connect brokerage accounts, view consolidated positions, track performance across accounts, and manage portfolio allocations with automated rebalancing.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Portfolio Managers</div>
+      <div class="card-desc">Build model portfolios, apply them to client accounts, monitor drift from targets, execute batch trades, and generate performance reports.</div>
+    </div>
+  </div>
+
+  <h3 class="section-subtitle">Core Value Proposition</h3>
+  <ul>
+    <li><strong>Multi-Account Consolidation</strong> &mdash; Connect multiple brokerage accounts, see aggregated positions and true exposure</li>
+    <li><strong>ETF Look-Through</strong> &mdash; Decompose ETFs into underlying stock holdings for real sector and geographic exposure analysis</li>
+    <li><strong>Automated Rebalancing</strong> &mdash; Set target allocations, detect drift, generate and execute trade orders to maintain targets</li>
+    <li><strong>Rich Analytics</strong> &mdash; Customizable dashboard with 23 widgets, performance tracking (TWR), risk metrics, benchmark comparison</li>
+    <li><strong>Data Enrichment</strong> &mdash; Automated ingestion from EODHD, Alpha Vantage, and ETF.com for comprehensive instrument data</li>
+  </ul>
+</section>
+
+<!-- ═══════════════ TECH STACK ═══════════════ -->
+<section class="section" id="tech-stack">
+  <h2 class="section-title">Technology Stack</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">Backend</div>
+      <table>
+        <tr><td><strong>Language</strong></td><td>Kotlin 2.0.21</td></tr>
+        <tr><td><strong>JDK</strong></td><td>Eclipse Temurin 21</td></tr>
+        <tr><td><strong>Framework</strong></td><td>Spring Boot 3.3.5</td></tr>
+        <tr><td><strong>ORM</strong></td><td>Spring Data JPA / Hibernate</td></tr>
+        <tr><td><strong>Migrations</strong></td><td>Flyway (55 migration files)</td></tr>
+        <tr><td><strong>Auth</strong></td><td>Spring Security + JWT (HS512)</td></tr>
+        <tr><td><strong>Broker SDK</strong></td><td>SnapTrade Java SDK 5.0.168</td></tr>
+        <tr><td><strong>Resilience</strong></td><td>Resilience4j 2.2.0</td></tr>
+        <tr><td><strong>Async</strong></td><td>kotlinx-coroutines 1.8.1</td></tr>
+        <tr><td><strong>Monitoring</strong></td><td>Micrometer + Prometheus</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Frontend</div>
+      <table>
+        <tr><td><strong>Library</strong></td><td>React 18.3.1</td></tr>
+        <tr><td><strong>Language</strong></td><td>TypeScript 5.6.3</td></tr>
+        <tr><td><strong>Bundler</strong></td><td>Vite 5.4.9</td></tr>
+        <tr><td><strong>Data Fetching</strong></td><td>TanStack React Query 5.60</td></tr>
+        <tr><td><strong>State</strong></td><td>Zustand 5.0.1 (5 stores)</td></tr>
+        <tr><td><strong>Tables</strong></td><td>AG Grid 32.3.3</td></tr>
+        <tr><td><strong>Charts</strong></td><td>AG Charts 10.3.3</td></tr>
+        <tr><td><strong>Router</strong></td><td>React Router 6.28</td></tr>
+        <tr><td><strong>Icons</strong></td><td>Lucide React 0.577</td></tr>
+        <tr><td><strong>Styling</strong></td><td>Custom CSS + CSS Variables</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">Data & Cache</div>
+      <table>
+        <tr><td><strong>Database</strong></td><td>PostgreSQL 16 (Alpine)</td></tr>
+        <tr><td><strong>Cache</strong></td><td>Redis 7 (Alpine)</td></tr>
+        <tr><td><strong>Schema</strong></td><td>53 tables, 1 view</td></tr>
+        <tr><td><strong>DDL Mode</strong></td><td>Validate (Flyway-managed)</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Infrastructure</div>
+      <table>
+        <tr><td><strong>Containers</strong></td><td>Docker + Docker Compose</td></tr>
+        <tr><td><strong>CI/CD</strong></td><td>GitHub Actions (3 workflows)</td></tr>
+        <tr><td><strong>IaC</strong></td><td>Terraform (5 modules)</td></tr>
+        <tr><td><strong>Cloud</strong></td><td>GCP (Cloud Run, SQL, Storage)</td></tr>
+        <tr><td><strong>VPS</strong></td><td>Hostinger (devpc.nanobyte.ca)</td></tr>
+        <tr><td><strong>Proxy</strong></td><td>Nginx + Let's Encrypt SSL</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SYSTEM ARCHITECTURE ═══════════════ -->
+<section class="section" id="system-architecture">
+  <h2 class="section-title">System Architecture</h2>
+  <p class="section-desc">High-level view of how components interact.</p>
+
+  <div class="diagram-container">
+    <pre class="mermaid">
+graph TB
+  subgraph Client["Browser (React SPA)"]
+    UI[React Components]
+    RQ[React Query Cache]
+    ZS[Zustand Stores]
+  end
+
+  subgraph Backend["Spring Boot Backend"]
+    SEC[Security Filter Chain]
+    CTRL[REST Controllers]
+    SVC[Service Layer]
+    REPO[JPA Repositories]
+    SCHED[Schedulers]
+    ADAPT[SnapTrade Adapter]
+  end
+
+  subgraph Data["Data Layer"]
+    PG[(PostgreSQL 16)]
+    RD[(Redis 7)]
+  end
+
+  subgraph External["External APIs"]
+    ST[SnapTrade API]
+    EOD[EODHD API]
+    AV[AlphaVantage API]
+    ETFC[ETF.com API]
+  end
+
+  UI --> RQ --> |apiFetch + CSRF| SEC
+  SEC --> |JWT Auth| CTRL
+  CTRL --> SVC
+  SVC --> REPO --> PG
+  SVC --> RD
+  SVC --> ADAPT --> ST
+  SCHED --> SVC
+  SCHED --> ADAPT
+
+  subgraph Ingestion["Ingestion Pipeline"]
+    ING[Ingestion Orchestrator]
+  end
+  ING --> EOD
+  ING --> AV
+  ING --> ETFC
+  ING --> REPO
+
+  style Client fill:#1a365d,stroke:#2b6cb0,color:#fff
+  style Backend fill:#1a4731,stroke:#38a169,color:#fff
+  style Data fill:#553c0e,stroke:#d69e2e,color:#fff
+  style External fill:#4a1d5e,stroke:#9f7aea,color:#fff
+  style Ingestion fill:#4a1d5e,stroke:#9f7aea,color:#fff
+    </pre>
+  </div>
+
+  <h3 class="section-subtitle">Request Flow</h3>
+  <div class="diagram-container">
+    <pre class="mermaid">
+sequenceDiagram
+  participant B as Browser
+  participant N as Nginx/Vite Proxy
+  participant S as Spring Security
+  participant C as Controller
+  participant SV as Service
+  participant R as Repository
+  participant DB as PostgreSQL
+  participant RD as Redis
+
+  B->>N: HTTP Request + JWT Cookie + XSRF Header
+  N->>S: Forward to backend
+  S->>S: Validate JWT, extract user
+  S->>C: Authenticated request
+  C->>SV: Business logic
+  SV->>RD: Check cache
+  alt Cache hit
+    RD-->>SV: Cached data
+  else Cache miss
+    SV->>R: Query
+    R->>DB: SQL
+    DB-->>R: Results
+    R-->>SV: Entities
+    SV->>RD: Store in cache
+  end
+  SV-->>C: DTO response
+  C-->>B: JSON + Set-Cookie
+    </pre>
+  </div>
+</section>
+
+<!-- ═══════════════ AUTHENTICATION ═══════════════ -->
+<section class="section" id="authentication">
+  <h2 class="section-title">Authentication & Security</h2>
+  <p class="section-desc">JWT-based stateless authentication with refresh tokens, OAuth2 (Google), and comprehensive security measures.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>Authentication Flow</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <div class="diagram-container">
+          <pre class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant F as Frontend
+  participant A as AuthController
+  participant AS as AuthService
+  participant DB as Database
+
+  U->>F: Enter email + password
+  F->>A: POST /auth/login
+  A->>AS: login(credentials)
+  AS->>DB: Find user by email
+  AS->>AS: Verify Argon2id hash
+  AS->>AS: Check lockout status
+  AS->>DB: Create refresh token
+  AS->>AS: Generate JWT (HS512, 60min)
+  A-->>F: Set-Cookie: access_token, refresh_token (HttpOnly)
+  F->>F: Store user in Zustand authStore
+  Note over F: Auto-refresh before expiry via useSessionManager
+          </pre>
+        </div>
+        <h4>Key Security Features</h4>
+        <table>
+          <tr><th>Feature</th><th>Implementation</th></tr>
+          <tr><td>JWT Algorithm</td><td>HS512 with 64+ character signing key</td></tr>
+          <tr><td>Access Token TTL</td><td>60 minutes (HttpOnly cookie)</td></tr>
+          <tr><td>Refresh Token TTL</td><td>6 hours (HttpOnly cookie)</td></tr>
+          <tr><td>Password Hashing</td><td>Argon2id via BouncyCastle</td></tr>
+          <tr><td>Password Policy</td><td>12 char minimum</td></tr>
+          <tr><td>Account Lockout</td><td>5 failed attempts, 30-minute lockout</td></tr>
+          <tr><td>CSRF Protection</td><td>CookieCsrfTokenRepository + X-XSRF-TOKEN header</td></tr>
+          <tr><td>CORS</td><td>Configurable allowed origins with credentials</td></tr>
+          <tr><td>OAuth2</td><td>Google Sign-In integration</td></tr>
+          <tr><td>Broker Token Encryption</td><td>AES-256 with env-configured key</td></tr>
+          <tr><td>Session Type</td><td>Stateless (no server sessions)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>User Roles & Authorization</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <table>
+          <tr><th>Role</th><th>Access</th></tr>
+          <tr><td><span class="tag tag-green">USER</span></td><td>All <code>/api/v1/**</code> endpoints (portfolios, dashboard, trading, etc.)</td></tr>
+          <tr><td><span class="tag tag-red">ADMIN</span></td><td>All USER access + <code>/admin/**</code> (ingestion triggers, enrichment, data management)</td></tr>
+          <tr><td><span class="tag tag-blue">PUBLIC</span></td><td><code>/health</code>, <code>/api/v1/version</code>, <code>/auth/**</code> (login, signup, password reset)</td></tr>
+        </table>
+        <p style="margin-top:12px; font-size:14px; color:var(--text-secondary)">
+          Roles are stored in a <code>roles</code> table with a <code>user_roles</code> join table.
+          The JWT contains the user ID; roles are resolved per-request from the database.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ BROKERAGE ═══════════════ -->
+<section class="section" id="brokerage">
+  <h2 class="section-title">Brokerage Integration</h2>
+  <p class="section-desc">Real brokerage account connectivity via SnapTrade SDK for position tracking, activity sync, and order execution.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>Connection Flow</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <div class="diagram-container">
+          <pre class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant F as Frontend
+  participant B as BrokerController
+  participant SS as SnapTradeService
+  participant ST as SnapTrade API
+  participant DB as Database
+
+  U->>F: Click "Connect Broker"
+  F->>B: POST /api/v1/brokers/connect
+  B->>SS: getConnectionPortalUrl()
+  SS->>ST: OAuth redirect URL
+  ST-->>SS: Portal URL
+  SS-->>B: Redirect URL
+  B-->>F: URL in response
+  F->>U: Redirect to broker OAuth
+  U->>ST: Authorize at broker
+  ST->>F: Callback to /brokers/connections
+  F->>B: POST /api/v1/brokers/connections/sync
+  B->>SS: listAccounts() + listConnections()
+  SS->>ST: Fetch accounts
+  ST-->>SS: Account data
+  SS-->>B: BrokerConnection entities
+  B->>DB: Save connections
+  B-->>F: Connection list
+          </pre>
+        </div>
+
+        <h4>Data Sync Cycle</h4>
+        <ol class="flow-list">
+          <li><strong>Connection established</strong> &mdash; SnapTrade OAuth flow creates broker authorization</li>
+          <li><strong>Position fetch</strong> &mdash; Manual trigger or nightly scheduler fetches current positions via <code>PositionFetchService</code></li>
+          <li><strong>Activity ingestion</strong> &mdash; <code>ActivityIngestionService</code> pulls trades, dividends, fees since last sync</li>
+          <li><strong>Balance snapshot</strong> &mdash; Daily balance snapshot stored in <code>broker_balance_snapshots</code></li>
+          <li><strong>Drift check</strong> &mdash; If portfolio group has targets, <code>DriftCalculationService</code> calculates accuracy</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>SnapTrade Adapter Layer</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <p style="font-size:14px; margin-bottom:12px;">The <code>SnapTradeAdapter</code> interface abstracts the SnapTrade Java SDK, providing a clean boundary between the application and the external API. The <code>SnapTradeAdapterImpl</code> maps SDK types to internal DTOs.</p>
+        <table>
+          <tr><th>Capability</th><th>Adapter Methods</th></tr>
+          <tr><td>User Registration</td><td><code>registerUser()</code></td></tr>
+          <tr><td>Authentication</td><td><code>getLoginRedirectUrl()</code></td></tr>
+          <tr><td>Account Discovery</td><td><code>listAccounts()</code>, <code>listConnections()</code></td></tr>
+          <tr><td>Positions</td><td><code>getPositions()</code>, <code>getOptionPositions()</code>, <code>getBalances()</code></td></tr>
+          <tr><td>Activities</td><td><code>getActivities()</code></td></tr>
+          <tr><td>Trading</td><td><code>placeOrder()</code>, <code>cancelOrder()</code>, <code>listAccountOrders()</code></td></tr>
+          <tr><td>Brokerages</td><td><code>listBrokerages()</code>, <code>listBrokerageAuthorizationTypes()</code></td></tr>
+          <tr><td>Health</td><td><code>checkApiStatus()</code></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ PORTFOLIO MANAGEMENT ═══════════════ -->
+<section class="section" id="portfolio">
+  <h2 class="section-title">Portfolio Management</h2>
+  <p class="section-desc">Portfolio groups with target allocations, drift detection, and automated rebalancing.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>Portfolio Group Lifecycle</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+  A[Create Group] --> B[Link Accounts]
+  B --> C[Set Target Allocations]
+  C --> D[Calculate Drift]
+  D --> E{Drift > Threshold?}
+  E -->|Yes| F[Generate Trade Orders]
+  E -->|No| G[Monitor]
+  F --> H[Execute Trades]
+  H --> I[Record Rebalance Event]
+  I --> D
+  G --> D
+
+  style A fill:#1a365d,stroke:#2b6cb0,color:#fff
+  style F fill:#553c0e,stroke:#d69e2e,color:#fff
+  style H fill:#4a1d2c,stroke:#f85149,color:#fff
+          </pre>
+        </div>
+
+        <h4>Key Concepts</h4>
+        <table>
+          <tr><th>Concept</th><th>Description</th></tr>
+          <tr><td><strong>Portfolio Group</strong></td><td>A named collection of linked brokerage accounts treated as a single portfolio</td></tr>
+          <tr><td><strong>Target Allocation</strong></td><td>Desired percentage for each symbol (e.g., VTI: 40%, VXUS: 30%, BND: 30%)</td></tr>
+          <tr><td><strong>Model Portfolio</strong></td><td>Reusable template of allocations (system-defined or user-created) that can be applied to groups</td></tr>
+          <tr><td><strong>Accuracy</strong></td><td>Percentage match between actual holdings and target allocations (100% = perfect match)</td></tr>
+          <tr><td><strong>Drift</strong></td><td>Deviation from targets. Triggers rebalancing when accuracy drops below threshold</td></tr>
+          <tr><td><strong>Rebalance Event</strong></td><td>Record of a rebalancing action (trigger type, accuracy before/after, status)</td></tr>
+          <tr><td><strong>Excluded Assets</strong></td><td>Symbols to ignore in drift calculations (e.g., cash-like positions)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>Model Portfolios</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <p style="font-size:14px;">Model portfolios are reusable allocation templates with risk levels (LOW, MODERATE, HIGH, EXTRA_HIGH). They can be:</p>
+        <ul>
+          <li><strong>System models</strong> &mdash; Pre-defined by the platform (e.g., "Conservative Growth", "Aggressive Tech")</li>
+          <li><strong>User models</strong> &mdash; Custom models created by individual users</li>
+          <li><strong>Applied to accounts</strong> &mdash; A model can be linked to broker connections, which then tracks drift against the model's allocations</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<section class="section" id="dashboard">
+  <h2 class="section-title">Dashboard System</h2>
+  <p class="section-desc">Customizable widget-based dashboard with per-user preferences, supporting both global and account-specific views.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>Widget Architecture</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+  DP[DashboardPage] --> DG[DashboardGrid]
+  DG --> WR[WidgetRegistry]
+  WR --> WW[WidgetWrapper]
+  WW --> W1[AccountSummaryWidget]
+  WW --> W2[PortfolioValueWidget]
+  WW --> W3[SectorExposureWidget]
+  WW --> W4[PositionsTableWidget]
+  WW --> W5[...]
+
+  DP --> AT[AccountTabs]
+  AT --> |Filter by account| DG
+
+  DP --> EM[DashboardEditMode]
+  EM --> |Toggle visibility/order| PS[PreferencesService]
+  PS --> |Save| API[PUT /api/v1/dashboard/preferences]
+
+  style DP fill:#1a365d,stroke:#2b6cb0,color:#fff
+  style WR fill:#1a4731,stroke:#38a169,color:#fff
+          </pre>
+        </div>
+
+        <h4>Widget Categories (23 widget files)</h4>
+        <table>
+          <tr><th>Category</th><th>Widgets</th></tr>
+          <tr><td><strong>Portfolio Overview</strong></td><td>PortfolioSummaryWidget, PortfolioValueWidget, AccountSummaryWidget</td></tr>
+          <tr><td><strong>Positions & Holdings</strong></td><td>PositionsTableWidget, PositionsSummaryWidget, HoldingsTableWidget, HoldingsCountWidget</td></tr>
+          <tr><td><strong>Cash & Buying Power</strong></td><td>AvailableCashWidget, BuyingPowerWidget</td></tr>
+          <tr><td><strong>Exposure Analysis</strong></td><td>SectorExposureWidget, GeographyExposureWidget, RiskProfileWidget</td></tr>
+          <tr><td><strong>Trading & Orders</strong></td><td>OpenOrdersWidget, OrdersWidget, PendingOrdersWidget</td></tr>
+          <tr><td><strong>Rebalancing</strong></td><td>RebalancingProgressWidget</td></tr>
+          <tr><td><strong>Fees & Income</strong></td><td>FeesAndDividendsWidget, FeesCommissionWidget, DividendCalendarWidget</td></tr>
+          <tr><td><strong>Accounts</strong></td><td>ConnectedAccountsWidget, RefreshButtonWidget</td></tr>
+        </table>
+
+        <h4>Preference System</h4>
+        <p style="font-size:14px;">Each user can customize which widgets are visible, their order, and column span. Preferences are scoped by context:</p>
+        <ul>
+          <li><code>DASHBOARD</code> context &mdash; Global dashboard view</li>
+          <li><code>CONNECTION</code> context &mdash; Per-account detail view</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ TRADING ═══════════════ -->
+<section class="section" id="trading">
+  <h2 class="section-title">Trading Engine</h2>
+  <p class="section-desc">Order execution system supporting market and limit orders, batch processing, and integration with SnapTrade for broker order placement.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>Order Lifecycle</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <div class="diagram-container">
+          <pre class="mermaid">
+stateDiagram-v2
+  [*] --> PENDING: Order created
+  PENDING --> SUBMITTED: Sent to broker
+  SUBMITTED --> FILLED: Broker confirms fill
+  SUBMITTED --> PARTIALLY_FILLED: Partial execution
+  PARTIALLY_FILLED --> FILLED: Remaining filled
+  SUBMITTED --> CANCELLED: User cancels
+  SUBMITTED --> FAILED: Broker rejects
+  PENDING --> FAILED: Validation error
+  FILLED --> [*]
+  CANCELLED --> [*]
+  FAILED --> [*]
+          </pre>
+        </div>
+
+        <h4>Trade Execution Flow</h4>
+        <ol class="flow-list">
+          <li><strong>Rebalance calculation</strong> &mdash; <code>RebalanceService</code> compares current positions to targets, generates trade recommendations</li>
+          <li><strong>Order creation</strong> &mdash; <code>OrderExecutionService</code> creates <code>TradeOrder</code> records with batch UUID</li>
+          <li><strong>Broker submission</strong> &mdash; Orders sent to SnapTrade via <code>placeOrder()</code> adapter method</li>
+          <li><strong>Status tracking</strong> &mdash; Frontend polls <code>GET /api/v1/trading/groups/{id}/orders</code> every 10-15 seconds</li>
+          <li><strong>Completion</strong> &mdash; Filled orders update position data on next sync</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ PERFORMANCE ═══════════════ -->
+<section class="section" id="performance">
+  <h2 class="section-title">Performance & Analytics</h2>
+  <p class="section-desc">Time-weighted return (TWR) calculation, benchmark comparison, and portfolio analysis.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>Performance Calculation</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <table>
+          <tr><th>Feature</th><th>Description</th></tr>
+          <tr><td><strong>TWR Calculation</strong></td><td>Time-weighted return using daily portfolio snapshots and cash flows, eliminating the impact of deposits/withdrawals</td></tr>
+          <tr><td><strong>Period Selection</strong></td><td>1M, 3M, 6M, YTD, 1Y, ALL time periods</td></tr>
+          <tr><td><strong>Benchmark Comparison</strong></td><td>Compare portfolio returns against model portfolio benchmarks</td></tr>
+          <tr><td><strong>Chart Data</strong></td><td>Daily return series for cumulative return charts</td></tr>
+          <tr><td><strong>Risk Metrics</strong></td><td>HHI (concentration), sector/geographic diversification, volatility indicators</td></tr>
+          <tr><td><strong>Portfolio Snapshots</strong></td><td>Daily snapshots of total value, cash, and account value per portfolio group</td></tr>
+        </table>
+
+        <h4>Analytics Pipeline</h4>
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+  A[Positions] --> B[LookThrough Service]
+  B --> C[Underlying Holdings]
+  C --> D[Sector Exposure]
+  C --> E[Geography Exposure]
+  C --> F[Risk Metrics]
+  A --> G[Performance Service]
+  G --> H[TWR Calculation]
+  H --> I[Benchmark Comparison]
+
+  style B fill:#553c0e,stroke:#d69e2e,color:#fff
+          </pre>
+        </div>
+        <p style="font-size:14px;"><strong>LookThrough</strong> is a key differentiator: it decomposes ETF holdings into their underlying stocks, giving users true exposure analysis rather than just seeing "VTI: 40%" in their portfolio.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ INGESTION ═══════════════ -->
+<section class="section" id="ingestion">
+  <h2 class="section-title">Data Ingestion Pipeline</h2>
+  <p class="section-desc">Multi-source data ingestion for stock universe, ETF holdings, and instrument enrichment. Runs nightly with retry logic and rate limiting.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>Pipeline Architecture</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+  SCHED[NightlyIngestionScheduler<br/>Cron: 10 PM daily] --> ORCH[IngestionOrchestrator]
+
+  ORCH --> S1[Step 1: EODHD Universe Refresh]
+  S1 --> |Stocks & ETFs<br/>Rate: 5 req/s| EODHD[EODHD API]
+
+  ORCH --> S2[Step 2: Alpha Vantage Enrichment]
+  S2 --> |Stock fundamentals<br/>Rate: 75 req/min| AV[AlphaVantage API]
+
+  ORCH --> S3[Step 3: ETF.com Enrichment]
+  S3 --> |ETF details<br/>Batch: 20, Delay: 500ms| ETFC[ETF.com API]
+
+  ORCH --> TRACK[IngestionTrackingService]
+  TRACK --> RUN[(ingestion_runs)]
+  TRACK --> STEP[(ingestion_steps)]
+  TRACK --> ERR[(ingestion_errors)]
+
+  style SCHED fill:#4a1d5e,stroke:#9f7aea,color:#fff
+  style ORCH fill:#1a4731,stroke:#38a169,color:#fff
+          </pre>
+        </div>
+
+        <h4>Data Sources</h4>
+        <table>
+          <tr><th>Source</th><th>Data</th><th>Rate Limit</th><th>Schedule</th></tr>
+          <tr><td><strong>EODHD</strong></td><td>Stock/ETF universe, identifiers, exchange data</td><td>5 requests/second</td><td>Nightly (10 PM)</td></tr>
+          <tr><td><strong>Alpha Vantage</strong></td><td>Company overview, GICS classification, fundamentals</td><td>75 requests/minute, exponential backoff retry</td><td>Nightly (stale &gt; 30 days)</td></tr>
+          <tr><td><strong>ETF.com</strong></td><td>ETF details, sector allocations, fund IDs</td><td>Batch 20, 500ms delay, 5s inter-batch</td><td>Nightly (stale &gt; 7 days)</td></tr>
+          <tr><td><strong>SnapTrade</strong></td><td>Brokerage list, account positions, activities</td><td>Per-request</td><td>Nightly sync (10:30 PM) + manual</td></tr>
+        </table>
+
+        <h4>Resilience Features</h4>
+        <ul>
+          <li><strong>Rate limiting</strong> &mdash; Guava rate limiter for EODHD; custom token bucket for Alpha Vantage</li>
+          <li><strong>Retry with backoff</strong> &mdash; Exponential backoff (1s to 300s) with jitter for transient failures</li>
+          <li><strong>Circuit breakers</strong> &mdash; Resilience4j circuit breakers prevent cascade failures</li>
+          <li><strong>Hash-based dedup</strong> &mdash; Redis-cached content hashes skip unchanged records</li>
+          <li><strong>Batch processing</strong> &mdash; Configurable batch sizes with inter-batch delays</li>
+          <li><strong>Error tracking</strong> &mdash; Failed items recorded in <code>ingestion_errors</code> with error type and symbol</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DATA MODEL ═══════════════ -->
+<section class="section" id="data-model">
+  <h2 class="section-title">Data Model</h2>
+  <p class="section-desc">Entity relationships across the 53-table PostgreSQL schema.</p>
+
+  <div class="diagram-container">
+    <pre class="mermaid">
+erDiagram
+  users ||--o{ broker_connections : "has"
+  users ||--o{ portfolio_groups : "owns"
+  users ||--o{ model_portfolios : "creates"
+  users ||--o{ notifications : "receives"
+  users ||--o{ dashboard_preferences : "configures"
+  users ||--o{ audit_log : "generates"
+  users ||--o{ refresh_tokens : "has"
+  users ||--o{ user_roles : "assigned"
+  roles ||--o{ user_roles : "grants"
+
+  broker_connections ||--o{ broker_positions : "holds"
+  broker_connections ||--o{ broker_activities : "records"
+  broker_connections ||--o{ broker_balance_snapshots : "tracks"
+  broker_connections ||--o{ trade_orders : "executes"
+  broker_connections }o--o| brokers : "via"
+  broker_connections }o--o| model_portfolios : "follows"
+
+  portfolio_groups ||--o{ portfolio_targets : "defines"
+  portfolio_groups ||--o{ portfolio_group_accounts : "links"
+  portfolio_groups ||--o{ portfolio_snapshots : "snapshots"
+  portfolio_groups ||--o{ rebalance_events : "triggers"
+  portfolio_groups }o--o| model_portfolios : "based on"
+  portfolio_group_accounts }o--|| broker_connections : "references"
+
+  model_portfolios ||--o{ model_portfolio_allocations : "contains"
+
+  etfs ||--o{ etf_holdings : "contains"
+  etf_holdings }o--o| stocks : "resolves to"
+
+  gics_sectors ||--o{ gics_industry_groups : "contains"
+  gics_industry_groups ||--o{ gics_industries : "contains"
+  gics_industries ||--o{ gics_sub_industries : "contains"
+
+  ingestion_runs ||--o{ ingestion_steps : "has"
+  ingestion_steps ||--o{ ingestion_errors : "logs"
+    </pre>
+  </div>
+
+  <h3 class="section-subtitle">Table Sizes</h3>
+  <table>
+    <tr><th>Table</th><th>Size</th><th>Domain</th></tr>
+    <tr><td><code>etfs</code></td><td>67 MB</td><td>Core Data</td></tr>
+    <tr><td><code>stocks</code></td><td>30 MB</td><td>Core Data</td></tr>
+    <tr><td><code>ingestion_errors</code></td><td>15 MB</td><td>Ingestion</td></tr>
+    <tr><td><code>broker_activities</code></td><td>6.2 MB</td><td>Broker</td></tr>
+    <tr><td><code>refresh_tokens</code></td><td>416 KB</td><td>Auth</td></tr>
+    <tr><td><code>broker_positions</code></td><td>368 KB</td><td>Broker</td></tr>
+    <tr><td><code>etf_holdings</code></td><td>328 KB</td><td>Core Data</td></tr>
+    <tr><td><code>audit_log</code></td><td>280 KB</td><td>Auth</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════ API SURFACE ═══════════════ -->
+<section class="section" id="api-surface">
+  <h2 class="section-title">API Surface</h2>
+  <p class="section-desc">Overview of all API endpoint groups. See <code>docs/reference/api-endpoints.md</code> for the full specification.</p>
+
+  <table>
+    <tr><th>Prefix</th><th>Controller</th><th>Auth</th><th>Purpose</th></tr>
+    <tr><td><code>GET /health</code></td><td>HealthController</td><td><span class="tag tag-blue">Public</span></td><td>Health check</td></tr>
+    <tr><td><code>GET /api/v1/version</code></td><td>VersionController</td><td><span class="tag tag-blue">Public</span></td><td>App version</td></tr>
+    <tr><td><code>/auth/**</code></td><td>AuthController</td><td><span class="tag tag-blue">Public</span></td><td>Login, signup, OAuth, password reset</td></tr>
+    <tr><td><code>/api/v1/brokers/**</code></td><td>BrokerController</td><td><span class="tag tag-green">Auth</span></td><td>Broker connections, positions, activities (18 endpoints)</td></tr>
+    <tr><td><code>/api/v1/dashboard/**</code></td><td>DashboardController</td><td><span class="tag tag-green">Auth</span></td><td>Widget data, preferences (8 endpoints)</td></tr>
+    <tr><td><code>/api/v1/portfolio-groups/**</code></td><td>PortfolioGroupController</td><td><span class="tag tag-green">Auth</span></td><td>Portfolio CRUD, targets, accounts (11 endpoints)</td></tr>
+    <tr><td><code>/api/v1/model-portfolios/**</code></td><td>ModelPortfolioController</td><td><span class="tag tag-green">Auth</span></td><td>Model portfolio CRUD and analysis (7 endpoints)</td></tr>
+    <tr><td><code>/api/v1/trading/**</code></td><td>TradingController</td><td><span class="tag tag-green">Auth</span></td><td>Order execution and management (5 endpoints)</td></tr>
+    <tr><td><code>/api/v1/performance/**</code></td><td>PerformanceController</td><td><span class="tag tag-green">Auth</span></td><td>TWR metrics and charts (3 endpoints)</td></tr>
+    <tr><td><code>/api/v1/notifications/**</code></td><td>NotificationController</td><td><span class="tag tag-green">Auth</span></td><td>Notification management (5+ endpoints)</td></tr>
+    <tr><td><code>/api/v1/stocks/**</code></td><td>StockController</td><td><span class="tag tag-green">Auth</span></td><td>Stock search and details (3 endpoints)</td></tr>
+    <tr><td><code>/api/v1/etfs/**</code></td><td>EtfController</td><td><span class="tag tag-green">Auth</span></td><td>ETF search, details, holdings (5 endpoints)</td></tr>
+    <tr><td><code>/api/v1/instruments/**</code></td><td>InstrumentController</td><td><span class="tag tag-green">Auth</span></td><td>Unified instrument search (1 endpoint)</td></tr>
+    <tr><td><code>/api/v1/reference/**</code></td><td>ReferenceDataController</td><td><span class="tag tag-green">Auth</span></td><td>GICS, countries, exchanges (6 endpoints)</td></tr>
+    <tr><td><code>/api/v1/portfolio/**</code></td><td>PortfolioController</td><td><span class="tag tag-green">Auth</span></td><td>Portfolio analysis tools (3 endpoints)</td></tr>
+    <tr><td><code>/admin/**</code></td><td>Ingestion Controllers</td><td><span class="tag tag-red">Admin</span></td><td>Data ingestion triggers (3 endpoints)</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════ INFRASTRUCTURE ═══════════════ -->
+<section class="section" id="infrastructure">
+  <h2 class="section-title">Infrastructure & Deployment</h2>
+  <p class="section-desc">Multi-environment deployment architecture with local development, VPS staging, and GCP production.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>Deployment Topology</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TB
+  subgraph Local["Local Development"]
+    LC[docker-compose.yml]
+    LC --> LP[(PostgreSQL)]
+    LC --> LR[(Redis)]
+    LC --> LB[Backend :8080]
+    LC --> LF[Frontend :3000]
+  end
+
+  subgraph VPS["VPS Staging (devpc.nanobyte.ca)"]
+    NG[Nginx + SSL]
+    NG --> VB[Backend :8080]
+    NG --> VF[Frontend :3000]
+    VB --> VP[(PostgreSQL)]
+    note1[No Redis on VPS]
+  end
+
+  subgraph GCP["GCP Production"]
+    LB2[Cloud Load Balancer + SSL]
+    LB2 --> CR[Cloud Run Backend]
+    LB2 --> CS[Cloud Storage Frontend + CDN]
+    CR --> SQL[(Cloud SQL PostgreSQL)]
+    CR --> MR[(Memorystore Redis)]
+  end
+
+  GH[GitHub Actions] --> |push main| GCP
+  GH --> |push development| VPS
+
+  style Local fill:#1a365d,stroke:#2b6cb0,color:#fff
+  style VPS fill:#553c0e,stroke:#d69e2e,color:#fff
+  style GCP fill:#1a4731,stroke:#38a169,color:#fff
+          </pre>
+        </div>
+
+        <h4>Environments</h4>
+        <table>
+          <tr><th>Environment</th><th>Trigger</th><th>URL</th><th>Profile</th></tr>
+          <tr><td><strong>Local</strong></td><td>Manual (<code>docker compose up</code>)</td><td>localhost:3000</td><td><code>local</code></td></tr>
+          <tr><td><strong>VPS Dev</strong></td><td>Push to <code>development</code> branch</td><td>devpc.nanobyte.ca</td><td><code>dev</code></td></tr>
+          <tr><td><strong>GCP Prod</strong></td><td>Push to <code>main</code> branch</td><td>TBD (api.portfolio.example.com)</td><td><code>prod</code></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>CI/CD Pipelines</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+  PR[PR / Push] --> CI[CI Workflow]
+  CI --> BT[Backend Tests]
+  CI --> FT[Frontend Tests]
+  BT --> BD[Docker Build Check]
+  FT --> FD[Docker Build Check]
+
+  CI --> |main| DEPLOY_GCP[Deploy GCP]
+  DEPLOY_GCP --> DB_GCP[Push to Artifact Registry]
+  DB_GCP --> CR[Deploy Cloud Run]
+  DB_GCP --> CS[Upload to Cloud Storage]
+
+  CI --> |development| DEPLOY_VPS[Deploy VPS]
+  DEPLOY_VPS --> TAR[Create Tarball]
+  TAR --> SCP[SCP to VPS]
+  SCP --> SSH[SSH docker compose up]
+  SSH --> HC[Health Check Loop]
+
+  style CI fill:#1a4731,stroke:#38a169,color:#fff
+  style DEPLOY_GCP fill:#1a365d,stroke:#2b6cb0,color:#fff
+  style DEPLOY_VPS fill:#553c0e,stroke:#d69e2e,color:#fff
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FRONTEND ARCHITECTURE ═══════════════ -->
+<section class="section" id="frontend-arch">
+  <h2 class="section-title">Frontend Architecture</h2>
+  <p class="section-desc">React SPA with React Query for server state, Zustand for client state, and a component-per-feature organization.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span>Data Flow</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="collapsible-body">
+      <div class="collapsible-content">
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+  P[Page Component] --> H[Custom Hook<br/>useXxx]
+  H --> RQ[React Query<br/>useQuery / useMutation]
+  RQ --> S[Service Function<br/>services/xxxService.ts]
+  S --> AF[apiFetch<br/>services/api.ts]
+  AF --> |CSRF + JWT Cookie| BE[Backend API]
+
+  P --> ZS[Zustand Store]
+  ZS --> |Auth state| AUTH[authStore]
+  ZS --> |Theme| THEME[themeStore]
+  ZS --> |Sidebar| SIDE[sidebarStore]
+  ZS --> |Portfolio builder| PORT[portfolioStore]
+  ZS --> |Analysis results| ANAL[analysisStore]
+
+  style RQ fill:#1a365d,stroke:#2b6cb0,color:#fff
+  style ZS fill:#553c0e,stroke:#d69e2e,color:#fff
+          </pre>
+        </div>
+
+        <h4>Routing Structure</h4>
+        <table>
+          <tr><th>Route</th><th>Page</th><th>Description</th></tr>
+          <tr><td><code>/</code></td><td>DashboardPage</td><td>Main dashboard with widgets</td></tr>
+          <tr><td><code>/portfolios</code></td><td>PortfolioPage</td><td>Model portfolios and portfolio builder</td></tr>
+          <tr><td><code>/screener/stocks</code></td><td>StockScreenerPage</td><td>Stock screener with AG Grid</td></tr>
+          <tr><td><code>/screener/etfs</code></td><td>EtfScreenerPage</td><td>ETF screener with AG Grid</td></tr>
+          <tr><td><code>/stocks/:ticker</code></td><td>StockDetailPage</td><td>Individual stock details</td></tr>
+          <tr><td><code>/etfs/:symbol</code></td><td>EtfDetailPage</td><td>ETF details + holdings</td></tr>
+          <tr><td><code>/analytics</code></td><td>AnalyticsPage</td><td>Portfolio analysis visualizations</td></tr>
+          <tr><td><code>/brokers/connections</code></td><td>BrokerConnectionsPage</td><td>Connected broker management</td></tr>
+          <tr><td><code>/brokers/positions</code></td><td>BrokerPositionsPage</td><td>Aggregated positions view</td></tr>
+          <tr><td><code>/brokers/reporting</code></td><td>ReportingPage</td><td>Fees, dividends, activity reports</td></tr>
+          <tr><td><code>/profile</code></td><td>ProfilePage</td><td>User profile settings</td></tr>
+          <tr><td><code>/admin</code></td><td>AdminPage</td><td>Admin console (ADMIN role only)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ UNUSED & LEGACY ═══════════════ -->
+<section class="section" id="unused-legacy">
+  <h2 class="section-title">Unused & Legacy Items</h2>
+  <p class="section-desc">Items identified during the audit that appear unused, redundant, or legacy. See <code>docs/reference/unused-legacy.md</code> for full details with code evidence.</p>
+
+  <h3 class="section-subtitle">Cleanup Completed (V66 Migration)</h3>
+  <p style="font-size:14px; color:var(--success); margin-bottom:16px;">The following items were identified during the initial audit and have been removed:</p>
+  <table>
+    <tr><th>Item</th><th>Type</th><th>Resolution</th></tr>
+    <tr><td><code>external_connections</code> + <code>external_connection_tokens</code></td><td>Orphan tables</td><td>Dropped via V66 migration</td></tr>
+    <tr><td><code>app_metadata</code></td><td>Orphan table</td><td>Dropped via V66 migration</td></tr>
+    <tr><td><code>fund_sector_allocations</code> + entity + repository</td><td>Dead code</td><td>Table dropped, Kotlin files deleted</td></tr>
+    <tr><td><code>DashboardService</code> + <code>GET /api/v1/dashboard</code></td><td>Legacy service/endpoint</td><td>Service, test, endpoint, DTOs removed</td></tr>
+    <tr><td><code>dashboardService.ts</code> + <code>useDashboard.ts</code></td><td>Dead frontend code</td><td>Files deleted, types removed</td></tr>
+    <tr><td>4 orphan dashboard components</td><td>Dead frontend code</td><td>PortfolioGroupsList, AlertsList, RecentOrdersList, DashboardKpiCards deleted</td></tr>
+    <tr><td>3 unregistered widget components + CSS</td><td>Dead frontend code</td><td>RefreshButton, HoldingsCount, PositionsSummary widgets deleted</td></tr>
+  </table>
+
+  <h3 class="section-subtitle">Remaining: Empty Tables (Functional, Kept Intentionally)</h3>
+  <table>
+    <tr><th>Table</th><th>Entity Exists</th><th>Service Uses</th><th>Rows</th><th>Notes</th></tr>
+    <tr><td><code>benchmark_returns</code></td><td>Yes</td><td>BenchmarkService</td><td>0</td><td>Wired into PerformanceCalculationService, awaiting data</td></tr>
+    <tr><td><code>snaptrade_status_checks</code></td><td>Yes</td><td>SnapTradeStatusService</td><td>0</td><td>Feature-flagged off; full code path functional</td></tr>
+    <tr><td><code>portfolio_cash_flows</code></td><td>Yes</td><td>PerformanceCalculationService</td><td>0</td><td>Used for TWR calculation, awaiting data</td></tr>
+    <tr><td><code>portfolio_excluded_assets</code></td><td>Yes</td><td>DriftCalculationService</td><td>0</td><td>Active feature, no user has configured exclusions yet</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════ MODULE DEPENDENCIES ═══════════════ -->
+<section class="section" id="module-deps">
+  <h2 class="section-title">Module Dependency Map</h2>
+  <p class="section-desc">How backend modules depend on each other.</p>
+
+  <div class="diagram-container">
+    <pre class="mermaid">
+graph TD
+  AUTH[Auth Module] --> |JWT context| BROKER[Broker Module]
+  AUTH --> |User entity| PORTFOLIO[Portfolio Module]
+  AUTH --> |User entity| DASHBOARD[Dashboard Module]
+
+  BROKER --> |Positions| DASHBOARD
+  BROKER --> |Positions| PORTFOLIO
+  BROKER --> |Connection| TRADING[Trading Module]
+
+  PORTFOLIO --> |Targets| TRADING
+  PORTFOLIO --> |Group| PERFORMANCE[Performance Module]
+
+  INSTRUMENT[Instrument Module] --> |Stock/ETF data| BROKER
+  INSTRUMENT --> |Holdings| DASHBOARD
+
+  INGESTION[Ingestion Module] --> |Enriches| INSTRUMENT
+
+  SHARED[Shared Services] --> DASHBOARD
+  SHARED --> PORTFOLIO
+  SHARED --> PERFORMANCE
+
+  subgraph Shared Services
+    LT[LookThrough]
+    ER[ExchangeRate]
+    CL[CachedLookup]
+    RM[RiskMetrics]
+  end
+
+  style AUTH fill:#4a1d5e,stroke:#9f7aea,color:#fff
+  style BROKER fill:#1a365d,stroke:#2b6cb0,color:#fff
+  style PORTFOLIO fill:#1a4731,stroke:#38a169,color:#fff
+  style TRADING fill:#4a1d2c,stroke:#f85149,color:#fff
+  style INGESTION fill:#553c0e,stroke:#d69e2e,color:#fff
+    </pre>
+  </div>
+</section>
+
+</main>
+
+<!-- SCRIPTS -->
+<script>
+// Initialize Mermaid
+mermaid.initialize({
+  startOnLoad: true,
+  theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default',
+  securityLevel: 'loose',
+  flowchart: { useMaxWidth: true, htmlLabels: true },
+  er: { useMaxWidth: true },
+  sequence: { useMaxWidth: true }
+});
+
+// Theme toggle
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  // Re-render mermaid diagrams with new theme
+  location.reload();
+}
+
+// Restore theme
+const saved = localStorage.getItem('theme');
+if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+// Collapsible sections
+function toggleCollapsible(header) {
+  const parent = header.parentElement;
+  parent.classList.toggle('open');
+}
+
+// Scroll spy for sidebar
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-80px 0px -70% 0px' });
+
+document.querySelectorAll('.section').forEach(s => observer.observe(s));
+
+// Search/filter
+function filterSections(query) {
+  const q = query.toLowerCase().trim();
+  document.querySelectorAll('.section').forEach(section => {
+    if (!q) {
+      section.style.display = '';
+      return;
+    }
+    const text = section.textContent.toLowerCase();
+    section.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+
+// Smooth scroll for sidebar links
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const id = link.getAttribute('href').slice(1);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-import { InstrumentType } from './instrument';
+import { InstrumentType } from './screener';
 
 export interface PortfolioPosition {
   instrumentType: InstrumentType;

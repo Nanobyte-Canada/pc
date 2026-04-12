@@ -1,19 +1,26 @@
 import { useDashboardAccounts } from '@/hooks/useDashboardWidgets'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Link2, ExternalLink } from 'lucide-react'
+import { Link2 } from 'lucide-react'
 import './ConnectedAccountsWidget.css'
 
-function fmtCurrency(value: number | null) {
-  if (value == null) return '-'
-  return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(value)
+const CIRCLE_RADIUS = 17
+const CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS // ~106.81
+
+function getAccuracyColor(accuracy: number | null): string {
+  if (accuracy == null) return 'var(--text-muted)'
+  if (accuracy >= 85) return 'var(--success)'
+  if (accuracy >= 65) return 'var(--warning)'
+  return 'var(--error)'
 }
 
-const STATUS_CLASSES: Record<string, string> = {
-  ACTIVE: 'ca-status-active',
-  NEEDS_RECONNECTION: 'ca-status-needs-reconnection',
-  ERROR: 'ca-status-error',
+function getStatusColor(status: string): string {
+  switch (status) {
+    case 'ACTIVE': return 'var(--success)'
+    case 'NEEDS_RECONNECTION': return 'var(--warning)'
+    case 'ERROR': return 'var(--error)'
+    default: return 'var(--text-muted)'
+  }
 }
 
 export default function ConnectedAccountsWidget(_props: { connectionId?: number }) {
@@ -33,56 +40,69 @@ export default function ConnectedAccountsWidget(_props: { connectionId?: number 
   }
 
   return (
-    <div className="ca-list">
-      {data.accounts.map(account => (
-        <div
-          key={account.connectionId}
-          className={`ca-item ${STATUS_CLASSES[account.status] || 'ca-status-default'}`}
-          onClick={() => window.location.href = `/brokers/accounts/${account.connectionId}`}
-        >
-          <div className="ca-item-left">
-            <div className="ca-broker-icon">
-              <span>
-                {(account.brokerName || 'B').substring(0, 2).toUpperCase()}
+    <div className="ca-row">
+      {data.accounts.map(account => {
+        const accuracy = account.linkedGroup?.accuracy ?? null
+        const fgColor = getAccuracyColor(accuracy)
+        const dashOffset = accuracy != null
+          ? CIRCUMFERENCE * (1 - accuracy / 100)
+          : CIRCUMFERENCE
+
+        const modelLabel = account.linkedGroup?.name
+          ?? account.modelPortfolioName
+          ?? null
+
+        return (
+          <div
+            key={account.connectionId}
+            className="ca-card"
+            onClick={() => window.location.href = `/brokers/accounts/${account.connectionId}`}
+          >
+            <div className="ca-card-info">
+              <div className="ca-card-top">
+                <span
+                  className="ca-dot"
+                  style={{ backgroundColor: getStatusColor(account.status) }}
+                />
+                <span className="ca-card-name">
+                  {account.accountName || account.brokerName}
+                </span>
+              </div>
+              <div className="ca-card-broker">{account.brokerName}</div>
+              {modelLabel ? (
+                <span className="ca-card-model">{modelLabel}</span>
+              ) : (
+                <span className="ca-card-no-model">No model</span>
+              )}
+            </div>
+
+            <div className="ca-accuracy">
+              <svg viewBox="0 0 40 40" width="40" height="40">
+                <circle
+                  className="ca-bg-ring"
+                  cx="20"
+                  cy="20"
+                  r={CIRCLE_RADIUS}
+                />
+                <circle
+                  className="ca-fg-ring"
+                  cx="20"
+                  cy="20"
+                  r={CIRCLE_RADIUS}
+                  style={{
+                    stroke: fgColor,
+                    strokeDasharray: CIRCUMFERENCE,
+                    strokeDashoffset: dashOffset,
+                  }}
+                />
+              </svg>
+              <span className="ca-accuracy-text" style={{ color: fgColor }}>
+                {accuracy != null ? `${accuracy.toFixed(0)}%` : '\u2014'}
               </span>
             </div>
-            <div className="ca-account-info">
-              <div className="ca-account-name">{account.accountName || account.brokerName}</div>
-              <div className="ca-account-detail">
-                {account.accountType}{account.accountNumber ? ` \u2022 ${account.accountNumber}` : ''}
-              </div>
-            </div>
           </div>
-          <div className="ca-item-right">
-            <div className="ca-value-info">
-              <div className="ca-value">{fmtCurrency(account.totalValue)}</div>
-              <div className="ca-value-breakdown">
-                <span>Inv: {fmtCurrency(account.investmentValue)}</span>
-                <span>Cash: {fmtCurrency(account.cash)}</span>
-                {account.buyingPower != null && account.buyingPower > 0 && (
-                  <span>BP: {fmtCurrency(account.buyingPower)}</span>
-                )}
-              </div>
-            </div>
-            {account.linkedGroup ? (
-              <div>
-                <div
-                  className="ca-accuracy-circle"
-                  style={{
-                    borderColor: account.linkedGroup.accuracy >= 90 ? '#059669' : account.linkedGroup.accuracy >= 75 ? '#d97706' : '#dc2626',
-                    color: account.linkedGroup.accuracy >= 90 ? '#059669' : account.linkedGroup.accuracy >= 75 ? '#d97706' : '#dc2626',
-                  }}
-                >
-                  {account.linkedGroup.accuracy.toFixed(0)}%
-                </div>
-              </div>
-            ) : (
-              <Badge variant="warning" style={{ fontSize: '0.75rem' }}>Setup</Badge>
-            )}
-            <ExternalLink className="ca-external-icon" />
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

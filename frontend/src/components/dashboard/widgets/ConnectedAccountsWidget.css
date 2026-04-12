@@ -1,3 +1,4 @@
+/* Empty state */
 .ca-empty {
   display: flex;
   flex-direction: column;
@@ -16,118 +17,137 @@
   margin-bottom: 0.75rem;
 }
 
-.ca-list > * + * {
-  margin-top: 0.625rem;
-}
-
-.ca-item {
+/* Horizontal scrollable row */
+.ca-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border);
-  border-left-width: 4px;
-  transition: background-color 0.15s;
-  cursor: pointer;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 0.25rem;
 }
 
-.ca-item:hover {
+.ca-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.ca-row::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+/* Card */
+.ca-card {
+  min-width: 13rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.ca-card:hover {
+  border-color: var(--accent);
   background-color: var(--muted-bg);
 }
 
-.ca-status-active { border-left-color: var(--success-text); }
-.ca-status-needs-reconnection { border-left-color: var(--warning-text); }
-.ca-status-error { border-left-color: var(--danger-text); }
-.ca-status-default { border-left-color: var(--gray-text); }
-
-.ca-item-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+/* Card left info */
+.ca-card-info {
+  flex: 1;
   min-width: 0;
 }
 
-.ca-broker-icon {
-  height: 2.25rem;
-  width: 2.25rem;
-  border-radius: 9999px;
-  background-color: rgba(42, 138, 129, 0.1);
+.ca-card-top {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.375rem;
+}
+
+.ca-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 
-.ca-broker-icon span {
+.ca-card-name {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--accent);
-}
-
-.ca-account-info {
-  min-width: 0;
-}
-
-.ca-account-name {
-  font-size: 0.875rem;
-  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.ca-account-detail {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ca-item-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-shrink: 0;
-}
-
-.ca-value-info {
-  text-align: right;
-}
-
-.ca-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.ca-positions-count {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.ca-value-breakdown {
-  display: flex;
-  gap: 0.625rem;
-  font-size: 0.6875rem;
+.ca-card-broker {
+  font-size: 0.625rem;
   color: var(--text-muted);
   margin-top: 0.125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.ca-accuracy-circle {
-  display: inline-flex;
+.ca-card-model {
+  display: inline-block;
+  background: var(--accent-subtle, rgba(132, 107, 84, 0.1));
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.625rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ca-card-no-model {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* Accuracy SVG circle */
+.ca-accuracy {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ca-accuracy svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotate(-90deg);
+}
+
+.ca-bg-ring {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 3;
+}
+
+.ca-fg-ring {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.ca-accuracy-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  height: 2.25rem;
-  width: 2.25rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.5625rem;
   font-weight: 700;
-  border: 2px solid;
-}
-
-.ca-external-icon {
-  height: 0.875rem;
-  width: 0.875rem;
-  color: var(--text-muted);
+  line-height: 1;
 }

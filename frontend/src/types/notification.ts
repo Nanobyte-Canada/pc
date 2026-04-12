@@ -29,26 +29,6 @@ export interface NotificationPreferences {
   reminderFrequency: string
 }
 
-export interface DashboardData {
-  totalPortfolioValue: number
-  dayChange: number
-  dayChangePercent: number
-  averageAccuracy: number
-  portfolioGroups: DashboardGroupSummary[]
-  recentOrders: import('../types/trading').TradeOrder[]
-  activeAlerts: Notification[]
-  unreadNotificationCount: number
-}
-
-export interface DashboardGroupSummary {
-  id: number
-  name: string
-  totalValue: number
-  accuracy: number
-  targetCount: number
-  accountCount: number
-}
-
 // ========== Request Types ==========
 
 export interface UpdateNotificationPreferencesRequest {

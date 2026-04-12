@@ -34,7 +34,7 @@
   justify-content: center;
   border-radius: 0.375rem;
   background-color: var(--accent);
-  color: #ffffff;
+  color: var(--nav-text);
   font-size: 0.875rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -180,7 +180,7 @@
   justify-content: center;
   border-radius: 9999px;
   background-color: var(--accent);
-  color: #ffffff;
+  color: var(--nav-text);
   font-size: 0.875rem;
   font-weight: 600;
 }
@@ -237,3 +237,40 @@
   background-color: var(--danger-light);
   color: var(--danger-text);
 }
+
+.sidebar-icon-btn-spin svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.sidebar-refresh-time {
+  font-size: 0.5625rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 0.125rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Instrument count badge */
+.sidebar-link-count {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  background: var(--bg-tertiary);
+  padding: 1px 6px;
+  border-radius: 8px;
+  min-width: 28px;
+  text-align: center;
+}
+
+.sidebar-nav-link-active .sidebar-link-count {
+  background: var(--accent);
+  color: var(--nav-text);
+}
+

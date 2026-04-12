@@ -227,6 +227,8 @@ export interface DashboardAccount {
   positionsCount: number
   lastFetchedAt: string | null
   linkedGroup: LinkedGroupInfo | null
+  modelPortfolioId: number | null
+  modelPortfolioName: string | null
   needsSetup: boolean
 }
 
@@ -258,6 +260,13 @@ export type WidgetKey =
   | 'POSITIONS_TABLE'
   | 'HOLDINGS_TABLE'
   | 'CONNECTED_ACCOUNTS'
+  | 'REBALANCING_PROGRESS'
+  | 'PENDING_ORDERS'
+  | 'ACCOUNT_SUMMARY'
+  | 'ORDERS'
+  | 'FEES_AND_DIVIDENDS'
+  | 'POSITIONS_HOLDINGS'
+  | 'PORTFOLIO_SUMMARY'
 
 export interface WidgetDefinition {
   key: WidgetKey

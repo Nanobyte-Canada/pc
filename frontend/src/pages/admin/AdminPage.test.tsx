@@ -7,24 +7,36 @@ import * as adminService from '../../services/adminService'
 
 vi.mock('../../services/adminService', () => ({
   getIngestionStats: vi.fn(),
+  getActiveRun: vi.fn(),
   getIngestionRuns: vi.fn(),
-  getErrorSummary: vi.fn(),
-  getRecentErrors: vi.fn(),
+  getRunSteps: vi.fn(),
+  getRunErrors: vi.fn(),
+  triggerExchangeSync: vi.fn(),
   triggerFullIngestion: vi.fn(),
-  triggerStockIngestion: vi.fn(),
-  triggerStockEnrichment: vi.fn(),
-  triggerEtfComUniverse: vi.fn(),
-  triggerEtfComEnrichment: vi.fn(),
 }))
 
 const mockStats: adminService.IngestionStats = {
-  totalStocks: 5000,
-  stocksWithRawData: 4500,
-  stocksPendingIngestion: 500,
-  totalEtfs: 3000,
-  etfsEnriched: 2800,
-  etfsPendingEnrichment: 200,
-  errorsLast24h: 12,
+  totalInstruments: 12847,
+  enrichedInstruments: 8231,
+  pendingInstruments: 4616,
+  remainingDailyQuota: 72450,
+  totalDailyQuota: 100000,
+  exchangeCount: 5,
+  exchanges: ['US', 'TO', 'V', 'INDX', 'GBOND'],
+  lastRunStatus: 'COMPLETED',
+  lastRunCompletedAt: new Date(Date.now() - 7200000).toISOString(),
+  instrumentsByType: {
+    STOCK: { total: 8421, enriched: 5102 },
+    ETF: { total: 2847, enriched: 2103 },
+    MUTUAL_FUND: { total: 1234, enriched: 891 },
+    PREFERRED_STOCK: { total: 189, enriched: 72 },
+    INDEX: { total: 124, enriched: 48 },
+    BOND: { total: 32, enriched: 15 },
+  },
+}
+
+const mockActiveRun: adminService.ActiveRun = {
+  isRunning: false,
 }
 
 function renderWithProviders(ui: React.ReactElement) {
@@ -41,29 +53,35 @@ function renderWithProviders(ui: React.ReactElement) {
 describe('AdminPage', () => {
   beforeEach(() => {
     vi.mocked(adminService.getIngestionStats).mockResolvedValue(mockStats)
+    vi.mocked(adminService.getActiveRun).mockResolvedValue(mockActiveRun)
     vi.mocked(adminService.getIngestionRuns).mockResolvedValue([])
-    vi.mocked(adminService.getErrorSummary).mockResolvedValue([])
-    vi.mocked(adminService.getRecentErrors).mockResolvedValue([])
   })
 
   it('renders the page title', () => {
     renderWithProviders(<AdminPage />)
-    expect(screen.getByText(/Admin — Ingestion Pipeline/i)).toBeTruthy()
+    expect(screen.getByText('Ingestion Management')).toBeTruthy()
   })
 
-  it('renders all 5 workflow cards', () => {
+  it('renders both workflow cards', () => {
     renderWithProviders(<AdminPage />)
-    expect(screen.getByText('Full Pipeline')).toBeTruthy()
-    expect(screen.getByText('Stock Ingestion')).toBeTruthy()
-    expect(screen.getByText('AV Stock Ingestion')).toBeTruthy()
-    expect(screen.getByText('ETF Ingestion')).toBeTruthy()
-    expect(screen.getByText('ETF Enrichment')).toBeTruthy()
+    expect(screen.getByText('Exchange Sync')).toBeTruthy()
+    expect(screen.getByText('Full Ingestion')).toBeTruthy()
   })
 
-  it('displays ingestion stats after loading', async () => {
+  it('displays summary stats after loading', async () => {
     renderWithProviders(<AdminPage />)
     await waitFor(() => {
-      expect(screen.getByText(/4,500 \/ 5,000/)).toBeTruthy()
+      expect(screen.getByText('12,847')).toBeTruthy()
+      expect(screen.getByText('8,231')).toBeTruthy()
+      expect(screen.getByText('4,616')).toBeTruthy()
+    })
+  })
+
+  it('displays instrument type stats', async () => {
+    renderWithProviders(<AdminPage />)
+    await waitFor(() => {
+      expect(screen.getByText('8,421')).toBeTruthy()
+      expect(screen.getByText('2,847')).toBeTruthy()
     })
   })
 
@@ -71,27 +89,6 @@ describe('AdminPage', () => {
     renderWithProviders(<AdminPage />)
     await waitFor(() => {
       expect(screen.getByText(/No ingestion runs found/i)).toBeTruthy()
-    })
-  })
-
-  it('shows no errors message when error summary is empty', async () => {
-    renderWithProviders(<AdminPage />)
-    await waitFor(() => {
-      expect(screen.getByText(/No errors in the last 24 hours/i)).toBeTruthy()
-    })
-  })
-
-  it('displays error summary badges when errors exist', async () => {
-    vi.mocked(adminService.getErrorSummary).mockResolvedValue([
-      { errorType: 'API_ERROR', count: 5, lastOccurredAt: null },
-      { errorType: 'PARSE_ERROR', count: 7, lastOccurredAt: null },
-    ])
-
-    renderWithProviders(<AdminPage />)
-
-    await waitFor(() => {
-      expect(screen.getByText('API_ERROR: 5')).toBeTruthy()
-      expect(screen.getByText('PARSE_ERROR: 7')).toBeTruthy()
     })
   })
 })

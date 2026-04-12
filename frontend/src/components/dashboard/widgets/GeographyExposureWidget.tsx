@@ -6,7 +6,7 @@ import type { AgChartOptions } from 'ag-charts-community'
 import { Globe } from 'lucide-react'
 import './GeographyExposureWidget.css'
 
-const REGION_COLORS = ['#2a8a81', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
+const REGION_COLORS = ['#546d84', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
 
 export default function GeographyExposureWidget({ connectionId }: { connectionId?: number }) {
   const { data, isLoading } = useGeographyExposure(connectionId)

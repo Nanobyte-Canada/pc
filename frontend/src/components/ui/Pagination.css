@@ -31,7 +31,7 @@
 
 .pagination-active {
   background: var(--accent);
-  color: #ffffff;
+  color: var(--nav-text);
   border-color: var(--accent);
 }
 

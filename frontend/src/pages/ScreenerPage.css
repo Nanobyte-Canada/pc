@@ -1,33 +1,192 @@
+/* ===== Screener Page — Full-Width Layout ===== */
+
 .screener-page {
-  padding: 24px;
+  padding: 1.5rem 2rem;
 }
 
-.screener-page h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
+/* Header */
+.screener-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
 }
 
-.screener-subtitle {
-  color: var(--text-muted);
-  margin-bottom: 1.5rem;
+.screener-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.screener-title-sub {
+  margin: 0.375rem 0 0;
   font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 400;
 }
 
-.screener-grid-container {
+/* Search bar */
+.screener-search-wrapper {
+  position: relative;
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.screener-search-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.screener-search-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.screener-search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(132, 107, 84, 0.10);
+}
+
+.screener-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Results header */
+.screener-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding: 0 0.25rem;
+}
+
+.screener-results-count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.screener-results-showing {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grid card */
+.screener-grid-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  animation: screener-fade-in 0.25s ease-out;
+}
+
+html.dark .screener-grid-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Override AG Grid border radius inside card */
+.screener-grid-card .ag-theme-quartz {
+  --ag-wrapper-border-radius: 0;
+  --ag-border-radius: 0;
+}
+
+.screener-grid-card .screener-grid-container {
   width: 100%;
 }
 
+@keyframes screener-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Grid cell styles */
+.screener-grid-container .ticker-link {
+  color: var(--accent);
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.screener-grid-container .ticker-link:hover {
+  text-decoration: underline;
+  color: var(--accent-hover);
+}
+
+.screener-grid-container .sector-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.screener-grid-container .return-positive {
+  color: var(--success);
+}
+
+.screener-grid-container .return-negative {
+  color: var(--error);
+}
+
+/* Skeleton loading */
+.screener-grid-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Pagination */
 .screener-pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
-  padding: 8px 0;
+  margin-top: 1rem;
+  padding: 0.5rem 0.25rem;
 }
 
 .screener-pagination .pagination-info {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
+/* Responsive */
+@media (max-width: 768px) {
+  .screener-page {
+    padding: 1.25rem 1rem;
+  }
+
+  .screener-header {
+    flex-direction: column;
+  }
+
+  .screener-search-wrapper {
+    width: 100%;
+  }
+}

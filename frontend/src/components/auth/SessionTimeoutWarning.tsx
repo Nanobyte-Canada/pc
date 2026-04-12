@@ -25,7 +25,7 @@ export function SessionTimeoutWarning({ onExtendSession, onLogout }: SessionTime
     <div style={overlayStyle}>
       <div style={modalStyle}>
         <h3 style={{ margin: '0 0 8px 0' }}>Session Expiring</h3>
-        <p style={{ margin: '0 0 20px 0', color: '#666' }}>
+        <p style={{ margin: '0 0 20px 0', color: 'var(--text-muted)' }}>
           Your session is about to expire due to inactivity. Would you like to stay logged in?
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
@@ -64,18 +64,19 @@ const overlayStyle: React.CSSProperties = {
 };
 
 const modalStyle: React.CSSProperties = {
-  background: '#fff',
+  background: 'var(--bg-secondary)',
   borderRadius: '8px',
   padding: '24px',
   maxWidth: '420px',
   width: '90%',
   boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
+  color: 'var(--text-primary)',
 };
 
 const primaryButtonStyle: React.CSSProperties = {
   padding: '8px 20px',
-  backgroundColor: '#1976d2',
-  color: '#fff',
+  backgroundColor: 'var(--accent)',
+  color: 'var(--nav-text)',
   border: 'none',
   borderRadius: '4px',
   cursor: 'pointer',
@@ -85,8 +86,8 @@ const primaryButtonStyle: React.CSSProperties = {
 const secondaryButtonStyle: React.CSSProperties = {
   padding: '8px 20px',
   backgroundColor: 'transparent',
-  color: '#666',
-  border: '1px solid #ccc',
+  color: 'var(--text-muted)',
+  border: '1px solid var(--border)',
   borderRadius: '4px',
   cursor: 'pointer',
   fontSize: '14px',

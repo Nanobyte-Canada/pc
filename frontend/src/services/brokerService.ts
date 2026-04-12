@@ -37,9 +37,13 @@ export async function getUserConnections(): Promise<BrokerConnectionsResponse> {
 }
 
 export async function connectBroker(request?: ConnectBrokerRequest): Promise<ConnectBrokerResponse> {
+  const body = {
+    ...request,
+    connectionType: request?.connectionType ?? 'trade-if-available'
+  }
   const response = await apiFetch(`${BROKER_API_BASE}/connect`, {
     method: 'POST',
-    body: JSON.stringify(request || {})
+    body: JSON.stringify(body)
   })
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))

@@ -1,22 +1,64 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
+import { ChevronDown, SlidersHorizontal, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import './ScreenerFilters.css';
 
 interface ScreenerFiltersProps {
   children: ReactNode;
   onApply: () => void;
   onReset: () => void;
+  activeFilters?: { key: string; label: string; value: string }[];
+  onRemoveFilter?: (key: string) => void;
 }
 
-export function ScreenerFilters({ children, onApply, onReset }: ScreenerFiltersProps) {
+export function ScreenerFilters({ children, onApply, onReset, activeFilters, onRemoveFilter }: ScreenerFiltersProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const filterCount = activeFilters?.length ?? 0;
+
   return (
-    <div className="screener-filters">
-      <div className="filter-inputs">
-        {children}
+    <div className="screener-filters-card">
+      <button
+        className="screener-filters-toggle"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <span className="screener-filters-toggle-left">
+          <SlidersHorizontal size={16} />
+          <span>Filters</span>
+          {filterCount > 0 && (
+            <span className="filter-count-badge">{filterCount}</span>
+          )}
+        </span>
+        <ChevronDown
+          size={16}
+          className={cn('filter-chevron', isExpanded && 'filter-chevron--open')}
+        />
+      </button>
+
+      <div className={cn('screener-filters-body', !isExpanded && 'screener-filters-body--collapsed')}>
+        <div className="filter-inputs">
+          {children}
+        </div>
+        <div className="filter-actions">
+          <button className="filter-btn secondary" onClick={onReset}>Reset</button>
+          <button className="filter-btn primary" onClick={onApply}>Apply</button>
+        </div>
       </div>
-      <div className="filter-actions">
-        <button className="filter-btn secondary" onClick={onReset}>Reset</button>
-        <button className="filter-btn primary" onClick={onApply}>Apply</button>
-      </div>
+
+      {filterCount > 0 && (
+        <div className="active-filter-chips">
+          {activeFilters!.map((f) => (
+            <span key={f.key} className="filter-chip">
+              {f.label}: {f.value}
+              <button
+                className="filter-chip-remove"
+                onClick={() => onRemoveFilter?.(f.key)}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -55,7 +55,7 @@
 
 .error code {
   font-size: 0.9rem;
-  color: #b91c1c;
+  color: var(--error);
 }
 
 .version-info {

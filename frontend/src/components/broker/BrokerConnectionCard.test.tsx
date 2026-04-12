@@ -24,7 +24,9 @@ describe('BrokerConnectionCard', () => {
     totalValue: 25000.50,
     lastPositionsFetchedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     errorMessage: null,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    modelPortfolioId: null,
+    modelPortfolioName: null
   }
 
   it('renders broker name with account type', () => {

@@ -115,11 +115,11 @@
 .connection-btn.reconnect {
   border: none;
   background-color: var(--warning);
-  color: #fff;
+  color: var(--nav-text);
 }
 
 .connection-btn.reconnect:hover {
-  background-color: #b45309;
+  background-color: var(--warning-dark);
 }
 
 .connection-btn.fetch {
@@ -139,7 +139,7 @@
 }
 
 .connection-btn.disconnect {
-  border: 1px solid #fecaca;
+  border: 1px solid var(--error);
   background-color: var(--card-bg);
   color: var(--error);
 }
@@ -151,7 +151,7 @@
 .connection-btn.confirm-delete {
   border: none;
   background-color: var(--error);
-  color: #fff;
+  color: var(--nav-text);
   padding: 8px 12px;
 }
 

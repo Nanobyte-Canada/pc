@@ -1,0 +1,19 @@
+package com.portfolio
+
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.runApplication
+import org.springframework.scheduling.annotation.EnableScheduling
+import com.portfolio.broker.config.BrokerEncryptionConfig
+import com.portfolio.broker.config.BrokerSyncConfig
+import com.portfolio.broker.config.SnapTradeConfig
+import com.portfolio.broker.config.SnapTradeHealthConfig
+
+@SpringBootApplication
+@EnableScheduling
+@EnableConfigurationProperties(SnapTradeConfig::class, BrokerEncryptionConfig::class, SnapTradeHealthConfig::class, BrokerSyncConfig::class)
+class Application
+
+fun main(args: Array<String>) {
+    runApplication<Application>(*args)
+}

@@ -52,7 +52,7 @@ export function TotalValueChart({ data, kpis }: TotalValueChartProps) {
         <KpiCard
           label="Net Change"
           value={kpis.netChange}
-          valueColor={kpis.netChange >= 0 ? '#059669' : '#dc2626'}
+          valueColor={kpis.netChange >= 0 ? 'var(--success)' : 'var(--error)'}
         />
       </div>
     </div>

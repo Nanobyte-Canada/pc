@@ -3,9 +3,6 @@ import {
   LayoutDashboard,
   BarChart3,
   Briefcase,
-  Hammer,
-  TrendingUp,
-  PieChart,
   Link2,
   Wallet,
   FileText,
@@ -14,7 +11,17 @@ import {
   User,
   ChevronsLeft,
   ChevronsRight,
+  Landmark,
+  RefreshCw,
+  TrendingUp,
+  PieChart,
+  Building2,
+  Star,
+  Activity,
+  Banknote,
 } from 'lucide-react'
+import { useDashboardAccounts, useRefreshAll } from '@/hooks/useDashboardWidgets'
+import { useTypeCounts } from '@/hooks/useNewScreener'
 import { useUser } from '@/stores/authStore'
 import { logout } from '@/services/authService'
 import { useSidebarStore } from '@/stores/sidebarStore'
@@ -30,6 +37,7 @@ interface NavItem {
   icon: React.ElementType
   label: string
   end?: boolean
+  countKey?: string
 }
 
 interface NavSection {
@@ -48,15 +56,18 @@ const navSections: NavSection[] = [
   {
     title: 'Portfolios',
     items: [
-      { to: '/portfolios', icon: Briefcase, label: 'Model Portfolios' },
-      { to: '/builder', icon: Hammer, label: 'Portfolio Builder' },
+      { to: '/portfolios', icon: Briefcase, label: 'Portfolio' },
     ],
   },
   {
     title: 'Screeners',
     items: [
-      { to: '/screener/stocks', icon: TrendingUp, label: 'Stocks' },
-      { to: '/screener/etfs', icon: PieChart, label: 'ETFs' },
+      { to: '/screener/stocks', icon: TrendingUp, label: 'Stocks', countKey: 'STOCK' },
+      { to: '/screener/etfs', icon: PieChart, label: 'ETFs', countKey: 'ETF' },
+      { to: '/screener/mutual-funds', icon: Building2, label: 'Mutual Funds', countKey: 'MUTUAL_FUND' },
+      { to: '/screener/preferred-stocks', icon: Star, label: 'Preferred Stocks', countKey: 'PREFERRED_STOCK' },
+      { to: '/screener/indices', icon: Activity, label: 'Indices', countKey: 'INDEX' },
+      { to: '/screener/bonds', icon: Banknote, label: 'Bonds', countKey: 'BOND' },
     ],
   },
   {
@@ -76,6 +87,9 @@ interface AppSidebarProps {
 export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const user = useUser()
   const navigate = useNavigate()
+  const { data: accountsData } = useDashboardAccounts()
+  const { data: typeCounts } = useTypeCounts()
+  const { mutate: refresh, isPending: isRefreshing } = useRefreshAll()
   const displayName = user?.name || user?.email?.split('@')[0] || 'User'
   const { collapsed, toggleSidebar } = useSidebarStore()
   // When onNavigate is set (mobile sheet), always show expanded
@@ -103,6 +117,11 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       >
         <item.icon className="sidebar-nav-icon" />
         {!isCollapsed && <span>{item.label}</span>}
+        {!isCollapsed && item.countKey && typeCounts?.[item.countKey] != null && (
+          <span className="sidebar-link-count">
+            {typeCounts[item.countKey].toLocaleString()}
+          </span>
+        )}
       </NavLink>
     )
 
@@ -142,14 +161,25 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
       {/* Nav sections */}
       <nav className="sidebar-nav">
-        {navSections.map((section) => (
-          <div key={section.title}>
-            {!isCollapsed && <p className="sidebar-section-title">{section.title}</p>}
-            <div className="sidebar-section-items">
-              {section.items.map(renderNavLink)}
+        {navSections.map((section) => {
+          // Inject Accounts link into Main section after Dashboard
+          const items = section.title === 'Main' && accountsData && accountsData.accounts.length > 0
+            ? [
+                section.items[0], // Dashboard
+                { to: `/brokers/accounts/${accountsData.accounts[0].connectionId}`, icon: Landmark, label: 'Accounts' },
+                ...section.items.slice(1), // Analytics
+              ]
+            : section.items
+
+          return (
+            <div key={section.title}>
+              {!isCollapsed && <p className="sidebar-section-title">{section.title}</p>}
+              <div className="sidebar-section-items">
+                {items.map(renderNavLink)}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         {/* Admin section - conditional */}
         {user?.roles.includes('ADMIN') && (
@@ -185,11 +215,26 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
       {/* Footer */}
       <div className="sidebar-footer">
-        {/* Theme toggle + Notification */}
+        {/* Refresh + Theme + Notification */}
         <div className={cn('sidebar-footer-actions', isCollapsed && 'sidebar-footer-actions-collapsed')}>
+          <Tooltip content={isRefreshing ? 'Refreshing...' : 'Refresh Data'} side="right">
+            <button
+              className={cn('sidebar-icon-btn', isRefreshing && 'sidebar-icon-btn-spin')}
+              onClick={() => refresh()}
+              disabled={isRefreshing}
+              title="Refresh Data"
+            >
+              <RefreshCw style={{ height: '1rem', width: '1rem' }} />
+            </button>
+          </Tooltip>
           <ThemeToggle />
           <NotificationBell />
         </div>
+        {!isCollapsed && accountsData?.accounts?.[0]?.lastFetchedAt && (
+          <p className="sidebar-refresh-time">
+            Last refreshed: {new Date(accountsData.accounts[0].lastFetchedAt).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        )}
 
         <Separator />
 

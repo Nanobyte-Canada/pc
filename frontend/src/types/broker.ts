@@ -1,3 +1,8 @@
+export interface BrokerAuthType {
+  type: 'read' | 'trade'
+  authType: 'OAUTH' | 'SCRAPE' | 'UNOFFICIAL_API'
+}
+
 export interface Broker {
   id?: number
   name: string
@@ -5,6 +10,17 @@ export interface Broker {
   status?: string
   logoUrl: string | null
   description: string | null
+  url?: string
+  openUrl?: string
+  enabled?: boolean
+  maintenanceMode?: boolean
+  isDegraded?: boolean
+  allowsTrading?: boolean
+  allowsFractionalUnits?: boolean
+  hasReporting?: boolean
+  isRealTimeConnection?: boolean
+  brokerageType?: string
+  authTypes?: BrokerAuthType[]
 }
 
 export interface BrokersResponse {
@@ -26,6 +42,8 @@ export interface BrokerConnection {
   totalValue: number | null
   errorMessage: string | null
   createdAt: string
+  modelPortfolioId: number | null
+  modelPortfolioName: string | null
 }
 
 export interface BrokerConnectionsResponse {
@@ -35,6 +53,7 @@ export interface BrokerConnectionsResponse {
 export interface ConnectBrokerRequest {
   broker?: string
   reconnectAuthId?: string
+  connectionType?: 'read' | 'trade' | 'trade-if-available'
 }
 
 export interface ConnectBrokerResponse {

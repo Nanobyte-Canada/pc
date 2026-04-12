@@ -12,14 +12,14 @@ import './AccountActivitiesGrid.css'
 const ACTIVITY_TYPES = ['BUY', 'SELL', 'DIVIDEND', 'TRANSFER_IN', 'TRANSFER_OUT', 'FEE', 'INTEREST', 'OTHER']
 
 const typeColors: Record<string, string> = {
-  BUY: '#059669',
-  SELL: '#dc2626',
-  DIVIDEND: '#7c3aed',
-  TRANSFER_IN: '#0284c7',
-  TRANSFER_OUT: '#d97706',
-  FEE: '#6b7280',
-  INTEREST: '#16a34a',
-  OTHER: '#6b7280'
+  BUY: 'var(--success)',
+  SELL: 'var(--error)',
+  DIVIDEND: 'var(--purple-text)',
+  TRANSFER_IN: 'var(--info)',
+  TRANSFER_OUT: 'var(--warning)',
+  FEE: 'var(--text-muted)',
+  INTEREST: 'var(--success)',
+  OTHER: 'var(--text-muted)'
 }
 
 interface AccountActivitiesGridProps {
@@ -114,7 +114,7 @@ export function AccountActivitiesGrid({ connectionId, connectionActive }: Accoun
       type: 'rightAligned',
       cellStyle: (params) => ({
         fontWeight: 600,
-        color: (params.value ?? 0) >= 0 ? '#059669' : '#dc2626'
+        color: (params.value ?? 0) >= 0 ? 'var(--success)' : 'var(--error)'
       }),
       valueFormatter: (params: ValueFormatterParams) => {
         if (params.value == null) return '-'

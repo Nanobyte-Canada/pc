@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { InstrumentType } from '../types/instrument';
+import { InstrumentType } from '../types/screener';
 
 export interface PortfolioPosition {
   instrumentType: InstrumentType;

@@ -5,8 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { WidgetWrapper } from './WidgetWrapper'
 import { DashboardEditMode } from './DashboardEditMode'
-import { PositionsHoldingsTabs } from './PositionsHoldingsTabs'
-import { WIDGET_REGISTRY, DEFAULT_WIDGET_ORDER, ZONE_A_WIDGETS, ZONE_B_WIDGETS, CONFIGURABLE_WIDGETS } from './WidgetRegistry'
+import { WIDGET_REGISTRY, DEFAULT_WIDGET_ORDER, CONFIGURABLE_WIDGETS } from './WidgetRegistry'
 import { useDashboardPreferences, useUpdateDashboardPreferences } from '@/hooks/useDashboardPreferences'
 import { useRefreshAll } from '@/hooks/useDashboardWidgets'
 import type { WidgetPreference, WidgetKey } from '@/types/dashboard'
@@ -17,46 +16,72 @@ interface DashboardGridProps {
   contextType?: string
 }
 
-const ACCENT_COLORS: Partial<Record<WidgetKey, string>> = {
-  PORTFOLIO_VALUE: '#2a8a81',
-  AVAILABLE_CASH: '#059669',
-  BUYING_POWER: '#06b6d4',
-  RISK_PROFILE: '#f59e0b',
-  SECTOR_EXPOSURE: '#2a8a81',
-  GEOGRAPHY_EXPOSURE: '#3b82f6',
-  CONNECTED_ACCOUNTS: '#8b5cf6',
-  OPEN_ORDERS: '#f97316',
-  FEES_COMMISSION: '#ef4444',
-  DIVIDEND_CALENDAR: '#059669',
+// Dashboard context: 4-column grid (consolidated widgets, no zones)
+const DASHBOARD_WIDGET_ORDER: WidgetKey[] = [
+  'PORTFOLIO_SUMMARY',
+  'RISK_PROFILE', 'SECTOR_EXPOSURE', 'GEOGRAPHY_EXPOSURE', 'FEES_AND_DIVIDENDS',
+  'ORDERS', 'REBALANCING_PROGRESS',
+  'CONNECTED_ACCOUNTS',
+  'POSITIONS_HOLDINGS',
+]
+
+const DASHBOARD_COL_SPANS: Partial<Record<WidgetKey, number>> = {
+  PORTFOLIO_SUMMARY: 4,
+  RISK_PROFILE: 1,
+  SECTOR_EXPOSURE: 1,
+  GEOGRAPHY_EXPOSURE: 1,
+  FEES_AND_DIVIDENDS: 1,
+  ORDERS: 2,
+  REBALANCING_PROGRESS: 2,
+  CONNECTED_ACCOUNTS: 4,
+  POSITIONS_HOLDINGS: 4,
 }
 
-const ConnectedAccountsComponent = WIDGET_REGISTRY.CONNECTED_ACCOUNTS.component
+// Account context: 4-column grid
+const ACCOUNT_WIDGET_ORDER: WidgetKey[] = [
+  'ACCOUNT_SUMMARY',
+  'RISK_PROFILE', 'SECTOR_EXPOSURE', 'GEOGRAPHY_EXPOSURE', 'FEES_AND_DIVIDENDS',
+  'ORDERS', 'REBALANCING_PROGRESS',
+  'POSITIONS_HOLDINGS',
+]
+
+const ACCOUNT_COL_SPANS: Partial<Record<WidgetKey, number>> = {
+  ACCOUNT_SUMMARY: 4,
+  RISK_PROFILE: 1,
+  SECTOR_EXPOSURE: 1,
+  GEOGRAPHY_EXPOSURE: 1,
+  FEES_AND_DIVIDENDS: 1,
+  ORDERS: 2,
+  REBALANCING_PROGRESS: 2,
+  POSITIONS_HOLDINGS: 4,
+}
 
 export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: DashboardGridProps) {
   const [editMode, setEditMode] = useState(false)
+  const isAccountContext = contextType === 'ACCOUNT'
   const { data: prefsData, isLoading: prefsLoading } = useDashboardPreferences(contextType, connectionId ? connectionId : undefined)
   const updatePrefs = useUpdateDashboardPreferences()
   const { mutate: refresh, isPending: isRefreshing } = useRefreshAll()
 
-  const preferences: WidgetPreference[] = prefsData?.widgets ?? DEFAULT_WIDGET_ORDER.map(key => {
-    const reg = WIDGET_REGISTRY[key]
-    return { key, visible: reg.defaultVisible, sortOrder: reg.defaultSortOrder, columnSpan: reg.defaultColumnSpan }
-  })
+  const preferences: WidgetPreference[] = (() => {
+    const defaults = DEFAULT_WIDGET_ORDER.map(key => {
+      const reg = WIDGET_REGISTRY[key]
+      return { key, visible: reg.defaultVisible, sortOrder: reg.defaultSortOrder, columnSpan: reg.defaultColumnSpan }
+    })
+    const rawPrefs = prefsData?.widgets
+    if (!rawPrefs || rawPrefs.length === 0) return defaults
 
-  const zoneAWidgets = preferences
-    .filter(p => ZONE_A_WIDGETS.includes(p.key as WidgetKey) && p.visible)
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-
-  const zoneBWidgets = preferences
-    .filter(p => ZONE_B_WIDGETS.includes(p.key as WidgetKey) && p.visible)
-    .sort((a, b) => a.sortOrder - b.sortOrder)
+    const savedKeys = new Set(rawPrefs.map(p => p.key))
+    const newWidgets = defaults.filter(d => !savedKeys.has(d.key))
+    const validSaved = rawPrefs.filter(p => WIDGET_REGISTRY[p.key as WidgetKey])
+    return [...validSaved, ...newWidgets]
+  })()
 
   const configurablePrefs = preferences.filter(p =>
     CONFIGURABLE_WIDGETS.includes(p.key as WidgetKey)
   )
 
   const handleSavePreferences = (newPrefs: WidgetPreference[]) => {
-    // Merge configurable prefs back with always-visible prefs (forced visible)
     const alwaysVisible = preferences
       .filter(p => !CONFIGURABLE_WIDGETS.includes(p.key as WidgetKey))
       .map(p => ({ ...p, visible: true }))
@@ -79,104 +104,59 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
     )
   }
 
+  // Shared 4-column grid renderer for both contexts
+  const widgetOrder = isAccountContext ? ACCOUNT_WIDGET_ORDER : DASHBOARD_WIDGET_ORDER
+  const colSpans = isAccountContext ? ACCOUNT_COL_SPANS : DASHBOARD_COL_SPANS
+
+  const widgetsToRender = widgetOrder
+    .map(key => {
+      const pref = preferences.find(p => p.key === key)
+      const entry = WIDGET_REGISTRY[key]
+      if (!pref || !entry || !pref.visible) return null
+      return { key, pref, entry }
+    })
+    .filter(Boolean) as { key: WidgetKey; pref: WidgetPreference; entry: typeof WIDGET_REGISTRY[WidgetKey] }[]
+
   return (
     <div>
-      <div className="dashboard-grid-toolbar">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refresh()}
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={isRefreshing ? 'animate-spin' : ''} style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }} />
-          {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
-          <Settings style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }} />
-          Customize
-        </Button>
-      </div>
+      {/* Toolbar: only show Customize on account pages */}
+      {isAccountContext && (
+        <div className="dashboard-grid-toolbar">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refresh()}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={isRefreshing ? 'animate-spin' : ''} style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
+            <Settings style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }} />
+            Customize
+          </Button>
+        </div>
+      )}
 
-      <div className={`dashboard-zones-top${contextType === 'ACCOUNT' ? ' dashboard-zones-no-c' : ''}`}>
-        {/* Zone A: Category 1 widgets (top-left 2/3) */}
-        {zoneAWidgets.length > 0 && (
-          <div className="dashboard-zone-a">
-            <div className="zone-a-grid">
-              {zoneAWidgets.map(pref => {
-                const widgetKey = pref.key as WidgetKey
-                const entry = WIDGET_REGISTRY[widgetKey]
-                if (!entry) return null
-                const Component = entry.component
-                return (
-                  <WidgetWrapper
-                    key={pref.key}
-                    title={entry.title}
-                    columnSpan={1}
-                    accentColor={ACCENT_COLORS[widgetKey]}
-                  >
-                    <ErrorBoundary>
-                      <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
-                        <Component connectionId={connectionId} />
-                      </Suspense>
-                    </ErrorBoundary>
-                  </WidgetWrapper>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Zone C: Connected Accounts (hidden on account dashboards) */}
-        {contextType !== 'ACCOUNT' && (
-          <div className="dashboard-zone-c">
+      <div className="dashboard-grid-4col">
+        {widgetsToRender.map(({ key, entry }) => {
+          const Component = entry.component
+          const colSpan = colSpans[key] ?? 1
+          return (
             <WidgetWrapper
-              title="Connected Accounts"
-              columnSpan={1}
-              accentColor={ACCENT_COLORS.CONNECTED_ACCOUNTS}
+              key={key}
+              title={entry.title}
+              columnSpan={colSpan}
+              className={colSpan === 4 ? 'widget-col-span-4' : colSpan === 2 ? 'widget-col-span-2' : undefined}
             >
               <ErrorBoundary>
                 <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
-                  <ConnectedAccountsComponent connectionId={connectionId} />
+                  <Component connectionId={connectionId} />
                 </Suspense>
               </ErrorBoundary>
             </WidgetWrapper>
-          </div>
-        )}
-
-        {/* Zone B: Category 2 widgets (right 1/3) */}
-        {zoneBWidgets.length > 0 && (
-          <div className="dashboard-zone-b">
-            {zoneBWidgets.map(pref => {
-              const widgetKey = pref.key as WidgetKey
-              const entry = WIDGET_REGISTRY[widgetKey]
-              if (!entry) return null
-              const Component = entry.component
-              return (
-                <WidgetWrapper
-                  key={pref.key}
-                  title={entry.title}
-                  columnSpan={1}
-                  accentColor={ACCENT_COLORS[widgetKey]}
-                >
-                  <ErrorBoundary>
-                    <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
-                      <Component connectionId={connectionId} />
-                    </Suspense>
-                  </ErrorBoundary>
-                </WidgetWrapper>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Zone D: Positions/Holdings tabs (always visible, full width) */}
-        <div className="dashboard-zone-d">
-          <ErrorBoundary>
-            <Suspense fallback={<Skeleton style={{ height: '12rem', width: '100%' }} />}>
-              <PositionsHoldingsTabs connectionId={connectionId} />
-            </Suspense>
-          </ErrorBoundary>
-        </div>
+          )
+        })}
       </div>
 
       <DashboardEditMode

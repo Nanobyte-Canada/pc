@@ -2,12 +2,26 @@ import { useRiskProfile } from '@/hooks/useDashboardWidgets'
 import { Skeleton } from '@/components/ui/skeleton'
 import './RiskProfileWidget.css'
 
-const LEVEL_CONFIG: Record<string, { label: string; badgeBg: string; badgeText: string; gaugeColor: string }> = {
-  LOW: { label: 'Low Risk', badgeBg: 'var(--green-light)', badgeText: 'var(--green-text)', gaugeColor: '#059669' },
-  MODERATE_LOW: { label: 'Moderate Low', badgeBg: 'var(--green-light)', badgeText: 'var(--green-text)', gaugeColor: '#34d399' },
-  MODERATE: { label: 'Moderate', badgeBg: 'var(--yellow-light)', badgeText: 'var(--yellow-text)', gaugeColor: '#d97706' },
-  MODERATE_HIGH: { label: 'Moderate High', badgeBg: 'var(--orange-light)', badgeText: 'var(--orange-text)', gaugeColor: '#f97316' },
-  HIGH: { label: 'High Risk', badgeBg: 'var(--red-light)', badgeText: 'var(--red-text)', gaugeColor: '#dc2626' },
+const LEVEL_LABELS: Record<string, string> = {
+  LOW: 'Low Risk',
+  MODERATE_LOW: 'Moderate Low',
+  MODERATE: 'Moderate',
+  MODERATE_HIGH: 'Moderate High',
+  HIGH: 'High Risk',
+}
+
+/** Score-based color thresholds: low risk (0-35) = green, moderate (36-65) = amber, high (66-100) = red */
+function getRiskColors(score: number): { badgeBg: string; badgeText: string; gaugeColor: string } {
+  if (score <= 35) {
+    // Green — low risk is good
+    return { badgeBg: 'var(--green-light)', badgeText: 'var(--green-text)', gaugeColor: '#059669' }
+  }
+  if (score <= 65) {
+    // Amber — moderate
+    return { badgeBg: 'var(--yellow-light)', badgeText: 'var(--yellow-text)', gaugeColor: '#d97706' }
+  }
+  // Red — high risk is bad
+  return { badgeBg: 'var(--red-light)', badgeText: 'var(--red-text)', gaugeColor: '#dc2626' }
 }
 
 const FACTOR_LABELS: Record<string, string> = {
@@ -22,7 +36,10 @@ export default function RiskProfileWidget({ connectionId }: { connectionId?: num
   if (isLoading || !data) return <Skeleton style={{ height: '8rem', width: '100%' }} />
 
   const { riskScore, riskLevel, factors } = data
-  const config = LEVEL_CONFIG[riskLevel] || LEVEL_CONFIG.MODERATE
+  const config = {
+    ...getRiskColors(riskScore),
+    label: LEVEL_LABELS[riskLevel] || 'Moderate',
+  }
 
   const radius = 45
   const strokeWidth = 10
