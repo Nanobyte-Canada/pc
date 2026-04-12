@@ -24,12 +24,12 @@
 
 .tab-button:hover {
   color: var(--text-primary);
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(132, 107, 84, 0.06);
 }
 
 .tab-button.active {
   color: var(--accent);
-  background-color: rgba(0, 217, 255, 0.1);
+  background-color: rgba(132, 107, 84, 0.1);
 }
 
 .tabs-content {

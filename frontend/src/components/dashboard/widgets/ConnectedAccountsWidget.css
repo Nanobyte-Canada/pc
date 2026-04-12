@@ -1,0 +1,153 @@
+/* Empty state */
+.ca-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0;
+  color: var(--text-muted);
+}
+
+.ca-empty svg {
+  margin-bottom: 0.5rem;
+  opacity: 0.4;
+}
+
+.ca-empty p {
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Horizontal scrollable row */
+.ca-row {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 0.25rem;
+}
+
+.ca-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.ca-row::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+/* Card */
+.ca-card {
+  min-width: 13rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.ca-card:hover {
+  border-color: var(--accent);
+  background-color: var(--muted-bg);
+}
+
+/* Card left info */
+.ca-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ca-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.ca-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ca-card-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ca-card-broker {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  margin-top: 0.125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ca-card-model {
+  display: inline-block;
+  background: var(--accent-subtle, rgba(132, 107, 84, 0.1));
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.625rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ca-card-no-model {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* Accuracy SVG circle */
+.ca-accuracy {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ca-accuracy svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotate(-90deg);
+}
+
+.ca-bg-ring {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 3;
+}
+
+.ca-fg-ring {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.ca-accuracy-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  line-height: 1;
+}

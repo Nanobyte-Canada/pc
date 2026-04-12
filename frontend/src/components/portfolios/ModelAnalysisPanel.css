@@ -1,0 +1,311 @@
+/* ========== Model Analysis Panel ========== */
+
+.model-analysis-panel {
+  background: var(--card-bg, #21242b);
+  border: 1px solid var(--border, #2e3139);
+  border-left: 3px solid var(--orange-text);
+  border-radius: 8px;
+  padding: 20px;
+  animation: map-slide-in 0.25s ease-out;
+}
+
+@keyframes map-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 2x2 widget grid */
+.map-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .map-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Individual widget card */
+.map-widget {
+  background: var(--bg-secondary, #21242b);
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid var(--border, #2e3139);
+}
+
+.map-widget__title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted, #6e7182);
+  margin-bottom: 12px;
+}
+
+/* ========== Exposure (Sector & Geography) Widgets ========== */
+
+.map-exposure__chart-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.map-exposure__donut-wrapper {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.map-exposure__donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-exposure__donut-center span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted, #6e7182);
+}
+
+.map-exposure__legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.map-exposure__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-exposure__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.map-exposure__legend-name {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #9b9da8);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-exposure__legend-pct {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary, #e8e8ed);
+  flex-shrink: 0;
+}
+
+.map-exposure__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+  color: var(--text-muted, #6e7182);
+  gap: 8px;
+}
+
+.map-exposure__empty svg {
+  opacity: 0.35;
+}
+
+.map-exposure__empty span {
+  font-size: 0.8125rem;
+}
+
+/* ========== Risk Profile Widget ========== */
+
+.map-risk {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 0;
+}
+
+.map-risk__circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border-width: 4px;
+  border-style: solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.map-risk__score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #e8e8ed);
+}
+
+.map-risk__info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-risk__level {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #e8e8ed);
+}
+
+.map-risk__desc {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #6e7182);
+  line-height: 1.5;
+}
+
+.map-risk__bar-bg {
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--muted-bg, #2a2d35);
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.map-risk__bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+/* ========== Holdings Widget ========== */
+
+.map-holdings__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.map-holdings__table th {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #6e7182);
+  text-align: left;
+  padding: 0 0 8px 0;
+  border-bottom: 1px solid var(--border, #2e3139);
+}
+
+.map-holdings__table th:nth-child(2),
+.map-holdings__table td:nth-child(2) {
+  text-align: right;
+}
+
+.map-holdings__table td {
+  font-size: 0.8125rem;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border, #2e3139);
+}
+
+.map-holdings__table tr:last-child td {
+  border-bottom: none;
+}
+
+.map-holdings__symbol {
+  font-weight: 600;
+  color: var(--text-primary, #e8e8ed);
+}
+
+.map-holdings__pct {
+  text-align: right;
+  font-weight: 500;
+  color: var(--text-primary, #e8e8ed);
+}
+
+.map-holdings__asset-class {
+  color: var(--text-muted, #6e7182);
+}
+
+.map-holdings__empty {
+  text-align: center;
+  padding: 1.5rem 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted, #6e7182);
+}
+
+.map-holdings__scroll {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* ========== Action Bar ========== */
+
+.map-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ========== Loading Skeletons ========== */
+
+.map-loading {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .map-loading {
+    grid-template-columns: 1fr;
+  }
+}
+
+.map-loading__card {
+  background: var(--bg-secondary, #21242b);
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid var(--border, #2e3139);
+}
+
+.map-loading__title {
+  height: 12px;
+  width: 140px;
+  border-radius: 4px;
+  background: var(--muted-bg, #2a2d35);
+  margin-bottom: 16px;
+  animation: map-shimmer 1.5s ease-in-out infinite;
+}
+
+.map-loading__block {
+  height: 100px;
+  border-radius: 4px;
+  background: var(--muted-bg, #2a2d35);
+  animation: map-shimmer 1.5s ease-in-out infinite;
+}
+
+.map-loading__block--tall {
+  height: 140px;
+}
+
+@keyframes map-shimmer {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}

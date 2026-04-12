@@ -1,11 +1,26 @@
+export interface BrokerAuthType {
+  type: 'read' | 'trade'
+  authType: 'OAUTH' | 'SCRAPE' | 'UNOFFICIAL_API'
+}
+
 export interface Broker {
-  id: number
-  code: string
+  id?: number
   name: string
-  authType: 'OAUTH2' | 'API_KEY' | 'AGGREGATOR'
-  status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE'
+  slug?: string
+  status?: string
   logoUrl: string | null
   description: string | null
+  url?: string
+  openUrl?: string
+  enabled?: boolean
+  maintenanceMode?: boolean
+  isDegraded?: boolean
+  allowsTrading?: boolean
+  allowsFractionalUnits?: boolean
+  hasReporting?: boolean
+  isRealTimeConnection?: boolean
+  brokerageType?: string
+  authTypes?: BrokerAuthType[]
 }
 
 export interface BrokersResponse {
@@ -15,24 +30,34 @@ export interface BrokersResponse {
 export interface BrokerConnection {
   id: number
   broker: Broker
+  snaptradeAuthorizationId: string | null
   accountNumber: string | null
   accountType: string | null
   accountName: string | null
+  accountNumberActual: string | null
+  accountMetaType: string | null
   status: 'PENDING' | 'ACTIVE' | 'EXPIRED' | 'ERROR' | 'DISCONNECTED'
   lastPositionsFetchedAt: string | null
   positionsCount: number
   totalValue: number | null
   errorMessage: string | null
   createdAt: string
+  modelPortfolioId: number | null
+  modelPortfolioName: string | null
 }
 
 export interface BrokerConnectionsResponse {
   connections: BrokerConnection[]
 }
 
-export interface OAuthInitiateResponse {
+export interface ConnectBrokerRequest {
+  broker?: string
+  reconnectAuthId?: string
+  connectionType?: 'read' | 'trade' | 'trade-if-available'
+}
+
+export interface ConnectBrokerResponse {
   redirectUrl: string
-  state: string
 }
 
 export interface PositionFetchResponse {
@@ -53,6 +78,10 @@ export interface BrokerPosition {
   totalPnl: number | null
   totalPnlPercent: number | null
   currency: string
+  strikePrice: number | null
+  expirationDate: string | null
+  optionType: string | null
+  underlyingSymbol: string | null
 }
 
 export interface PositionsSummary {
@@ -64,7 +93,7 @@ export interface PositionsSummary {
 
 export interface ConnectionPositionsResponse {
   connectionId: number
-  broker: string
+  broker: string | null
   accountNumber: string | null
   asOfDate: string
   positions: BrokerPosition[]
@@ -72,8 +101,9 @@ export interface ConnectionPositionsResponse {
 }
 
 export interface BrokerBreakdown {
-  broker: string
+  broker: string | null
   accountNumber: string | null
+  accountType: string | null
   quantity: number
   value: number | null
 }
@@ -106,32 +136,114 @@ export interface AggregatedPositionsResponse {
   aggregateSummary: AggregateSummary
 }
 
-export interface BrokerPrefs {
-  autoFetchEnabled: boolean
-  fetchTimeUtc: string
-  notificationOnFetch: boolean
-  notificationOnError: boolean
+// SnapTrade Status types
+export interface SnapTradeStatus {
+  status: 'ONLINE' | 'DEGRADED' | 'OFFLINE' | 'UNKNOWN'
+  responseTimeMs: number | null
+  version: string | null
+  uptimePercent24h: number
+  lastChecked: string
 }
 
-export interface UpdateBrokerPrefsRequest {
-  autoFetchEnabled: boolean
-  fetchTimeUtc?: string
+export interface SnapTradeStatusResponse {
+  status: SnapTradeStatus
 }
 
-export interface BrokerPrefsResponse {
-  autoFetchEnabled: boolean
-  fetchTimeUtc: string
-  message?: string
+export interface ConnectionSyncResponse {
+  syncedCount: number
+  message: string
+}
+
+// ========== Activity Types ==========
+
+export interface BrokerActivityDto {
+  id: number
+  type: string
+  symbol: string | null
+  description: string | null
+  quantity: number | null
+  price: number | null
+  amount: number
+  fee: number | null
+  currency: string
+  tradeDate: string
+  settlementDate: string | null
+  accountName: string | null
+  optionType: string | null
+}
+
+export interface ActivitiesResponse {
+  activities: BrokerActivityDto[]
+  totalCount: number
+  page: number
+  pageSize: number
+}
+
+// ========== Balance Types ==========
+
+export interface BalanceSnapshotDto {
+  totalValue: number | null
+  cash: Record<string, number>
+  currency: string
+  asOfDate: string
+}
+
+export interface BalanceHistoryResponse {
+  snapshots: BalanceSnapshotDto[]
+  connectionId: number
+}
+
+// ========== Reporting Types ==========
+
+export interface PeriodSummary {
+  period: string
+  contributions: number
+  withdrawals: number
+  net: number
+}
+
+export interface ValuePoint {
+  date: string
+  totalValue: number
+  costBasis: number | null
+}
+
+export interface DividendPeriod {
+  period: string
+  total: number
+  bySymbol: Record<string, number>
+}
+
+export interface SymbolDividend {
+  symbol: string
+  total: number
+}
+
+export interface PerformanceKpis {
+  netContributions: number
+  monthlyAvgContributions: number
+  netChange: number
+  totalDividendIncome: number
+  avgMonthlyDividends: number
+  feesAndCommissions: number
+}
+
+export interface ReportingPerformanceResponse {
+  contributionsWithdrawals: PeriodSummary[]
+  totalValueHistory: ValuePoint[]
+  dividendHistory: DividendPeriod[]
+  totalDividendsBySymbol: SymbolDividend[]
+  kpis: PerformanceKpis
 }
 
 // Utility types
 export type ConnectionStatusType = BrokerConnection['status']
 
 export const connectionStatusColors: Record<ConnectionStatusType, string> = {
-  PENDING: '#f59e0b',
-  ACTIVE: '#10b981',
-  EXPIRED: '#ef4444',
-  ERROR: '#ef4444',
+  PENDING: '#d97706',
+  ACTIVE: '#059669',
+  EXPIRED: '#dc2626',
+  ERROR: '#dc2626',
   DISCONNECTED: '#6b7280'
 }
 

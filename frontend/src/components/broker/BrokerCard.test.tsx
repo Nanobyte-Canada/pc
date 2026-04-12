@@ -5,12 +5,11 @@ import type { Broker } from '../../types/broker'
 
 describe('BrokerCard', () => {
   const mockBroker: Broker = {
-    id: 1,
-    code: 'QUESTRADE',
     name: 'Questrade',
+    slug: 'questrade',
     description: 'Canadian discount brokerage',
-    authType: 'OAUTH2',
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    logoUrl: null
   }
 
   it('renders broker name', () => {
@@ -73,7 +72,7 @@ describe('BrokerCard', () => {
     expect(screen.getByText('Connecting...')).toBeInTheDocument()
   })
 
-  it('calls onConnect with broker code when button clicked', () => {
+  it('calls onConnect with broker slug when button clicked', () => {
     const mockOnConnect = vi.fn()
     render(
       <BrokerCard
@@ -85,22 +84,7 @@ describe('BrokerCard', () => {
     )
 
     fireEvent.click(screen.getByText('Connect'))
-    expect(mockOnConnect).toHaveBeenCalledWith('QUESTRADE')
-  })
-
-  it('disables button when broker status is not ACTIVE', () => {
-    const inactiveBroker = { ...mockBroker, status: 'MAINTENANCE' as const }
-    render(
-      <BrokerCard
-        broker={inactiveBroker}
-        onConnect={vi.fn()}
-        isConnecting={false}
-        hasExistingConnection={false}
-      />
-    )
-
-    const button = screen.getByRole('button')
-    expect(button).toBeDisabled()
+    expect(mockOnConnect).toHaveBeenCalledWith('questrade')
   })
 
   it('disables button when isConnecting is true', () => {
@@ -115,34 +99,6 @@ describe('BrokerCard', () => {
 
     const button = screen.getByRole('button')
     expect(button).toBeDisabled()
-  })
-
-  it('shows Under Maintenance message for MAINTENANCE status', () => {
-    const maintenanceBroker = { ...mockBroker, status: 'MAINTENANCE' as const }
-    render(
-      <BrokerCard
-        broker={maintenanceBroker}
-        onConnect={vi.fn()}
-        isConnecting={false}
-        hasExistingConnection={false}
-      />
-    )
-
-    expect(screen.getByText('Under Maintenance')).toBeInTheDocument()
-  })
-
-  it('shows Unavailable message for INACTIVE status', () => {
-    const inactiveBroker = { ...mockBroker, status: 'INACTIVE' as const }
-    render(
-      <BrokerCard
-        broker={inactiveBroker}
-        onConnect={vi.fn()}
-        isConnecting={false}
-        hasExistingConnection={false}
-      />
-    )
-
-    expect(screen.getByText('Unavailable')).toBeInTheDocument()
   })
 
   it('renders broker initial as avatar', () => {

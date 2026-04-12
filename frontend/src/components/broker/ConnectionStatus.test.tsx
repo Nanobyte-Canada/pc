@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { ConnectionStatus } from './ConnectionStatus'
-import type { ConnectionStatusType } from '../../types/broker'
 
 describe('ConnectionStatus', () => {
   it('renders ACTIVE status with correct label', () => {
@@ -16,7 +15,7 @@ describe('ConnectionStatus', () => {
 
   it('renders EXPIRED status with correct label', () => {
     render(<ConnectionStatus status="EXPIRED" />)
-    expect(screen.getByText('Expired')).toBeInTheDocument()
+    expect(screen.getByText('Token Expired')).toBeInTheDocument()
   })
 
   it('renders ERROR status with correct label', () => {
@@ -32,13 +31,13 @@ describe('ConnectionStatus', () => {
   it('applies correct color styling for ACTIVE status', () => {
     const { container } = render(<ConnectionStatus status="ACTIVE" />)
     const span = container.querySelector('span')
-    expect(span).toHaveStyle({ color: '#10b981' })
+    expect(span).toHaveStyle({ color: '#059669' })
   })
 
   it('applies correct color styling for ERROR status', () => {
     const { container } = render(<ConnectionStatus status="ERROR" />)
     const span = container.querySelector('span')
-    expect(span).toHaveStyle({ color: '#ef4444' })
+    expect(span).toHaveStyle({ color: '#dc2626' })
   })
 
   it('renders with status indicator dot', () => {

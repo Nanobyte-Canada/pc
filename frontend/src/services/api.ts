@@ -8,8 +8,75 @@ function getCsrfTokenFromCookie(): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+// Token refresh mutex to prevent concurrent refresh attempts
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+async function attemptTokenRefresh(): Promise<boolean> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const csrfToken = getCsrfTokenFromCookie();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (csrfToken) {
+        headers['X-XSRF-TOKEN'] = csrfToken;
+      }
+
+      const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+      });
+
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+    public detail: string,
+    public title?: string
+  ) {
+    super(detail)
+    this.name = 'ApiError'
+  }
+}
+
+export async function parseErrorResponse(response: Response): Promise<ApiError> {
+  try {
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('application/problem+json') || contentType.includes('application/json')) {
+      const body = await response.json()
+      return new ApiError(
+        body.status || response.status,
+        body.code || body.errorCode || 'UNKNOWN',
+        body.detail || body.message || response.statusText,
+        body.title
+      )
+    }
+  } catch {
+    // Failed to parse body
+  }
+  return new ApiError(response.status, 'UNKNOWN', response.statusText)
+}
+
 /**
- * Authenticated fetch wrapper that includes credentials and CSRF token
+ * Authenticated fetch wrapper that includes credentials, CSRF token,
+ * and automatic 401 retry via token refresh.
  */
 export async function apiFetch(
   endpoint: string,
@@ -34,11 +101,39 @@ export async function apiFetch(
     credentials: 'include',
   });
 
+  // Auto-refresh on 401, but skip for auth endpoints to avoid loops
+  if (response.status === 401 && !endpoint.startsWith('/auth/')) {
+    const refreshed = await attemptTokenRefresh();
+    if (refreshed) {
+      // Retry original request with fresh tokens
+      const retryHeaders = new Headers(options.headers);
+      if (!retryHeaders.has('Content-Type') && options.method && options.method !== 'GET') {
+        retryHeaders.set('Content-Type', 'application/json');
+      }
+      const newCsrf = getCsrfTokenFromCookie();
+      if (newCsrf) {
+        retryHeaders.set('X-XSRF-TOKEN', newCsrf);
+      }
+      return fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers: retryHeaders,
+        credentials: 'include',
+      });
+    }
+
+    // Refresh failed — session is dead, force logout
+    const { useAuthStore } = await import('../stores/authStore');
+    useAuthStore.getState().logout();
+    useAuthStore.getState().setSessionExpired(true);
+    window.location.href = '/login';
+  }
+
   return response;
 }
 
 // Legacy exports for backward compatibility
-export function setCsrfToken(_token: string | null) {
+export function setCsrfToken(_token: string | null): void {
+  void _token;
   // No-op: CSRF token is now read from cookie
 }
 

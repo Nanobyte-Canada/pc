@@ -1,13 +1,26 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: portfolio-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - portfolio-network
+
   postgres:
     image: postgres:16-alpine
     container_name: portfolio-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-portfolio}
       POSTGRES_USER: ${POSTGRES_USER:-portfolio}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localdev123}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
     ports:
       - "5432:5432"
     volumes:
@@ -22,20 +35,30 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./backend/portfolio
       dockerfile: Dockerfile
     container_name: portfolio-backend
     environment:
       SPRING_PROFILES_ACTIVE: local
       DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
       DATABASE_USERNAME: ${POSTGRES_USER:-portfolio}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-localdev123}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       APP_VERSION: ${APP_VERSION:-0.0.1-SNAPSHOT}
       APP_ENVIRONMENT: local
+      SNAPTRADE_CLIENT_ID: ${SNAPTRADE_CLIENT_ID:-}
+      SNAPTRADE_CONSUMER_KEY: ${SNAPTRADE_CONSUMER_KEY:-}
+      SNAPTRADE_REDIRECT_URI: ${SNAPTRADE_REDIRECT_URI:-http://localhost:3000/brokers/connections}
+      BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY:-}
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     ports:
       - "8080:8080"
+      - "5005:5005"  # Debug port
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
@@ -43,6 +66,29 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    networks:
+      - portfolio-network
+
+  ingestion-service:
+    build:
+      context: ./backend/ingestion
+      dockerfile: Dockerfile
+    container_name: portfolio-ingestion
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
+      DATABASE_USERNAME: ${POSTGRES_USER:-portfolio}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EODHD_API_KEY: ${EODHD_API_KEY:-}
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - portfolio-network
 
@@ -54,13 +100,17 @@ services:
     container_name: portfolio-frontend
     environment:
       VITE_API_URL: http://localhost:8080
+      VITE_PROXY_BACKEND_URL: http://backend:8080
+      VITE_PROXY_INGESTION_URL: http://ingestion-service:8081
     ports:
       - "3000:3000"
     volumes:
       - ./frontend/src:/app/src:ro
       - ./frontend/public:/app/public:ro
+      - ./frontend/index.html:/app/index.html:ro
     depends_on:
       - backend
+      - ingestion-service
     networks:
       - portfolio-network
 

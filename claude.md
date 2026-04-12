@@ -1,113 +1,97 @@
-You are a senior full-stack + DevOps engineer. Create a practical, step-by-step plan and an initial project stub (repo structure + minimal runnable skeleton) for an application that helps with portfolio construction using public ETFs and Mutual Funds.
+# Portfolio Construction App
 
-Scope (important)
+Monorepo for a portfolio construction and analysis application using public ETFs.
+Backend (Kotlin/Spring Boot) + Frontend (React/TypeScript) + PostgreSQL + Redis.
 
-- For now, do NOT implement portfolio logic. Only create a foundation/stub for:
-    - backend
-    - frontend
-    - database
-    - tests
-    - Docker container deployment 
-    - CI/CD via GitHub Actions
-    - environment separation (local/dev/prod)
-    - GCP deployment architecture (Cloud Run + Cloud SQL + Cloud Storage + HTTPS Load Balancer)
+## Local Environment Constraint
 
-Tech requirements
-- Backend: Kotlin
-- Frontend: React
-- Database: PostgreSQL
-- Tests:
-    backend tests included
-    frontend tests included
-- Deployment:
-    Docker containers
-    GitHub Actions workflows for CI/CD
-- Environments:
-    local, dev, prod
-    separate env variables per environment
-- GCP target:
-    backend on Cloud Run with autoscaling
-    postgres on Cloud SQL
-    frontend hosted on Cloud Storage
-    Cloud Load Balancing in front (HTTPS)
+**No JDK/Java is installed on the local machine.** All backend compilation, testing, and validation must be done inside Docker containers. Never run `./gradlew` commands directly on the host.
 
-What to produce (deliverables)
+## Commands
 
-1. High-level architecture
-- Components and how they connect (frontend → LB → backend; backend → Cloud SQL; static frontend → Cloud Storage, etc.)
-- Local/dev/prod setup strategy.
+```bash
+# Docker (local full stack)
+docker compose up --build
+docker compose down
+docker compose logs -f backend
 
-2. Repository layout
-- A monorepo layout is preferred unless you strongly justify multi-repo.
-- Include folders for backend, frontend, infra, scripts, docs.
+# Backend validation (inside Docker)
+docker compose exec backend ./gradlew test
+docker compose exec backend ./gradlew build
 
-3. Backend stub (Kotlin)
-- Use either Ktor or Spring Boot (choose one and justify).
-- Minimal endpoints:
-    GET /health returns 200 + basic info
-    GET /api/v1/version
-- Database connectivity stub (no real schema needed yet, but include migration tooling).
-- Add configuration loading from env vars.
+# Frontend (npm — run from frontend/)
+npm install && npm run dev          # Dev server on :3000
+npm run build                       # tsc + vite build
+npm run test:run                    # Vitest single run
+npm run lint                        # ESLint
+```
 
-4. Frontend stub (React)
-- Minimal page that calls /api/v1/version and displays it.
-- Environment-based config (local/dev/prod).
+## Key Constraints
 
-5. Database stub (PostgreSQL)
-- Local docker-compose service for Postgres.
-- Migration tool (Flyway or Liquibase) wired in.
+- **No Tailwind** — plain CSS with CSS custom properties. Component styles in companion `.css` files.
+- **Schema changes** — always use Flyway migrations. Never modify Hibernate DDL mode. Check highest existing V number and increment.
+- **API calls (frontend)** — always use `apiFetch()` from `services/api.ts`. Never use raw `fetch`.
+- **Tests (backend)** — use MockK for mocking, not Mockito.
+- **New endpoints** — follow `/api/v1/` prefix pattern. Controllers return DTOs, never entities.
+- **New entities** — create entity, repository, service, DTO, and Flyway migration.
 
-6. Docker & local development
-- Dockerfiles for backend and frontend (or frontend build artifact + static hosting).
-- docker-compose.yml for local: postgres + backend (+ frontend optional).
-- Provide commands: build, run, test.
+## Pre-Planning Review (Mandatory)
 
-7. Testing
-- Backend tests (unit + minimal integration test around health/version route).
-- Frontend tests (basic render + mock API call).
-- Show how tests run in CI.
+Before planning any change:
+1. Read `docs/reference/INDEX.md` for the documentation structure
+2. Read the relevant reference files for the area being changed (see table below)
+3. Check `docs/reference/unused-legacy.md` to avoid touching dead code
+4. Review `docs/business-context.html` for architectural context
 
-8. CI/CD with GitHub Actions
-- Workflows:
-    PR checks: lint + unit tests + build for backend and frontend.
-    Main branch: build Docker image(s), push to registry, deploy to GCP.
-- Use secure auth to GCP (prefer Workload Identity Federation), not long-lived keys.
-- Cache dependencies for speed.
+| Area | Reference File |
+|------|---------------|
+| Schema changes | `docs/reference/database-schema.md` |
+| API changes | `docs/reference/api-endpoints.md` |
+| Service logic | `docs/reference/backend-services.md` |
+| Frontend work | `docs/reference/frontend-map.md` |
+| Entity/DTO changes | `docs/reference/entity-relationships.md` |
+| Infrastructure | `docs/reference/infrastructure.md` |
+| Config/env vars | `docs/reference/configurations.md` |
 
-9. GCP deployment plan
-- What GCP resources are needed and why:
-    Cloud Run service (backend)
-    Cloud SQL instance (Postgres)
-    Cloud Storage bucket (static frontend)
-    HTTPS Load Balancer (routing + TLS)
-    Secret Manager for secrets
-    VPC Connector / Cloud SQL connector approach
-- Explain environment separation (separate projects or separate resources/namespaces).
+## Post-Implementation (Mandatory)
 
-10. Provide concrete stub files
-- Include minimal but valid content for key files:
-    backend/build.gradle.kts (or Maven equivalent)
-    backend/src/... with minimal app + routes
-    frontend/package.json + minimal React app code
-    docker-compose.yml
-    backend/Dockerfile, frontend/Dockerfile (or alternative for static)
-    .github/workflows/ci.yml and .github/workflows/deploy.yml
-    .env.example plus .env.local, .env.dev, .env.prod templates (no secrets)
-    README.md with setup instructions
+After implementing any change:
+1. Update all affected `docs/reference/` files (see trigger table below)
+2. Update `docs/business-context.html` if architecture or features changed
+3. Move completed spec and plan files to `.archive/` via `git mv`
 
-11. Keep it minimal but runnable
-- The repo should build and tests should pass from a fresh clone.
-- Use placeholder values where needed.
-- Avoid implementing portfolio features; just scaffolding.
+| What Changed | Update These Files |
+|---|---|
+| New Flyway migration | `database-schema.md` |
+| New/modified API endpoint | `api-endpoints.md` |
+| New/modified service or scheduler | `backend-services.md` |
+| New/modified component, hook, page | `frontend-map.md` |
+| New/modified entity or DTO | `entity-relationships.md` |
+| Environment variable or config | `configurations.md` |
+| Docker, CI/CD, Terraform | `infrastructure.md` |
+| Dead code removed | `unused-legacy.md` |
+| Improvement implemented | `improvements.md` |
 
+**Do not consider a task complete until documentation is updated.**
 
-Output format
-- Start with a short architecture overview.
-- Then present the repo tree.
-- Then show the key file contents in fenced code blocks.
-- End with “How to run locally” and “How CI/CD works” sections.
+## Quality Bar
 
-Constraints
-- No proprietary dependencies.
-- Keep secrets out of the repo.
-- Prefer simple defaults and clear docs.
+Before committing:
+- `docker compose exec backend ./gradlew test` passes
+- `npm run test:run` passes (from `frontend/`)
+- `npm run lint` passes (from `frontend/`)
+- `npm run build` succeeds (from `frontend/`)
+- No secrets in committed files
+- Flyway migration number does not conflict
+
+## Directory Structure
+
+```
+backend/portfolio/     — Main Spring Boot app (port 8080)
+backend/ingestion/     — Data ingestion microservice (port 8081)
+frontend/              — React/TypeScript (Vite, port 3000)
+config/                — Environment file template (.env.example)
+docs/reference/        — Agent reference documentation (11 files)
+docs/business-context.html — Architecture and module overview
+.archive/              — Completed design specs and plans
+```

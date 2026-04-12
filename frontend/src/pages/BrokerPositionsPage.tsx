@@ -7,7 +7,8 @@ import { formatCurrency, formatPercent, formatQuantity, getRelativeTime } from '
 import type { AggregatedPosition, BrokerConnection } from '../types/broker'
 
 import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
+import 'ag-grid-community/styles/ag-theme-quartz.css'
+import './BrokerPositionsPage.css'
 
 type ViewMode = 'all' | 'by-broker'
 
@@ -22,8 +23,7 @@ export function BrokerPositionsPage() {
   // Get latest fetch time from connections
   const lastFetchTime = connectionsData?.connections
     .filter(c => c.lastPositionsFetchedAt)
-    .sort((a, b) => new Date(b.lastPositionsFetchedAt!).getTime() - new Date(a.lastPositionsFetchedAt!).getTime())
-    [0]?.lastPositionsFetchedAt
+    .sort((a, b) => new Date(b.lastPositionsFetchedAt!).getTime() - new Date(a.lastPositionsFetchedAt!).getTime())[0]?.lastPositionsFetchedAt
 
   const columnDefs: ColDef<AggregatedPosition>[] = [
     {
@@ -75,7 +75,7 @@ export function BrokerPositionsPage() {
       width: 120,
       type: 'rightAligned',
       cellStyle: (params) => ({
-        color: params.value >= 0 ? '#10b981' : '#ef4444',
+        color: params.value >= 0 ? 'var(--success)' : 'var(--error)',
         fontWeight: 500
       }),
       valueFormatter: (params: ValueFormatterParams) => {
@@ -90,7 +90,7 @@ export function BrokerPositionsPage() {
       width: 100,
       type: 'rightAligned',
       cellStyle: (params) => ({
-        color: params.value >= 0 ? '#10b981' : '#ef4444',
+        color: params.value >= 0 ? 'var(--success)' : 'var(--error)',
         fontWeight: 500
       }),
       valueFormatter: (params: ValueFormatterParams) => formatPercent(params.value)
@@ -101,25 +101,19 @@ export function BrokerPositionsPage() {
       width: 150,
       valueFormatter: (params: ValueFormatterParams) => {
         if (!params.value || params.value.length === 0) return '-'
-        return params.value.map((b: { broker: string }) => b.broker.charAt(0)).join(', ')
+        return params.value.map((b: { broker: string | null }) => (b.broker || '?').charAt(0)).join(', ')
       },
-      cellRenderer: (params: { value: { broker: string; quantity: number }[] }) => {
+      cellRenderer: (params: { value: { broker: string | null; accountType: string | null; quantity: number }[] }) => {
         if (!params.value || params.value.length === 0) return '-'
         return (
           <div style={{ display: 'flex', gap: '4px' }}>
             {params.value.map((b, i) => (
               <span
                 key={i}
-                style={{
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  backgroundColor: '#f3f4f6',
-                  fontSize: '11px',
-                  color: '#374151'
-                }}
-                title={`${b.broker}: ${formatQuantity(b.quantity)}`}
+                className="broker-badge"
+                title={`${b.broker || 'Unknown'}${b.accountType ? ' - ' + b.accountType : ''}: ${formatQuantity(b.quantity)}`}
               >
-                {b.broker.substring(0, 2)}
+                {(b.broker || '??').substring(0, 2)}
               </span>
             ))}
           </div>
@@ -130,49 +124,30 @@ export function BrokerPositionsPage() {
 
   if (positionsLoading) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
+      <div className="broker-positions-page page-loading">
         <div>Loading positions...</div>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto', height: 'calc(100vh - 100px)' }}>
+    <div className="broker-positions-page">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 600, color: '#111827', margin: 0 }}>
-            Portfolio Positions
-          </h1>
+      <div className="positions-header">
+        <div className="positions-header-left">
+          <h1>Portfolio Positions</h1>
 
           {/* View mode toggle */}
-          <div style={{ display: 'flex', borderRadius: '6px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+          <div className="view-toggle">
             <button
               onClick={() => setViewMode('all')}
-              style={{
-                padding: '6px 12px',
-                border: 'none',
-                backgroundColor: viewMode === 'all' ? '#3b82f6' : '#fff',
-                color: viewMode === 'all' ? '#fff' : '#374151',
-                fontSize: '13px',
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}
+              className={viewMode === 'all' ? 'active' : ''}
             >
               All
             </button>
             <button
               onClick={() => setViewMode('by-broker')}
-              style={{
-                padding: '6px 12px',
-                border: 'none',
-                borderLeft: '1px solid #e5e7eb',
-                backgroundColor: viewMode === 'by-broker' ? '#3b82f6' : '#fff',
-                color: viewMode === 'by-broker' ? '#fff' : '#374151',
-                fontSize: '13px',
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}
+              className={viewMode === 'by-broker' ? 'active' : ''}
             >
               By Broker
             </button>
@@ -180,7 +155,7 @@ export function BrokerPositionsPage() {
         </div>
 
         {lastFetchTime && (
-          <span style={{ fontSize: '13px', color: '#6b7280' }}>
+          <span className="positions-last-updated">
             Last updated: {getRelativeTime(lastFetchTime)}
           </span>
         )}
@@ -188,16 +163,21 @@ export function BrokerPositionsPage() {
 
       {/* Summary Cards */}
       {summary && (
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+        <div className="positions-summary">
           <SummaryCard title="Total Value" value={formatCurrency(summary.totalValue)} />
+          <SummaryCard title="Total Contribution" value={formatCurrency(summary.totalCost)} />
           <SummaryCard
             title="Total P&L"
             value={`${summary.totalPnl >= 0 ? '+' : ''}${formatCurrency(summary.totalPnl)}`}
             subtitle={formatPercent(summary.totalPnlPercent)}
-            valueColor={summary.totalPnl >= 0 ? '#10b981' : '#ef4444'}
+            valueColor={summary.totalPnl >= 0 ? 'var(--success)' : 'var(--error)'}
           />
-          <SummaryCard title="Accounts" value={summary.accountCount.toString()} subtitle={`${summary.brokerCount} broker${summary.brokerCount > 1 ? 's' : ''}`} />
           <SummaryCard title="Positions" value={positions.length.toString()} />
+          <SummaryCard
+            title="Accounts"
+            value={(connectionsData?.connections.filter(c => c.status === 'ACTIVE' || c.positionsCount > 0).length ?? summary.accountCount).toString()}
+            subtitle={`${summary.brokerCount} broker${summary.brokerCount > 1 ? 's' : ''}`}
+          />
         </div>
       )}
 
@@ -205,22 +185,12 @@ export function BrokerPositionsPage() {
       {viewMode === 'all' ? (
         // Aggregated Positions Grid
         positions.length === 0 ? (
-          <div
-            style={{
-              border: '1px dashed #d1d5db',
-              borderRadius: '8px',
-              padding: '48px',
-              textAlign: 'center',
-              color: '#6b7280'
-            }}
-          >
-            <p style={{ margin: 0, fontSize: '16px' }}>No positions found.</p>
-            <p style={{ margin: '8px 0 0', fontSize: '14px' }}>
-              Connect a broker and fetch positions to see your portfolio here.
-            </p>
+          <div className="positions-empty-state">
+            <p>No positions found.</p>
+            <p>Connect a broker and fetch positions to see your portfolio here.</p>
           </div>
         ) : (
-          <div className="ag-theme-alpine" style={{ height: 'calc(100% - 180px)', width: '100%' }}>
+          <div className="ag-theme-quartz positions-grid-container">
             <AgGridReact
               rowData={positions}
               columnDefs={columnDefs}
@@ -251,18 +221,10 @@ interface SummaryCardProps {
 
 function SummaryCard({ title, value, subtitle, valueColor }: SummaryCardProps) {
   return (
-    <div
-      style={{
-        flex: 1,
-        padding: '16px',
-        backgroundColor: '#fff',
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px'
-      }}
-    >
-      <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>{title}</div>
-      <div style={{ fontSize: '24px', fontWeight: 600, color: valueColor || '#111827' }}>{value}</div>
-      {subtitle && <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>{subtitle}</div>}
+    <div className="positions-summary-card">
+      <div className="card-title">{title}</div>
+      <div className="card-value" style={valueColor ? { color: valueColor } : undefined}>{value}</div>
+      {subtitle && <div className="card-subtitle">{subtitle}</div>}
     </div>
   )
 }
@@ -276,18 +238,10 @@ function BrokerAccountsList({ connections }: BrokerAccountsListProps) {
 
   if (activeConnections.length === 0) {
     return (
-      <div
-        style={{
-          border: '1px dashed #d1d5db',
-          borderRadius: '8px',
-          padding: '48px',
-          textAlign: 'center',
-          color: '#6b7280'
-        }}
-      >
-        <p style={{ margin: 0, fontSize: '16px' }}>No broker accounts with positions.</p>
-        <p style={{ margin: '8px 0 0', fontSize: '14px' }}>
-          <Link to="/brokers/connections" style={{ color: '#3b82f6' }}>
+      <div className="positions-empty-state">
+        <p>No broker accounts with positions.</p>
+        <p>
+          <Link to="/brokers/connections" className="broker-account-connect-link">
             Connect a broker
           </Link>{' '}
           to start tracking your positions.
@@ -297,90 +251,49 @@ function BrokerAccountsList({ connections }: BrokerAccountsListProps) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div className="broker-accounts-list">
       {activeConnections.map(connection => (
         <Link
           key={connection.id}
           to={`/brokers/positions/${connection.id}`}
-          style={{ textDecoration: 'none' }}
+          className="broker-account-link"
         >
-          <div
-            style={{
-              padding: '16px 20px',
-              backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              transition: 'border-color 0.2s, box-shadow 0.2s',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#3b82f6'
-              e.currentTarget.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.1)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#e5e7eb'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  backgroundColor: '#f3f4f6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 600,
-                  color: '#374151',
-                  fontSize: '14px'
-                }}
-              >
-                {connection.broker.code.substring(0, 2)}
+          <div className="broker-account-card">
+            <div className="broker-account-left">
+              <div className="broker-account-icon">
+                {(connection.broker.name || '??').substring(0, 2)}
               </div>
               <div>
-                <div style={{ fontWeight: 600, color: '#111827', fontSize: '15px' }}>
+                <div className="broker-account-name">
                   {connection.broker.name}
                 </div>
-                <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                <div className="broker-account-detail">
                   {connection.accountType && `${connection.accountType} - `}
                   {connection.accountNumber || 'Account'}
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '13px', color: '#6b7280' }}>Positions</div>
-                <div style={{ fontWeight: 600, color: '#111827' }}>{connection.positionsCount}</div>
+            <div className="broker-account-right">
+              <div className="broker-account-stat">
+                <div className="stat-label">Positions</div>
+                <div className="stat-value">{connection.positionsCount}</div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '13px', color: '#6b7280' }}>Total Value</div>
-                <div style={{ fontWeight: 600, color: '#111827' }}>
+              <div className="broker-account-stat">
+                <div className="stat-label">Total Value</div>
+                <div className="stat-value">
                   {connection.totalValue !== null ? formatCurrency(connection.totalValue) : '-'}
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '13px', color: '#6b7280' }}>Last Updated</div>
-                <div style={{ fontSize: '13px', color: '#374151' }}>
+              <div className="broker-account-stat">
+                <div className="stat-label">Last Updated</div>
+                <div className="stat-time">
                   {connection.lastPositionsFetchedAt
                     ? getRelativeTime(connection.lastPositionsFetchedAt)
                     : 'Never'}
                 </div>
               </div>
-              <div
-                style={{
-                  color: '#3b82f6',
-                  fontSize: '18px',
-                  fontWeight: 500
-                }}
-              >
-                &rarr;
-              </div>
+              <div className="broker-account-arrow">View Positions ›</div>
             </div>
           </div>
         </Link>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { InstrumentType } from '../../types/instrument';
+import { InstrumentType } from '../../types/screener';
 import { InstrumentSearchAutocomplete } from './InstrumentSearchAutocomplete';
 import './InstrumentTabs.css';
 
@@ -14,7 +14,6 @@ const TABS: Tab[] = [
   { id: 'all', label: 'All' },
   { id: 'STOCK', label: 'Stocks' },
   { id: 'ETF', label: 'ETFs' },
-  { id: 'MUTUAL_FUND', label: 'Mutual Funds' },
 ];
 
 export function InstrumentTabs() {

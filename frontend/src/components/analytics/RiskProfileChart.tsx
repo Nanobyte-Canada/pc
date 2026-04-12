@@ -16,13 +16,13 @@ interface RiskBar {
 const getColor = (status: string) => {
   switch (status) {
     case 'good':
-      return '#00ff88';
+      return '#059669';
     case 'warning':
-      return '#ffaa00';
+      return '#d97706';
     case 'high':
-      return '#ff6b6b';
+      return '#dc2626';
     default:
-      return '#00d9ff';
+      return '#846b54';
   }
 };
 
@@ -64,7 +64,7 @@ export function RiskProfileChart({ metrics }: RiskProfileChartProps) {
         xKey: 'metric',
         yKey: 'value',
         yName: 'Current Value',
-        fill: '#00d9ff',
+        fill: '#846b54',
         stroke: 'transparent',
         cornerRadius: 4,
         formatter: (params: { itemId: number }) => ({
@@ -88,7 +88,7 @@ export function RiskProfileChart({ metrics }: RiskProfileChartProps) {
         type: 'category' as const,
         position: 'left' as const,
         label: {
-          color: '#a0aec0',
+          color: '#6e7182',
           fontSize: 12,
         },
         line: {
@@ -99,11 +99,11 @@ export function RiskProfileChart({ metrics }: RiskProfileChartProps) {
         type: 'number' as const,
         position: 'bottom' as const,
         label: {
-          color: '#718096',
+          color: '#6e7182',
           formatter: ({ value }: { value: number }) => `${value}%`,
         },
         gridLine: {
-          style: [{ stroke: '#16213e', lineDash: [4, 4] }],
+          style: [{ stroke: '#9b9da8', lineDash: [4, 4] }],
         },
       },
     ],

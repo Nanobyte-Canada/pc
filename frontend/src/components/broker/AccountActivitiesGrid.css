@@ -1,0 +1,116 @@
+.activities-grid-wrapper {
+  margin-top: 16px;
+}
+
+.activities-filters {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.activities-filters .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activities-filters .filter-group label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.activities-filters .filter-group input,
+.activities-filters .filter-group select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.sync-activities-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background-color: var(--accent);
+  color: var(--nav-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sync-activities-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.sync-activities-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.activities-grid-container {
+  width: 100%;
+}
+
+.activities-loading,
+.activities-empty {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.activities-empty p {
+  margin: 0;
+}
+
+.activities-empty p + p {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.activities-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding: 8px 0;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.pagination-controls button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.pagination-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background: var(--bg-primary);
+}

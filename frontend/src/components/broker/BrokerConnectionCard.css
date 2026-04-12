@@ -1,0 +1,192 @@
+.broker-connection-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background-color: var(--card-bg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Left: Broker info */
+.connection-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.connection-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.connection-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.connection-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.connection-broker-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.connection-account-number {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.connection-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.connection-last-fetched {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.connection-error-msg {
+  font-size: 12px;
+  color: var(--error);
+  margin-top: 4px;
+}
+
+/* Middle: Stats */
+.connection-stats {
+  text-align: right;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.connection-total-value {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.connection-positions-count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Right: Actions */
+.connection-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.connection-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.connection-btn.reconnect {
+  border: none;
+  background-color: var(--warning);
+  color: var(--nav-text);
+}
+
+.connection-btn.reconnect:hover {
+  background-color: var(--warning-dark);
+}
+
+.connection-btn.fetch {
+  border: 1px solid var(--border);
+  background-color: var(--card-bg);
+  color: var(--text-secondary);
+}
+
+.connection-btn.fetch:hover:not(:disabled) {
+  background-color: var(--bg-primary);
+}
+
+.connection-btn.fetch:disabled {
+  background-color: var(--bg-primary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.connection-btn.disconnect {
+  border: 1px solid var(--error);
+  background-color: var(--card-bg);
+  color: var(--error);
+}
+
+.connection-btn.disconnect:hover {
+  background-color: rgba(220, 38, 38, 0.05);
+}
+
+.connection-btn.confirm-delete {
+  border: none;
+  background-color: var(--error);
+  color: var(--nav-text);
+  padding: 8px 12px;
+}
+
+.connection-btn.cancel {
+  border: 1px solid var(--border);
+  background-color: var(--card-bg);
+  color: var(--text-secondary);
+  padding: 8px 12px;
+}
+
+.connection-confirm-group {
+  display: flex;
+  gap: 4px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .broker-connection-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .connection-info {
+    flex: none;
+  }
+
+  .connection-stats {
+    text-align: left;
+    min-width: auto;
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+  }
+
+  .connection-actions {
+    justify-content: flex-start;
+  }
+}

@@ -1,172 +1,107 @@
-import { apiFetch } from './api';
+// ─── Types ───
 
-// Response types
-export interface TriggerIngestionResponse {
-  runId: number;
-  status: string;
-  message: string;
+export interface InstrumentTypeStats {
+  total: number
+  enriched: number
+}
+
+export interface IngestionStats {
+  totalInstruments: number
+  enrichedInstruments: number
+  pendingInstruments: number
+  remainingDailyQuota: number
+  totalDailyQuota: number
+  exchangeCount: number
+  exchanges: string[]
+  lastRunStatus: string
+  lastRunCompletedAt: string | null
+  instrumentsByType: Record<string, InstrumentTypeStats>
+}
+
+export interface ActiveRunStep {
+  name: string
+  status: string
+  processed: number
+  created: number
+  updated: number
+  failed: number
+}
+
+export interface ActiveRun {
+  isRunning: boolean
+  runId?: number
+  steps?: ActiveRunStep[]
 }
 
 export interface IngestionRun {
-  id: number;
-  runType: string;
-  status: string;
-  triggeredBy: string | null;
-  startedAt: string;
-  completedAt: string | null;
-  totalSteps: number;
-  completedSteps: number;
-  failedSteps: number;
-  errorCount: number;
+  id: number
+  runType: string
+  status: string
+  triggerSource: string | null
+  startedAt: string
+  completedAt: string | null
 }
 
 export interface IngestionStep {
-  id: number;
-  stepName: string;
-  status: string;
-  startedAt: string | null;
-  completedAt: string | null;
-  itemsProcessed: number;
-  itemsFailed: number;
-  errorMessage: string | null;
-}
-
-export interface IngestionRunDetails {
-  run: IngestionRun;
-  steps: IngestionStep[];
+  id: number
+  stepName: string
+  status: string
+  startedAt: string
+  completedAt: string | null
+  recordsProcessed: number
+  recordsCreated: number
+  recordsUpdated: number
+  recordsFailed: number
 }
 
 export interface IngestionError {
-  id: number;
-  runId: number;
-  stepName: string;
-  errorType: string;
-  errorMessage: string;
-  stackTrace: string | null;
-  itemIdentifier: string | null;
-  createdAt: string;
+  id: number
+  errorType: string
+  errorCode: string | null
+  errorMessage: string | null
+  createdAt: string
 }
 
-// Ingestion trigger functions
-export async function triggerFullIngestion(): Promise<TriggerIngestionResponse> {
-  const response = await apiFetch('/admin/ingestion/run', {
-    method: 'POST',
-  });
+// ─── API Functions ───
 
+const BASE = '/ingestion-api/admin/ingestion'
+
+async function ingestionFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  })
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to trigger full ingestion');
+    const body = await response.json().catch(() => ({}))
+    throw new Error(body.detail || body.message || `Request failed: ${response.status}`)
   }
-
-  return response.json();
+  return response.json()
 }
 
-export async function triggerUniverseRefresh(): Promise<TriggerIngestionResponse> {
-  const response = await apiFetch('/admin/ingestion/universe', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to trigger universe refresh');
-  }
-
-  return response.json();
+export async function getIngestionStats(): Promise<IngestionStats> {
+  return ingestionFetch('/stats')
 }
 
-export async function triggerStockIngestion(): Promise<TriggerIngestionResponse> {
-  const response = await apiFetch('/admin/ingestion/stocks/run', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to trigger stock ingestion');
-  }
-
-  return response.json();
+export async function getActiveRun(): Promise<ActiveRun> {
+  return ingestionFetch('/active-run')
 }
 
-export async function triggerEtfIngestion(): Promise<TriggerIngestionResponse> {
-  const response = await apiFetch('/admin/ingestion/etfs/run', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to trigger ETF ingestion');
-  }
-
-  return response.json();
+export async function triggerExchangeSync(): Promise<{ status: string }> {
+  return ingestionFetch('/exchanges', { method: 'POST' })
 }
 
-export async function triggerStockEnrichment(): Promise<TriggerIngestionResponse> {
-  const response = await apiFetch('/admin/enrichment/stocks/run', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to trigger stock enrichment');
-  }
-
-  return response.json();
+export async function triggerFullIngestion(): Promise<{ status: string }> {
+  return ingestionFetch('/run', { method: 'POST' })
 }
 
-export async function triggerEtfEnrichment(): Promise<TriggerIngestionResponse> {
-  const response = await apiFetch('/admin/enrichment/etfs/run', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to trigger ETF enrichment');
-  }
-
-  return response.json();
-}
-
-// Query functions
 export async function getIngestionRuns(limit: number = 10): Promise<IngestionRun[]> {
-  const response = await apiFetch(`/admin/ingestion/runs?limit=${limit}`);
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch ingestion runs');
-  }
-
-  return response.json();
+  return ingestionFetch(`/runs?limit=${limit}`)
 }
 
-export async function getIngestionRunDetails(id: number): Promise<IngestionRunDetails> {
-  const response = await apiFetch(`/admin/ingestion/runs/${id}`);
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch run details');
-  }
-
-  return response.json();
+export async function getRunSteps(runId: number): Promise<IngestionStep[]> {
+  return ingestionFetch(`/runs/${runId}/steps`)
 }
 
-export async function getIngestionRunErrors(id: number): Promise<IngestionError[]> {
-  const response = await apiFetch(`/admin/ingestion/runs/${id}/errors`);
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch run errors');
-  }
-
-  return response.json();
-}
-
-export async function getRecentErrors(limit: number = 50): Promise<IngestionError[]> {
-  const response = await apiFetch(`/admin/ingestion/errors?limit=${limit}`);
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch recent errors');
-  }
-
-  return response.json();
+export async function getRunErrors(runId: number): Promise<IngestionError[]> {
+  return ingestionFetch(`/runs/${runId}/errors`)
 }

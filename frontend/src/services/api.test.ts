@@ -23,7 +23,9 @@ describe('API Service', () => {
       const result = await getVersion()
 
       expect(result).toEqual(mockResponse)
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/version')
+      expect(mockFetch).toHaveBeenCalledWith('/api/v1/version', expect.objectContaining({
+        credentials: 'include'
+      }))
     })
 
     it('throws error on failed response', async () => {
@@ -47,7 +49,9 @@ describe('API Service', () => {
       const result = await getHealth()
 
       expect(result).toEqual(mockResponse)
-      expect(mockFetch).toHaveBeenCalledWith('/health')
+      expect(mockFetch).toHaveBeenCalledWith('/health', expect.objectContaining({
+        credentials: 'include'
+      }))
     })
 
     it('throws error on failed response', async () => {

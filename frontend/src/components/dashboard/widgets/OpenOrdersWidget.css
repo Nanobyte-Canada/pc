@@ -1,0 +1,69 @@
+.oo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0;
+  color: var(--text-muted);
+}
+
+.oo-empty svg {
+  margin-bottom: 0.5rem;
+  opacity: 0.4;
+}
+
+.oo-empty span {
+  font-size: 0.875rem;
+}
+
+.oo-list > * + * {
+  margin-top: 0.25rem;
+}
+
+.oo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.5rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s;
+  border-bottom: 1px solid rgba(var(--border), 0.5);
+}
+
+.oo-item:last-child {
+  border-bottom: none;
+}
+
+.oo-item:hover {
+  background-color: var(--muted-bg);
+}
+
+.oo-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.oo-item-info .oo-symbol {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.oo-item-info .oo-account {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+
+.oo-item-right {
+  text-align: right;
+}
+
+.oo-units {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.oo-type {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

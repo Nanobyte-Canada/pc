@@ -1,53 +1,76 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { LayoutGrid, Table } from 'lucide-react'
 import { BrokerCard } from '../components/broker/BrokerCard'
+import { BrokerageMatrix } from '../components/broker/BrokerageMatrix'
 import { BrokerConnectionCard } from '../components/broker/BrokerConnectionCard'
+import { SnapTradeBadge } from '../components/broker/SnapTradeBadge'
 import {
   useAvailableBrokers,
   useBrokerConnections,
-  useInitiateConnection,
+  useConnectBroker,
   useDisconnectBroker,
   useTriggerPositionFetch,
-  useBrokerPreferences,
-  useUpdateBrokerPreferences
+  useSyncConnections
 } from '../hooks/useBrokerConnections'
+import './BrokerConnectionsPage.css'
 
 export function BrokerConnectionsPage() {
   const [searchParams] = useSearchParams()
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [fetchingConnectionId, setFetchingConnectionId] = useState<number | null>(null)
+  const [brokerView, setBrokerView] = useState<'cards' | 'matrix'>('cards')
 
   const { data: brokersData, isLoading: brokersLoading } = useAvailableBrokers()
   const { data: connectionsData, isLoading: connectionsLoading, refetch: refetchConnections } = useBrokerConnections()
-  const { data: prefsData } = useBrokerPreferences()
 
-  const initiateConnection = useInitiateConnection()
+  const connectBroker = useConnectBroker()
   const disconnectBroker = useDisconnectBroker()
   const triggerFetch = useTriggerPositionFetch()
-  const updatePrefs = useUpdateBrokerPreferences()
+  const sync = useSyncConnections()
 
-  // Handle URL params for success/error messages
+  // Always sync connections from SnapTrade on page load
+  useEffect(() => {
+    sync.mutate(undefined, {
+      onSuccess: () => refetchConnections()
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Handle return from SnapTrade portal (query params) — show notification + auto-fetch
   useEffect(() => {
     const success = searchParams.get('success')
     const error = searchParams.get('error')
-    const broker = searchParams.get('broker')
+    const status = searchParams.get('status')
 
-    if (success === 'true' && broker) {
-      setNotification({ type: 'success', message: `Successfully connected to ${broker}` })
-      refetchConnections()
+    if (success === 'true' || status === 'SUCCESS') {
+      setNotification({ type: 'success', message: 'Broker connected successfully! Fetching positions...' })
+      // Sync first, then auto-fetch for new connections with no positions
+      sync.mutate(undefined, {
+        onSuccess: () => {
+          refetchConnections().then(({ data }) => {
+            const conns = data?.connections || []
+            conns.filter(c => c.positionsCount === 0).forEach(c => {
+              triggerFetch.mutate(c.id)
+            })
+          })
+        }
+      })
     } else if (error) {
       const errorMessages: Record<string, string> = {
-        state_invalid: 'OAuth state expired or invalid. Please try again.',
-        connection_failed: 'Failed to connect to broker. Please try again.'
+        state_invalid: 'Connection session expired. Please try again.',
+        connection_failed: 'Failed to connect to broker. Please try again.',
+        ABANDONED: 'Connection was cancelled.'
       }
       setNotification({ type: 'error', message: errorMessages[error] || 'An error occurred' })
     }
 
     // Clear params from URL
-    if (success || error) {
+    if (success || error || status) {
       window.history.replaceState({}, '', '/brokers/connections')
     }
-  }, [searchParams, refetchConnections])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   // Auto-dismiss notification
   useEffect(() => {
@@ -57,8 +80,12 @@ export function BrokerConnectionsPage() {
     }
   }, [notification])
 
-  const handleConnect = (brokerCode: string) => {
-    initiateConnection.mutate(brokerCode)
+  const handleConnect = (brokerSlug?: string) => {
+    connectBroker.mutate(brokerSlug ? { broker: brokerSlug } : undefined)
+  }
+
+  const handleReconnect = (authorizationId: string) => {
+    connectBroker.mutate({ reconnectAuthId: authorizationId })
   }
 
   const handleFetch = (connectionId: number) => {
@@ -70,8 +97,8 @@ export function BrokerConnectionsPage() {
     })
   }
 
-  const handleDisconnect = (connectionId: number) => {
-    disconnectBroker.mutate(connectionId, {
+  const handleDisconnect = (authorizationId: string) => {
+    disconnectBroker.mutate(authorizationId, {
       onSuccess: () => {
         setNotification({ type: 'success', message: 'Broker disconnected successfully' })
       },
@@ -81,135 +108,106 @@ export function BrokerConnectionsPage() {
     })
   }
 
-  const handleAutoFetchToggle = () => {
-    if (prefsData) {
-      updatePrefs.mutate({
-        autoFetchEnabled: !prefsData.autoFetchEnabled,
-        fetchTimeUtc: prefsData.fetchTimeUtc
-      })
-    }
-  }
-
   const brokers = brokersData?.brokers || []
   const connections = connectionsData?.connections || []
 
   // Check which brokers have existing connections
-  const connectedBrokerCodes = new Set(connections.map(c => c.broker.code))
+  const connectedBrokerSlugs = new Set(connections.map(c => c.broker.slug).filter((s): s is string => !!s))
 
   if (brokersLoading || connectionsLoading) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
+      <div className="broker-connections-page page-loading">
         <div>Loading...</div>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="broker-connections-page">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 600, color: '#111827', margin: 0 }}>
-          Broker Connections
-        </h1>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '14px', color: '#6b7280' }}>Daily Auto-fetch:</span>
-          <button
-            onClick={handleAutoFetchToggle}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '16px',
-              border: 'none',
-              backgroundColor: prefsData?.autoFetchEnabled ? '#10b981' : '#e5e7eb',
-              color: prefsData?.autoFetchEnabled ? '#fff' : '#6b7280',
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            {prefsData?.autoFetchEnabled ? 'ON' : 'OFF'}
-          </button>
-        </div>
+      <div className="broker-connections-header">
+        <h1>Broker Connections</h1>
+        <SnapTradeBadge />
       </div>
 
       {/* Notification */}
       {notification && (
-        <div
-          style={{
-            padding: '12px 16px',
-            borderRadius: '8px',
-            marginBottom: '16px',
-            backgroundColor: notification.type === 'success' ? '#d1fae5' : '#fee2e2',
-            color: notification.type === 'success' ? '#065f46' : '#991b1b',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}
-        >
+        <div className={`broker-notification ${notification.type}`}>
           <span>{notification.message}</span>
-          <button
-            onClick={() => setNotification(null)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '18px',
-              color: 'inherit'
-            }}
-          >
+          <button className="dismiss-btn" onClick={() => setNotification(null)}>
             x
           </button>
         </div>
       )}
 
       {/* Available Brokers */}
-      <section style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#374151', marginBottom: '16px' }}>
-          Available Brokers
-        </h2>
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          {brokers.map(broker => (
-            <BrokerCard
-              key={broker.id}
-              broker={broker}
-              onConnect={handleConnect}
-              isConnecting={initiateConnection.isPending}
-              hasExistingConnection={connectedBrokerCodes.has(broker.code)}
-            />
-          ))}
+      <section className="broker-section">
+        <div className="broker-section-header">
+          <h2>Available Brokers</h2>
+          <div className="broker-view-toggle">
+            <button
+              className={`view-toggle-btn${brokerView === 'cards' ? ' active' : ''}`}
+              onClick={() => setBrokerView('cards')}
+              title="Card view"
+            >
+              <LayoutGrid size={16} />
+            </button>
+            <button
+              className={`view-toggle-btn${brokerView === 'matrix' ? ' active' : ''}`}
+              onClick={() => setBrokerView('matrix')}
+              title="Matrix view"
+            >
+              <Table size={16} />
+            </button>
+          </div>
         </div>
+
+        {brokers.length > 0 ? (
+          brokerView === 'cards' ? (
+            <div className="broker-cards-grid">
+              {brokers.map((broker, index) => (
+                <BrokerCard
+                  key={broker.slug || index}
+                  broker={broker}
+                  onConnect={handleConnect}
+                  isConnecting={connectBroker.isPending}
+                  hasExistingConnection={connectedBrokerSlugs.has(broker.slug || '')}
+                />
+              ))}
+            </div>
+          ) : (
+            <BrokerageMatrix
+              brokers={brokers}
+              onConnect={handleConnect}
+              connectedSlugs={connectedBrokerSlugs}
+              isConnecting={connectBroker.isPending}
+            />
+          )
+        ) : (
+          <div className="broker-no-data">
+            No brokerages available. Check your SnapTrade configuration.
+          </div>
+        )}
       </section>
 
       {/* Connected Accounts */}
-      <section>
-        <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#374151', marginBottom: '16px' }}>
-          Connected Accounts
-        </h2>
+      <section className="broker-section">
+        <h2>Connected Accounts</h2>
 
         {connections.length === 0 ? (
-          <div
-            style={{
-              border: '1px dashed #d1d5db',
-              borderRadius: '8px',
-              padding: '32px',
-              textAlign: 'center',
-              color: '#6b7280'
-            }}
-          >
-            <p style={{ margin: 0 }}>No broker accounts connected yet.</p>
-            <p style={{ margin: '8px 0 0', fontSize: '14px' }}>
-              Connect a broker above to start tracking your positions.
-            </p>
+          <div className="broker-empty-state">
+            <p>No broker accounts connected yet.</p>
+            <p>Connect a broker above to start tracking your positions.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="broker-connections-list">
             {connections.map(connection => (
               <BrokerConnectionCard
                 key={connection.id}
                 connection={connection}
                 onFetch={handleFetch}
                 onDisconnect={handleDisconnect}
+                onReconnect={handleReconnect}
                 isFetching={fetchingConnectionId === connection.id}
               />
             ))}

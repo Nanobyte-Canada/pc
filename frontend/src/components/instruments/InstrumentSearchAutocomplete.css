@@ -7,7 +7,7 @@
   width: 100%;
   padding: 0.75rem 1rem;
   font-size: 1rem;
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text-primary);
@@ -17,6 +17,7 @@
 
 .autocomplete-input:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(132, 107, 84, 0.2);
 }
 
 .autocomplete-input::placeholder {
@@ -29,10 +30,10 @@
   left: 0;
   right: 0;
   margin-top: 4px;
-  background-color: var(--bg-secondary);
+  background-color: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   max-height: 400px;
   overflow-y: auto;
   z-index: 100;
@@ -56,7 +57,7 @@
 
 .autocomplete-item:hover,
 .autocomplete-item.selected {
-  background-color: rgba(0, 217, 255, 0.1);
+  background-color: rgba(132, 107, 84, 0.08);
 }
 
 .autocomplete-item.disabled {
@@ -77,18 +78,38 @@
 }
 
 .type-badge.type-stock {
-  background-color: rgba(76, 175, 80, 0.2);
-  color: #4caf50;
+  background-color: rgba(5, 150, 105, 0.12);
+  color: var(--success);
 }
 
 .type-badge.type-etf {
-  background-color: rgba(33, 150, 243, 0.2);
-  color: #2196f3;
+  background-color: rgba(132, 107, 84, 0.12);
+  color: var(--accent);
 }
 
-.type-badge.type-mf {
-  background-color: rgba(156, 39, 176, 0.2);
-  color: #9c27b0;
+.type-badge.type-mutual-fund {
+  background-color: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
+}
+
+.type-badge.type-preferred-stock {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+
+.type-badge.type-index {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+.type-badge.type-bond {
+  background-color: rgba(236, 72, 153, 0.12);
+  color: #ec4899;
+}
+
+.type-badge.type-other {
+  background-color: rgba(107, 114, 128, 0.12);
+  color: #6b7280;
 }
 
 .autocomplete-item .ticker {
@@ -109,7 +130,7 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   padding: 0.2rem 0.4rem;
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-primary);
   border-radius: 3px;
 }
 
@@ -118,7 +139,7 @@
   font-size: 0.875rem;
   font-weight: 500;
   background-color: var(--accent);
-  color: #000;
+  color: var(--nav-text);
   border: none;
   border-radius: 4px;
   cursor: pointer;

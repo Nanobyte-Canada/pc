@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useInstrumentSearch } from '../../hooks/useInstrumentSearch';
+import { useNewInstrumentSearch } from '../../hooks/useNewScreener';
 import { usePortfolioStore } from '../../store/portfolioStore';
-import { InstrumentType, SearchResult } from '../../types/instrument';
+import { InstrumentType, SearchResult, INSTRUMENT_TYPE_CONFIG } from '../../types/screener';
 import './InstrumentSearchAutocomplete.css';
 
 interface InstrumentSearchAutocompleteProps {
@@ -16,7 +16,9 @@ export function InstrumentSearchAutocomplete({ filterType = 'all' }: InstrumentS
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading } = useInstrumentSearch(debouncedQuery, filterType);
+  // Convert filterType to types array for new search hook
+  const types = filterType === 'all' ? undefined : [filterType];
+  const { data, isLoading } = useNewInstrumentSearch(debouncedQuery, types);
   const { addPosition, hasPosition } = usePortfolioStore();
 
   // Debounce the query
@@ -46,8 +48,8 @@ export function InstrumentSearchAutocomplete({ filterType = 'all' }: InstrumentS
   const results = data?.data || [];
 
   const handleAddToPortfolio = useCallback((result: SearchResult) => {
-    const idParts = result.id.split('-');
-    const instrumentId = parseInt(idParts[1], 10);
+    // New SearchResult has id as number, not string
+    const instrumentId = result.id;
 
     addPosition({
       instrumentType: result.type,
@@ -87,19 +89,20 @@ export function InstrumentSearchAutocomplete({ filterType = 'all' }: InstrumentS
   };
 
   const getTypeLabel = (type: InstrumentType) => {
-    switch (type) {
-      case 'STOCK': return 'Stock';
-      case 'ETF': return 'ETF';
-      case 'MUTUAL_FUND': return 'MF';
-    }
+    return INSTRUMENT_TYPE_CONFIG[type]?.label || type;
   };
 
   const getTypeClass = (type: InstrumentType) => {
-    switch (type) {
-      case 'STOCK': return 'type-stock';
-      case 'ETF': return 'type-etf';
-      case 'MUTUAL_FUND': return 'type-mf';
-    }
+    // Map type to CSS class
+    const classMap: Record<InstrumentType, string> = {
+      'STOCK': 'type-stock',
+      'ETF': 'type-etf',
+      'MUTUAL_FUND': 'type-mutual-fund',
+      'PREFERRED_STOCK': 'type-preferred-stock',
+      'INDEX': 'type-index',
+      'BOND': 'type-bond',
+    };
+    return classMap[type] || 'type-other';
   };
 
   return (
@@ -130,8 +133,8 @@ export function InstrumentSearchAutocomplete({ filterType = 'all' }: InstrumentS
           )}
 
           {!isLoading && results.map((result, index) => {
-            const idParts = result.id.split('-');
-            const instrumentId = parseInt(idParts[1], 10);
+            // New SearchResult has id as number
+            const instrumentId = result.id;
             const alreadyAdded = hasPosition(result.type, instrumentId);
 
             return (

@@ -2,13 +2,16 @@ import { apiFetch } from './api'
 import type {
   BrokersResponse,
   BrokerConnectionsResponse,
-  OAuthInitiateResponse,
+  ConnectBrokerRequest,
+  ConnectBrokerResponse,
   PositionFetchResponse,
   ConnectionPositionsResponse,
   AggregatedPositionsResponse,
-  BrokerPrefs,
-  UpdateBrokerPrefsRequest,
-  BrokerPrefsResponse
+  SnapTradeStatusResponse,
+  ConnectionSyncResponse,
+  ActivitiesResponse,
+  BalanceHistoryResponse,
+  ReportingPerformanceResponse
 } from '../types/broker'
 
 const BROKER_API_BASE = '/api/v1/brokers'
@@ -33,9 +36,14 @@ export async function getUserConnections(): Promise<BrokerConnectionsResponse> {
   return response.json()
 }
 
-export async function initiateConnection(brokerCode: string): Promise<OAuthInitiateResponse> {
-  const response = await apiFetch(`${BROKER_API_BASE}/${brokerCode}/connect`, {
-    method: 'POST'
+export async function connectBroker(request?: ConnectBrokerRequest): Promise<ConnectBrokerResponse> {
+  const body = {
+    ...request,
+    connectionType: request?.connectionType ?? 'trade-if-available'
+  }
+  const response = await apiFetch(`${BROKER_API_BASE}/connect`, {
+    method: 'POST',
+    body: JSON.stringify(body)
   })
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
@@ -44,8 +52,8 @@ export async function initiateConnection(brokerCode: string): Promise<OAuthIniti
   return response.json()
 }
 
-export async function disconnectBroker(connectionId: number): Promise<void> {
-  const response = await apiFetch(`${BROKER_API_BASE}/connections/${connectionId}`, {
+export async function disconnectBroker(authorizationId: string): Promise<void> {
+  const response = await apiFetch(`${BROKER_API_BASE}/connections/${authorizationId}`, {
     method: 'DELETE'
   })
   if (!response.ok) {
@@ -82,25 +90,89 @@ export async function getAggregatedPositions(): Promise<AggregatedPositionsRespo
   return response.json()
 }
 
-// ========== User Preferences ==========
+// ========== SnapTrade Status ==========
 
-export async function getBrokerPreferences(): Promise<BrokerPrefs> {
-  const response = await apiFetch(`${BROKER_API_BASE}/preferences`)
+export async function getSnapTradeStatus(): Promise<SnapTradeStatusResponse> {
+  const response = await apiFetch(`${BROKER_API_BASE}/snaptrade/status`)
   if (!response.ok) {
-    throw new Error('Failed to fetch broker preferences')
+    throw new Error('Failed to fetch SnapTrade status')
   }
   return response.json()
 }
 
-export async function updateBrokerPreferences(request: UpdateBrokerPrefsRequest): Promise<BrokerPrefsResponse> {
-  const response = await apiFetch(`${BROKER_API_BASE}/preferences`, {
-    method: 'PUT',
-    body: JSON.stringify(request)
+// ========== Connection Sync ==========
+
+export async function syncConnections(): Promise<ConnectionSyncResponse> {
+  const response = await apiFetch(`${BROKER_API_BASE}/connections/sync`, {
+    method: 'POST'
   })
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.message || 'Failed to update broker preferences')
+    throw new Error('Failed to sync connections')
   }
+  return response.json()
+}
+
+// ========== Activities ==========
+
+export async function getConnectionActivities(
+  connectionId: number,
+  params: { page?: number; size?: number; startDate?: string; endDate?: string; type?: string } = {}
+): Promise<ActivitiesResponse> {
+  const searchParams = new URLSearchParams()
+  if (params.page !== undefined) searchParams.set('page', params.page.toString())
+  if (params.size !== undefined) searchParams.set('size', params.size.toString())
+  if (params.startDate) searchParams.set('startDate', params.startDate)
+  if (params.endDate) searchParams.set('endDate', params.endDate)
+  if (params.type) searchParams.set('type', params.type)
+
+  const response = await apiFetch(`${BROKER_API_BASE}/connections/${connectionId}/activities?${searchParams}`)
+  if (!response.ok) throw new Error('Failed to fetch activities')
+  return response.json()
+}
+
+export async function syncConnectionActivities(connectionId: number): Promise<{ activitiesSynced: number; message: string }> {
+  const response = await apiFetch(`${BROKER_API_BASE}/connections/${connectionId}/sync-activities`, { method: 'POST' })
+  if (!response.ok) throw new Error('Failed to sync activities')
+  return response.json()
+}
+
+// ========== Balances ==========
+
+export async function getBalanceHistory(connectionId: number, days: number = 90): Promise<BalanceHistoryResponse> {
+  const response = await apiFetch(`${BROKER_API_BASE}/connections/${connectionId}/balance-history?days=${days}`)
+  if (!response.ok) throw new Error('Failed to fetch balance history')
+  return response.json()
+}
+
+// ========== Reporting ==========
+
+export async function getReportingPerformance(
+  params: { startDate?: string; endDate?: string; accounts?: string; granularity?: string } = {}
+): Promise<ReportingPerformanceResponse> {
+  const searchParams = new URLSearchParams()
+  if (params.startDate) searchParams.set('startDate', params.startDate)
+  if (params.endDate) searchParams.set('endDate', params.endDate)
+  if (params.accounts) searchParams.set('accounts', params.accounts)
+  if (params.granularity) searchParams.set('granularity', params.granularity)
+
+  const response = await apiFetch(`${BROKER_API_BASE}/reporting/performance?${searchParams}`)
+  if (!response.ok) throw new Error('Failed to fetch performance report')
+  return response.json()
+}
+
+export async function getReportingActivities(
+  params: { page?: number; size?: number; startDate?: string; endDate?: string; accounts?: string; type?: string } = {}
+): Promise<ActivitiesResponse> {
+  const searchParams = new URLSearchParams()
+  if (params.page !== undefined) searchParams.set('page', params.page.toString())
+  if (params.size !== undefined) searchParams.set('size', params.size.toString())
+  if (params.startDate) searchParams.set('startDate', params.startDate)
+  if (params.endDate) searchParams.set('endDate', params.endDate)
+  if (params.accounts) searchParams.set('accounts', params.accounts)
+  if (params.type) searchParams.set('type', params.type)
+
+  const response = await apiFetch(`${BROKER_API_BASE}/reporting/activities?${searchParams}`)
+  if (!response.ok) throw new Error('Failed to fetch reporting activities')
   return response.json()
 }
 

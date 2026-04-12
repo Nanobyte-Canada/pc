@@ -2,15 +2,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getAvailableBrokers,
   getUserConnections,
-  initiateConnection,
+  connectBroker,
   disconnectBroker,
   triggerPositionFetch,
   getConnectionPositions,
   getAggregatedPositions,
-  getBrokerPreferences,
-  updateBrokerPreferences
+  getSnapTradeStatus,
+  syncConnections,
+  getConnectionActivities,
+  syncConnectionActivities,
+  getBalanceHistory
 } from '../services/brokerService'
-import type { UpdateBrokerPrefsRequest } from '../types/broker'
+import type { ConnectBrokerRequest } from '../types/broker'
 
 // Query keys
 export const brokerKeys = {
@@ -20,7 +23,8 @@ export const brokerKeys = {
   positions: () => [...brokerKeys.all, 'positions'] as const,
   connectionPositions: (id: number) => [...brokerKeys.positions(), id] as const,
   aggregatedPositions: () => [...brokerKeys.positions(), 'aggregated'] as const,
-  preferences: () => [...brokerKeys.all, 'preferences'] as const
+  activities: (id: number) => [...brokerKeys.all, 'activities', id] as const,
+  balanceHistory: (id: number) => [...brokerKeys.all, 'balance-history', id] as const
 }
 
 // ========== Queries ==========
@@ -58,21 +62,13 @@ export function useAggregatedPositions() {
   })
 }
 
-export function useBrokerPreferences() {
-  return useQuery({
-    queryKey: brokerKeys.preferences(),
-    queryFn: getBrokerPreferences,
-    staleTime: 5 * 60 * 1000 // 5 minutes
-  })
-}
-
 // ========== Mutations ==========
 
-export function useInitiateConnection() {
+export function useConnectBroker() {
   return useMutation({
-    mutationFn: (brokerCode: string) => initiateConnection(brokerCode),
+    mutationFn: (request?: ConnectBrokerRequest) => connectBroker(request),
     onSuccess: (data) => {
-      // Redirect to OAuth URL
+      // Redirect to SnapTrade connection portal
       window.location.href = data.redirectUrl
     }
   })
@@ -82,7 +78,7 @@ export function useDisconnectBroker() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (connectionId: number) => disconnectBroker(connectionId),
+    mutationFn: (authorizationId: string) => disconnectBroker(authorizationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brokerKeys.connections() })
       queryClient.invalidateQueries({ queryKey: brokerKeys.positions() })
@@ -106,13 +102,60 @@ export function useTriggerPositionFetch() {
   })
 }
 
-export function useUpdateBrokerPreferences() {
+// ========== SnapTrade Status ==========
+
+export function useSnapTradeStatus() {
+  return useQuery({
+    queryKey: [...brokerKeys.all, 'snaptrade-status'] as const,
+    queryFn: getSnapTradeStatus,
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000
+  })
+}
+
+// ========== Activities & Balances ==========
+
+export function useConnectionActivities(
+  connectionId: number,
+  params: { page?: number; size?: number; startDate?: string; endDate?: string; type?: string } = {},
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: [...brokerKeys.activities(connectionId), params] as const,
+    queryFn: () => getConnectionActivities(connectionId, params),
+    enabled: enabled && connectionId > 0,
+    staleTime: 60 * 1000
+  })
+}
+
+export function useSyncActivities() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (request: UpdateBrokerPrefsRequest) => updateBrokerPreferences(request),
+    mutationFn: (connectionId: number) => syncConnectionActivities(connectionId),
+    onSuccess: (_, connectionId) => {
+      queryClient.invalidateQueries({ queryKey: brokerKeys.activities(connectionId) })
+    }
+  })
+}
+
+export function useBalanceHistory(connectionId: number, days: number = 90, enabled: boolean = true) {
+  return useQuery({
+    queryKey: [...brokerKeys.balanceHistory(connectionId), days] as const,
+    queryFn: () => getBalanceHistory(connectionId, days),
+    enabled: enabled && connectionId > 0,
+    staleTime: 60 * 1000
+  })
+}
+
+export function useSyncConnections() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: syncConnections,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: brokerKeys.preferences() })
+      queryClient.invalidateQueries({ queryKey: brokerKeys.connections() })
+      queryClient.invalidateQueries({ queryKey: brokerKeys.positions() })
     }
   })
 }

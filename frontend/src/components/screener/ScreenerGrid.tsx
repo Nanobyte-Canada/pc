@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef, GridReadyEvent } from 'ag-grid-community';
 import { usePortfolioStore } from '../../store/portfolioStore';
-import { InstrumentType } from '../../types/instrument';
+import { InstrumentType } from '../../types/screener';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import './ScreenerGrid.css';
@@ -79,7 +79,7 @@ export function ScreenerGrid<T>({
   };
 
   return (
-    <div className="ag-theme-quartz-dark screener-grid">
+    <div className="ag-theme-quartz screener-grid">
       <AgGridReact
         rowData={rowData}
         columnDefs={allColumns}

@@ -1,5 +1,5 @@
 import { PortfolioAnalysis, AnalyzeRequest } from '../types/portfolio';
-import { InstrumentType } from '../types/instrument';
+import { InstrumentType } from '../types/screener';
 import { apiFetch } from './api';
 
 export interface PortfolioPosition {

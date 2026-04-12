@@ -1,0 +1,14 @@
+server:
+  forward-headers-strategy: framework
+
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    com.portfolio: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.web.csrf: TRACE
+    org.springframework.security.web.FilterChainProxy: DEBUG
+    org.springframework.web.cors: DEBUG

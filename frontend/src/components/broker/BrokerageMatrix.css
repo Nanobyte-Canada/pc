@@ -1,0 +1,96 @@
+.brokerage-matrix-container {
+  width: 100%;
+}
+
+.matrix-check {
+  color: var(--success);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.matrix-cross {
+  color: var(--error);
+  font-size: 14px;
+}
+
+.matrix-na {
+  color: var(--text-muted);
+}
+
+.matrix-auth-types {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.matrix-auth-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  line-height: 1.5;
+}
+
+.matrix-auth-oauth {
+  background-color: rgba(5, 150, 105, 0.12);
+  color: var(--success);
+}
+
+.matrix-auth-scrape {
+  background-color: rgba(217, 119, 6, 0.12);
+  color: var(--warning);
+}
+
+.matrix-auth-unofficial-api {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: var(--info);
+}
+
+.matrix-status-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.matrix-status-badge.active {
+  background-color: rgba(5, 150, 105, 0.12);
+  color: var(--success);
+}
+
+.matrix-status-badge.maintenance {
+  background-color: rgba(220, 38, 38, 0.12);
+  color: var(--error);
+}
+
+.matrix-status-badge.degraded {
+  background-color: rgba(217, 119, 6, 0.12);
+  color: var(--warning);
+}
+
+.matrix-connect-btn {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: var(--accent);
+  color: var(--nav-text);
+  transition: background-color 0.15s;
+}
+
+.matrix-connect-btn:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+
+.matrix-connect-btn.connected {
+  background-color: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.matrix-connect-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

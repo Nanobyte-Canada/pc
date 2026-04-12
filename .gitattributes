@@ -1,0 +1,7 @@
+# Force LF line endings for shell scripts (required for Linux execution)
+*.sh text eol=lf
+
+# Other common files that should use LF
+*.yml text eol=lf
+*.yaml text eol=lf
+Dockerfile text eol=lf

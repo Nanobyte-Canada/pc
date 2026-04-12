@@ -1,4 +1,4 @@
-import { InstrumentType } from './instrument';
+import { InstrumentType } from './screener';
 
 export interface PortfolioPosition {
   instrumentType: InstrumentType;
@@ -42,7 +42,7 @@ export interface TopHolding {
 }
 
 export interface ExposureSource {
-  type: 'DIRECT' | 'ETF' | 'MUTUAL_FUND';
+  type: 'DIRECT' | 'ETF' | 'NESTED_ETF';
   instrumentId?: number;
   instrumentSymbol?: string;
   contribution: number;
@@ -61,7 +61,6 @@ export interface PortfolioAnalysis {
     totalPositions: number;
     directStockCount: number;
     etfCount: number;
-    mutualFundCount: number;
     lookThroughStockCount: number;
     analysisDate: string;
   };

@@ -22,7 +22,7 @@
 # Gradle
 .gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.jar
 
 # Maven
 target/
@@ -63,14 +63,10 @@ frontend/build/
 
 # Environment files with secrets
 .env
+.env.local
 .env.local.secrets
 .env.*.local
-
-# Keep template env files
-!.env.example
-!.env.local
-!.env.dev
-!.env.prod
+config/.env.local
 
 # OS generated files
 .DS_Store
@@ -83,6 +79,10 @@ Thumbs.db
 
 # Docker
 .docker/
+
+# Custom CA certificates (corporate proxy, etc.)
+backend/portfolio/certs/*.crt
+backend/portfolio/certs/*.pem
 
 # Terraform
 **/.terraform/
@@ -103,6 +103,9 @@ coverage/
 *.lcov
 .nyc_output/
 
+# Database dumps
+*.backup
+
 # Misc
 *.swp
 *.swo
@@ -117,3 +120,4 @@ gradle-out.txt
 *_output.txt
 build_output.txt
 gradle_output.txt
+/tmp/*

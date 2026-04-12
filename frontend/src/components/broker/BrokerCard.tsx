@@ -1,80 +1,100 @@
 import type { Broker } from '../../types/broker'
+import './BrokerCard.css'
 
 interface BrokerCardProps {
   broker: Broker
-  onConnect: (brokerCode: string) => void
+  onConnect: (brokerSlug?: string) => void
   isConnecting: boolean
   hasExistingConnection: boolean
 }
 
+const AUTH_TYPE_LABELS: Record<string, string> = {
+  OAUTH: 'OAuth',
+  SCRAPE: 'Credentials',
+  UNOFFICIAL_API: 'API Key',
+}
+
+const AUTH_TYPE_CLASSES: Record<string, string> = {
+  OAUTH: 'badge-oauth',
+  SCRAPE: 'badge-credentials',
+  UNOFFICIAL_API: 'badge-api-key',
+}
+
+function getAuthTypeLabel(broker: Broker): string | null {
+  if (!broker.authTypes?.length) return null
+  const authTypes = new Set(broker.authTypes.map(at => at.authType))
+  if (authTypes.size === 1) {
+    return AUTH_TYPE_LABELS[broker.authTypes[0].authType] ?? null
+  }
+  return null
+}
+
+function getAuthTypeClass(broker: Broker): string {
+  if (!broker.authTypes?.length) return ''
+  return AUTH_TYPE_CLASSES[broker.authTypes[0].authType] ?? ''
+}
+
 export function BrokerCard({ broker, onConnect, isConnecting, hasExistingConnection }: BrokerCardProps) {
-  const isDisabled = broker.status !== 'ACTIVE' || isConnecting
+  const isDisabled = isConnecting || broker.maintenanceMode || broker.enabled === false
+
+  const handleClick = () => {
+    if (isDisabled) return
+    onConnect(broker.slug || undefined)
+  }
+
+  const authLabel = getAuthTypeLabel(broker)
 
   return (
     <div
-      style={{
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px',
-        padding: '16px',
-        backgroundColor: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '12px',
-        minWidth: '180px'
-      }}
+      className={`broker-card${hasExistingConnection ? ' connected' : ''}${isDisabled ? ' disabled' : ''}${broker.isDegraded ? ' degraded' : ''}`}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick() }}
+      title={
+        broker.maintenanceMode ? `${broker.name} is in maintenance`
+        : isConnecting ? 'Connecting...'
+        : hasExistingConnection ? `Add another ${broker.name} account`
+        : `Connect to ${broker.name}`
+      }
     >
-      <div
-        style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '8px',
-          backgroundColor: '#f3f4f6',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '20px',
-          fontWeight: 'bold',
-          color: '#6b7280'
-        }}
-      >
-        {broker.name.charAt(0)}
-      </div>
+      {hasExistingConnection && (
+        <span className="broker-card-connected-badge">&#10003;</span>
+      )}
 
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontWeight: 600, fontSize: '14px', color: '#111827' }}>
-          {broker.name}
-        </div>
-        {broker.description && (
-          <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-            {broker.description}
-          </div>
-        )}
-      </div>
+      {broker.maintenanceMode && (
+        <span className="broker-card-status-badge maintenance">Maintenance</span>
+      )}
 
-      <button
-        onClick={() => onConnect(broker.code)}
-        disabled={isDisabled}
-        style={{
-          width: '100%',
-          padding: '8px 16px',
-          borderRadius: '6px',
-          border: 'none',
-          backgroundColor: isDisabled ? '#e5e7eb' : '#3b82f6',
-          color: isDisabled ? '#9ca3af' : '#fff',
-          fontSize: '14px',
-          fontWeight: 500,
-          cursor: isDisabled ? 'not-allowed' : 'pointer'
-        }}
-      >
-        {isConnecting ? 'Connecting...' : hasExistingConnection ? 'Add Account' : 'Connect'}
-      </button>
+      {broker.isDegraded && !broker.maintenanceMode && (
+        <span className="broker-card-status-badge degraded">Degraded</span>
+      )}
 
-      {broker.status !== 'ACTIVE' && (
-        <div style={{ fontSize: '11px', color: '#f59e0b' }}>
-          {broker.status === 'MAINTENANCE' ? 'Under Maintenance' : 'Unavailable'}
+      {broker.logoUrl ? (
+        <img
+          src={broker.logoUrl}
+          alt={broker.name}
+          className="broker-card-logo"
+        />
+      ) : (
+        <div className="broker-card-placeholder">
+          {broker.name.charAt(0)}
         </div>
       )}
+
+      <div className="broker-card-name">{broker.name}</div>
+
+      <div className="broker-card-badges">
+        {authLabel && (
+          <span className={`broker-badge ${getAuthTypeClass(broker)}`}>{authLabel}</span>
+        )}
+        {broker.allowsTrading && (
+          <span className="broker-badge badge-feature">Trading</span>
+        )}
+        {broker.isRealTimeConnection && (
+          <span className="broker-badge badge-feature">Real-time</span>
+        )}
+      </div>
     </div>
   )
 }
