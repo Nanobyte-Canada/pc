@@ -18,14 +18,15 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
         WHERE i.status = 'ACTIVE'
         ORDER BY prd.fetchedAt ASC NULLS FIRST,
             CASE i.instrumentType
-                WHEN 'STOCK' THEN 1
-                WHEN 'ETF' THEN 2
+                WHEN 'ETF' THEN 1
+                WHEN 'STOCK' THEN 2
                 WHEN 'MUTUAL_FUND' THEN 3
                 WHEN 'PREFERRED_STOCK' THEN 4
                 WHEN 'BOND' THEN 5
                 WHEN 'INDEX' THEN 6
                 ELSE 7
-            END
+            END,
+            CASE WHEN i.isin IS NOT NULL THEN 0 ELSE 1 END
     """)
     fun findStaleInstruments(pageable: Pageable): List<Instrument>
 
