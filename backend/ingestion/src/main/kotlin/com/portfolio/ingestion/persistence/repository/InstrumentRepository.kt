@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query
 interface InstrumentRepository : JpaRepository<Instrument, Long> {
     fun findByIsin(isin: String): Instrument?
     fun findByTickerAndInstrumentType(ticker: String, instrumentType: InstrumentType): Instrument?
+    fun findByTickerAndInstrumentTypeAndCurrency(ticker: String, instrumentType: InstrumentType, currency: String): Instrument?
 
     @Query("""
         SELECT i FROM Instrument i

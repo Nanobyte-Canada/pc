@@ -1,11 +1,3 @@
-.dashboard-grid-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-bottom: 1.25rem;
-}
-
 /* ===== Unified 4-column grid (both dashboard and account contexts) ===== */
 .dashboard-grid-4col {
   display: grid;
@@ -30,12 +22,20 @@
   grid-column: span 2;
 }
 
+.widget-col-span-3 {
+  grid-column: span 3;
+}
+
 .widget-col-span-4 {
   grid-column: span 4;
 }
 
 @media (max-width: 1023px) {
   .widget-col-span-2 {
+    grid-column: span 2;
+  }
+
+  .widget-col-span-3 {
     grid-column: span 2;
   }
 
@@ -46,6 +46,10 @@
 
 @media (max-width: 640px) {
   .widget-col-span-2 {
+    grid-column: span 1;
+  }
+
+  .widget-col-span-3 {
     grid-column: span 1;
   }
 

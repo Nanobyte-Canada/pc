@@ -6,11 +6,11 @@ Complete database schema reference for AI coding agents. All column definitions 
 
 - **Database**: PostgreSQL 16 (Alpine image)
 - **Schema**: `public`
-- **Tables**: 49
+- **Tables**: 50
 - **Views**: 1 (`v_aggregated_positions`)
-- **Indexes**: 216 (including primary keys)
-- **Foreign Keys**: 51
-- **Migration tool**: Flyway (62 applied migrations, V1 through V66, gaps at V4, V5, V19, V20)
+- **Indexes**: 218 (including primary keys)
+- **Foreign Keys**: 53
+- **Migration tool**: Flyway (63 applied migrations, V1 through V69, gaps at V4, V5, V19, V20)
 - **Hibernate DDL mode**: `validate` (schema managed exclusively by Flyway)
 - **Migration files**: `backend/portfolio/src/main/resources/db/migration/V{N}__{description}.sql`
 
@@ -509,7 +509,7 @@ Maps alternative sub-industry codes (from data providers) to canonical GICS sub-
 
 ---
 
-### 3. Broker Integration Domain (8 tables)
+### 3. Broker Integration Domain (9 tables)
 
 #### brokers
 
@@ -703,6 +703,33 @@ Health check records for the SnapTrade API.
 
 - **PK**: `id`
 - **Indexes**: `idx_snaptrade_status_checked_at` (DESC)
+
+#### account_analytics
+
+Pre-computed analytics snapshots per brokerage connection. One snapshot per connection, upserted on each position sync.
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | bigint | NO | sequence |
+| connection_id | bigint | NO | |
+| user_id | bigint | NO | |
+| sector_exposure | jsonb | YES | |
+| geography_exposure | jsonb | YES | |
+| risk_profile | jsonb | YES | |
+| holdings | jsonb | YES | |
+| mer_weighted | numeric | YES | |
+| total_value | numeric | YES | |
+| coverage_percent | numeric | YES | |
+| positions_count | integer | YES | |
+| computed_at | timestamptz | NO | now() |
+| created_at | timestamptz | NO | now() |
+| updated_at | timestamptz | NO | now() |
+
+- **PK**: `id`
+- **Unique**: `connection_id`
+- **FKs**: `connection_id -> broker_connections.id`, `user_id -> users.id`
+- **Indexes**: `idx_account_analytics_connection` (unique), `idx_account_analytics_user`
+- **Notes**: JSONB columns store pre-computed analytics: `sector_exposure` is an array of {sector, weight} objects totaling 100% (with "Unknown" bucket), `geography_exposure` is an array of {region, weight} objects, `risk_profile` is a composite risk score object (0-100), `holdings` is a list of look-through holdings. All values are normalized to CAD. Computed by `AccountAnalyticsComputeService` after each position sync -- see [backend-services.md](backend-services.md).
 
 ---
 
@@ -1232,6 +1259,8 @@ Listed as `source_table.column -> target_table.column`:
 27. `broker_balance_snapshots.connection_id -> broker_connections.id`
 28. `position_fetch_log.connection_id -> broker_connections.id`
 29. `position_fetch_log.user_id -> users.id`
+30. `account_analytics.connection_id -> broker_connections.id`
+31. `account_analytics.user_id -> users.id`
 
 **From portfolio management tables:**
 32. `portfolio_groups.user_id -> users.id`
@@ -1308,7 +1337,7 @@ All other tables: 24-40 kB each (empty or near-empty).
 
 ## Flyway Migration History
 
-62 applied migrations from V1 through V66 (gaps at V4, V5, V19, V20).
+63 applied migrations from V1 through V69 (gaps at V4, V5, V19, V20).
 
 | Version | Description | Notes |
 |---------|------------|-------|
@@ -1376,8 +1405,9 @@ All other tables: 24-40 kB each (empty or near-empty).
 | V66 | drop unused tables | Dropped external_connections, external_connection_tokens, app_metadata, fund_sector_allocations |
 | V67 | drop broker positions instrument id fk | Dropped `instrument_id` FK column from `broker_positions` (V67 screener migration prep) |
 | V68 | drop legacy screener tables | Dropped all public schema instrument/GICS/ingestion tables (stocks, etfs, etf_holdings, gics_*, data_sources, ingestion_batches, ingestion_runs/steps/errors, etf_sector_allocations_factset). Portfolio app now reads from `ingestion` schema. |
+| V69 | account analytics | `account_analytics` table for pre-computed per-connection analytics snapshots (sector exposure, geography exposure, risk profile, holdings, weighted MER). UNIQUE constraint on `connection_id`, INDEX on `user_id`. |
 
-**Next migration**: V69 (always check by running `ls backend/portfolio/src/main/resources/db/migration/` to confirm)
+**Next migration**: V70 (always check by running `ls backend/portfolio/src/main/resources/db/migration/` to confirm)
 
 ---
 

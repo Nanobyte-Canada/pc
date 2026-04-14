@@ -56,6 +56,7 @@ com.portfolio
 │   ├── security/
 │   │   └── TokenEncryptionService.kt   # AES-256-GCM for broker tokens
 │   └── service/
+│       ├── AccountAnalyticsComputeService.kt
 │       ├── ActivityIngestionService.kt
 │       ├── BenchmarkService.kt
 │       ├── BrokerService.kt
@@ -252,13 +253,13 @@ Wraps the SnapTradeAdapter with user registration/authentication logic. Generate
 ### PositionFetchService
 
 **File:** `broker/service/PositionFetchService.kt`
-**Dependencies:** `BrokerConnectionRepository`, `BrokerPositionRepository`, `PositionFetchLogRepository`, `BrokerBalanceRepository`, `TradeOrderRepository`, `UserRepository`, `SnapTradeService`, `AuditService`, `ObjectMapper`, `StockRepository`, `EtfRepository`
+**Dependencies:** `BrokerConnectionRepository`, `BrokerPositionRepository`, `PositionFetchLogRepository`, `BrokerBalanceRepository`, `TradeOrderRepository`, `UserRepository`, `SnapTradeService`, `AccountAnalyticsComputeService`, `AuditService`, `ObjectMapper`, `StockRepository`, `EtfRepository`
 
 | Method | Signature | Description |
 |---|---|---|
 | `triggerManualFetch` | `(connectionId: Long, userId: Long): PositionFetchLog` | Creates fetch log, triggers async fetch, returns immediately |
 | `executeAsyncFetch` | `@Async (connectionId, fetchLogId, userId)` | Asynchronous position fetch wrapper |
-| `executePositionFetch` | `(connectionId, fetchLogId, userId): PositionFetchLog` | Full fetch: positions, option enrichment, balance snapshot, order sync |
+| `executePositionFetch` | `(connectionId, fetchLogId, userId): PositionFetchLog` | Full fetch: positions, option enrichment, balance snapshot, order sync, analytics computation |
 
 Internal responsibilities:
 - Marks old positions as non-current before saving new ones
@@ -267,21 +268,22 @@ Internal responsibilities:
 - Saves balance snapshots (cash + buying power by currency in JSONB)
 - Syncs broker orders into `trade_orders` table
 - Maps SnapTrade order statuses (EXECUTED->FILLED, CANCELED->CANCELLED, etc.)
+- Triggers `AccountAnalyticsComputeService.computeForConnection()` after successful position sync to pre-compute analytics snapshots
 
 ### DashboardDataService
 
 **File:** `broker/service/DashboardDataService.kt`
-**Dependencies:** `BrokerPositionRepository`, `BrokerConnectionRepository`, `BrokerActivityRepository`, `TradeOrderRepository`, `PortfolioGroupAccountRepository`, `StockRepository`, `EtfRepository`, `CountryRepository`, `LookThroughService`, `DriftCalculationService`, `PositionFetchService`, `DashboardCashService`, `DashboardExposureService`, `DashboardRiskService`
+**Dependencies:** `BrokerPositionRepository`, `BrokerConnectionRepository`, `BrokerActivityRepository`, `TradeOrderRepository`, `PortfolioGroupAccountRepository`, `AccountAnalyticsRepository`, `StockRepository`, `EtfRepository`, `CountryRepository`, `LookThroughService`, `DriftCalculationService`, `PositionFetchService`, `DashboardCashService`, `DashboardExposureService`, `DashboardRiskService`
 
-Orchestrates all dashboard widget data endpoints. Delegates to sub-services for cash, exposure, and risk.
+Orchestrates all dashboard widget data endpoints. Delegates to sub-services for cash, exposure, and risk. For sector exposure, geography exposure, and risk profile, reads from pre-computed `account_analytics` snapshots when available (with fallback to live computation). Aggregates analytics across multiple connections for multi-account dashboard views.
 
 | Method | Signature | Description |
 |---|---|---|
 | `getSummary` | `(userId: Long, connectionId: Long?): DashboardSummaryResponse` | Portfolio value, day P&L, positions summary, look-through holdings count |
 | `getCash` | `(userId, connectionId?): DashboardCashResponse` | Delegates to DashboardCashService |
-| `getSectorExposure` | `(userId, connectionId?): SectorExposureResponse` | Delegates to DashboardExposureService |
-| `getGeographyExposure` | `(userId, connectionId?): GeographyExposureResponse` | Delegates to DashboardExposureService |
-| `getRiskProfile` | `(userId, connectionId?): RiskProfileResponse` | Delegates to DashboardRiskService |
+| `getSectorExposure` | `(userId, connectionId?): SectorExposureResponse` | Reads from account_analytics snapshots (falls back to DashboardExposureService for live computation) |
+| `getGeographyExposure` | `(userId, connectionId?): GeographyExposureResponse` | Reads from account_analytics snapshots (falls back to DashboardExposureService for live computation) |
+| `getRiskProfile` | `(userId, connectionId?): RiskProfileResponse` | Reads from account_analytics snapshots (falls back to DashboardRiskService for live computation) |
 | `getOpenOrders` | `(userId: Long): OpenOrdersResponse` | Fetches PENDING/SUBMITTED/PARTIALLY_FILLED orders |
 | `getFees` | `(userId, connectionId?): FeesResponse` | Last 12 months fees, commissions, weighted MER |
 | `getDividendCalendar` | `(userId, month?, connectionId?): DividendCalendarResponse` | Dividend/distribution entries for a month |
@@ -449,6 +451,25 @@ Constants: `RISK_FREE_RATE = 4%` annual, used for Sharpe/Sortino.
 | `getOrdersForGroup` | `(userId, groupId): OrderStatusResponse` | Lists orders for a portfolio group |
 | `getOrdersForBatch` | `(userId, batchId: UUID): OrderStatusResponse` | Lists orders by batch ID |
 | `cancelOrder` | `(user, orderId): TradeOrderDto` | Cancels order locally and via SnapTrade |
+
+### AccountAnalyticsComputeService
+
+**File:** `broker/service/AccountAnalyticsComputeService.kt`
+**Dependencies:** `AccountAnalyticsRepository`, `BrokerConnectionRepository`, `BrokerPositionRepository`, `LookThroughService`, `ExchangeRateService`, `ObjectMapper`
+
+Pre-computes analytics for a brokerage connection on each position sync. Normalizes multi-currency positions to CAD, computes sector/geography exposure (totaling 100% with "Unknown" bucket), risk profile (composite 0-100 score), weighted MER, and look-through holdings list. Upserts results into the `account_analytics` table (one snapshot per connection).
+
+| Method | Signature | Description |
+|---|---|---|
+| `computeForConnection` | `(connectionId: Long)` | Computes and upserts analytics snapshot for a single connection. Called by PositionFetchService after successful position sync. |
+
+Internal responsibilities:
+- Fetches current positions for the connection and normalizes all values to CAD using ExchangeRateService
+- Computes sector exposure via LookThroughService, ensuring all weights total 100% (unresolved weight goes to "Unknown" bucket)
+- Computes geography exposure via LookThroughService with region-level aggregation
+- Computes composite risk score (0-100) from concentration metrics
+- Calculates weighted MER across all ETF/fund positions
+- Persists snapshot as JSONB in account_analytics (upsert by connection_id)
 
 ### ActivityIngestionService
 

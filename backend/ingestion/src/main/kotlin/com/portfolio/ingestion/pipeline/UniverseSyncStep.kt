@@ -73,9 +73,17 @@ class UniverseSyncStep(
         val instrumentType = mapType(raw.type)
         val now = OffsetDateTime.now()
 
-        // Try to find by ISIN first (globally unique), then by ticker + type
+        // Try to find by ISIN first (globally unique), then by ticker + type + currency.
+        // This allows the same ticker to exist in different currencies (e.g., TSLA on NASDAQ in USD
+        // and TSLA on TSX in CAD are separate instruments), while deduplicating same-currency
+        // listings across exchanges (e.g., TSLA on NASDAQ and NYSE are the same instrument).
+        val currency = raw.currency ?: exchange.currency
         val existing = raw.isin?.let { instrumentRepo.findByIsin(it) }
-            ?: instrumentRepo.findByTickerAndInstrumentType(raw.ticker, instrumentType)
+            ?: if (currency != null) {
+                instrumentRepo.findByTickerAndInstrumentTypeAndCurrency(raw.ticker, instrumentType, currency)
+            } else {
+                instrumentRepo.findByTickerAndInstrumentType(raw.ticker, instrumentType)
+            }
 
         val instrument = if (existing != null) {
             existing.name = raw.name
@@ -88,7 +96,7 @@ class UniverseSyncStep(
                 name = raw.name,
                 instrumentType = instrumentType,
                 isin = raw.isin,
-                currency = raw.currency,
+                currency = currency,
                 country = raw.country,
                 sourceLastSeenAt = now
             ))

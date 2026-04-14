@@ -31,7 +31,8 @@ class PositionFetchService(
     private val snapTradeService: SnapTradeService,
     private val auditService: AuditService,
     private val objectMapper: ObjectMapper,
-    private val jdbcTemplate: NamedParameterJdbcTemplate
+    private val jdbcTemplate: NamedParameterJdbcTemplate,
+    private val accountAnalyticsComputeService: AccountAnalyticsComputeService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -177,6 +178,15 @@ class PositionFetchService(
             )
 
             log.info("Successfully fetched {} positions for connection {}", positions.size, connectionId)
+
+            // Compute analytics snapshot after successful position sync
+            try {
+                accountAnalyticsComputeService.computeForConnection(connectionId)
+                log.info("Analytics computed for connection {}", connectionId)
+            } catch (e: Exception) {
+                log.warn("Analytics computation failed for connection {} (non-fatal): {}", connectionId, e.message)
+            }
+
             return fetchLog
 
         } catch (e: Exception) {

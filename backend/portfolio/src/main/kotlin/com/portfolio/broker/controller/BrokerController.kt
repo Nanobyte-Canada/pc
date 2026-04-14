@@ -283,6 +283,14 @@ class BrokerController(
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<RebalanceProgressDto> {
         val connection = brokerService.getConnection(connectionId, principal.id)
+        if (connection.modelPortfolio == null) {
+            return ResponseEntity.ok(RebalanceProgressDto(
+                connectionId = connectionId,
+                modelName = "",
+                accuracy = java.math.BigDecimal.ZERO,
+                entries = emptyList()
+            ))
+        }
         val progress = driftCalculationService.getRebalanceProgress(connection)
         return ResponseEntity.ok(progress)
     }
@@ -293,6 +301,13 @@ class BrokerController(
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<PendingOrdersResponse> {
         val connection = brokerService.getConnection(connectionId, principal.id)
+        if (connection.modelPortfolio == null) {
+            return ResponseEntity.ok(PendingOrdersResponse(
+                connectionId = connectionId,
+                orders = emptyList(),
+                totalAmount = java.math.BigDecimal.ZERO
+            ))
+        }
         val orders = rebalanceService.calculateTradesForAccount(connection)
         return ResponseEntity.ok(orders)
     }

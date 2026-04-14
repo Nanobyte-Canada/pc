@@ -162,14 +162,20 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       {/* Nav sections */}
       <nav className="sidebar-nav">
         {navSections.map((section) => {
-          // Inject Accounts link into Main section after Dashboard
-          const items = section.title === 'Main' && accountsData && accountsData.accounts.length > 0
-            ? [
-                section.items[0], // Dashboard
-                { to: `/brokers/accounts/${accountsData.accounts[0].connectionId}`, icon: Landmark, label: 'Accounts' },
-                ...section.items.slice(1), // Analytics
-              ]
-            : section.items
+          // Inject individual account links into Main section after Dashboard
+          let items = section.items
+          if (section.title === 'Main' && accountsData && accountsData.accounts.length > 0) {
+            const accountLinks = accountsData.accounts.map((acc) => ({
+              to: `/brokers/accounts/${acc.connectionId}`,
+              icon: Landmark,
+              label: acc.accountName || acc.brokerName || 'Account',
+            }))
+            items = [
+              section.items[0], // Dashboard
+              ...accountLinks,
+              ...section.items.slice(1), // Analytics
+            ]
+          }
 
           return (
             <div key={section.title}>

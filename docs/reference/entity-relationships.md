@@ -60,6 +60,7 @@ User -->1:* PortfolioGroup
 User -->1:* TradeOrder
 User -->1:* Notification
 User -->1:* DashboardPreference
+User -->1:* AccountAnalytics
 
                          +------------------+
                          |      Broker      |
@@ -70,14 +71,15 @@ User -->1:* DashboardPreference
                     +--------------------+
                     | BrokerConnection   |1---------*+------------------+
                     +--------------------+           | BrokerPosition   |
-                      |1   |1   |1   |1             +------------------+
-                      |    |    |    |                       |*
-                      |    |    |    |               +------------------+
-                      |*   |*   |*   |*             | PositionFetchLog |
+                      |1   |1   |1   |1   |1        +------------------+
+                      |    |    |    |     |                |*
+                      |    |    |    |     |         +------------------+
+                      |*   |*   |*   |*   |1        | PositionFetchLog |
                 +------+ +---+ +---+ +--------+    +------------------+
-                |BrkAct| |Bal| |Trd|  |         |
-                +------+ |Snp| |Ord|  |ModelPort|
-                         +---+ +---+  +---------+
+                |BrkAct| |Bal| |Trd|  |         |        |
+                +------+ |Snp| |Ord|  |ModelPort|  +------------------+
+                         +---+ +---+  +---------+  |AccountAnalytics  |
+                                                    +------------------+
                                           |1
                                           |
                                           |*
@@ -843,6 +845,35 @@ No foreign key relationships (standalone entity).
 **Enum -- FetchStatus:** `PENDING`, `IN_PROGRESS`, `SUCCESS`, `FAILED`, `PARTIAL`, `CANCELLED`
 
 **Methods:** `markSuccess(count, value)`, `markFailed(code, msg)`, `markPartial(count, msg)`
+
+---
+
+### AccountAnalytics
+
+**File:** `broker/entity/AccountAnalytics.kt`
+**Table:** `account_analytics`
+
+| Field | Kotlin Type | Column | Annotations |
+|-------|------------|--------|-------------|
+| id | Long | id | @Id @GeneratedValue(IDENTITY) |
+| connection | BrokerConnection | connection_id | @ManyToOne(LAZY), not null |
+| userId | Long | user_id | not null |
+| sectorExposure | String? | sector_exposure | jsonb, @JdbcTypeCode(JSON) |
+| geographyExposure | String? | geography_exposure | jsonb, @JdbcTypeCode(JSON) |
+| riskProfile | String? | risk_profile | jsonb, @JdbcTypeCode(JSON) |
+| holdings | String? | holdings | jsonb, @JdbcTypeCode(JSON) |
+| merWeighted | BigDecimal? | mer_weighted | precision=18, scale=6 |
+| totalValue | BigDecimal? | total_value | precision=18, scale=2 |
+| coveragePercent | BigDecimal? | coverage_percent | precision=5, scale=2 |
+| positionsCount | Int? | positions_count | nullable |
+| computedAt | OffsetDateTime | computed_at | not null |
+| createdAt | OffsetDateTime | created_at | not null, updatable=false |
+| updatedAt | OffsetDateTime | updated_at | not null |
+
+**Relationships:**
+- `connection` -> `BrokerConnection` (ManyToOne, LAZY, not null) -- UNIQUE constraint ensures one snapshot per connection
+
+**Notes:** Pre-computed analytics snapshot per brokerage connection. JSONB columns store sector/geography exposure arrays, risk profile object, and look-through holdings list. All values normalized to CAD. Upserted by `AccountAnalyticsComputeService` on each position sync -- see [backend-services.md](backend-services.md). The `userId` column is a plain Long (not a JPA relationship) used for efficient lookups via `AccountAnalyticsRepository.findAllByUserId()`.
 
 ---
 

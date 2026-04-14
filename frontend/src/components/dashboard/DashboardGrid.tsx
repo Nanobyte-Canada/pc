@@ -1,13 +1,10 @@
 import { Suspense, useState } from 'react'
-import { Settings, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { WidgetWrapper } from './WidgetWrapper'
 import { DashboardEditMode } from './DashboardEditMode'
 import { WIDGET_REGISTRY, DEFAULT_WIDGET_ORDER, CONFIGURABLE_WIDGETS } from './WidgetRegistry'
 import { useDashboardPreferences, useUpdateDashboardPreferences } from '@/hooks/useDashboardPreferences'
-import { useRefreshAll } from '@/hooks/useDashboardWidgets'
 import type { WidgetPreference, WidgetKey } from '@/types/dashboard'
 import './DashboardGrid.css'
 
@@ -16,21 +13,22 @@ interface DashboardGridProps {
   contextType?: string
 }
 
-// Dashboard context: 4-column grid (consolidated widgets, no zones)
+// Dashboard context: 4-column grid
 const DASHBOARD_WIDGET_ORDER: WidgetKey[] = [
-  'PORTFOLIO_SUMMARY',
-  'RISK_PROFILE', 'SECTOR_EXPOSURE', 'GEOGRAPHY_EXPOSURE', 'FEES_AND_DIVIDENDS',
+  'PORTFOLIO_SUMMARY', 'RISK_PROFILE',
+  'SECTOR_EXPOSURE', 'GEOGRAPHY_EXPOSURE', 'FEES_COMMISSION', 'DIVIDEND_CALENDAR',
   'ORDERS', 'REBALANCING_PROGRESS',
   'CONNECTED_ACCOUNTS',
   'POSITIONS_HOLDINGS',
 ]
 
 const DASHBOARD_COL_SPANS: Partial<Record<WidgetKey, number>> = {
-  PORTFOLIO_SUMMARY: 4,
+  PORTFOLIO_SUMMARY: 3,
   RISK_PROFILE: 1,
   SECTOR_EXPOSURE: 1,
   GEOGRAPHY_EXPOSURE: 1,
-  FEES_AND_DIVIDENDS: 1,
+  FEES_COMMISSION: 1,
+  DIVIDEND_CALENDAR: 1,
   ORDERS: 2,
   REBALANCING_PROGRESS: 2,
   CONNECTED_ACCOUNTS: 4,
@@ -39,18 +37,19 @@ const DASHBOARD_COL_SPANS: Partial<Record<WidgetKey, number>> = {
 
 // Account context: 4-column grid
 const ACCOUNT_WIDGET_ORDER: WidgetKey[] = [
-  'ACCOUNT_SUMMARY',
-  'RISK_PROFILE', 'SECTOR_EXPOSURE', 'GEOGRAPHY_EXPOSURE', 'FEES_AND_DIVIDENDS',
+  'ACCOUNT_SUMMARY', 'RISK_PROFILE',
+  'SECTOR_EXPOSURE', 'GEOGRAPHY_EXPOSURE', 'FEES_COMMISSION', 'DIVIDEND_CALENDAR',
   'ORDERS', 'REBALANCING_PROGRESS',
   'POSITIONS_HOLDINGS',
 ]
 
 const ACCOUNT_COL_SPANS: Partial<Record<WidgetKey, number>> = {
-  ACCOUNT_SUMMARY: 4,
+  ACCOUNT_SUMMARY: 3,
   RISK_PROFILE: 1,
   SECTOR_EXPOSURE: 1,
   GEOGRAPHY_EXPOSURE: 1,
-  FEES_AND_DIVIDENDS: 1,
+  FEES_COMMISSION: 1,
+  DIVIDEND_CALENDAR: 1,
   ORDERS: 2,
   REBALANCING_PROGRESS: 2,
   POSITIONS_HOLDINGS: 4,
@@ -61,7 +60,6 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
   const isAccountContext = contextType === 'ACCOUNT'
   const { data: prefsData, isLoading: prefsLoading } = useDashboardPreferences(contextType, connectionId ? connectionId : undefined)
   const updatePrefs = useUpdateDashboardPreferences()
-  const { mutate: refresh, isPending: isRefreshing } = useRefreshAll()
 
   const preferences: WidgetPreference[] = (() => {
     const defaults = DEFAULT_WIDGET_ORDER.map(key => {
@@ -119,25 +117,6 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
 
   return (
     <div>
-      {/* Toolbar: only show Customize on account pages */}
-      {isAccountContext && (
-        <div className="dashboard-grid-toolbar">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refresh()}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={isRefreshing ? 'animate-spin' : ''} style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
-            <Settings style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }} />
-            Customize
-          </Button>
-        </div>
-      )}
-
       <div className="dashboard-grid-4col">
         {widgetsToRender.map(({ key, entry }) => {
           const Component = entry.component
@@ -147,7 +126,7 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
               key={key}
               title={entry.title}
               columnSpan={colSpan}
-              className={colSpan === 4 ? 'widget-col-span-4' : colSpan === 2 ? 'widget-col-span-2' : undefined}
+              className={colSpan === 4 ? 'widget-col-span-4' : colSpan === 3 ? 'widget-col-span-3' : colSpan === 2 ? 'widget-col-span-2' : undefined}
             >
               <ErrorBoundary>
                 <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>
