@@ -175,6 +175,7 @@ class SnapTradeApiException(
 
     companion object {
         const val ERROR_PERSONAL_KEY_SLOT_OCCUPIED = 1012
+        const val ERROR_INVALID_CREDENTIALS = 1083
 
         fun extractErrorCode(message: String?): Int? {
             if (message == null) return null

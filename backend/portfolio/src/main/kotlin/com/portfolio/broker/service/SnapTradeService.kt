@@ -82,12 +82,32 @@ class SnapTradeService(
 
     /**
      * Gets the SnapTrade connection portal URL for connecting a broker.
+     * If the stored credentials are stale (401 from SnapTrade), clears them and re-registers once.
      */
     fun getConnectionPortalUrl(user: User, broker: String? = null, reconnectAuthId: String? = null, connectionType: String? = null): String {
         val snapUser = ensureUserRegistered(user)
-        return adapter.getLoginRedirectUrl(
-            snapUser.userId, snapUser.userSecret, config.redirectUri, broker, reconnectAuthId, connectionType
-        )
+        return try {
+            adapter.getLoginRedirectUrl(
+                snapUser.userId, snapUser.userSecret, config.redirectUri, broker, reconnectAuthId, connectionType
+            )
+        } catch (e: SnapTradeApiException) {
+            if (e.errorCode == SnapTradeApiException.ERROR_INVALID_CREDENTIALS) {
+                log.warn("Stale SnapTrade credentials for user {}, re-registering", user.id)
+                val freshUser = resetAndReRegister(user)
+                adapter.getLoginRedirectUrl(
+                    freshUser.userId, freshUser.userSecret, config.redirectUri, broker, reconnectAuthId, connectionType
+                )
+            } else {
+                throw e
+            }
+        }
+    }
+
+    private fun resetAndReRegister(user: User): SnapTradeUserInfo {
+        user.snaptradeUserId = null
+        user.snaptradeUserSecretEncrypted = null
+        userRepository.save(user)
+        return ensureUserRegistered(user)
     }
 
     /**

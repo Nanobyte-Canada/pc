@@ -9,6 +9,7 @@ import com.portfolio.broker.repository.BrokerActivityRepository
 import com.portfolio.broker.repository.BrokerBalanceRepository
 import com.portfolio.broker.repository.BrokerConnectionRepository
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -23,7 +24,11 @@ class ActivityIngestionService(
     private val snapTradeService: SnapTradeService,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper,
-    private val exchangeRateService: ExchangeRateService
+    private val exchangeRateService: ExchangeRateService,
+    @Value("\${broker.sync.max-lookback-years:15}")
+    private val maxLookbackYears: Int = 15,
+    @Value("\${broker.sync.batch-increment-years:5}")
+    private val batchIncrementYears: Int = 5
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -34,13 +39,73 @@ class ActivityIngestionService(
         }
         val user = connection.user
 
-        // Incremental sync: find latest trade_date in DB
         val latestDate = activityRepository.findLatestTradeDateByConnectionId(connectionId)
-        val startDate = latestDate?.minusDays(1) // overlap by 1 day for safety
 
-        log.info("Syncing activities for connection {} (user {}), startDate={}",
-            connectionId, user.id, startDate ?: "all-time")
+        val insertedCount = if (latestDate == null) {
+            // No activities exist — full historical sync with batched date ranges
+            log.info("No existing activities for connection {} (user {}), starting full historical sync " +
+                "(lookback={}y, batch={}y)", connectionId, user.id, maxLookbackYears, batchIncrementYears)
+            syncFullHistory(connection, user)
+        } else {
+            // Incremental sync from latest known date
+            val startDate = latestDate.minusDays(1)
+            log.info("Incremental sync for connection {} (user {}), startDate={}",
+                connectionId, user.id, startDate)
+            syncIncremental(connection, user, startDate)
+        }
 
+        connection.lastActivitiesFetchedAt = OffsetDateTime.now()
+        connectionRepository.save(connection)
+
+        log.info("Synced {} new activities for connection {}", insertedCount, connectionId)
+        return insertedCount
+    }
+
+    private fun syncFullHistory(connection: com.portfolio.broker.entity.BrokerConnection, user: com.portfolio.auth.entity.User): Int {
+        var totalInserted = 0
+        var currentEnd = LocalDate.now()
+        val maxBatches = (maxLookbackYears + batchIncrementYears - 1) / batchIncrementYears
+
+        for (i in 0 until maxBatches) {
+            val batchStart = currentEnd.minusYears(batchIncrementYears.toLong())
+            val startMs = System.currentTimeMillis()
+
+            val activities = try {
+                snapTradeService.getActivities(
+                    user = user,
+                    startDate = batchStart,
+                    endDate = currentEnd,
+                    accounts = connection.accountIdExternal
+                )
+            } catch (e: Exception) {
+                log.error("Historical sync batch {}/{} failed for connection {}: {}",
+                    i + 1, maxBatches, connection.id, e.message)
+                break
+            }
+
+            val elapsed = System.currentTimeMillis() - startMs
+            val inserted = processAndSaveActivities(activities, connection)
+            totalInserted += inserted
+
+            log.info("Historical sync batch {}/{}: {} activities ({} new) from {} to {} ({}ms)",
+                i + 1, maxBatches, activities.size, inserted, batchStart, currentEnd, elapsed)
+
+            if (activities.isEmpty()) {
+                log.info("No activities found before {}, stopping historical sync", currentEnd)
+                break
+            }
+
+            currentEnd = batchStart
+        }
+
+        val earliest = activityRepository.findEarliestTradeDateByConnectionId(connection.id)
+        log.info("Historical sync complete for connection {}: {} total new activities, earliest={}",
+            connection.id, totalInserted, earliest ?: "none")
+
+        return totalInserted
+    }
+
+    private fun syncIncremental(connection: com.portfolio.broker.entity.BrokerConnection, user: com.portfolio.auth.entity.User, startDate: LocalDate): Int {
         val activities = try {
             snapTradeService.getActivities(
                 user = user,
@@ -48,15 +113,19 @@ class ActivityIngestionService(
                 accounts = connection.accountIdExternal
             )
         } catch (e: Exception) {
-            log.error("Failed to fetch activities for connection {}: {}", connectionId, e.message)
+            log.error("Failed to fetch activities for connection {}: {}", connection.id, e.message)
             throw e
         }
 
+        return processAndSaveActivities(activities, connection)
+    }
+
+    private fun processAndSaveActivities(activities: List<com.portfolio.broker.adapter.SnapTradeActivityDto>, connection: com.portfolio.broker.entity.BrokerConnection): Int {
         var insertedCount = 0
         for (activity in activities) {
             val externalId = activity.id
             if (externalId != null) {
-                val existing = activityRepository.findByConnectionIdAndExternalId(connectionId, externalId)
+                val existing = activityRepository.findByConnectionIdAndExternalId(connection.id, externalId)
                 if (existing != null) continue
             }
 
@@ -66,7 +135,6 @@ class ActivityIngestionService(
             val currency = activity.currency ?: "CAD"
             val mappedType = mapActivityType(activity.type)
 
-            // Compute CAD-equivalent amount for reporting
             val (amountCad, exchangeRate) = computeCadAmount(rawAmount, currency, tradeDate, mappedType)
 
             val entity = BrokerActivity(
@@ -91,12 +159,6 @@ class ActivityIngestionService(
             activityRepository.save(entity)
             insertedCount++
         }
-
-        connection.lastActivitiesFetchedAt = OffsetDateTime.now()
-        connectionRepository.save(connection)
-
-        log.info("Synced {} new activities for connection {} (total fetched: {})",
-            insertedCount, connectionId, activities.size)
         return insertedCount
     }
 

@@ -230,12 +230,13 @@ com.portfolio
 **File:** `broker/service/SnapTradeService.kt`
 **Dependencies:** `SnapTradeConfig`, `UserRepository`, `TokenEncryptionService`, `SnapTradeAdapter`
 
-Wraps the SnapTradeAdapter with user registration/authentication logic. Generates deterministic SnapTrade user IDs from email SHA-256 hashes. Encrypts/decrypts user secrets via TokenEncryptionService.
+Wraps the SnapTradeAdapter with user registration/authentication logic. Generates deterministic SnapTrade user IDs from email SHA-256 hashes. Encrypts/decrypts user secrets via TokenEncryptionService. Automatically recovers from stale credentials (error 1083) by re-registering the user.
 
 | Method | Signature | Description |
 |---|---|---|
 | `ensureUserRegistered` | `(user: User): SnapTradeUserInfo` | Registers with SnapTrade if needed, stores encrypted secret |
-| `getConnectionPortalUrl` | `(user, broker?, reconnectAuthId?, connectionType?): String` | Gets OAuth redirect URL from SnapTrade |
+| `getConnectionPortalUrl` | `(user, broker?, reconnectAuthId?, connectionType?): String` | Gets OAuth redirect URL from SnapTrade; auto-retries with fresh credentials on 401 |
+| `resetAndReRegister` | `(user: User): SnapTradeUserInfo` | (private) Clears stored credentials and re-registers with SnapTrade |
 | `listAccounts` | `(user: User): List<SnapTradeAccountDto>` | Lists all accounts |
 | `listConnections` | `(user: User): List<SnapTradeConnectionDto>` | Lists all brokerage authorizations |
 | `fetchPositions` | `(user: User, accountId: String): List<SnapTradePositionDto>` | Fetches positions for account |
@@ -273,12 +274,13 @@ Internal responsibilities:
 ### DashboardDataService
 
 **File:** `broker/service/DashboardDataService.kt`
-**Dependencies:** `BrokerPositionRepository`, `BrokerConnectionRepository`, `BrokerActivityRepository`, `TradeOrderRepository`, `PortfolioGroupAccountRepository`, `AccountAnalyticsRepository`, `StockRepository`, `EtfRepository`, `CountryRepository`, `LookThroughService`, `DriftCalculationService`, `PositionFetchService`, `DashboardCashService`, `DashboardExposureService`, `DashboardRiskService`
+**Dependencies:** `BrokerPositionRepository`, `BrokerConnectionRepository`, `BrokerActivityRepository`, `BrokerBalanceRepository`, `TradeOrderRepository`, `PortfolioGroupAccountRepository`, `AccountAnalyticsRepository`, `StockRepository`, `EtfRepository`, `CountryRepository`, `LookThroughService`, `DriftCalculationService`, `PositionFetchService`, `DashboardCashService`, `DashboardExposureService`, `DashboardRiskService`
 
 Orchestrates all dashboard widget data endpoints. Delegates to sub-services for cash, exposure, and risk. For sector exposure, geography exposure, and risk profile, reads from pre-computed `account_analytics` snapshots when available (with fallback to live computation). Aggregates analytics across multiple connections for multi-account dashboard views.
 
 | Method | Signature | Description |
 |---|---|---|
+| `getIrrData` | `(userId: Long, connectionId: Long?): DashboardIrrResponse` | IRR per account and portfolio-wide, calculated via Newton-Raphson from balance snapshots and cash flow activities |
 | `getSummary` | `(userId: Long, connectionId: Long?): DashboardSummaryResponse` | Portfolio value, day P&L, positions summary, look-through holdings count |
 | `getCash` | `(userId, connectionId?): DashboardCashResponse` | Delegates to DashboardCashService |
 | `getSectorExposure` | `(userId, connectionId?): SectorExposureResponse` | Reads from account_analytics snapshots (falls back to DashboardExposureService for live computation) |
@@ -911,7 +913,7 @@ Redis cache manager with per-cache TTLs:
 | `look-through` | 30m | Look-through computations |
 | `etf-sector-allocations` | 12h | ETF sector allocations |
 
-Default TTL: 1h. Serialization: GenericJackson2JsonRedisSerializer. Null values not cached.
+Default TTL: 1h. Serialization: GenericJackson2JsonRedisSerializer with Kotlin module (required for Kotlin data class deserialization). Null values not cached.
 
 ### HttpClientConfig
 

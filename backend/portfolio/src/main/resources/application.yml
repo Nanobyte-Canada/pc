@@ -16,7 +16,8 @@ spring:
       maximum-pool-size: 10
       minimum-idle: 2
       idle-timeout: 300000
-      connection-timeout: 20000
+      connection-timeout: 30000
+      initialization-fail-timeout: -1
   jpa:
     hibernate:
       ddl-auto: validate
@@ -80,6 +81,8 @@ broker:
   sync:
     enabled: ${BROKER_SYNC_ENABLED:false}
     cron: ${BROKER_SYNC_CRON:0 30 22 * * *}
+    max-lookback-years: ${BROKER_SYNC_MAX_LOOKBACK_YEARS:15}
+    batch-increment-years: ${BROKER_SYNC_BATCH_INCREMENT_YEARS:15}
 
 # SnapTrade integration configuration
 snaptrade:

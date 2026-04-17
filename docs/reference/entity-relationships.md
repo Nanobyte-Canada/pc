@@ -1255,6 +1255,8 @@ No foreign key relationships (standalone entity).
 | `DividendCalendarResponse` | month, totalDividends, entries[] | BrokerActivity entities |
 | `HoldingsTableResponse` | holdings[], totalCount, coveragePercent | LookThroughService |
 | `DashboardAccountsResponse` | accounts[] | BrokerConnection entities |
+| `AccountIrrDto` | connectionId, brokerName?, accountName?, irr?, startDate?, endDate? | Computed from BrokerBalanceSnapshot + BrokerActivity |
+| `DashboardIrrResponse` | portfolioIrr?, accounts[] | Composite |
 
 ### broker/dto/ModelPortfolioDtos.kt
 

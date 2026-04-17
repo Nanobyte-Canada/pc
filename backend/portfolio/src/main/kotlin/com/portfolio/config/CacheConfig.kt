@@ -1,5 +1,9 @@
 package com.portfolio.config
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
@@ -17,11 +21,22 @@ class CacheConfig {
 
     @Bean
     fun cacheManager(connectionFactory: RedisConnectionFactory): CacheManager {
+        val cacheMapper = ObjectMapper().apply {
+            registerKotlinModule()
+            activateDefaultTyping(
+                BasicPolymorphicTypeValidator.builder()
+                    .allowIfBaseType(Any::class.java)
+                    .build(),
+                ObjectMapper.DefaultTyping.EVERYTHING,
+                JsonTypeInfo.As.PROPERTY
+            )
+        }
+
         val defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
             .entryTtl(Duration.ofHours(1))
             .serializeValuesWith(
                 RedisSerializationContext.SerializationPair
-                    .fromSerializer(GenericJackson2JsonRedisSerializer())
+                    .fromSerializer(GenericJackson2JsonRedisSerializer(cacheMapper))
             )
             .disableCachingNullValues()
 

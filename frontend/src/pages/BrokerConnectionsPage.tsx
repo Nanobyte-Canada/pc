@@ -81,7 +81,11 @@ export function BrokerConnectionsPage() {
   }, [notification])
 
   const handleConnect = (brokerSlug?: string) => {
-    connectBroker.mutate(brokerSlug ? { broker: brokerSlug } : undefined)
+    connectBroker.mutate(brokerSlug ? { broker: brokerSlug } : undefined, {
+      onError: () => {
+        setNotification({ type: 'error', message: 'Failed to initiate broker connection. Please try again.' })
+      }
+    })
   }
 
   const handleReconnect = (authorizationId: string) => {

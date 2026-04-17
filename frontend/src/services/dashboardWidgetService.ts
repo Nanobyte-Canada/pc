@@ -12,6 +12,7 @@ import type {
   DashboardAccountsResponse,
   DashboardPreferencesResponse,
   UpdateDashboardPreferencesRequest,
+  DashboardIrrResponse,
 } from '../types/dashboard'
 import type { AggregatedPositionsResponse } from '../types/broker'
 
@@ -155,6 +156,15 @@ export async function getDashboardHoldings(connectionId?: number): Promise<Holdi
 export async function getDashboardAccounts(): Promise<DashboardAccountsResponse> {
   const response = await apiFetch('/api/v1/dashboard/accounts')
   if (!response.ok) throw new Error('Failed to fetch dashboard accounts')
+  return response.json()
+}
+
+export async function getDashboardIrr(connectionId?: number): Promise<DashboardIrrResponse> {
+  const params = new URLSearchParams()
+  if (connectionId) params.set('connectionId', String(connectionId))
+  const qs = params.toString()
+  const response = await apiFetch(`/api/v1/dashboard/irr${qs ? '?' + qs : ''}`)
+  if (!response.ok) throw new Error('Failed to fetch IRR data')
   return response.json()
 }
 

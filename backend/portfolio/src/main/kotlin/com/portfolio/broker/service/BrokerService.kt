@@ -9,7 +9,9 @@ import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
 import com.portfolio.broker.adapter.SnapTradeAccountDto
+import com.portfolio.broker.adapter.SnapTradeApiException
 import com.portfolio.broker.adapter.SnapTradeConnectionDto
+import com.portfolio.exception.ExternalServiceException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -114,7 +116,16 @@ class BrokerService(
     @Transactional
     fun getConnectionPortalUrl(userId: Long, broker: String? = null, reconnectAuthId: String? = null, connectionType: String? = null): String {
         val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
-        val redirectUrl = snapTradeService.getConnectionPortalUrl(user, broker, reconnectAuthId, connectionType)
+        val redirectUrl = try {
+            snapTradeService.getConnectionPortalUrl(user, broker, reconnectAuthId, connectionType)
+        } catch (e: SnapTradeApiException) {
+            log.error("SnapTrade API error for user {} connecting broker={}: {}", userId, broker, e.message)
+            throw ExternalServiceException(
+                code = "BROKER_CONNECTION_FAILED",
+                message = "Failed to connect to broker service. Please try again later.",
+                cause = e
+            )
+        }
 
         log.info("Generated SnapTrade connection portal URL for user {}, broker={}", userId, broker)
         return redirectUrl

@@ -251,3 +251,19 @@ data class RefreshAllResponse(
     val connectionsRefreshed: Int,
     val message: String
 )
+
+// ========== IRR (Internal Rate of Return) ==========
+
+data class AccountIrrDto(
+    val connectionId: Long,
+    val brokerName: String?,
+    val accountName: String?,
+    val irr: BigDecimal?,
+    val startDate: String?,
+    val endDate: String?
+)
+
+data class DashboardIrrResponse(
+    val portfolioIrr: BigDecimal?,
+    val accounts: List<AccountIrrDto>
+)

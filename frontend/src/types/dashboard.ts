@@ -267,6 +267,23 @@ export type WidgetKey =
   | 'FEES_AND_DIVIDENDS'
   | 'POSITIONS_HOLDINGS'
   | 'PORTFOLIO_SUMMARY'
+  | 'IRR'
+
+// ========== IRR ==========
+
+export interface AccountIrr {
+  connectionId: number
+  brokerName: string | null
+  accountName: string | null
+  irr: number | null
+  startDate: string | null
+  endDate: string | null
+}
+
+export interface DashboardIrrResponse {
+  portfolioIrr: number | null
+  accounts: AccountIrr[]
+}
 
 export interface WidgetDefinition {
   key: WidgetKey

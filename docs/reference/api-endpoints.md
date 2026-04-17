@@ -56,13 +56,13 @@ All errors follow a consistent format:
 | [ScreenerController](#screenercontroller) | `/api/v1/screener` | 5 | Authenticated |
 | [PortfolioController](#portfoliocontroller) | `/api/v1/portfolio` | 3 | Authenticated |
 | [BrokerController](#brokercontroller) | `/api/v1/brokers` | 14 | Authenticated |
-| [DashboardController](#dashboardcontroller) | `/api/v1/dashboard` | 14 | Authenticated |
+| [DashboardController](#dashboardcontroller) | `/api/v1/dashboard` | 15 | Authenticated |
 | [ModelPortfolioController](#modelportfoliocontroller) | `/api/v1/model-portfolios` | 6 | Authenticated |
 | [PerformanceController](#performancecontroller) | `/api/v1/portfolio-groups/{groupId}/performance` | 3 | Authenticated |
 | [PortfolioGroupController](#portfoliogroupcontroller) | `/api/v1/portfolio-groups` | 14 | Authenticated |
 | [TradingController](#tradingcontroller) | `/api/v1/trading` | 5 | Authenticated |
 | [NotificationController](#notificationcontroller) | `/api/v1/notifications` | 5 | Authenticated |
-**Total: 81 endpoints**
+**Total: 82 endpoints**
 
 ---
 
@@ -257,6 +257,7 @@ Returns count of instruments by type from the ingestion schema.
 | `GET` | `/api/v1/dashboard/preferences` | Authenticated | `dashboardPreferenceService.getPreferences()` | `DashboardPreferencesResponse` |
 | `PUT` | `/api/v1/dashboard/preferences` | Authenticated | `dashboardPreferenceService.updatePreferences()` | `DashboardPreferencesResponse` |
 | `POST` | `/api/v1/dashboard/preferences/reset` | Authenticated | `dashboardPreferenceService.resetPreferences()` | `DashboardPreferencesResponse` |
+| `GET` | `/api/v1/dashboard/irr` | Authenticated | `dashboardDataService.getIrrData()` | `DashboardIrrResponse` |
 | `GET` | `/api/v1/dashboard/summary` | Authenticated | `dashboardDataService.getSummary()` | `DashboardSummaryResponse` |
 | `GET` | `/api/v1/dashboard/cash` | Authenticated | `dashboardDataService.getCash()` | `DashboardCashResponse` |
 | `GET` | `/api/v1/dashboard/exposure/sector` | Authenticated | `dashboardDataService.getSectorExposure()` | `SectorExposureResponse` |
@@ -280,6 +281,11 @@ Most dashboard widget endpoints accept: `connectionId: Long?` -- Filter to a spe
 ### `PUT /api/v1/dashboard/preferences`
 **Request body:** `UpdateDashboardPreferencesRequest { widgets: List<WidgetPreferenceInput> }`
 **Query params:** `contextType: String` (default `DASHBOARD`), `contextId: Long?`
+
+### `GET /api/v1/dashboard/irr`
+Returns Internal Rate of Return (IRR) for individual accounts and portfolio-wide.
+**Query params:** `connectionId: Long?` -- Filter to a specific broker connection.
+**Response:** `DashboardIrrResponse { portfolioIrr: BigDecimal?, accounts: List<AccountIrrDto> }`
 
 ### `GET /api/v1/dashboard/dividends`
 **Query params:** `month: String?` (format `YYYY-MM`, default current month), `connectionId: Long?`

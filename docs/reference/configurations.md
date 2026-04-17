@@ -288,7 +288,8 @@ HikariCP configuration from `spring.datasource.hikari` in `application.yml`:
 | `maximum-pool-size` | 10 | Maximum number of connections in the pool |
 | `minimum-idle` | 2 | Minimum idle connections maintained |
 | `idle-timeout` | 300,000 ms (5 min) | Max time a connection can sit idle |
-| `connection-timeout` | 20,000 ms (20 sec) | Max time to wait for a connection from the pool |
+| `connection-timeout` | 30,000 ms (30 sec) | Max time to wait for a connection from the pool |
+| `initialization-fail-timeout` | -1 | Don't fail fast on startup; retry DB connection in background (tolerates transient DNS/network issues in Docker) |
 
 ### JPA/Hibernate
 - **DDL auto:** `validate` (schema managed exclusively by Flyway)

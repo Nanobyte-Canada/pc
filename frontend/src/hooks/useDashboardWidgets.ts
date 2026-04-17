@@ -15,6 +15,7 @@ export const dashboardKeys = {
   positions: (connectionId?: number) => [...dashboardKeys.all, 'positions', connectionId] as const,
   holdings: (connectionId?: number) => [...dashboardKeys.all, 'holdings', connectionId] as const,
   accounts: () => [...dashboardKeys.all, 'accounts'] as const,
+  irr: (connectionId?: number) => [...dashboardKeys.all, 'irr', connectionId] as const,
 }
 
 export function useDashboardSummary(connectionId?: number) {
@@ -96,6 +97,14 @@ export function useDashboardHoldings(connectionId?: number) {
   return useQuery({
     queryKey: dashboardKeys.holdings(connectionId),
     queryFn: () => api.getDashboardHoldings(connectionId),
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useDashboardIrr(connectionId?: number) {
+  return useQuery({
+    queryKey: dashboardKeys.irr(connectionId),
+    queryFn: () => api.getDashboardIrr(connectionId),
     staleTime: 5 * 60_000,
   })
 }

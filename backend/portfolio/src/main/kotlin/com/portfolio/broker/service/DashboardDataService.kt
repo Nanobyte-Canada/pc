@@ -13,15 +13,18 @@ import com.portfolio.service.LookThroughService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.math.MathContext
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 
 @Service
 class DashboardDataService(
     private val positionRepository: BrokerPositionRepository,
     private val connectionRepository: BrokerConnectionRepository,
     private val activityRepository: BrokerActivityRepository,
+    private val balanceRepository: BrokerBalanceRepository,
     private val tradeOrderRepository: TradeOrderRepository,
     private val portfolioGroupAccountRepository: PortfolioGroupAccountRepository,
     private val instrumentLookup: IngestionInstrumentLookupService,
@@ -62,6 +65,172 @@ class DashboardDataService(
             return aggregateRiskProfile(snapshots)
         }
         return riskService.getRiskProfile(userId, connectionId)
+    }
+
+    // ========== IRR (Internal Rate of Return) ==========
+
+    fun getIrrData(userId: Long, connectionId: Long? = null): DashboardIrrResponse {
+        val connections = connectionRepository.findByUserIdAndStatusWithBroker(userId, ConnectionStatus.ACTIVE)
+            .let { conns -> if (connectionId != null) conns.filter { it.id == connectionId } else conns }
+
+        val today = LocalDate.now()
+        val mc = MathContext.DECIMAL64
+
+        val accountResults = connections.map { conn ->
+            val snapshots = balanceRepository.findByConnectionIdAndAsOfDateBetween(
+                conn.id, LocalDate.of(2000, 1, 1), today
+            ).sortedBy { it.asOfDate }
+
+            if (snapshots.size < 2) {
+                return@map AccountIrrDto(
+                    connectionId = conn.id,
+                    brokerName = conn.broker?.code ?: conn.brokerName,
+                    accountName = conn.accountName,
+                    irr = null,
+                    startDate = snapshots.firstOrNull()?.asOfDate?.toString(),
+                    endDate = snapshots.lastOrNull()?.asOfDate?.toString()
+                )
+            }
+
+            val startDate = snapshots.first().asOfDate
+            val endDate = snapshots.last().asOfDate
+
+            val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
+            val activities = activityRepository.findByConnectionIdAndTradeDateBetween(conn.id, startDate, endDate)
+                .filter { it.type.uppercase() in cashFlowTypes }
+
+            val startingValue = snapshots.first().totalValue ?: BigDecimal.ZERO
+            val endingValue = snapshots.last().totalValue ?: BigDecimal.ZERO
+
+            val irr = calculateIrr(startingValue, endingValue, startDate, endDate, activities, mc)
+
+            AccountIrrDto(
+                connectionId = conn.id,
+                brokerName = conn.broker?.code ?: conn.brokerName,
+                accountName = conn.accountName,
+                irr = irr,
+                startDate = startDate.toString(),
+                endDate = endDate.toString()
+            )
+        }
+
+        // Portfolio-wide IRR: aggregate all connections' snapshots and activities
+        val portfolioIrr = calculatePortfolioIrr(connections, today, mc)
+
+        return DashboardIrrResponse(
+            portfolioIrr = portfolioIrr,
+            accounts = accountResults
+        )
+    }
+
+    private fun calculatePortfolioIrr(
+        connections: List<com.portfolio.broker.entity.BrokerConnection>,
+        today: LocalDate,
+        mc: MathContext
+    ): BigDecimal? {
+        if (connections.isEmpty()) return null
+
+        // Gather all snapshots across connections, grouped by date
+        data class DatedValue(val date: LocalDate, val totalValue: BigDecimal)
+
+        val allSnapshots = connections.flatMap { conn ->
+            balanceRepository.findByConnectionIdAndAsOfDateBetween(
+                conn.id, LocalDate.of(2000, 1, 1), today
+            )
+        }
+
+        if (allSnapshots.isEmpty()) return null
+
+        // Aggregate by date
+        val snapshotsByDate = allSnapshots.groupBy { it.asOfDate }
+            .mapValues { (_, snaps) -> snaps.sumOf { it.totalValue ?: BigDecimal.ZERO } }
+            .entries.sortedBy { it.key }
+
+        if (snapshotsByDate.size < 2) return null
+
+        val startDate = snapshotsByDate.first().key
+        val endDate = snapshotsByDate.last().key
+        val startingValue = snapshotsByDate.first().value
+        val endingValue = snapshotsByDate.last().value
+
+        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
+        val connectionIds = connections.map { it.id }
+        val allActivities = activityRepository.findByConnectionIdInAndTradeDateBetween(connectionIds, startDate, endDate)
+            .filter { it.type.uppercase() in cashFlowTypes }
+
+        return calculateIrr(startingValue, endingValue, startDate, endDate, allActivities, mc)
+    }
+
+    private fun calculateIrr(
+        startingValue: BigDecimal,
+        endingValue: BigDecimal,
+        startDate: LocalDate,
+        endDate: LocalDate,
+        activities: List<com.portfolio.broker.entity.BrokerActivity>,
+        mc: MathContext
+    ): BigDecimal? {
+        val totalDays = ChronoUnit.DAYS.between(startDate, endDate)
+        if (totalDays <= 0) return null
+
+        // Map activities to cash flows: deposits are positive (money in), withdrawals are negative (money out)
+        val depositTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
+        val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL")
+
+        data class CashFlow(val date: LocalDate, val amount: BigDecimal)
+
+        val cashFlows = activities.map { act ->
+            val amt = act.amountCad ?: act.amount
+            val signedAmount = if (act.type.uppercase() in depositTypes) {
+                amt.abs()
+            } else if (act.type.uppercase() in withdrawalTypes) {
+                amt.abs().negate()
+            } else {
+                amt
+            }
+            CashFlow(act.tradeDate, signedAmount)
+        }
+
+        // Newton-Raphson IRR approximation
+        var rate = BigDecimal("0.10") // Initial guess: 10%
+
+        for (iteration in 0 until 50) {
+            var npv = startingValue.negate()
+            var dnpv = BigDecimal.ZERO // derivative
+
+            for (cf in cashFlows) {
+                val days = ChronoUnit.DAYS.between(startDate, cf.date)
+                val t = BigDecimal(days).divide(BigDecimal(365), 8, RoundingMode.HALF_UP)
+                val onePlusR = BigDecimal.ONE + rate
+                if (onePlusR <= BigDecimal.ZERO) break
+
+                val exponent = t.negate().toInt().coerceIn(-10, 0)
+                val discount = onePlusR.pow(exponent)
+                npv += cf.amount.multiply(discount, mc)
+                dnpv -= cf.amount.multiply(t).multiply(discount, mc).divide(onePlusR, 8, RoundingMode.HALF_UP)
+            }
+
+            // Add terminal value (ending portfolio value)
+            val totalT = BigDecimal(totalDays).divide(BigDecimal(365), 8, RoundingMode.HALF_UP)
+            val onePlusR = BigDecimal.ONE + rate
+            if (onePlusR > BigDecimal.ZERO) {
+                val exponent = totalT.negate().toInt().coerceIn(-10, 0)
+                val termDiscount = onePlusR.pow(exponent)
+                npv += endingValue.multiply(termDiscount, mc)
+                dnpv -= endingValue.multiply(totalT).multiply(termDiscount, mc)
+                    .divide(onePlusR, 8, RoundingMode.HALF_UP)
+            }
+
+            if (dnpv.abs() < BigDecimal("0.0001")) break
+
+            val newRate = rate - npv.divide(dnpv, 8, RoundingMode.HALF_UP)
+            if ((newRate - rate).abs() < BigDecimal("0.0001")) {
+                rate = newRate
+                break
+            }
+            rate = newRate
+        }
+
+        return rate.multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
     }
 
     // ========== Summary (Portfolio Value + Positions + Holdings) ==========

@@ -120,7 +120,7 @@ Two-stage build for local development and CI.
 - Copies `src/` and builds with `gradle build -x test --no-daemon` (tests skipped, run separately)
 
 **Stage 2: Runtime** (`eclipse-temurin:21-jre`)
-- Installs CA certificates (`apt-get install ca-certificates`)
+- Installs CA certificates and HTTP tools (`apt-get install ca-certificates curl wget`)
 - Imports custom CA certs from `certs/*.crt` into JVM truststore via `keytool`
 - Creates non-root user `appuser:appgroup` (UID/GID 1001)
 - Copies `app.jar` from build stage
@@ -173,8 +173,8 @@ Full-stack local development environment.
 |---------|-------|-------|-------|
 | redis | `redis:7-alpine` | 6379:6379 | Health check via `redis-cli ping` |
 | postgres | `postgres:16-alpine` | 5432:5432 | Volume `postgres_data`, health check via `pg_isready` |
-| backend | Build from `./backend/portfolio/Dockerfile` | 8080:8080, 5005:5005 | Debug port 5005, JAVA_TOOL_OPTIONS for JDWP |
-| ingestion-service | Build from `./backend/ingestion/Dockerfile` | 8081:8081 | Separate ingestion microservice with own `ingestion` DB schema, depends on postgres + redis |
+| backend | Build from `./backend/portfolio/Dockerfile` | 8080:8080, 5005:5005 | Debug port 5005, JAVA_TOOL_OPTIONS for JDWP, `restart: unless-stopped` |
+| ingestion-service | Build from `./backend/ingestion/Dockerfile` | 8081:8081 | Separate ingestion microservice with own `ingestion` DB schema, depends on postgres + redis, `restart: unless-stopped` |
 | frontend | Build from `./frontend/Dockerfile` target=development | 3000:3000 | Bind mounts `src/`, `public/`, `index.html` as read-only for hot reload |
 
 **Key configuration:**
@@ -183,6 +183,8 @@ Full-stack local development environment.
 - Frontend depends on backend
 - Profile: `SPRING_PROFILES_ACTIVE=local`
 - Backend health check: `wget http://localhost:8080/health` (30s interval, 30s start period)
+- Ingestion health check: `wget http://localhost:8081/actuator/health` (30s interval, 60s start period)
+- Backend and ingestion have `restart: unless-stopped` for Docker DNS race condition resilience
 - Ingestion service depends on postgres + redis (both `service_healthy`)
 - Environment variables use defaults: `POSTGRES_DB=portfolio`, `POSTGRES_USER=portfolio`, `POSTGRES_PASSWORD=portfolio`
 - Vite dev server proxies `/ingestion-api` to `http://localhost:8081` (ingestion service), rewrites path prefix

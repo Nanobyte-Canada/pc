@@ -23,6 +23,7 @@ const PositionsHoldingsWidget = lazy(() =>
   import('./PositionsHoldingsTabs').then(m => ({ default: m.PositionsHoldingsTabs }))
 ) as React.LazyExoticComponent<React.ComponentType<{ connectionId?: number }>>
 const PortfolioSummaryWidget = lazy(() => import('./widgets/PortfolioSummaryWidget'))
+const IrrWidget = lazy(() => import('./widgets/IrrWidget'))
 
 export interface WidgetRegistryEntry extends WidgetDefinition {
   category: WidgetCategory
@@ -32,10 +33,10 @@ export interface WidgetRegistryEntry extends WidgetDefinition {
 export const WIDGET_REGISTRY: Record<WidgetKey, WidgetRegistryEntry> = {
   PORTFOLIO_VALUE: { key: 'PORTFOLIO_VALUE', title: 'Portfolio Value', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 0, category: 'CATEGORY_1', component: PortfolioValueWidget },
   AVAILABLE_CASH: { key: 'AVAILABLE_CASH', title: 'Available Cash', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 1, category: 'CATEGORY_1', component: AvailableCashWidget },
-  BUYING_POWER: { key: 'BUYING_POWER', title: 'Buying Power', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 2, category: 'CATEGORY_1', component: BuyingPowerWidget },
+  BUYING_POWER: { key: 'BUYING_POWER', title: 'Buying Power', defaultVisible: false, defaultColumnSpan: 1, defaultSortOrder: 2, category: 'CATEGORY_1', component: BuyingPowerWidget },
   RISK_PROFILE: { key: 'RISK_PROFILE', title: 'Risk Profile', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 3, category: 'CATEGORY_1', component: RiskProfileWidget },
   SECTOR_EXPOSURE: { key: 'SECTOR_EXPOSURE', title: 'Sector & Industry Exposure', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 4, category: 'CATEGORY_1', component: SectorExposureWidget },
-  GEOGRAPHY_EXPOSURE: { key: 'GEOGRAPHY_EXPOSURE', title: 'Geographic Exposure', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 5, category: 'CATEGORY_1', component: GeographyExposureWidget },
+  GEOGRAPHY_EXPOSURE: { key: 'GEOGRAPHY_EXPOSURE', title: 'Geographic Exposure', defaultVisible: false, defaultColumnSpan: 1, defaultSortOrder: 5, category: 'CATEGORY_1', component: GeographyExposureWidget },
   REBALANCING_PROGRESS: { key: 'REBALANCING_PROGRESS', title: 'Rebalancing Progress', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 6, category: 'CATEGORY_1', component: RebalancingProgressWidget },
   PENDING_ORDERS: { key: 'PENDING_ORDERS', title: 'Pending Orders', defaultVisible: true, defaultColumnSpan: 2, defaultSortOrder: 7, category: 'CATEGORY_1', component: PendingOrdersWidget },
   OPEN_ORDERS: { key: 'OPEN_ORDERS', title: 'Open Orders', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 8, category: 'CATEGORY_2', component: OpenOrdersWidget },
@@ -43,12 +44,13 @@ export const WIDGET_REGISTRY: Record<WidgetKey, WidgetRegistryEntry> = {
   DIVIDEND_CALENDAR: { key: 'DIVIDEND_CALENDAR', title: 'Dividend Calendar', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 10, category: 'CATEGORY_2', component: DividendCalendarWidget },
   CONNECTED_ACCOUNTS: { key: 'CONNECTED_ACCOUNTS', title: 'Connected Accounts', defaultVisible: true, defaultColumnSpan: 2, defaultSortOrder: 9, category: 'ALWAYS_VISIBLE', component: ConnectedAccountsWidget },
   POSITIONS_TABLE: { key: 'POSITIONS_TABLE', title: 'Positions', defaultVisible: true, defaultColumnSpan: 2, defaultSortOrder: 10, category: 'ALWAYS_VISIBLE', component: PositionsTableWidget },
-  HOLDINGS_TABLE: { key: 'HOLDINGS_TABLE', title: 'Holdings', defaultVisible: true, defaultColumnSpan: 2, defaultSortOrder: 11, category: 'ALWAYS_VISIBLE', component: HoldingsTableWidget },
+  HOLDINGS_TABLE: { key: 'HOLDINGS_TABLE', title: 'Holdings', defaultVisible: false, defaultColumnSpan: 2, defaultSortOrder: 11, category: 'CATEGORY_1', component: HoldingsTableWidget },
   ACCOUNT_SUMMARY: { key: 'ACCOUNT_SUMMARY', title: 'Account Summary', defaultVisible: true, defaultColumnSpan: 4, defaultSortOrder: 0, category: 'CATEGORY_1', component: AccountSummaryWidget },
   ORDERS: { key: 'ORDERS', title: 'Orders', defaultVisible: true, defaultColumnSpan: 2, defaultSortOrder: 7, category: 'CATEGORY_1', component: OrdersWidget },
   FEES_AND_DIVIDENDS: { key: 'FEES_AND_DIVIDENDS', title: 'Fees & Dividends', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 5.5, category: 'CATEGORY_1', component: FeesAndDividendsWidget },
   POSITIONS_HOLDINGS: { key: 'POSITIONS_HOLDINGS', title: 'Positions & Holdings', defaultVisible: true, defaultColumnSpan: 4, defaultSortOrder: 10, category: 'ALWAYS_VISIBLE', component: PositionsHoldingsWidget },
   PORTFOLIO_SUMMARY: { key: 'PORTFOLIO_SUMMARY', title: 'Portfolio Summary', defaultVisible: true, defaultColumnSpan: 4, defaultSortOrder: -1, category: 'ALWAYS_VISIBLE', component: PortfolioSummaryWidget },
+  IRR: { key: 'IRR', title: 'Returns (IRR)', defaultVisible: true, defaultColumnSpan: 1, defaultSortOrder: 5, category: 'CATEGORY_1', component: IrrWidget },
 }
 
 export const ZONE_A_WIDGETS: WidgetKey[] = Object.values(WIDGET_REGISTRY)
