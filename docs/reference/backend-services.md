@@ -1129,3 +1129,86 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 | `StepName` | EXCHANGE_SYNC, UNIVERSE_SYNC, RAW_DATA_FETCH |
 | `StepStatus` | RUNNING, COMPLETED, FAILED, SKIPPED |
 | `ErrorType` | API_ERROR, PARSE_ERROR, DB_ERROR, RATE_LIMIT, VALIDATION_ERROR, DUPLICATE_ISIN, NOT_FOUND |
+
+---
+
+## Market Data Service (`backend/market-data/`)
+
+**Port:** 8082 | **Schema:** `market_data` | **Package:** `com.portfolio.marketdata`
+
+### IBKR Integration (`ibkr/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `IbkrClient` | Interface | Abstraction over IBKR TWS API: connect, disconnect, requestMarketData, cancelMarketData, requestOptionChain, requestContractDetails |
+| `FakeIbkrClient` | `@Component @Profile("dev","local","test")` | Generates fake market data for SPY, QQQ, IWM, AAPL, MSFT, TSLA, GOOG, AMZN, NVDA, META. 500ms tick interval. |
+| `IbkrConnectionManager` | `@Component ApplicationRunner` | Auto-connects on startup, exponential backoff reconnection (5s-60s), health status tracking |
+| `ContractResolver` | `@Component` | Multi-level contract ID resolution: Redis (24h TTL) → PostgreSQL → IBKR API. In-memory fallback. |
+| `SubscriptionManager` | `@Component` | LRU eviction for subscription capacity (default 100). Contract pinning for open positions. |
+
+### Processing (`processing/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `QuoteNormalizer` | `@Component` | Accumulates bid/ask/last/volume ticks, emits complete Quote objects |
+| `OptionQuoteNormalizer` | `@Component` | Same pattern for option contracts |
+| `GreeksCalculator` | `@Service` | Computes Greeks via Black-Scholes. Prefers IBKR Greeks when available. Configurable risk-free rate. |
+| `OptionsChainBuilder` | `@Component` | Groups OptionQuotes by expiry and strike, pairs calls and puts |
+
+### Distribution (`distribution/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `QuoteCacheService` | `@Service` | Redis caching: 5s TTL for quotes, 30s for chains. Jackson JSON serialization. |
+| `QuoteWebSocketHandler` | `@Component TextWebSocketHandler` | WebSocket at /ws/quotes. Subscribe/unsubscribe stocks and options. Broadcast to subscribed sessions. |
+
+### Streaming (`streaming/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `QuoteStreamingService` | `@Service` | Ref-counted stock quote streaming. Resolves contracts, subscribes to IBKR, normalizes ticks, caches and broadcasts. |
+| `OptionStreamingService` | `@Service` | Ref-counted option streaming with Greeks enrichment from spot price cache. |
+
+---
+
+## Strategy Service (`backend/strategy/`)
+
+**Port:** 8083 | **Schema:** `strategy` | **Package:** `com.portfolio.strategy`
+
+### Strategy Engine (`engine/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `StrategyRegistry` | `@Component` | Registry of 7 strategy definitions with education content. Strategies: BULL_CALL_SPREAD, BEAR_PUT_SPREAD, BULL_PUT_SPREAD, BEAR_CALL_SPREAD, IRON_CONDOR, COVERED_CALL, PROTECTIVE_PUT |
+| `StrategyCalculator` | `@Component` | P&L calculation engine: net debit/credit, P&L curve (100 points ±20%), break-even interpolation, risk/reward ratio, net Greeks |
+| `LegValidator` | `@Component` | Validates leg combinations: no duplicates, same expiry for all option legs |
+| `EducationEngine` | `@Component` | Static education content per strategy + dynamic warnings (short DTE, wide spreads, deep ITM, delta-neutral, long DTE) |
+
+### Models (`model/`)
+
+| Class | Description |
+|---|---|
+| `StrategyType` | Enum: 7 strategy types |
+| `StrategyDefinition` | Display name, description, outlook, risk profile, leg templates |
+| `Leg` | Action (BUY/SELL), option type, strike, expiry, quantity, bid/ask/mid/delta |
+| `CalculationResult` | Net debit/credit, max profit/loss, break-evens, P&L curve, net Greeks |
+| `EducationContent` | When to use, risk explanation, key characteristics, warnings |
+
+---
+
+## Common Module (`backend/common/`)
+
+**Package:** `com.portfolio.common`
+
+Shared Kotlin library (no Spring Boot). Used by market-data and strategy services via Gradle composite builds.
+
+| Class | Package | Description |
+|---|---|---|
+| `BlackScholes` | `math` | Option pricing, all 5 Greeks (delta, gamma, theta, vega, rho), implied volatility (Newton-Raphson) |
+| `TradingCalendar` | `util` | DTE calculation, market hours (9:30-16:00 ET), next/previous trading day, time-to-expiry for Black-Scholes |
+| `Money` | `util` | BigDecimal extensions: toCents, roundTo, safeDivide, percentageChange, bpsToDecimal |
+| `OptionType` | `domain` | Enum: CALL, PUT |
+| `Greeks` | `domain` | Delta, gamma, theta, vega, rho + source (IBKR or BLACK_SCHOLES) |
+| `Quote` | `domain` | Symbol, bid, ask, last, volume, timestamp + computed mid/spread |
+| `OptionQuote` | `domain` | Underlying, option type, strike, expiry, bid/ask/last, volume, open interest, Greeks |
+| `OptionsChain` | `domain` | Underlying, spot price, expirations map (expiry → strike → StrikeData) |

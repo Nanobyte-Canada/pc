@@ -506,3 +506,63 @@ Separate Spring Boot application at `backend/ingestion/`. No authentication requ
 | `GET` | `/admin/ingestion/runs` | None | Lists recent ingestion runs. Query param: `limit` (default 10). | `List<RunSummary>` |
 | `GET` | `/admin/ingestion/runs/{id}/steps` | None | Lists steps for a specific run with record counts. | `List<StepDetail>` |
 | `GET` | `/admin/ingestion/runs/{id}/errors` | None | Lists errors for a specific run (max 100). | `List<ErrorDetail>` |
+
+---
+
+## Market Data Service (Port 8082)
+
+**Base URL:** `http://localhost:8082`
+
+### Quote Endpoints
+
+**Prefix:** `/api/v1/quotes`
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/quotes/{symbol}` | None | Get quote for symbol. Checks Redis cache, then DB, then IBKR. | `QuoteResponse` |
+
+### Options Chain Endpoints
+
+**Prefix:** `/api/v1/chains`
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/chains/{underlying}` | None | Get options chain for underlying. Cached 30s in Redis. | `OptionsChainResponse` |
+| `GET` | `/api/v1/chains/{underlying}/greeks` | None | Get options chain with Black-Scholes computed Greeks. | `OptionsChainResponse` |
+
+### IV Rank Endpoints
+
+**Prefix:** `/api/v1/iv`
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/iv/{ticker}` | None | Get IV rank/percentile from last 365 days of observations. | `IvRankResponse` |
+
+### WebSocket
+
+| Endpoint | Protocol | Description |
+|---|---|---|
+| `/ws/quotes` | WebSocket | Real-time quote streaming. Subscribe/unsubscribe via JSON messages. |
+
+**WebSocket Actions:**
+- `{"action": "subscribe", "symbol": "SPY"}` -- subscribe to stock quotes
+- `{"action": "unsubscribe", "symbol": "SPY"}` -- unsubscribe from stock quotes
+- `{"action": "subscribe_option", "symbol": "SPY", "expiry": "2026-06-19", "strike": "450.00", "optionType": "CALL"}` -- subscribe to option
+- `{"action": "unsubscribe_option", ...}` -- unsubscribe from option
+
+---
+
+## Strategy Service (Port 8083)
+
+**Base URL:** `http://localhost:8083`
+
+### Strategy Endpoints
+
+**Prefix:** `/api/v1/strategies`
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/strategies` | None | List all 7 strategy definitions. | `List<StrategyListResponse>` |
+| `GET` | `/api/v1/strategies/{name}` | None | Get strategy info with education content. | `StrategyInfoResponse` |
+| `POST` | `/api/v1/strategies/calculate` | None | Calculate P&L, break-evens, Greeks for leg combination. | `CalculateResponse` |
+| `POST` | `/api/v1/strategies/suggest` | None | Suggest strategies by market outlook (bullish/bearish/neutral). | `List<StrategyListResponse>` |

@@ -937,3 +937,58 @@ interface PortfolioStore {
 | `test:run` | `vitest run` (single run) |
 | `test:coverage` | `vitest run --coverage` |
 | `lint` | `eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0` |
+
+---
+
+## Options Trading Module
+
+### Pages
+
+| File | Route | Description |
+|---|---|---|
+| `pages/OptionsPage.tsx` | `/options` | Full options trading UI: symbol search, quote bar, strategy selector, options chain, leg builder, P&L chart |
+
+### Components (`components/options/`)
+
+| File | Description |
+|---|---|
+| `UnderlyingSearch.tsx` + `.css` | Symbol input with submit button, shows active underlying |
+| `QuoteBar.tsx` + `.css` | Real-time quote display: symbol, price, bid, ask, spread, volume |
+| `StrategySelector.tsx` + `.css` | 7 strategy type buttons with active state toggle |
+| `OptionsChainTable.tsx` + `.css` | Full options chain: expiry tabs, calls/puts columns, strike prices, Greeks, click-to-add-leg |
+| `LegBuilder.tsx` + `.css` | Shows selected legs with action/type/strike/expiry/price, clear all, calculate button |
+| `PnlChart.tsx` + `.css` | SVG P&L curve at expiration, metrics (max profit/loss, net debit, risk/reward), break-even markers, warnings |
+
+### Hooks
+
+| File | Description |
+|---|---|
+| `hooks/useMarketDataWebSocket.ts` | WebSocket connection to `/ws/quotes` with subscribe/unsubscribe, exponential backoff reconnection (1s-30s) |
+
+### Services
+
+| File | Description |
+|---|---|
+| `services/marketDataService.ts` | REST: getQuote, getOptionsChain, getOptionsChainWithGreeks, getIvRank via `/market-data-api/` proxy |
+| `services/optionsStrategyService.ts` | REST: getStrategies, getStrategyInfo, calculateStrategy, suggestStrategy, submitOptionsOrder, getOptionsOrders via `/strategy-api/` proxy |
+
+### Stores
+
+| File | Description |
+|---|---|
+| `stores/quoteStore.ts` | Zustand: quotes map, chains map, selectedUnderlying |
+| `stores/strategyStore.ts` | Zustand: strategies list, selectedStrategy, legs array, calculationResult, isCalculating |
+
+### Types
+
+| File | Description |
+|---|---|
+| `types/options.ts` | Quote, OptionQuote, Greeks, OptionsChain, StrikeData, StrategyType (7 values), Leg, CalculationResult, PnlPoint, NetGreeks, StrategyInfo, EducationContent, WheelAccount/Config/Recommendation, OptionsOrderRequest/Response |
+
+### Vite Proxy Routes
+
+| Path | Target | Description |
+|---|---|---|
+| `/market-data-api/*` | `http://market-data-service:8082` | Market data REST API (path prefix stripped) |
+| `/ws/quotes` | `ws://market-data-service:8082` | WebSocket for real-time quotes |
+| `/strategy-api/*` | `http://strategy-service:8083` | Strategy REST API (path prefix stripped) |

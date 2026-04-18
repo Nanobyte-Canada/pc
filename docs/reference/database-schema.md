@@ -1578,3 +1578,90 @@ Individual error records within ingestion steps.
 4. **JPA entity validation**: Hibernate will fail startup if entities do not match the schema. Every column in an entity must exist in the database and vice versa for mapped columns.
 5. **Indexes**: Consider adding indexes for columns used in WHERE clauses, JOIN conditions, or ORDER BY. Use partial indexes for boolean filters.
 6. **JSONB columns**: Used for flexible/nested data (cash amounts, raw API payloads, notification metadata). Query with PostgreSQL `->` and `->>` operators.
+
+---
+
+## Market Data Schema (`market_data`)
+
+**Service:** market-data-service (port 8082)
+**Migration:** `backend/market-data/src/main/resources/db/migration/V1__market_data_schema.sql`
+
+### market_data.underlying_prices
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| id | BIGINT (IDENTITY) | NO | Primary key |
+| ticker | VARCHAR(20) | NO | Symbol |
+| price | NUMERIC(12,4) | NO | Price |
+| volume | BIGINT | YES | Volume |
+| observed_at | TIMESTAMPTZ | NO | Observation timestamp |
+
+### market_data.option_quotes
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| id | BIGINT (IDENTITY) | NO | Primary key |
+| ticker | VARCHAR(20) | NO | Underlying symbol |
+| expiry | DATE | NO | Option expiry |
+| strike | NUMERIC(12,4) | NO | Strike price |
+| option_type | VARCHAR(4) | NO | CALL or PUT |
+| bid/ask/mid | NUMERIC(12,4) | YES | Price fields |
+| implied_volatility | NUMERIC(10,6) | YES | IV |
+| delta/gamma/theta/vega | NUMERIC(10,6) | YES | Greeks |
+| observed_at | TIMESTAMPTZ | NO | Observation timestamp |
+
+### market_data.iv_observations
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| id | BIGINT (IDENTITY) | NO | Primary key |
+| ticker | VARCHAR(20) | NO | Symbol |
+| atm_iv | NUMERIC(10,6) | NO | ATM implied volatility |
+| observed_date | DATE | NO | Date (unique with ticker) |
+
+### market_data.contract_cache
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| id | BIGINT (IDENTITY) | NO | Primary key |
+| symbol | VARCHAR(30) | NO | Symbol |
+| con_id | INTEGER | NO | IBKR contract ID |
+| sec_type | VARCHAR(10) | NO | STK or OPT |
+| expiry | DATE | YES | Option expiry |
+| strike | NUMERIC(12,4) | YES | Strike price |
+| option_right | VARCHAR(4) | YES | C or P |
+| cached_at | TIMESTAMPTZ | NO | Cache timestamp |
+
+---
+
+## Strategy Schema (`strategy`)
+
+**Service:** strategy-service (port 8083)
+**Migration:** `backend/strategy/src/main/resources/db/migration/V1__strategy_schema.sql`
+
+### strategy.orders
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| id | BIGINT (IDENTITY) | NO | Primary key |
+| user_id | BIGINT | NO | User reference |
+| strategy_type | VARCHAR(30) | NO | Strategy enum name |
+| underlying | VARCHAR(20) | NO | Underlying symbol |
+| order_type | VARCHAR(20) | NO | LIMIT (default) |
+| net_price | NUMERIC(12,4) | YES | Net price |
+| quantity | INTEGER | NO | Contract quantity |
+| status | VARCHAR(20) | NO | SUBMITTED/FILLED/CANCELLED |
+| snaptrade_order_id | VARCHAR(100) | YES | SnapTrade order reference |
+| created_at/updated_at | TIMESTAMPTZ | NO | Timestamps |
+
+### strategy.order_legs
+
+Order legs with fill prices. FK to orders(id) CASCADE.
+
+### strategy.positions
+
+Open/closed positions with P&L tracking. FK to orders for entry/exit.
+
+### strategy.wheel_accounts / wheel_configs / wheel_recommendations / wheel_holdings
+
+Wheel writer automation tables for CSP/CC strategy management.
