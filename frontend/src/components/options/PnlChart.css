@@ -1,0 +1,79 @@
+.pnl-chart {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--bg-secondary);
+}
+
+.pnl-chart__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.pnl-chart__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pnl-chart__metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pnl-chart__metric-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pnl-chart__metric-value {
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pnl-chart__metric-value--positive {
+  color: var(--success, #22c55e);
+}
+
+.pnl-chart__metric-value--negative {
+  color: var(--error, #ef4444);
+}
+
+.pnl-chart__canvas {
+  width: 100%;
+  height: 200px;
+  position: relative;
+}
+
+.pnl-chart__svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pnl-chart__breakeven {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.pnl-chart__warnings {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pnl-chart__warning {
+  font-size: 12px;
+  color: var(--warning, #f59e0b);
+  padding: 4px 8px;
+  background: rgba(245, 158, 11, 0.08);
+  border-radius: 4px;
+}

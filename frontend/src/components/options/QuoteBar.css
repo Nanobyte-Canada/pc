@@ -1,0 +1,44 @@
+.quote-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.quote-bar__symbol {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.quote-bar__price {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.quote-bar__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quote-bar__label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quote-bar__value {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-bar__spread {
+  color: var(--text-secondary);
+}

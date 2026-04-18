@@ -1,0 +1,77 @@
+.chain-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.chain-table__expiry-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 12px 0 6px;
+  border-bottom: 2px solid var(--accent);
+  margin-bottom: 4px;
+}
+
+.chain-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chain-table th {
+  padding: 6px 8px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chain-table th.chain-table__strike-col {
+  text-align: center;
+  background: var(--bg-secondary);
+}
+
+.chain-table td {
+  padding: 5px 8px;
+  text-align: right;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light, rgba(128, 128, 128, 0.1));
+}
+
+.chain-table__strike-cell {
+  text-align: center !important;
+  font-weight: 600;
+  background: var(--bg-secondary);
+}
+
+.chain-table__call-side {
+  cursor: pointer;
+}
+
+.chain-table__put-side {
+  cursor: pointer;
+}
+
+.chain-table__call-side:hover,
+.chain-table__put-side:hover {
+  background: var(--accent-light);
+}
+
+.chain-table__atm-row td {
+  border-top: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+.chain-table__itm {
+  opacity: 0.6;
+}
+
+.chain-table__empty {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 24px;
+}

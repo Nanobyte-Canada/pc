@@ -1,0 +1,32 @@
+.strategy-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.strategy-selector__button {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.strategy-selector__button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.strategy-selector__button--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.strategy-selector__button--active:hover {
+  background: var(--accent-hover);
+  color: #fff;
+}

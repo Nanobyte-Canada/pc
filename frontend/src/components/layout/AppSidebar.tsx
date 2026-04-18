@@ -19,6 +19,7 @@ import {
   Star,
   Activity,
   Banknote,
+  LineChart,
 } from 'lucide-react'
 import { useDashboardAccounts, useRefreshAll } from '@/hooks/useDashboardWidgets'
 import { useTypeCounts } from '@/hooks/useNewScreener'
@@ -76,6 +77,12 @@ const navSections: NavSection[] = [
       { to: '/brokers/connections', icon: Link2, label: 'Connections' },
       { to: '/brokers/positions', icon: Wallet, label: 'Positions' },
       { to: '/brokers/reporting', icon: FileText, label: 'Reporting' },
+    ],
+  },
+  {
+    title: 'Options',
+    items: [
+      { to: '/options', icon: LineChart, label: 'Options Trading' },
     ],
   },
 ]

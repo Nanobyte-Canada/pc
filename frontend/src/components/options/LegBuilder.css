@@ -1,0 +1,107 @@
+.leg-builder {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--bg-secondary);
+}
+
+.leg-builder__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.leg-builder__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.leg-builder__clear {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.leg-builder__clear:hover {
+  border-color: var(--error, #ef4444);
+  color: var(--error, #ef4444);
+}
+
+.leg-builder__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.leg-builder__row {
+  display: grid;
+  grid-template-columns: 60px 60px 80px 100px 50px 36px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  font-size: 13px;
+}
+
+.leg-builder__action {
+  font-weight: 600;
+}
+
+.leg-builder__action--buy {
+  color: var(--success, #22c55e);
+}
+
+.leg-builder__action--sell {
+  color: var(--error, #ef4444);
+}
+
+.leg-builder__remove {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.leg-builder__remove:hover {
+  color: var(--error, #ef4444);
+}
+
+.leg-builder__empty {
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+}
+
+.leg-builder__calculate {
+  margin-top: 12px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.leg-builder__calculate:hover {
+  background: var(--accent-hover);
+}
+
+.leg-builder__calculate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
