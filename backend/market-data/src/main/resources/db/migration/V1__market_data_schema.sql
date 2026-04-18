@@ -52,7 +52,7 @@ CREATE INDEX idx_iv_observations_ticker_date
 CREATE TABLE market_data.contract_cache (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     symbol VARCHAR(30) NOT NULL,
-    con_id BIGINT NOT NULL,
+    con_id INTEGER NOT NULL,
     sec_type VARCHAR(10) NOT NULL,
     expiry DATE,
     strike NUMERIC(12, 4),
