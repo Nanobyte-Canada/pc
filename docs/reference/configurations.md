@@ -472,6 +472,47 @@ spring.mvc.problemdetails.enabled: true
 
 ---
 
+## Market Data Service Configuration
+
+**File:** `backend/market-data/src/main/resources/application.yml`
+**Port:** 8082
+**DB Schema:** `market_data`
+
+### Market Data Service Environment Variables
+
+| Variable | Description | Default | Used By |
+|---|---|---|---|
+| `DATABASE_URL` | JDBC connection string | `jdbc:postgresql://localhost:5432/portfolio` | Market data service |
+| `DATABASE_USERNAME` | Database username | `portfolio` | Market data service |
+| `DATABASE_PASSWORD` | Database password | `portfolio` | Market data service |
+| `REDIS_HOST` | Redis hostname | `localhost` | Market data service |
+| `REDIS_PORT` | Redis port | `6379` | Market data service |
+| `IBKR_HOST` | Interactive Brokers TWS/Gateway host | (empty) | Market data service |
+| `IBKR_PORT` | Interactive Brokers TWS/Gateway port | `4002` | Market data service |
+| `IBKR_CLIENT_ID` | IBKR client connection ID | `1` | Market data service |
+
+---
+
+## Strategy Service Configuration
+
+**File:** `backend/strategy/src/main/resources/application.yml`
+**Port:** 8083
+**DB Schema:** `strategy`
+
+### Strategy Service Environment Variables
+
+| Variable | Description | Default | Used By |
+|---|---|---|---|
+| `DATABASE_URL` | JDBC connection string | `jdbc:postgresql://localhost:5432/portfolio` | Strategy service |
+| `DATABASE_USERNAME` | Database username | `portfolio` | Strategy service |
+| `DATABASE_PASSWORD` | Database password | `portfolio` | Strategy service |
+| `REDIS_HOST` | Redis hostname | `localhost` | Strategy service |
+| `REDIS_PORT` | Redis port | `6379` | Strategy service |
+| `MARKET_DATA_SERVICE_URL` | Market data service base URL | `http://localhost:8082` | Strategy service |
+| `PORTFOLIO_SERVICE_URL` | Portfolio backend base URL | `http://localhost:8080` | Strategy service |
+
+---
+
 ## Cross-References
 
 - For Docker and deployment infrastructure, see [infrastructure.md](infrastructure.md)

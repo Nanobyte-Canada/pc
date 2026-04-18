@@ -175,19 +175,27 @@ Full-stack local development environment.
 | postgres | `postgres:16-alpine` | 5432:5432 | Volume `postgres_data`, health check via `pg_isready` |
 | backend | Build from `./backend/portfolio/Dockerfile` | 8080:8080, 5005:5005 | Debug port 5005, JAVA_TOOL_OPTIONS for JDWP, `restart: unless-stopped` |
 | ingestion-service | Build from `./backend/ingestion/Dockerfile` | 8081:8081 | Separate ingestion microservice with own `ingestion` DB schema, depends on postgres + redis, `restart: unless-stopped` |
+| market-data-service | Build from `./backend` context, `market-data/Dockerfile` | 8082:8082 | IBKR market data + WebSocket streaming, `market_data` DB schema, depends on postgres + redis |
+| strategy-service | Build from `./backend` context, `strategy/Dockerfile` | 8083:8083 | Strategy engine + wheel writer, `strategy` DB schema, depends on postgres + redis |
 | frontend | Build from `./frontend/Dockerfile` target=development | 3000:3000 | Bind mounts `src/`, `public/`, `index.html` as read-only for hot reload |
 
 **Key configuration:**
 - Network: `portfolio-network` (bridge driver)
 - Backend depends on postgres + redis (both `service_healthy`)
-- Frontend depends on backend
+- Frontend depends on backend, ingestion-service, market-data-service, strategy-service
 - Profile: `SPRING_PROFILES_ACTIVE=local`
 - Backend health check: `wget http://localhost:8080/health` (30s interval, 30s start period)
 - Ingestion health check: `wget http://localhost:8081/actuator/health` (30s interval, 60s start period)
-- Backend and ingestion have `restart: unless-stopped` for Docker DNS race condition resilience
-- Ingestion service depends on postgres + redis (both `service_healthy`)
+- Market data health check: `wget http://localhost:8082/actuator/health` (30s interval, 60s start period)
+- Strategy health check: `wget http://localhost:8083/actuator/health` (30s interval, 60s start period)
+- All backend services have `restart: unless-stopped` for Docker DNS race condition resilience
+- All services depend on postgres + redis (both `service_healthy`)
 - Environment variables use defaults: `POSTGRES_DB=portfolio`, `POSTGRES_USER=portfolio`, `POSTGRES_PASSWORD=portfolio`
 - Vite dev server proxies `/ingestion-api` to `http://localhost:8081` (ingestion service), rewrites path prefix
+- Vite dev server proxies `/market-data-api` to `http://localhost:8082` (market data service), rewrites path prefix
+- Vite dev server proxies `/strategy-api` to `http://localhost:8083` (strategy service), rewrites path prefix
+- Vite dev server proxies `/ws/quotes` to `ws://localhost:8082` (WebSocket for real-time quotes)
+- Market-data and strategy services use Gradle composite builds with shared `backend/common/` module
 
 ### docker-compose.vps.yml -- VPS Production-Like
 

@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: market-data-service
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/portfolio}
+    username: ${DATABASE_USERNAME:portfolio}
+    password: ${DATABASE_PASSWORD:portfolio}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      initialization-fail-timeout: -1
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: market_data
+  flyway:
+    enabled: true
+    schemas: market_data
+    default-schema: market_data
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: ${PORT:8082}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized
+
+ibkr:
+  host: ${IBKR_HOST:}
+  port: ${IBKR_PORT:4002}
+  client-id: ${IBKR_CLIENT_ID:1}
