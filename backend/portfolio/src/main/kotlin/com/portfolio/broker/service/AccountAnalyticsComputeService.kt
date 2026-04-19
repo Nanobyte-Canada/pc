@@ -447,8 +447,18 @@ class AccountAnalyticsComputeService(
         data class CashFlow(val date: LocalDate, val amount: BigDecimal)
         val cashFlows = activities.map { CashFlow(it.tradeDate, signedCashFlow(it)) }
 
+        val minRate = BigDecimal("-0.99")
+        val maxRate = BigDecimal("10.0")
         var rate = BigDecimal("0.10")
+        var converged = false
+
         for (iteration in 0 until 50) {
+            val onePlusRCheck = BigDecimal.ONE + rate
+            if (onePlusRCheck <= BigDecimal.ZERO) {
+                rate = BigDecimal("-0.50")
+                continue
+            }
+
             var npv = BigDecimal.ZERO
             var dnpv = BigDecimal.ZERO
 
@@ -472,16 +482,18 @@ class AccountAnalyticsComputeService(
             }
 
             if (dnpv.abs() < BigDecimal("0.0001")) break
-            val newRate = rate - npv.divide(dnpv, 8, RoundingMode.HALF_UP)
+            val newRate = (rate - npv.divide(dnpv, 8, RoundingMode.HALF_UP)).coerceIn(minRate, maxRate)
             if ((newRate - rate).abs() < BigDecimal("0.0001")) {
                 rate = newRate
+                converged = true
                 break
             }
             rate = newRate
         }
 
-        val xirrPct = rate.multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
-        return xirrPct.coerceIn(BigDecimal("-9999.9999"), BigDecimal("9999.9999"))
+        if (!converged && rate.abs() > BigDecimal("5.0")) return null
+
+        return rate.multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
     }
 
     private fun computeTotalReturn(connectionId: Long): BigDecimal? {

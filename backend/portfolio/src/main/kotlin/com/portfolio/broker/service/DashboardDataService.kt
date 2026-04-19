@@ -76,22 +76,6 @@ class DashboardDataService(
         val today = LocalDate.now()
         val mc = MathContext.DECIMAL64
 
-        val accountResults = connections.map { conn ->
-            val analytics = analyticsRepository.findByConnectionId(conn.id)
-
-            AccountIrrDto(
-                connectionId = conn.id,
-                brokerName = conn.broker?.code ?: conn.brokerName,
-                accountName = conn.accountName,
-                irr = analytics?.xirr,
-                totalReturn = analytics?.totalReturn,
-                totalReturnPct = analytics?.totalReturnPct,
-                dividendYield = analytics?.dividendYield,
-                startDate = null,
-                endDate = today.toString()
-            )
-        }
-
         val portfolioIrr = calculatePortfolioIrr(connections, today, mc)
 
         val totalPortfolioValue = connections.sumOf { it.totalValue ?: BigDecimal.ZERO }
@@ -131,6 +115,22 @@ class DashboardDataService(
             last12mDividends.divide(totalPortfolioValue, 6, RoundingMode.HALF_UP)
                 .multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
         else null
+
+        val accountResults = connections.map { conn ->
+            val analytics = analyticsRepository.findByConnectionId(conn.id)
+
+            AccountIrrDto(
+                connectionId = conn.id,
+                brokerName = conn.broker?.code ?: conn.brokerName,
+                accountName = conn.accountName,
+                irr = if (connectionId != null) portfolioIrr else analytics?.xirr,
+                totalReturn = if (connectionId != null) portfolioTotalReturn?.setScale(2, RoundingMode.HALF_UP) else analytics?.totalReturn,
+                totalReturnPct = if (connectionId != null) portfolioTotalReturnPct else analytics?.totalReturnPct,
+                dividendYield = if (connectionId != null) portfolioDividendYield else analytics?.dividendYield,
+                startDate = null,
+                endDate = today.toString()
+            )
+        }
 
         return DashboardIrrResponse(
             portfolioIrr = portfolioIrr,
@@ -191,12 +191,20 @@ class DashboardDataService(
             CashFlow(act.tradeDate, signedAmount)
         }
 
-        // Newton-Raphson IRR approximation
-        var rate = BigDecimal("0.10") // Initial guess: 10%
+        val minRate = BigDecimal("-0.99")
+        val maxRate = BigDecimal("10.0")
+        var rate = BigDecimal("0.10")
+        var converged = false
 
         for (iteration in 0 until 50) {
+            val onePlusRCheck = BigDecimal.ONE + rate
+            if (onePlusRCheck <= BigDecimal.ZERO) {
+                rate = BigDecimal("-0.50")
+                continue
+            }
+
             var npv = startingValue.negate()
-            var dnpv = BigDecimal.ZERO // derivative
+            var dnpv = BigDecimal.ZERO
 
             for (cf in cashFlows) {
                 val days = ChronoUnit.DAYS.between(startDate, cf.date)
@@ -220,13 +228,16 @@ class DashboardDataService(
 
             if (dnpv.abs() < BigDecimal("0.0001")) break
 
-            val newRate = rate - npv.divide(dnpv, 8, RoundingMode.HALF_UP)
+            val newRate = (rate - npv.divide(dnpv, 8, RoundingMode.HALF_UP)).coerceIn(minRate, maxRate)
             if ((newRate - rate).abs() < BigDecimal("0.0001")) {
                 rate = newRate
+                converged = true
                 break
             }
             rate = newRate
         }
+
+        if (!converged && rate.abs() > BigDecimal("5.0")) return null
 
         return rate.multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
     }
