@@ -209,9 +209,12 @@ class SnapTradeService(
                 type = type
             )
             allActivities.addAll(page.activities)
+            log.info("Activity page: account={}, offset={}, returned={}, total={}, accumulated={}",
+                accountId, offset, page.activities.size, page.total, allActivities.size)
             offset += page.activities.size
         } while (allActivities.size < page.total && page.activities.isNotEmpty())
 
+        log.info("Activity fetch complete: account={}, total={}", accountId, allActivities.size)
         return allActivities
     }
 

@@ -11,6 +11,7 @@ import com.portfolio.broker.repository.BrokerConnectionRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -30,7 +31,7 @@ class ActivityIngestionService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun syncActivitiesForConnection(connectionId: Long): Int {
         val connection = connectionRepository.findById(connectionId).orElseThrow {
             IllegalArgumentException("Connection not found: $connectionId")
@@ -153,7 +154,7 @@ class ActivityIngestionService(
         return insertedCount
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun syncBalanceForConnection(connectionId: Long) {
         val connection = connectionRepository.findById(connectionId).orElseThrow {
             IllegalArgumentException("Connection not found: $connectionId")
