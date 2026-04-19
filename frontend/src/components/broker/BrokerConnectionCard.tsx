@@ -7,17 +7,21 @@ import './BrokerConnectionCard.css'
 interface BrokerConnectionCardProps {
   connection: BrokerConnection
   onFetch: (connectionId: number) => void
+  onSyncActivities: (connectionId: number) => void
   onDisconnect: (authorizationId: string) => void
   onReconnect: (authorizationId: string) => void
   isFetching: boolean
+  isSyncingActivities: boolean
 }
 
 export function BrokerConnectionCard({
   connection,
   onFetch,
+  onSyncActivities,
   onDisconnect,
   onReconnect,
-  isFetching
+  isFetching,
+  isSyncingActivities
 }: BrokerConnectionCardProps) {
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
 
@@ -104,6 +108,13 @@ export function BrokerConnectionCard({
             className="connection-btn fetch"
           >
             {isFetching ? 'Fetching...' : 'Fetch Now'}
+          </button>
+          <button
+            onClick={() => onSyncActivities(connection.id)}
+            disabled={!canFetch || isSyncingActivities}
+            className="connection-btn fetch"
+          >
+            {isSyncingActivities ? 'Syncing...' : 'Sync Activities'}
           </button>
         )}
 

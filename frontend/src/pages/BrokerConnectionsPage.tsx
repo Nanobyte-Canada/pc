@@ -11,7 +11,8 @@ import {
   useConnectBroker,
   useDisconnectBroker,
   useTriggerPositionFetch,
-  useSyncConnections
+  useSyncConnections,
+  useSyncActivities
 } from '../hooks/useBrokerConnections'
 import './BrokerConnectionsPage.css'
 
@@ -19,6 +20,7 @@ export function BrokerConnectionsPage() {
   const [searchParams] = useSearchParams()
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [fetchingConnectionId, setFetchingConnectionId] = useState<number | null>(null)
+  const [syncingActivitiesId, setSyncingActivitiesId] = useState<number | null>(null)
   const [brokerView, setBrokerView] = useState<'cards' | 'matrix'>('cards')
 
   const { data: brokersData, isLoading: brokersLoading } = useAvailableBrokers()
@@ -28,6 +30,7 @@ export function BrokerConnectionsPage() {
   const disconnectBroker = useDisconnectBroker()
   const triggerFetch = useTriggerPositionFetch()
   const sync = useSyncConnections()
+  const syncActivities = useSyncActivities()
 
   // Always sync connections from SnapTrade on page load
   useEffect(() => {
@@ -97,6 +100,21 @@ export function BrokerConnectionsPage() {
     triggerFetch.mutate(connectionId, {
       onSettled: () => {
         setTimeout(() => setFetchingConnectionId(null), 2000)
+      }
+    })
+  }
+
+  const handleSyncActivities = (connectionId: number) => {
+    setSyncingActivitiesId(connectionId)
+    syncActivities.mutate(connectionId, {
+      onSuccess: (data) => {
+        setNotification({ type: 'success', message: `Synced ${data.activitiesSynced} activities` })
+      },
+      onError: () => {
+        setNotification({ type: 'error', message: 'Failed to sync activities' })
+      },
+      onSettled: () => {
+        setTimeout(() => setSyncingActivitiesId(null), 2000)
       }
     })
   }
@@ -210,9 +228,11 @@ export function BrokerConnectionsPage() {
                 key={connection.id}
                 connection={connection}
                 onFetch={handleFetch}
+                onSyncActivities={handleSyncActivities}
                 onDisconnect={handleDisconnect}
                 onReconnect={handleReconnect}
                 isFetching={fetchingConnectionId === connection.id}
+                isSyncingActivities={syncingActivitiesId === connection.id}
               />
             ))}
           </div>
