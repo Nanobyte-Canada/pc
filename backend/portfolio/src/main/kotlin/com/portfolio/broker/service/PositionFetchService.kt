@@ -12,7 +12,6 @@ import com.portfolio.broker.repository.*
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -36,10 +35,6 @@ class PositionFetchService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    /**
-     * Triggers a manual position fetch for a connection.
-     * Returns immediately with fetch log, actual fetch happens async.
-     */
     @Transactional
     fun triggerManualFetch(connectionId: Long, userId: Long): PositionFetchLog {
         val connection = connectionRepository.findByIdAndUserId(connectionId, userId)
@@ -54,18 +49,7 @@ class PositionFetchService(
         )
         val savedLog = fetchLogRepository.save(fetchLog)
 
-        executeAsyncFetch(connectionId, savedLog.id, userId)
-
-        return savedLog
-    }
-
-    @Async
-    fun executeAsyncFetch(connectionId: Long, fetchLogId: Long, userId: Long) {
-        try {
-            executePositionFetch(connectionId, fetchLogId, userId)
-        } catch (e: Exception) {
-            log.error("Async fetch failed for connection {}: {}", connectionId, e.message, e)
-        }
+        return executePositionFetch(connectionId, savedLog.id, userId)
     }
 
     @Transactional
