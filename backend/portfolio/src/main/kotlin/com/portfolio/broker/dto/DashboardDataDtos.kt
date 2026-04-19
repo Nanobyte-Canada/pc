@@ -180,7 +180,8 @@ data class DividendEntryDto(
     val symbol: String?,
     val amount: BigDecimal,
     val currency: String,
-    val accountName: String?
+    val accountName: String?,
+    val type: String = "DIVIDEND"
 )
 
 data class DividendCalendarResponse(
