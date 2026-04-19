@@ -410,27 +410,23 @@ class AccountAnalyticsComputeService(
     private fun computeIrr(connectionId: Long): BigDecimal? {
         val today = LocalDate.now()
         val mc = java.math.MathContext.DECIMAL64
-
-        val snapshots = balanceRepository.findByConnectionIdAndAsOfDateBetween(
-            connectionId, LocalDate.of(2000, 1, 1), today
-        ).sortedBy { it.asOfDate }
-
-        if (snapshots.size < 2) return null
-
-        val startDate = snapshots.first().asOfDate
-        val endDate = snapshots.last().asOfDate
-        val totalDays = ChronoUnit.DAYS.between(startDate, endDate)
-        if (totalDays <= 0) return null
-
-        val startingValue = snapshots.first().totalValue ?: BigDecimal.ZERO
-        val endingValue = snapshots.last().totalValue ?: BigDecimal.ZERO
+        val connection = connectionRepository.findById(connectionId).orElse(null) ?: return null
+        val endingValue = connection.totalValue ?: return null
+        if (endingValue <= BigDecimal.ZERO) return null
 
         val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
         val depositTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
         val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL")
 
-        val activities = activityRepository.findByConnectionIdAndTradeDateBetween(connectionId, startDate, endDate)
-            .filter { it.type.uppercase() in cashFlowTypes }
+        val activities = activityRepository.findByConnectionIdAndTradeDateBetween(
+            connectionId, LocalDate.of(2000, 1, 1), today
+        ).filter { it.type.uppercase() in cashFlowTypes && it.amount.abs() > BigDecimal.ZERO }
+
+        if (activities.isEmpty()) return null
+
+        val startDate = activities.minOf { it.tradeDate }
+        val totalDays = ChronoUnit.DAYS.between(startDate, today)
+        if (totalDays <= 0) return null
 
         data class CashFlow(val date: LocalDate, val amount: BigDecimal)
         val cashFlows = activities.map { act ->
@@ -445,7 +441,7 @@ class AccountAnalyticsComputeService(
 
         var rate = BigDecimal("0.10")
         for (iteration in 0 until 50) {
-            var npv = startingValue.negate()
+            var npv = BigDecimal.ZERO
             var dnpv = BigDecimal.ZERO
 
             for (cf in cashFlows) {
