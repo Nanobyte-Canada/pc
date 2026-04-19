@@ -81,8 +81,7 @@ broker:
   sync:
     enabled: ${BROKER_SYNC_ENABLED:false}
     cron: ${BROKER_SYNC_CRON:0 30 22 * * *}
-    max-lookback-years: ${BROKER_SYNC_MAX_LOOKBACK_YEARS:15}
-    batch-increment-years: ${BROKER_SYNC_BATCH_INCREMENT_YEARS:15}
+    max-lookback-years: ${BROKER_SYNC_MAX_LOOKBACK_YEARS:25}
 
 # SnapTrade integration configuration
 snaptrade:

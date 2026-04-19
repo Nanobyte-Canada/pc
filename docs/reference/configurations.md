@@ -173,6 +173,7 @@ Every environment variable referenced in `application.yml`, organized by categor
 | `BROKER_ENCRYPTION_KEY` | Base64-encoded 32-byte AES-256 key | (empty) | All profiles |
 | `BROKER_SYNC_ENABLED` | Enable automated broker sync | `false` | All profiles |
 | `BROKER_SYNC_CRON` | Cron for broker sync | `0 30 22 * * *` (10:30 PM) | All profiles |
+| `BROKER_SYNC_MAX_LOOKBACK_YEARS` | Max years of historical activity data to fetch on first sync | `25` | All profiles |
 
 ### SnapTrade
 
