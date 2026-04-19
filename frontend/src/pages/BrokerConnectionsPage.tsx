@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { LayoutGrid, Table, Loader2 } from 'lucide-react'
 import { BrokerCard } from '../components/broker/BrokerCard'
@@ -25,6 +25,7 @@ export function BrokerConnectionsPage() {
   const [brokerView, setBrokerView] = useState<'cards' | 'matrix'>('cards')
   const [isSyncingNewConnection, setIsSyncingNewConnection] = useState(false)
   const [syncStatus, setSyncStatus] = useState('')
+  const syncCalledRef = useRef(false)
 
   const { data: brokersData, isLoading: brokersLoading } = useAvailableBrokers()
   const { data: connectionsData, isLoading: connectionsLoading, refetch: refetchConnections } = useBrokerConnections()
@@ -34,11 +35,12 @@ export function BrokerConnectionsPage() {
   const sync = useSyncConnections()
   const syncAll = useSyncAll()
 
-  // Sync connections from SnapTrade on page load (skip if returning from SnapTrade — post-connection flow handles it)
   useEffect(() => {
+    if (syncCalledRef.current) return
     const success = searchParams.get('success')
     const status = searchParams.get('status')
     if (success === 'true' || status === 'SUCCESS') return
+    syncCalledRef.current = true
     sync.mutate(undefined, {
       onSuccess: () => refetchConnections()
     })
@@ -46,14 +48,15 @@ export function BrokerConnectionsPage() {
   }, [])
 
   const runPostConnectionSync = useCallback(async () => {
+    syncCalledRef.current = true
     setIsSyncingNewConnection(true)
     setSyncStatus('Discovering accounts...')
 
     try {
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         sync.mutate(undefined, {
           onSuccess: () => resolve(),
-          onError: (err) => reject(err)
+          onError: () => resolve()
         })
       })
 

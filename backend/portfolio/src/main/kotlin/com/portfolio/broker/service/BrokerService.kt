@@ -166,6 +166,7 @@ class BrokerService(
 
             for (account in relatedAccounts) {
                 val accountId = account.id?.toString() ?: continue
+                connectionRepository.flush()
                 val existingConnection = connectionRepository.findByUserIdAndAccountIdExternal(userId, accountId)
 
                 if (existingConnection != null) {
