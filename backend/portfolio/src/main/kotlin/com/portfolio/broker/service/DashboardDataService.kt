@@ -93,11 +93,50 @@ class DashboardDataService(
         }
 
         val portfolioIrr = calculatePortfolioIrr(connections, today, mc)
-        val portfolioTotalReturn = accountResults.mapNotNull { it.totalReturn }.let { if (it.isNotEmpty()) it.reduce(BigDecimal::add) else null }
+
+        val totalPortfolioValue = connections.sumOf { it.totalValue ?: BigDecimal.ZERO }
+        val allConnectionIds = connections.map { it.id }
+
+        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "TRANSFER", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
+        val depositTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
+        val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL")
+
+        val allCashFlows = activityRepository.findByConnectionIdInAndTradeDateBetween(
+            allConnectionIds, LocalDate.of(2000, 1, 1), today
+        ).filter { it.type.uppercase() in cashFlowTypes && it.amount.abs() > BigDecimal.ZERO }
+
+        val netDeposits = allCashFlows.sumOf { act ->
+            val amt = act.amountCad ?: act.amount
+            when {
+                act.type.uppercase() in depositTypes -> amt.abs()
+                act.type.uppercase() in withdrawalTypes -> amt.abs().negate()
+                act.type.uppercase() == "TRANSFER" -> amt
+                else -> amt
+            }
+        }
+
+        val portfolioTotalReturn = if (allCashFlows.isNotEmpty()) totalPortfolioValue - netDeposits else null
+        val portfolioTotalReturnPct = if (netDeposits > BigDecimal.ZERO && portfolioTotalReturn != null)
+            portfolioTotalReturn.divide(netDeposits, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
+        else null
+
+        val dividendTypes = setOf("DIVIDEND", "DISTRIBUTION", "REI")
+        val last12mDividends = activityRepository.findByConnectionIdInAndTradeDateBetween(
+            allConnectionIds, today.minusYears(1), today
+        ).filter { it.type.uppercase() in dividendTypes }
+            .sumOf { (it.amountCad ?: it.amount).abs() }
+
+        val portfolioDividendYield = if (totalPortfolioValue > BigDecimal.ZERO)
+            last12mDividends.divide(totalPortfolioValue, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
+        else null
 
         return DashboardIrrResponse(
             portfolioIrr = portfolioIrr,
-            portfolioTotalReturn = portfolioTotalReturn,
+            portfolioTotalReturn = portfolioTotalReturn?.setScale(2, RoundingMode.HALF_UP),
+            portfolioTotalReturnPct = portfolioTotalReturnPct,
+            portfolioDividendYield = portfolioDividendYield,
             accounts = accountResults
         )
     }

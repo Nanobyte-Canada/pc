@@ -271,5 +271,7 @@ data class AccountIrrDto(
 data class DashboardIrrResponse(
     val portfolioIrr: BigDecimal?,
     val portfolioTotalReturn: BigDecimal?,
+    val portfolioTotalReturnPct: BigDecimal?,
+    val portfolioDividendYield: BigDecimal?,
     val accounts: List<AccountIrrDto>
 )
