@@ -43,6 +43,17 @@ interface SnapTradeAdapter {
         type: String?
     ): List<SnapTradeActivityDto>
 
+    fun getAccountActivities(
+        userId: String,
+        userSecret: String,
+        accountId: String,
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null,
+        offset: Int = 0,
+        limit: Int = 1000,
+        type: String? = null
+    ): PaginatedActivitiesResult
+
     fun disconnectBrokerage(userId: String, userSecret: String, authorizationId: String)
 
     fun listBrokerages(): List<SnapTradeBrokerageDto>

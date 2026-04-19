@@ -91,6 +91,13 @@ data class SnapTradeActivityDto(
     val rawJson: String?
 )
 
+data class PaginatedActivitiesResult(
+    val activities: List<SnapTradeActivityDto>,
+    val total: Int,
+    val offset: Int,
+    val limit: Int
+)
+
 // ========== Brokerage ==========
 
 data class SnapTradeBrokerageDto(
