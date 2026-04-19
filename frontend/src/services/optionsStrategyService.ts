@@ -1,4 +1,4 @@
-import { apiFetch, parseErrorResponse } from '@/services/api'
+import { proxyFetch, parseErrorResponse } from '@/services/api'
 import type {
   StrategyInfo,
   StrategyType,
@@ -12,13 +12,13 @@ import type {
 } from '@/types/options'
 
 export async function getStrategies(): Promise<StrategyInfo[]> {
-  const response = await apiFetch('/strategy-api/api/v1/strategies')
+  const response = await proxyFetch('/strategy-api/api/v1/strategies')
   if (!response.ok) throw await parseErrorResponse(response)
   return response.json()
 }
 
 export async function getStrategyInfo(type: StrategyType): Promise<StrategyInfo & { education: EducationContent }> {
-  const response = await apiFetch(`/strategy-api/api/v1/strategies/${type}`)
+  const response = await proxyFetch(`/strategy-api/api/v1/strategies/${type}`)
   if (!response.ok) throw await parseErrorResponse(response)
   return response.json()
 }
@@ -29,7 +29,7 @@ export async function calculateStrategy(
   spotPrice: number,
   legs: Leg[]
 ): Promise<CalculationResult> {
-  const response = await apiFetch('/strategy-api/api/v1/strategies/calculate', {
+  const response = await proxyFetch('/strategy-api/api/v1/strategies/calculate', {
     method: 'POST',
     body: JSON.stringify({ strategyType, underlying, spotPrice, legs }),
   })
@@ -41,13 +41,13 @@ export async function suggestStrategy(
   outlook: string,
   underlying: string
 ): Promise<StrategyInfo[]> {
-  const response = await apiFetch(`/strategy-api/api/v1/strategies/suggest?outlook=${outlook}&underlying=${encodeURIComponent(underlying)}`)
+  const response = await proxyFetch(`/strategy-api/api/v1/strategies/suggest?outlook=${outlook}&underlying=${encodeURIComponent(underlying)}`)
   if (!response.ok) throw await parseErrorResponse(response)
   return response.json()
 }
 
 export async function submitOptionsOrder(order: OptionsOrderRequest): Promise<OptionsOrderResponse> {
-  const response = await apiFetch('/strategy-api/api/v1/options/orders', {
+  const response = await proxyFetch('/strategy-api/api/v1/options/orders', {
     method: 'POST',
     body: JSON.stringify(order),
   })
@@ -56,19 +56,19 @@ export async function submitOptionsOrder(order: OptionsOrderRequest): Promise<Op
 }
 
 export async function getOptionsOrders(): Promise<OptionsOrderResponse[]> {
-  const response = await apiFetch('/strategy-api/api/v1/options/orders')
+  const response = await proxyFetch('/strategy-api/api/v1/options/orders')
   if (!response.ok) throw await parseErrorResponse(response)
   return response.json()
 }
 
 export async function getWheelConfig(wheelAccountId: number): Promise<WheelConfig> {
-  const response = await apiFetch(`/strategy-api/api/v1/wheel/config?wheelAccountId=${wheelAccountId}`)
+  const response = await proxyFetch(`/strategy-api/api/v1/wheel/config?wheelAccountId=${wheelAccountId}`)
   if (!response.ok) throw await parseErrorResponse(response)
   return response.json()
 }
 
 export async function generateWheelRecommendations(wheelAccountId: number): Promise<WheelRecommendation[]> {
-  const response = await apiFetch(`/strategy-api/api/v1/wheel/recommendations`, {
+  const response = await proxyFetch(`/strategy-api/api/v1/wheel/recommendations`, {
     method: 'POST',
     body: JSON.stringify({ wheelAccountId }),
   })

@@ -131,6 +131,27 @@ export async function apiFetch(
   return response;
 }
 
+/**
+ * Fetch wrapper for services routed through the Vite dev proxy (market-data, strategy).
+ * Does NOT prepend API_URL since these requests must go through the Vite proxy
+ * at the same origin, not directly to the portfolio backend.
+ */
+export async function proxyFetch(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const headers = new Headers(options.headers);
+
+  if (!headers.has('Content-Type') && options.method && options.method !== 'GET') {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  return fetch(endpoint, {
+    ...options,
+    headers,
+  });
+}
+
 // Legacy exports for backward compatibility
 export function setCsrfToken(_token: string | null): void {
   void _token;
