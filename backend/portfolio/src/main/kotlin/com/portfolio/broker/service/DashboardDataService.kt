@@ -77,40 +77,20 @@ class DashboardDataService(
         val mc = MathContext.DECIMAL64
 
         val accountResults = connections.map { conn ->
+            val analytics = analyticsRepository.findByConnectionId(conn.id)
+            val irr = analytics?.irr
+
             val snapshots = balanceRepository.findByConnectionIdAndAsOfDateBetween(
                 conn.id, LocalDate.of(2000, 1, 1), today
             ).sortedBy { it.asOfDate }
-
-            if (snapshots.size < 2) {
-                return@map AccountIrrDto(
-                    connectionId = conn.id,
-                    brokerName = conn.broker?.code ?: conn.brokerName,
-                    accountName = conn.accountName,
-                    irr = null,
-                    startDate = snapshots.firstOrNull()?.asOfDate?.toString(),
-                    endDate = snapshots.lastOrNull()?.asOfDate?.toString()
-                )
-            }
-
-            val startDate = snapshots.first().asOfDate
-            val endDate = snapshots.last().asOfDate
-
-            val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
-            val activities = activityRepository.findByConnectionIdAndTradeDateBetween(conn.id, startDate, endDate)
-                .filter { it.type.uppercase() in cashFlowTypes }
-
-            val startingValue = snapshots.first().totalValue ?: BigDecimal.ZERO
-            val endingValue = snapshots.last().totalValue ?: BigDecimal.ZERO
-
-            val irr = calculateIrr(startingValue, endingValue, startDate, endDate, activities, mc)
 
             AccountIrrDto(
                 connectionId = conn.id,
                 brokerName = conn.broker?.code ?: conn.brokerName,
                 accountName = conn.accountName,
                 irr = irr,
-                startDate = startDate.toString(),
-                endDate = endDate.toString()
+                startDate = snapshots.firstOrNull()?.asOfDate?.toString(),
+                endDate = snapshots.lastOrNull()?.asOfDate?.toString()
             )
         }
 
@@ -475,7 +455,7 @@ class DashboardDataService(
         val endDate = targetMonth.atEndOfMonth()
         val activities = activityRepository.findByConnectionIdInAndTradeDateBetween(connectionIds, startDate, endDate)
 
-        val dividendTypes = setOf("DIVIDEND", "DISTRIBUTION")
+        val dividendTypes = setOf("DIVIDEND", "DISTRIBUTION", "REI")
         val dividendActivities = activities.filter { it.type.uppercase() in dividendTypes }
 
         val entries = dividendActivities.map { act ->
@@ -484,7 +464,8 @@ class DashboardDataService(
                 symbol = act.symbol,
                 amount = act.amount.abs(),
                 currency = act.currency,
-                accountName = act.connection.accountName
+                accountName = act.connection.accountName,
+                type = act.type.uppercase()
             )
         }.sortedBy { it.date }
 

@@ -3,6 +3,8 @@ package com.portfolio.broker.service
 import com.portfolio.broker.entity.AccountAnalytics
 import com.portfolio.broker.entity.InstrumentType
 import com.portfolio.broker.repository.AccountAnalyticsRepository
+import com.portfolio.broker.repository.BrokerActivityRepository
+import com.portfolio.broker.repository.BrokerBalanceRepository
 import com.portfolio.broker.repository.BrokerConnectionRepository
 import com.portfolio.broker.repository.BrokerPositionRepository
 import com.portfolio.dto.request.PortfolioPositionRequest
@@ -17,6 +19,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 
 /**
  * Pre-computes analytics for a broker connection and persists the snapshot
@@ -30,7 +33,9 @@ class AccountAnalyticsComputeService(
     private val lookThroughService: LookThroughService,
     private val countryRegionLookup: CountryRegionLookupService,
     private val exchangeRateService: ExchangeRateService,
-    private val analyticsRepository: AccountAnalyticsRepository
+    private val analyticsRepository: AccountAnalyticsRepository,
+    private val balanceRepository: BrokerBalanceRepository,
+    private val activityRepository: BrokerActivityRepository
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -128,6 +133,7 @@ class AccountAnalyticsComputeService(
         analytics.totalValue = totalValueCAD
         analytics.coveragePercent = coveragePercent
         analytics.positionsCount = positions.size
+        analytics.irr = computeIrr(connectionId)
         analytics.computedAt = OffsetDateTime.now()
         analytics.updatedAt = OffsetDateTime.now()
 
@@ -395,9 +401,84 @@ class AccountAnalyticsComputeService(
         analytics.totalValue = BigDecimal.ZERO
         analytics.coveragePercent = BigDecimal.ZERO
         analytics.positionsCount = 0
+        analytics.irr = null
         analytics.computedAt = OffsetDateTime.now()
         analytics.updatedAt = OffsetDateTime.now()
         return analyticsRepository.save(analytics)
+    }
+
+    private fun computeIrr(connectionId: Long): BigDecimal? {
+        val today = LocalDate.now()
+        val mc = java.math.MathContext.DECIMAL64
+
+        val snapshots = balanceRepository.findByConnectionIdAndAsOfDateBetween(
+            connectionId, LocalDate.of(2000, 1, 1), today
+        ).sortedBy { it.asOfDate }
+
+        if (snapshots.size < 2) return null
+
+        val startDate = snapshots.first().asOfDate
+        val endDate = snapshots.last().asOfDate
+        val totalDays = ChronoUnit.DAYS.between(startDate, endDate)
+        if (totalDays <= 0) return null
+
+        val startingValue = snapshots.first().totalValue ?: BigDecimal.ZERO
+        val endingValue = snapshots.last().totalValue ?: BigDecimal.ZERO
+
+        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
+        val depositTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
+        val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL")
+
+        val activities = activityRepository.findByConnectionIdAndTradeDateBetween(connectionId, startDate, endDate)
+            .filter { it.type.uppercase() in cashFlowTypes }
+
+        data class CashFlow(val date: LocalDate, val amount: BigDecimal)
+        val cashFlows = activities.map { act ->
+            val amt = act.amountCad ?: act.amount
+            val signedAmount = when {
+                act.type.uppercase() in depositTypes -> amt.abs()
+                act.type.uppercase() in withdrawalTypes -> amt.abs().negate()
+                else -> amt
+            }
+            CashFlow(act.tradeDate, signedAmount)
+        }
+
+        var rate = BigDecimal("0.10")
+        for (iteration in 0 until 50) {
+            var npv = startingValue.negate()
+            var dnpv = BigDecimal.ZERO
+
+            for (cf in cashFlows) {
+                val days = ChronoUnit.DAYS.between(startDate, cf.date)
+                val t = BigDecimal(days).divide(BigDecimal(365), 8, RoundingMode.HALF_UP)
+                val onePlusR = BigDecimal.ONE + rate
+                if (onePlusR <= BigDecimal.ZERO) break
+                val exponent = t.negate().toDouble()
+                val discount = BigDecimal(Math.pow(onePlusR.toDouble(), exponent))
+                npv += cf.amount.multiply(discount, mc)
+                dnpv -= cf.amount.multiply(t).multiply(discount, mc).divide(onePlusR, 8, RoundingMode.HALF_UP)
+            }
+
+            val totalT = BigDecimal(totalDays).divide(BigDecimal(365), 8, RoundingMode.HALF_UP)
+            val onePlusR = BigDecimal.ONE + rate
+            if (onePlusR > BigDecimal.ZERO) {
+                val exponent = totalT.negate().toDouble()
+                val termDiscount = BigDecimal(Math.pow(onePlusR.toDouble(), exponent))
+                npv += endingValue.multiply(termDiscount, mc)
+                dnpv -= endingValue.multiply(totalT).multiply(termDiscount, mc)
+                    .divide(onePlusR, 8, RoundingMode.HALF_UP)
+            }
+
+            if (dnpv.abs() < BigDecimal("0.0001")) break
+            val newRate = rate - npv.divide(dnpv, 8, RoundingMode.HALF_UP)
+            if ((newRate - rate).abs() < BigDecimal("0.0001")) {
+                rate = newRate
+                break
+            }
+            rate = newRate
+        }
+
+        return rate.multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
     }
 
     companion object {

@@ -48,6 +48,9 @@ class AccountAnalytics(
     @Column(name = "positions_count")
     var positionsCount: Int = 0,
 
+    @Column(name = "irr", precision = 10, scale = 4)
+    var irr: BigDecimal? = null,
+
     @Column(name = "computed_at", nullable = false)
     var computedAt: OffsetDateTime = OffsetDateTime.now(),
 
