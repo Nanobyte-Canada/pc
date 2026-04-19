@@ -25,10 +25,8 @@ class ActivityIngestionService(
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper,
     private val exchangeRateService: ExchangeRateService,
-    @Value("\${broker.sync.max-lookback-years:15}")
-    private val maxLookbackYears: Int = 15,
-    @Value("\${broker.sync.batch-increment-years:5}")
-    private val batchIncrementYears: Int = 5
+    @Value("\${broker.sync.max-lookback-years:25}")
+    private val maxLookbackYears: Int = 25
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -42,9 +40,9 @@ class ActivityIngestionService(
         val latestDate = activityRepository.findLatestTradeDateByConnectionId(connectionId)
 
         val insertedCount = if (latestDate == null) {
-            // No activities exist — full historical sync with batched date ranges
+            // No activities exist — full historical sync
             log.info("No existing activities for connection {} (user {}), starting full historical sync " +
-                "(lookback={}y, batch={}y)", connectionId, user.id, maxLookbackYears, batchIncrementYears)
+                "(lookback={}y)", connectionId, user.id, maxLookbackYears)
             syncFullHistory(connection, user)
         } else {
             // Incremental sync from latest known date
@@ -62,55 +60,48 @@ class ActivityIngestionService(
     }
 
     private fun syncFullHistory(connection: com.portfolio.broker.entity.BrokerConnection, user: com.portfolio.auth.entity.User): Int {
-        var totalInserted = 0
-        var currentEnd = LocalDate.now()
-        val maxBatches = (maxLookbackYears + batchIncrementYears - 1) / batchIncrementYears
-
-        for (i in 0 until maxBatches) {
-            val batchStart = currentEnd.minusYears(batchIncrementYears.toLong())
-            val startMs = System.currentTimeMillis()
-
-            val activities = try {
-                snapTradeService.getActivities(
-                    user = user,
-                    startDate = batchStart,
-                    endDate = currentEnd,
-                    accounts = connection.accountIdExternal
-                )
-            } catch (e: Exception) {
-                log.error("Historical sync batch {}/{} failed for connection {}: {}",
-                    i + 1, maxBatches, connection.id, e.message)
-                break
+        val startDate = LocalDate.now().minusYears(maxLookbackYears.toLong())
+        val endDate = LocalDate.now()
+        val accountId = connection.accountIdExternal
+            ?: run {
+                log.warn("Connection {} has no external account ID, skipping historical sync", connection.id)
+                return 0
             }
 
-            val elapsed = System.currentTimeMillis() - startMs
-            val inserted = processAndSaveActivities(activities, connection)
-            totalInserted += inserted
+        log.info("Full historical sync for connection {}: fetching {} to {} (paginated)", connection.id, startDate, endDate)
 
-            log.info("Historical sync batch {}/{}: {} activities ({} new) from {} to {} ({}ms)",
-                i + 1, maxBatches, activities.size, inserted, batchStart, currentEnd, elapsed)
-
-            if (activities.isEmpty()) {
-                log.info("No activities found before {}, stopping historical sync", currentEnd)
-                break
-            }
-
-            currentEnd = batchStart
+        val activities = try {
+            snapTradeService.getAllAccountActivities(
+                user = user,
+                accountId = accountId,
+                startDate = startDate,
+                endDate = endDate
+            )
+        } catch (e: Exception) {
+            log.error("Historical sync failed for connection {}: {}", connection.id, e.message)
+            return 0
         }
 
-        val earliest = activityRepository.findEarliestTradeDateByConnectionId(connection.id)
-        log.info("Historical sync complete for connection {}: {} total new activities, earliest={}",
-            connection.id, totalInserted, earliest ?: "none")
+        val inserted = processAndSaveActivities(activities, connection)
 
-        return totalInserted
+        log.info("Historical sync complete for connection {}: {} activities ({} new)",
+            connection.id, activities.size, inserted)
+
+        return inserted
     }
 
     private fun syncIncremental(connection: com.portfolio.broker.entity.BrokerConnection, user: com.portfolio.auth.entity.User, startDate: LocalDate): Int {
+        val accountId = connection.accountIdExternal
+            ?: run {
+                log.warn("Connection {} has no external account ID, skipping incremental sync", connection.id)
+                return 0
+            }
+
         val activities = try {
-            snapTradeService.getActivities(
+            snapTradeService.getAllAccountActivities(
                 user = user,
-                startDate = startDate,
-                accounts = connection.accountIdExternal
+                accountId = accountId,
+                startDate = startDate
             )
         } catch (e: Exception) {
             log.error("Failed to fetch activities for connection {}: {}", connection.id, e.message)
