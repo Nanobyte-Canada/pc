@@ -61,23 +61,6 @@ export default function IrrWidget({ connectionId }: { connectionId?: number }) {
         </div>
       </div>
 
-      {!isSingleAccount && data.accounts.length > 0 && (
-        <div className="irr-accounts">
-          {data.accounts.map(a => (
-            <div key={a.connectionId} className="irr-account-row">
-              <span className="irr-account-name">
-                {a.accountName || a.brokerName || `Account #${a.connectionId}`}
-              </span>
-              <span className={`irr-account-value ${valueClass(a.totalReturn)}`}>
-                {formatCurrency(a.totalReturn)}
-              </span>
-              <span className={`irr-account-value ${valueClass(a.totalReturnPct)}`}>
-                {formatPct(a.totalReturnPct)}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
