@@ -34,8 +34,11 @@ export function BrokerConnectionsPage() {
   const sync = useSyncConnections()
   const syncAll = useSyncAll()
 
-  // Always sync connections from SnapTrade on page load
+  // Sync connections from SnapTrade on page load (skip if returning from SnapTrade — post-connection flow handles it)
   useEffect(() => {
+    const success = searchParams.get('success')
+    const status = searchParams.get('status')
+    if (success === 'true' || status === 'SUCCESS') return
     sync.mutate(undefined, {
       onSuccess: () => refetchConnections()
     })
