@@ -427,7 +427,7 @@ class DashboardDataService(
         val targetMonth = if (month != null) YearMonth.parse(month) else YearMonth.now()
 
         if (connectionIds.isEmpty()) {
-            return DividendCalendarResponse(targetMonth.toString(), BigDecimal.ZERO, emptyList())
+            return DividendCalendarResponse(targetMonth.toString(), BigDecimal.ZERO, BigDecimal.ZERO, emptyList())
         }
 
         val startDate = targetMonth.atDay(1)
@@ -448,11 +448,13 @@ class DashboardDataService(
             )
         }.sortedBy { it.date }
 
-        val totalDividends = entries.sumOf { it.amount }
+        val totalDividends = entries.filter { it.type != "REI" }.sumOf { it.amount }
+        val totalReinvestments = entries.filter { it.type == "REI" }.sumOf { it.amount }
 
         return DividendCalendarResponse(
             month = targetMonth.toString(),
             totalDividends = totalDividends.setScale(2, RoundingMode.HALF_UP),
+            totalReinvestments = totalReinvestments.setScale(2, RoundingMode.HALF_UP),
             entries = entries
         )
     }

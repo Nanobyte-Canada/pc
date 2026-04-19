@@ -187,6 +187,7 @@ data class DividendEntryDto(
 data class DividendCalendarResponse(
     val month: String,
     val totalDividends: BigDecimal,
+    val totalReinvestments: BigDecimal,
     val entries: List<DividendEntryDto>
 )
 

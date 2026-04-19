@@ -172,11 +172,13 @@ export interface DividendEntry {
   amount: number
   currency: string
   accountName: string | null
+  type: string
 }
 
 export interface DividendCalendarResponse {
   month: string
   totalDividends: number
+  totalReinvestments: number
   entries: DividendEntry[]
 }
 

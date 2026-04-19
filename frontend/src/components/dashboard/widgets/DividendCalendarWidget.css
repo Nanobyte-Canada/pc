@@ -31,6 +31,10 @@
   color: var(--success-text);
 }
 
+.dc-total-value--reinvestment {
+  color: var(--accent-secondary);
+}
+
 .dc-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -59,6 +63,32 @@
   color: var(--success-text);
   font-weight: 700;
   cursor: pointer;
+}
+
+.dc-day-reinvestment {
+  background-color: var(--accent-secondary-light, rgba(84, 109, 132, 0.15));
+  color: var(--accent-secondary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dc-day-both {
+  background-color: var(--success-light);
+  color: var(--success-text);
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+}
+
+.dc-day-both::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--accent-secondary);
 }
 
 .dc-day-active {
@@ -128,4 +158,27 @@
   font-weight: 600;
   color: var(--success-text);
   white-space: nowrap;
+}
+
+.dc-hover-amount--reinvestment {
+  color: var(--accent-secondary);
+}
+
+.dc-hover-type {
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dc-hover-type--dividend {
+  background-color: var(--success-light);
+  color: var(--success-text);
+}
+
+.dc-hover-type--reinvestment {
+  background-color: var(--accent-secondary-light, rgba(84, 109, 132, 0.15));
+  color: var(--accent-secondary);
 }
