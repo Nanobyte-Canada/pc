@@ -39,13 +39,22 @@ export default function DividendCalendarWidget({ connectionId }: { connectionId?
     return map
   }, [data])
 
+  const dayClassification = useMemo(() => {
+    const map = new Map<number, 'dividend' | 'reinvestment' | 'both'>()
+    for (const [day, entries] of entriesByDay) {
+      const hasDividend = entries.some(e => e.type !== 'REI')
+      const hasReinvestment = entries.some(e => e.type === 'REI')
+      map.set(day, hasDividend && hasReinvestment ? 'both' : hasReinvestment ? 'reinvestment' : 'dividend')
+    }
+    return map
+  }, [entriesByDay])
+
   if (isLoading || !data) return <Skeleton style={{ height: '10rem', width: '100%' }} />
 
   const monthLabel = new Date(year, monthNum - 1).toLocaleString('en', { month: 'long', year: 'numeric' })
 
   const firstDay = new Date(year, monthNum - 1, 1).getDay()
   const daysInMonth = new Date(year, monthNum, 0).getDate()
-  const dividendDays = new Set(data.entries.map(e => new Date(e.date).getDate()))
   const dayLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
   const hoveredEntries = hoveredDay != null ? entriesByDay.get(hoveredDay) ?? [] : []
@@ -63,8 +72,14 @@ export default function DividendCalendarWidget({ connectionId }: { connectionId?
       </div>
 
       <div className="dc-total-row">
-        <span className="dc-total-label">Total</span>
-        <span className="dc-total-value">{fmt(data.totalDividends)}</span>
+        <div>
+          <span className="dc-total-label">Dividends</span>
+          <span className="dc-total-value">{fmt(data.totalDividends)}</span>
+        </div>
+        <div>
+          <span className="dc-total-label">Reinvested</span>
+          <span className="dc-total-value dc-total-value--reinvestment">{fmt(data.totalReinvestments)}</span>
+        </div>
       </div>
 
       <div className="dc-calendar-grid">
@@ -76,13 +91,15 @@ export default function DividendCalendarWidget({ connectionId }: { connectionId?
         ))}
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const day = i + 1
-          const hasDividend = dividendDays.has(day)
+          const cls = dayClassification.get(day)
+          const hasEntry = cls != null
+          const dayClass = cls === 'both' ? 'dc-day-both' : cls === 'reinvestment' ? 'dc-day-reinvestment' : cls === 'dividend' ? 'dc-day-dividend' : ''
           return (
             <div
               key={day}
-              className={`dc-day ${hasDividend ? 'dc-day-dividend' : ''} ${hoveredDay === day ? 'dc-day-active' : ''}`}
-              onMouseEnter={hasDividend ? () => setHoveredDay(day) : undefined}
-              onMouseLeave={hasDividend ? () => setHoveredDay(null) : undefined}
+              className={`dc-day ${dayClass} ${hoveredDay === day ? 'dc-day-active' : ''}`}
+              onMouseEnter={hasEntry ? () => setHoveredDay(day) : undefined}
+              onMouseLeave={hasEntry ? () => setHoveredDay(null) : undefined}
             >
               {day}
             </div>
@@ -100,9 +117,14 @@ export default function DividendCalendarWidget({ connectionId }: { connectionId?
           {hoveredEntries.length > 0 ? (
             hoveredEntries.map((entry, i) => (
               <div key={i} className="dc-hover-entry">
+                <span className={`dc-hover-type ${entry.type === 'REI' ? 'dc-hover-type--reinvestment' : 'dc-hover-type--dividend'}`}>
+                  {entry.type === 'REI' ? 'DRIP' : 'DIV'}
+                </span>
                 <span className="dc-hover-symbol">{entry.symbol ?? 'N/A'}</span>
                 <span className="dc-hover-account">{entry.accountName ?? ''}</span>
-                <span className="dc-hover-amount">{fmt(entry.amount, entry.currency)}</span>
+                <span className={`dc-hover-amount ${entry.type === 'REI' ? 'dc-hover-amount--reinvestment' : ''}`}>
+                  {fmt(entry.amount, entry.currency)}
+                </span>
               </div>
             ))
           ) : (
