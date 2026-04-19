@@ -414,7 +414,7 @@ class AccountAnalyticsComputeService(
         val endingValue = connection.totalValue ?: return null
         if (endingValue <= BigDecimal.ZERO) return null
 
-        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
+        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "TRANSFER", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
         val depositTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
         val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL")
 
@@ -434,6 +434,7 @@ class AccountAnalyticsComputeService(
             val signedAmount = when {
                 act.type.uppercase() in depositTypes -> amt.abs()
                 act.type.uppercase() in withdrawalTypes -> amt.abs().negate()
+                act.type.uppercase() == "TRANSFER" -> amt
                 else -> amt
             }
             CashFlow(act.tradeDate, signedAmount)

@@ -110,35 +110,20 @@ class DashboardDataService(
     ): BigDecimal? {
         if (connections.isEmpty()) return null
 
-        // Gather all snapshots across connections, grouped by date
-        data class DatedValue(val date: LocalDate, val totalValue: BigDecimal)
+        val endingValue = connections.sumOf { it.totalValue ?: BigDecimal.ZERO }
+        if (endingValue <= BigDecimal.ZERO) return null
 
-        val allSnapshots = connections.flatMap { conn ->
-            balanceRepository.findByConnectionIdAndAsOfDateBetween(
-                conn.id, LocalDate.of(2000, 1, 1), today
-            )
-        }
-
-        if (allSnapshots.isEmpty()) return null
-
-        // Aggregate by date
-        val snapshotsByDate = allSnapshots.groupBy { it.asOfDate }
-            .mapValues { (_, snaps) -> snaps.sumOf { it.totalValue ?: BigDecimal.ZERO } }
-            .entries.sortedBy { it.key }
-
-        if (snapshotsByDate.size < 2) return null
-
-        val startDate = snapshotsByDate.first().key
-        val endDate = snapshotsByDate.last().key
-        val startingValue = snapshotsByDate.first().value
-        val endingValue = snapshotsByDate.last().value
-
-        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
+        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "TRANSFER", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
         val connectionIds = connections.map { it.id }
-        val allActivities = activityRepository.findByConnectionIdInAndTradeDateBetween(connectionIds, startDate, endDate)
-            .filter { it.type.uppercase() in cashFlowTypes }
+        val allActivities = activityRepository.findByConnectionIdInAndTradeDateBetween(
+            connectionIds, LocalDate.of(2000, 1, 1), today
+        ).filter { it.type.uppercase() in cashFlowTypes && it.amount.abs() > BigDecimal.ZERO }
 
-        return calculateIrr(startingValue, endingValue, startDate, endDate, allActivities, mc)
+        if (allActivities.isEmpty()) return null
+
+        val startDate = allActivities.minOf { it.tradeDate }
+
+        return calculateIrr(BigDecimal.ZERO, endingValue, startDate, today, allActivities, mc)
     }
 
     private fun calculateIrr(
@@ -152,7 +137,6 @@ class DashboardDataService(
         val totalDays = ChronoUnit.DAYS.between(startDate, endDate)
         if (totalDays <= 0) return null
 
-        // Map activities to cash flows: deposits are positive (money in), withdrawals are negative (money out)
         val depositTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
         val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL")
 
@@ -160,12 +144,11 @@ class DashboardDataService(
 
         val cashFlows = activities.map { act ->
             val amt = act.amountCad ?: act.amount
-            val signedAmount = if (act.type.uppercase() in depositTypes) {
-                amt.abs()
-            } else if (act.type.uppercase() in withdrawalTypes) {
-                amt.abs().negate()
-            } else {
-                amt
+            val signedAmount = when {
+                act.type.uppercase() in depositTypes -> amt.abs()
+                act.type.uppercase() in withdrawalTypes -> amt.abs().negate()
+                act.type.uppercase() == "TRANSFER" -> amt
+                else -> amt
             }
             CashFlow(act.tradeDate, signedAmount)
         }
