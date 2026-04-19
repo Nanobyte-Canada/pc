@@ -55,9 +55,9 @@ export function BrokerConnectionsPage() {
       })
 
       const { data } = await refetchConnections()
-      const newConnections = (data?.connections || []).filter(c => c.positionsCount === 0 && c.status === 'ACTIVE')
+      const activeConnections = (data?.connections || []).filter(c => c.status === 'ACTIVE')
 
-      if (newConnections.length === 0) {
+      if (activeConnections.length === 0) {
         setNotification({ type: 'success', message: 'Broker connected successfully!' })
         setIsSyncingNewConnection(false)
         setTimeout(() => navigate('/dashboard'), 1500)
@@ -67,10 +67,10 @@ export function BrokerConnectionsPage() {
       let totalPositions = 0
       let totalActivities = 0
 
-      for (let i = 0; i < newConnections.length; i++) {
-        const conn = newConnections[i]
+      for (let i = 0; i < activeConnections.length; i++) {
+        const conn = activeConnections[i]
         const accountLabel = conn.accountName || `Account ${i + 1}`
-        setSyncStatus(`Syncing ${accountLabel} (${i + 1}/${newConnections.length})...`)
+        setSyncStatus(`Syncing ${accountLabel} (${i + 1}/${activeConnections.length})...`)
 
         try {
           const result: SyncAllResponse = await syncAllConnectionData(conn.id)
@@ -86,7 +86,7 @@ export function BrokerConnectionsPage() {
 
       setNotification({
         type: 'success',
-        message: `Connected! Synced ${totalPositions} positions and ${totalActivities} activities across ${newConnections.length} account${newConnections.length !== 1 ? 's' : ''}.`
+        message: `Connected! Synced ${totalPositions} positions and ${totalActivities} activities across ${activeConnections.length} account${activeConnections.length !== 1 ? 's' : ''}.`
       })
 
       setTimeout(() => navigate('/dashboard'), 1500)
