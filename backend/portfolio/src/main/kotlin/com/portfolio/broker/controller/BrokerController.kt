@@ -84,21 +84,6 @@ class BrokerController(
     ): ResponseEntity<ConnectionSyncResponse> {
         brokerService.syncConnections(principal.id)
         val connections = brokerService.getUserConnections(principal.id)
-
-        // Auto-fetch data for newly synced connections that have no data yet
-        val rawConnections = brokerService.getUserConnectionEntities(principal.id)
-        for (conn in rawConnections) {
-            if (conn.lastPositionsFetchedAt == null && conn.accountIdExternal != null) {
-                try {
-                    positionFetchService.triggerManualFetch(conn.id, principal.id)
-                    activityIngestionService.syncActivitiesForConnection(conn.id)
-                    activityIngestionService.syncBalanceForConnection(conn.id)
-                } catch (e: Exception) {
-                    log.warn("Auto-fetch failed for connection {}: {}", conn.id, e.message)
-                }
-            }
-        }
-
         return ResponseEntity.ok(
             ConnectionSyncResponse(
                 syncedCount = connections.size,
@@ -217,10 +202,10 @@ class BrokerController(
         @PathVariable connectionId: Long,
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<Map<String, Any>> {
-        val connection = brokerService.getConnection(connectionId, principal.id)
+        brokerService.getConnection(connectionId, principal.id)
 
         val fetchLog = positionFetchService.triggerManualFetch(connectionId, principal.id)
-        val positionsFetched = connection.positionsCount ?: 0
+        val positionsFetched = fetchLog.positionsCount ?: 0
 
         val activitiesSynced = try {
             activityIngestionService.syncActivitiesForConnection(connectionId)
