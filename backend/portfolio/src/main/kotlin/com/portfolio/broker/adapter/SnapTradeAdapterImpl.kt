@@ -167,6 +167,41 @@ class SnapTradeAdapterImpl(
         }
     }
 
+    override fun getAccountActivities(
+        userId: String,
+        userSecret: String,
+        accountId: String,
+        startDate: LocalDate?,
+        endDate: LocalDate?,
+        offset: Int,
+        limit: Int,
+        type: String?
+    ): PaginatedActivitiesResult {
+        return try {
+            val request = snaptrade.accountInformation.getAccountActivities(
+                UUID.fromString(accountId), userId, userSecret
+            )
+            startDate?.let { request.startDate(it) }
+            endDate?.let { request.endDate(it) }
+            request.offset(offset)
+            request.limit(limit)
+            type?.let { request.type(it) }
+
+            val response = request.execute()
+            val activities = response.data?.map { it.toAccountActivityDto() } ?: emptyList()
+            val pagination = response.pagination
+
+            PaginatedActivitiesResult(
+                activities = activities,
+                total = pagination?.total ?: activities.size,
+                offset = pagination?.offset ?: offset,
+                limit = pagination?.limit ?: limit
+            )
+        } catch (e: ApiException) {
+            throw mapApiException(e)
+        }
+    }
+
     // ========== Connections ==========
 
     override fun disconnectBrokerage(userId: String, userSecret: String, authorizationId: String) {
@@ -398,6 +433,32 @@ class SnapTradeAdapterImpl(
     )
 
     private fun UniversalActivity.toDto(): SnapTradeActivityDto {
+        val tradeDateLocal = tradeDate?.let {
+            try { LocalDate.parse(it.toString().take(10)) } catch (e: Exception) { null }
+        }
+        val settlementDateLocal = settlementDate?.let {
+            try { LocalDate.parse(it.toString().take(10)) } catch (e: Exception) { null }
+        }
+        val rawJson = try { objectMapper.writeValueAsString(this) } catch (e: Exception) { null }
+
+        return SnapTradeActivityDto(
+            id = id,
+            type = type,
+            symbol = symbol?.symbol,
+            description = description,
+            units = units,
+            price = price,
+            amount = amount,
+            fee = fee,
+            currency = currency?.code,
+            tradeDate = tradeDateLocal,
+            settlementDate = settlementDateLocal,
+            optionType = optionType,
+            rawJson = rawJson
+        )
+    }
+
+    private fun AccountUniversalActivity.toAccountActivityDto(): SnapTradeActivityDto {
         val tradeDateLocal = tradeDate?.let {
             try { LocalDate.parse(it.toString().take(10)) } catch (e: Exception) { null }
         }
