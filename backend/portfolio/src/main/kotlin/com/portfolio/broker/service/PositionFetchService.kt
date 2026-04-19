@@ -360,8 +360,21 @@ class PositionFetchService(
                     tradeOrderRepository.save(newOrder)
                 }
             }
+
+            // Clean up stale orders: delete local open orders not returned by broker
+            val syncedBrokerOrderIds = orders.mapNotNull { it.brokerageOrderId }.toSet()
+            val localOpenOrders = tradeOrderRepository.findByConnectionIdAndStatusIn(
+                connection.id,
+                listOf(OrderStatus.PENDING, OrderStatus.SUBMITTED, OrderStatus.PARTIALLY_FILLED)
+            )
+            for (localOrder in localOpenOrders) {
+                if (localOrder.brokerOrderId != null && localOrder.brokerOrderId !in syncedBrokerOrderIds) {
+                    log.info("Removing stale order {} for connection {}", localOrder.brokerOrderId, connection.id)
+                    tradeOrderRepository.delete(localOrder)
+                }
+            }
         } catch (e: Exception) {
-            log.warn("Failed to sync orders for connection {}: {}", connection.id, e.message)
+            log.error("Failed to sync orders for connection {}: {}", connection.id, e.message, e)
         }
     }
 

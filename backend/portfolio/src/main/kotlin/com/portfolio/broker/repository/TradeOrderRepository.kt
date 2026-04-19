@@ -22,4 +22,6 @@ interface TradeOrderRepository : JpaRepository<TradeOrder, Long> {
     fun findTop5ByUserIdOrderByCreatedAtDesc(userId: Long): List<TradeOrder>
 
     fun findByUserIdAndStatusInOrderByCreatedAtDesc(userId: Long, statuses: List<OrderStatus>): List<TradeOrder>
+
+    fun findByConnectionIdAndStatusIn(connectionId: Long, statuses: List<OrderStatus>): List<TradeOrder>
 }
