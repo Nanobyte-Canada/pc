@@ -253,18 +253,22 @@ data class RefreshAllResponse(
     val message: String
 )
 
-// ========== IRR (Internal Rate of Return) ==========
+// ========== Performance Metrics (XIRR, Total Return, Dividend Yield) ==========
 
 data class AccountIrrDto(
     val connectionId: Long,
     val brokerName: String?,
     val accountName: String?,
     val irr: BigDecimal?,
+    val totalReturn: BigDecimal?,
+    val totalReturnPct: BigDecimal?,
+    val dividendYield: BigDecimal?,
     val startDate: String?,
     val endDate: String?
 )
 
 data class DashboardIrrResponse(
     val portfolioIrr: BigDecimal?,
+    val portfolioTotalReturn: BigDecimal?,
     val accounts: List<AccountIrrDto>
 )

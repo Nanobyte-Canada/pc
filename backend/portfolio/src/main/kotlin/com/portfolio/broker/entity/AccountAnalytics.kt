@@ -48,8 +48,17 @@ class AccountAnalytics(
     @Column(name = "positions_count")
     var positionsCount: Int = 0,
 
-    @Column(name = "irr", precision = 10, scale = 4)
-    var irr: BigDecimal? = null,
+    @Column(name = "xirr", precision = 10, scale = 4)
+    var xirr: BigDecimal? = null,
+
+    @Column(name = "total_return", precision = 18, scale = 2)
+    var totalReturn: BigDecimal? = null,
+
+    @Column(name = "total_return_pct", precision = 10, scale = 4)
+    var totalReturnPct: BigDecimal? = null,
+
+    @Column(name = "dividend_yield", precision = 10, scale = 4)
+    var dividendYield: BigDecimal? = null,
 
     @Column(name = "computed_at", nullable = false)
     var computedAt: OffsetDateTime = OffsetDateTime.now(),

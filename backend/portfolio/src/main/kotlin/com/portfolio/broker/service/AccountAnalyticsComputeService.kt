@@ -133,7 +133,10 @@ class AccountAnalyticsComputeService(
         analytics.totalValue = totalValueCAD
         analytics.coveragePercent = coveragePercent
         analytics.positionsCount = positions.size
-        analytics.irr = computeIrr(connectionId)
+        analytics.xirr = computeXirr(connectionId)
+        analytics.totalReturn = computeTotalReturn(connectionId)
+        analytics.totalReturnPct = computeTotalReturnPct(connectionId)
+        analytics.dividendYield = computeDividendYield(connectionId, totalValueCAD)
         analytics.computedAt = OffsetDateTime.now()
         analytics.updatedAt = OffsetDateTime.now()
 
@@ -401,27 +404,40 @@ class AccountAnalyticsComputeService(
         analytics.totalValue = BigDecimal.ZERO
         analytics.coveragePercent = BigDecimal.ZERO
         analytics.positionsCount = 0
-        analytics.irr = null
+        analytics.xirr = null
+        analytics.totalReturn = null
+        analytics.totalReturnPct = null
+        analytics.dividendYield = null
         analytics.computedAt = OffsetDateTime.now()
         analytics.updatedAt = OffsetDateTime.now()
         return analyticsRepository.save(analytics)
     }
 
-    private fun computeIrr(connectionId: Long): BigDecimal? {
+    private fun getCashFlowActivities(connectionId: Long): List<com.portfolio.broker.entity.BrokerActivity> {
+        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "TRANSFER", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
+        return activityRepository.findByConnectionIdAndTradeDateBetween(
+            connectionId, LocalDate.of(2000, 1, 1), LocalDate.now()
+        ).filter { it.type.uppercase() in cashFlowTypes && it.amount.abs() > BigDecimal.ZERO }
+    }
+
+    private fun signedCashFlow(act: com.portfolio.broker.entity.BrokerActivity): BigDecimal {
+        val amt = act.amountCad ?: act.amount
+        return when {
+            act.type.uppercase() in DEPOSIT_TYPES -> amt.abs()
+            act.type.uppercase() in WITHDRAWAL_TYPES -> amt.abs().negate()
+            act.type.uppercase() == "TRANSFER" -> amt
+            else -> amt
+        }
+    }
+
+    private fun computeXirr(connectionId: Long): BigDecimal? {
         val today = LocalDate.now()
         val mc = java.math.MathContext.DECIMAL64
         val connection = connectionRepository.findById(connectionId).orElse(null) ?: return null
         val endingValue = connection.totalValue ?: return null
         if (endingValue <= BigDecimal.ZERO) return null
 
-        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "TRANSFER", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
-        val depositTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
-        val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL")
-
-        val activities = activityRepository.findByConnectionIdAndTradeDateBetween(
-            connectionId, LocalDate.of(2000, 1, 1), today
-        ).filter { it.type.uppercase() in cashFlowTypes && it.amount.abs() > BigDecimal.ZERO }
-
+        val activities = getCashFlowActivities(connectionId)
         if (activities.isEmpty()) return null
 
         val startDate = activities.minOf { it.tradeDate }
@@ -429,16 +445,7 @@ class AccountAnalyticsComputeService(
         if (totalDays <= 0) return null
 
         data class CashFlow(val date: LocalDate, val amount: BigDecimal)
-        val cashFlows = activities.map { act ->
-            val amt = act.amountCad ?: act.amount
-            val signedAmount = when {
-                act.type.uppercase() in depositTypes -> amt.abs()
-                act.type.uppercase() in withdrawalTypes -> amt.abs().negate()
-                act.type.uppercase() == "TRANSFER" -> amt
-                else -> amt
-            }
-            CashFlow(act.tradeDate, signedAmount)
-        }
+        val cashFlows = activities.map { CashFlow(it.tradeDate, signedCashFlow(it)) }
 
         var rate = BigDecimal("0.10")
         for (iteration in 0 until 50) {
@@ -450,8 +457,7 @@ class AccountAnalyticsComputeService(
                 val t = BigDecimal(days).divide(BigDecimal(365), 8, RoundingMode.HALF_UP)
                 val onePlusR = BigDecimal.ONE + rate
                 if (onePlusR <= BigDecimal.ZERO) break
-                val exponent = t.negate().toDouble()
-                val discount = BigDecimal(Math.pow(onePlusR.toDouble(), exponent))
+                val discount = BigDecimal(Math.pow(onePlusR.toDouble(), t.negate().toDouble()))
                 npv += cf.amount.multiply(discount, mc)
                 dnpv -= cf.amount.multiply(t).multiply(discount, mc).divide(onePlusR, 8, RoundingMode.HALF_UP)
             }
@@ -459,8 +465,7 @@ class AccountAnalyticsComputeService(
             val totalT = BigDecimal(totalDays).divide(BigDecimal(365), 8, RoundingMode.HALF_UP)
             val onePlusR = BigDecimal.ONE + rate
             if (onePlusR > BigDecimal.ZERO) {
-                val exponent = totalT.negate().toDouble()
-                val termDiscount = BigDecimal(Math.pow(onePlusR.toDouble(), exponent))
+                val termDiscount = BigDecimal(Math.pow(onePlusR.toDouble(), totalT.negate().toDouble()))
                 npv += endingValue.multiply(termDiscount, mc)
                 dnpv -= endingValue.multiply(totalT).multiply(termDiscount, mc)
                     .divide(onePlusR, 8, RoundingMode.HALF_UP)
@@ -475,10 +480,51 @@ class AccountAnalyticsComputeService(
             rate = newRate
         }
 
-        return rate.multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
+        val xirrPct = rate.multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
+        return xirrPct.coerceIn(BigDecimal("-9999.9999"), BigDecimal("9999.9999"))
+    }
+
+    private fun computeTotalReturn(connectionId: Long): BigDecimal? {
+        val connection = connectionRepository.findById(connectionId).orElse(null) ?: return null
+        val currentValue = connection.totalValue ?: return null
+
+        val activities = getCashFlowActivities(connectionId)
+        val netDeposits = activities.sumOf { signedCashFlow(it) }
+
+        return currentValue.subtract(netDeposits).setScale(2, RoundingMode.HALF_UP)
+    }
+
+    private fun computeTotalReturnPct(connectionId: Long): BigDecimal? {
+        val connection = connectionRepository.findById(connectionId).orElse(null) ?: return null
+        val currentValue = connection.totalValue ?: return null
+
+        val activities = getCashFlowActivities(connectionId)
+        val netDeposits = activities.sumOf { signedCashFlow(it) }
+
+        if (netDeposits <= BigDecimal.ZERO) return null
+        val totalReturn = currentValue.subtract(netDeposits)
+        return totalReturn.divide(netDeposits, 6, RoundingMode.HALF_UP)
+            .multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
+    }
+
+    private fun computeDividendYield(connectionId: Long, totalValueCAD: BigDecimal): BigDecimal? {
+        if (totalValueCAD <= BigDecimal.ZERO) return null
+        val today = LocalDate.now()
+        val oneYearAgo = today.minusYears(1)
+
+        val dividendTypes = setOf("DIVIDEND", "DISTRIBUTION", "REI")
+        val dividends = activityRepository.findByConnectionIdAndTradeDateBetween(connectionId, oneYearAgo, today)
+            .filter { it.type.uppercase() in dividendTypes }
+        if (dividends.isEmpty()) return null
+
+        val totalDividends = dividends.sumOf { (it.amountCad ?: it.amount).abs() }
+        return totalDividends.divide(totalValueCAD, 6, RoundingMode.HALF_UP)
+            .multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
     }
 
     companion object {
-        private val HUNDRED = BigDecimal(100) // Used only in MER computation
+        private val HUNDRED = BigDecimal(100)
+        private val DEPOSIT_TYPES = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
+        private val WITHDRAWAL_TYPES = setOf("TRANSFER_OUT", "WITHDRAWAL")
     }
 }

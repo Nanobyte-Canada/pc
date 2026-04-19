@@ -78,27 +78,26 @@ class DashboardDataService(
 
         val accountResults = connections.map { conn ->
             val analytics = analyticsRepository.findByConnectionId(conn.id)
-            val irr = analytics?.irr
-
-            val snapshots = balanceRepository.findByConnectionIdAndAsOfDateBetween(
-                conn.id, LocalDate.of(2000, 1, 1), today
-            ).sortedBy { it.asOfDate }
 
             AccountIrrDto(
                 connectionId = conn.id,
                 brokerName = conn.broker?.code ?: conn.brokerName,
                 accountName = conn.accountName,
-                irr = irr,
-                startDate = snapshots.firstOrNull()?.asOfDate?.toString(),
-                endDate = snapshots.lastOrNull()?.asOfDate?.toString()
+                irr = analytics?.xirr,
+                totalReturn = analytics?.totalReturn,
+                totalReturnPct = analytics?.totalReturnPct,
+                dividendYield = analytics?.dividendYield,
+                startDate = null,
+                endDate = today.toString()
             )
         }
 
-        // Portfolio-wide IRR: aggregate all connections' snapshots and activities
         val portfolioIrr = calculatePortfolioIrr(connections, today, mc)
+        val portfolioTotalReturn = accountResults.mapNotNull { it.totalReturn }.let { if (it.isNotEmpty()) it.reduce(BigDecimal::add) else null }
 
         return DashboardIrrResponse(
             portfolioIrr = portfolioIrr,
+            portfolioTotalReturn = portfolioTotalReturn,
             accounts = accountResults
         )
     }
@@ -166,18 +165,15 @@ class DashboardDataService(
                 val onePlusR = BigDecimal.ONE + rate
                 if (onePlusR <= BigDecimal.ZERO) break
 
-                val exponent = t.negate().toInt().coerceIn(-10, 0)
-                val discount = onePlusR.pow(exponent)
+                val discount = BigDecimal(Math.pow(onePlusR.toDouble(), t.negate().toDouble()))
                 npv += cf.amount.multiply(discount, mc)
                 dnpv -= cf.amount.multiply(t).multiply(discount, mc).divide(onePlusR, 8, RoundingMode.HALF_UP)
             }
 
-            // Add terminal value (ending portfolio value)
             val totalT = BigDecimal(totalDays).divide(BigDecimal(365), 8, RoundingMode.HALF_UP)
             val onePlusR = BigDecimal.ONE + rate
             if (onePlusR > BigDecimal.ZERO) {
-                val exponent = totalT.negate().toInt().coerceIn(-10, 0)
-                val termDiscount = onePlusR.pow(exponent)
+                val termDiscount = BigDecimal(Math.pow(onePlusR.toDouble(), totalT.negate().toDouble()))
                 npv += endingValue.multiply(termDiscount, mc)
                 dnpv -= endingValue.multiply(totalT).multiply(termDiscount, mc)
                     .divide(onePlusR, 8, RoundingMode.HALF_UP)
