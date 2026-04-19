@@ -185,6 +185,36 @@ class SnapTradeService(
         return adapter.getActivities(snapUser.userId, snapUser.userSecret, startDate, endDate, accounts, type)
     }
 
+    fun getAllAccountActivities(
+        user: User,
+        accountId: String,
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null,
+        type: String? = null
+    ): List<SnapTradeActivityDto> {
+        val snapUser = ensureUserRegistered(user)
+        val allActivities = mutableListOf<SnapTradeActivityDto>()
+        var offset = 0
+        val pageSize = 1000
+
+        do {
+            val page = adapter.getAccountActivities(
+                userId = snapUser.userId,
+                userSecret = snapUser.userSecret,
+                accountId = accountId,
+                startDate = startDate,
+                endDate = endDate,
+                offset = offset,
+                limit = pageSize,
+                type = type
+            )
+            allActivities.addAll(page.activities)
+            offset += page.activities.size
+        } while (allActivities.size < page.total && page.activities.isNotEmpty())
+
+        return allActivities
+    }
+
     /**
      * Fetches account balance for a specific account.
      */
