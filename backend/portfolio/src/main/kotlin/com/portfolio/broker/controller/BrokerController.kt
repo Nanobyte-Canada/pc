@@ -212,6 +212,40 @@ class BrokerController(
         ))
     }
 
+    @PostMapping("/connections/{connectionId}/sync-all")
+    fun syncAll(
+        @PathVariable connectionId: Long,
+        @AuthenticationPrincipal principal: UserPrincipal
+    ): ResponseEntity<Map<String, Any>> {
+        val connection = brokerService.getConnection(connectionId, principal.id)
+
+        val fetchLog = positionFetchService.triggerManualFetch(connectionId, principal.id)
+        val positionsFetched = connection.positionsCount ?: 0
+
+        val activitiesSynced = try {
+            activityIngestionService.syncActivitiesForConnection(connectionId)
+        } catch (e: Exception) {
+            log.warn("Activity sync failed for connection {}: {}", connectionId, e.message)
+            0
+        }
+
+        val balanceSynced = try {
+            activityIngestionService.syncBalanceForConnection(connectionId)
+            true
+        } catch (e: Exception) {
+            log.warn("Balance sync failed for connection {}: {}", connectionId, e.message)
+            false
+        }
+
+        return ResponseEntity.ok(mapOf(
+            "connectionId" to connectionId,
+            "positionsFetched" to positionsFetched,
+            "activitiesSynced" to activitiesSynced,
+            "balanceSynced" to balanceSynced,
+            "message" to "Sync completed successfully"
+        ))
+    }
+
     // ========== Balances ==========
 
     @GetMapping("/connections/{connectionId}/balance-history")
