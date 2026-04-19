@@ -136,6 +136,20 @@ export async function syncConnectionActivities(connectionId: number): Promise<{ 
   return response.json()
 }
 
+export interface SyncAllResponse {
+  connectionId: number
+  positionsFetched: number
+  activitiesSynced: number
+  balanceSynced: boolean
+  message: string
+}
+
+export async function syncAllConnectionData(connectionId: number): Promise<SyncAllResponse> {
+  const response = await apiFetch(`${BROKER_API_BASE}/connections/${connectionId}/sync-all`, { method: 'POST' })
+  if (!response.ok) throw new Error('Failed to sync connection data')
+  return response.json()
+}
+
 // ========== Balances ==========
 
 export async function getBalanceHistory(connectionId: number, days: number = 90): Promise<BalanceHistoryResponse> {

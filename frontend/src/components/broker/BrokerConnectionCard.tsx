@@ -6,31 +6,25 @@ import './BrokerConnectionCard.css'
 
 interface BrokerConnectionCardProps {
   connection: BrokerConnection
-  onFetch: (connectionId: number) => void
-  onSyncActivities: (connectionId: number) => void
+  onSyncAll: (connectionId: number) => void
   onDisconnect: (authorizationId: string) => void
   onReconnect: (authorizationId: string) => void
-  isFetching: boolean
-  isSyncingActivities: boolean
+  isSyncing: boolean
 }
 
 export function BrokerConnectionCard({
   connection,
-  onFetch,
-  onSyncActivities,
+  onSyncAll,
   onDisconnect,
   onReconnect,
-  isFetching,
-  isSyncingActivities
+  isSyncing
 }: BrokerConnectionCardProps) {
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
 
-  const canFetch = connection.status === 'ACTIVE' && !isFetching
+  const canSync = connection.status === 'ACTIVE' && !isSyncing
   const needsReauth = connection.status === 'EXPIRED' || connection.status === 'ERROR'
 
-  // Use real account number from meta if available, fallback to accountNumber
   const displayAccountNumber = connection.accountNumberActual || connection.accountNumber
-  // Use meta type for the badge (e.g. "TFSA", "RRSP"), fallback to accountType
   const displayAccountType = connection.accountMetaType || connection.accountType
 
   const [imgError, setImgError] = useState(false)
@@ -102,22 +96,13 @@ export function BrokerConnectionCard({
             Reconnect
           </button>
         ) : (
-          <>
-            <button
-              onClick={() => onFetch(connection.id)}
-              disabled={!canFetch}
-              className="connection-btn fetch"
-            >
-              {isFetching ? 'Fetching...' : 'Fetch Now'}
-            </button>
-            <button
-              onClick={() => onSyncActivities(connection.id)}
-              disabled={!canFetch || isSyncingActivities}
-              className="connection-btn fetch"
-            >
-              {isSyncingActivities ? 'Syncing...' : 'Sync Activities'}
-            </button>
-          </>
+          <button
+            onClick={() => onSyncAll(connection.id)}
+            disabled={!canSync}
+            className="connection-btn fetch"
+          >
+            {isSyncing ? 'Syncing...' : 'Sync All'}
+          </button>
         )}
 
         {showDisconnectConfirm ? (

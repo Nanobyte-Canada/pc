@@ -11,21 +11,13 @@ import {
   syncConnections,
   getConnectionActivities,
   syncConnectionActivities,
+  syncAllConnectionData,
   getBalanceHistory
 } from '../services/brokerService'
 import type { ConnectBrokerRequest } from '../types/broker'
+import { brokerKeys, dashboardKeys } from './queryKeys'
 
-// Query keys
-export const brokerKeys = {
-  all: ['brokers'] as const,
-  available: () => [...brokerKeys.all, 'available'] as const,
-  connections: () => [...brokerKeys.all, 'connections'] as const,
-  positions: () => [...brokerKeys.all, 'positions'] as const,
-  connectionPositions: (id: number) => [...brokerKeys.positions(), id] as const,
-  aggregatedPositions: () => [...brokerKeys.positions(), 'aggregated'] as const,
-  activities: (id: number) => [...brokerKeys.all, 'activities', id] as const,
-  balanceHistory: (id: number) => [...brokerKeys.all, 'balance-history', id] as const
-}
+export { brokerKeys }
 
 // ========== Queries ==========
 
@@ -82,6 +74,7 @@ export function useDisconnectBroker() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brokerKeys.connections() })
       queryClient.invalidateQueries({ queryKey: brokerKeys.positions() })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
     }
   })
 }
@@ -148,6 +141,18 @@ export function useBalanceHistory(connectionId: number, days: number = 90, enabl
   })
 }
 
+export function useSyncAll() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (connectionId: number) => syncAllConnectionData(connectionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: brokerKeys.all })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
+    }
+  })
+}
+
 export function useSyncConnections() {
   const queryClient = useQueryClient()
 
@@ -156,6 +161,7 @@ export function useSyncConnections() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brokerKeys.connections() })
       queryClient.invalidateQueries({ queryKey: brokerKeys.positions() })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
     }
   })
 }
