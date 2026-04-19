@@ -245,7 +245,8 @@ Wraps the SnapTradeAdapter with user registration/authentication logic. Generate
 | `disconnectBrokerage` | `(user: User, authorizationId: String)` | Disconnects a brokerage |
 | `listAvailableBrokerages` | `(): List<SnapTradeBrokerageDto>` | Lists all brokerages |
 | `listBrokerageAuthorizationTypes` | `(brokerageSlug: String?): List<SnapTradeBrokerageAuthTypeDto>` | Lists auth types |
-| `getActivities` | `(user, startDate?, endDate?, accounts?, type?): List<SnapTradeActivityDto>` | Fetches transaction activities |
+| `getActivities` | `(user, startDate?, endDate?, accounts?, type?): List<SnapTradeActivityDto>` | Fetches transaction activities (deprecated endpoint) |
+| `getAllAccountActivities` | `(user, accountId, startDate?, endDate?, type?): List<SnapTradeActivityDto>` | Fetches all activities for an account using paginated API (loops until all pages fetched) |
 | `getAccountBalance` | `(user: User, accountId: String): List<SnapTradeBalanceDto>` | Fetches account balances |
 | `placeOrder` | `(user, accountId, action, symbol, units, orderType, limitPrice?, timeInForce): SnapTradeOrderDto` | Places an order |
 | `cancelOrder` | `(user: User, accountId: String, brokerOrderId: String)` | Cancels an order |
@@ -480,7 +481,7 @@ Internal responsibilities:
 
 | Method | Signature | Description |
 |---|---|---|
-| `syncActivitiesForConnection` | `(connectionId: Long): Int` | Incremental activity sync from SnapTrade (overlaps by 1 day). Normalizes types (TRANSFERS->TRANSFER_IN), computes CAD amounts. |
+| `syncActivitiesForConnection` | `(connectionId: Long): Int` | If no activities exist, fetches full history (configurable, default 25 years) in a single request. Otherwise incremental sync from latest date (overlaps by 1 day). Normalizes types (TRANSFERS->TRANSFER_IN), computes CAD amounts. |
 | `syncBalanceForConnection` | `(connectionId: Long)` | Fetches balance from SnapTrade and saves snapshot |
 | `syncAllConnections` | `()` | Syncs activities + balances for all non-disconnected connections |
 
@@ -554,6 +555,7 @@ Abstraction over the SnapTrade Java SDK. All SDK types are mapped to internal DT
 | `getBalances` | `(userId, userSecret, accountId): List<SnapTradeBalanceDto>` |
 | `getHoldings` | `(userId, userSecret, accountId): SnapTradeHoldingsDto` |
 | `getActivities` | `(userId, userSecret, startDate?, endDate?, accounts?, type?): List<SnapTradeActivityDto>` |
+| `getAccountActivities` | `(userId, userSecret, accountId, startDate?, endDate?, offset, limit, type?): PaginatedActivitiesResult` |
 | `disconnectBrokerage` | `(userId, userSecret, authorizationId)` |
 | `listBrokerages` | `(): List<SnapTradeBrokerageDto>` |
 | `listBrokerageAuthorizationTypes` | `(brokerageSlug?): List<SnapTradeBrokerageAuthTypeDto>` |
@@ -866,6 +868,7 @@ Spring Security filter chain configuration:
 |---|---|---|---|
 | `broker.sync.enabled` | Boolean | false | Enable data sync schedulers |
 | `broker.sync.cron` | String | "0 30 22 * * *" | Nightly sync cron expression |
+| `broker.sync.max-lookback-years` | Int | 25 | Max years of historical activity data to fetch on first sync |
 
 ### IngestionConfig
 
