@@ -34,13 +34,13 @@ class AccountDataSyncScheduler(
             log.error("Nightly activity/balance sync failed: {}", e.message, e)
         }
 
-        // Also refresh positions for all active connections
         try {
             val activeConnections = connectionRepository.findByStatus(ConnectionStatus.ACTIVE)
             log.info("Fetching positions for {} active connections", activeConnections.size)
             for (conn in activeConnections) {
                 try {
                     positionFetchService.triggerManualFetch(conn.id, conn.user.id)
+                    log.info("Nightly position fetch completed for connection {}", conn.id)
                 } catch (e: Exception) {
                     log.warn("Nightly position fetch failed for connection {}: {}", conn.id, e.message)
                 }

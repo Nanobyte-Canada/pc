@@ -608,12 +608,12 @@ class DashboardDataService(
                 positionFetchService.triggerManualFetch(conn.id, userId)
                 count++
             } catch (e: Exception) {
-                log.warn("Failed to trigger fetch for connection {}: {}", conn.id, e.message)
+                log.warn("Failed to refresh connection {}: {}", conn.id, e.message)
             }
         }
         return RefreshAllResponse(
             connectionsRefreshed = count,
-            message = "Refreshing data for $count accounts..."
+            message = "Refreshed data for $count accounts"
         )
     }
 
