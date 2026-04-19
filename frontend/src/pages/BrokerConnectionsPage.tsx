@@ -69,6 +69,7 @@ export function BrokerConnectionsPage() {
 
       let totalPositions = 0
       let totalActivities = 0
+      const syncResults: { connectionId: number; positionsFetched: number; activitiesSynced: number }[] = []
 
       for (let i = 0; i < activeConnections.length; i++) {
         const conn = activeConnections[i]
@@ -79,18 +80,61 @@ export function BrokerConnectionsPage() {
           const result: SyncAllResponse = await syncAllConnectionData(conn.id)
           totalPositions += result.positionsFetched
           totalActivities += result.activitiesSynced
+          syncResults.push({ connectionId: conn.id, positionsFetched: result.positionsFetched, activitiesSynced: result.activitiesSynced })
         } catch (e) {
           console.warn(`Sync failed for connection ${conn.id}:`, e)
+          syncResults.push({ connectionId: conn.id, positionsFetched: 0, activitiesSynced: 0 })
         }
+      }
+
+      // Auto-retry accounts with positions but 0 activities (broker hasn't cached data yet)
+      let pendingIds = syncResults
+        .filter(r => r.activitiesSynced === 0 && r.positionsFetched > 0)
+        .map(r => r.connectionId)
+
+      const retryDelays = [30000, 60000, 120000, 240000]
+
+      for (let retry = 0; retry < retryDelays.length && pendingIds.length > 0; retry++) {
+        const pendingNames = pendingIds
+          .map(id => activeConnections.find(c => c.id === id)?.accountName || 'account')
+          .join(', ')
+        setSyncStatus(`Waiting for broker to prepare ${pendingNames}... (retry ${retry + 1}/${retryDelays.length})`)
+
+        await new Promise(resolve => setTimeout(resolve, retryDelays[retry]))
+
+        const stillPending: number[] = []
+        for (const connId of pendingIds) {
+          const conn = activeConnections.find(c => c.id === connId)
+          setSyncStatus(`Retrying ${conn?.accountName || 'account'}... (retry ${retry + 1}/${retryDelays.length})`)
+          try {
+            const result = await syncAllConnectionData(connId)
+            if (result.activitiesSynced > 0) {
+              totalActivities += result.activitiesSynced
+            } else {
+              stillPending.push(connId)
+            }
+          } catch {
+            stillPending.push(connId)
+          }
+        }
+        pendingIds = stillPending
       }
 
       syncAll.reset()
       await refetchConnections()
 
-      setNotification({
-        type: 'success',
-        message: `Connected! Synced ${totalPositions} positions and ${totalActivities} activities across ${activeConnections.length} account${activeConnections.length !== 1 ? 's' : ''}.`
-      })
+      if (pendingIds.length > 0) {
+        setNotification({
+          type: 'success',
+          message: `Connected! Synced ${totalPositions} positions and ${totalActivities} activities. ` +
+            `${pendingIds.length} account(s) still being set up by your broker — click Sync All to check later.`
+        })
+      } else {
+        setNotification({
+          type: 'success',
+          message: `Connected! Synced ${totalPositions} positions and ${totalActivities} activities across ${activeConnections.length} accounts.`
+        })
+      }
 
       setTimeout(() => navigate('/dashboard'), 1500)
     } catch (e) {
