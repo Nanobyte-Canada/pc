@@ -102,20 +102,22 @@ export function BrokerConnectionCard({
             Reconnect
           </button>
         ) : (
-          <button
-            onClick={() => onFetch(connection.id)}
-            disabled={!canFetch}
-            className="connection-btn fetch"
-          >
-            {isFetching ? 'Fetching...' : 'Fetch Now'}
-          </button>
-          <button
-            onClick={() => onSyncActivities(connection.id)}
-            disabled={!canFetch || isSyncingActivities}
-            className="connection-btn fetch"
-          >
-            {isSyncingActivities ? 'Syncing...' : 'Sync Activities'}
-          </button>
+          <>
+            <button
+              onClick={() => onFetch(connection.id)}
+              disabled={!canFetch}
+              className="connection-btn fetch"
+            >
+              {isFetching ? 'Fetching...' : 'Fetch Now'}
+            </button>
+            <button
+              onClick={() => onSyncActivities(connection.id)}
+              disabled={!canFetch || isSyncingActivities}
+              className="connection-btn fetch"
+            >
+              {isSyncingActivities ? 'Syncing...' : 'Sync Activities'}
+            </button>
+          </>
         )}
 
         {showDisconnectConfirm ? (
