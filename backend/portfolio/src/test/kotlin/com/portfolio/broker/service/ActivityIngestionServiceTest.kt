@@ -89,7 +89,7 @@ class ActivityIngestionServiceTest {
             rawJson = null
         )
 
-        every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
+        every { snapTradeService.getAllAccountActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "act-1") } returns null
 
         val slot = slot<BrokerActivity>()
@@ -115,16 +115,16 @@ class ActivityIngestionServiceTest {
     fun `syncActivitiesForConnection incremental sync fetches from last known date`() {
         every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
         every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns LocalDate.of(2024, 5, 1)
-        every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns emptyList()
+        every { snapTradeService.getAllAccountActivities(any(), any(), any(), any(), any()) } returns emptyList()
 
         service.syncActivitiesForConnection(10L)
 
         verify {
-            snapTradeService.getActivities(
+            snapTradeService.getAllAccountActivities(
                 user = mockUser,
+                accountId = "ext-account-123",
                 startDate = LocalDate.of(2024, 4, 30),  // minus 1 day for safety
                 endDate = null,
-                accounts = "ext-account-123",
                 type = null
             )
         }
@@ -151,7 +151,7 @@ class ActivityIngestionServiceTest {
             rawJson = null
         )
 
-        every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
+        every { snapTradeService.getAllAccountActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "existing-id") } returns mockk()
 
         val count = service.syncActivitiesForConnection(10L)
@@ -181,7 +181,7 @@ class ActivityIngestionServiceTest {
             rawJson = null
         )
 
-        every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
+        every { snapTradeService.getAllAccountActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "act-null") } returns null
 
         val slot = slot<BrokerActivity>()
@@ -220,10 +220,10 @@ class ActivityIngestionServiceTest {
 
         // conn1 throws, conn2 succeeds
         every { activityRepository.findLatestTradeDateByConnectionId(1L) } returns null
-        every { snapTradeService.getActivities(any(), any(), any(), eq("acc-1"), any()) } throws RuntimeException("API down")
+        every { snapTradeService.getAllAccountActivities(any(), eq("acc-1"), any(), any(), any()) } throws RuntimeException("API down")
 
         every { activityRepository.findLatestTradeDateByConnectionId(2L) } returns null
-        every { snapTradeService.getActivities(any(), any(), any(), eq("acc-2"), any()) } returns emptyList()
+        every { snapTradeService.getAllAccountActivities(any(), eq("acc-2"), any(), any(), any()) } returns emptyList()
         every { snapTradeService.getAccountBalance(any(), "acc-2") } returns emptyList()
         every { balanceRepository.findByConnectionIdAndAsOfDate(2L, any()) } returns null
 
@@ -245,7 +245,7 @@ class ActivityIngestionServiceTest {
             tradeDate = LocalDate.of(2024, 6, 15), settlementDate = null, optionType = null, rawJson = null
         )
 
-        every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
+        every { snapTradeService.getAllAccountActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "transfer-1") } returns null
 
         val slot = slot<BrokerActivity>()
@@ -266,7 +266,7 @@ class ActivityIngestionServiceTest {
             tradeDate = LocalDate.of(2024, 6, 15), settlementDate = null, optionType = null, rawJson = null
         )
 
-        every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
+        every { snapTradeService.getAllAccountActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "wd-1") } returns null
 
         val slot = slot<BrokerActivity>()
@@ -288,7 +288,7 @@ class ActivityIngestionServiceTest {
             tradeDate = LocalDate.of(2024, 6, 15), settlementDate = null, optionType = null, rawJson = null
         )
 
-        every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
+        every { snapTradeService.getAllAccountActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "usd-1") } returns null
 
         val slot = slot<BrokerActivity>()
@@ -313,7 +313,7 @@ class ActivityIngestionServiceTest {
             tradeDate = LocalDate.of(2024, 6, 15), settlementDate = null, optionType = null, rawJson = null
         )
 
-        every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
+        every { snapTradeService.getAllAccountActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "cad-1") } returns null
 
         val slot = slot<BrokerActivity>()
@@ -337,7 +337,7 @@ class ActivityIngestionServiceTest {
             tradeDate = LocalDate.of(2024, 6, 15), settlementDate = null, optionType = null, rawJson = null
         )
 
-        every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
+        every { snapTradeService.getAllAccountActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "zero-1") } returns null
 
         val slot = slot<BrokerActivity>()
@@ -363,7 +363,7 @@ class ActivityIngestionServiceTest {
             tradeDate = LocalDate.of(2024, 6, 15), settlementDate = null, optionType = null, rawJson = null
         )
 
-        every { snapTradeService.getActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
+        every { snapTradeService.getAllAccountActivities(any(), any(), any(), any(), any()) } returns listOf(activity)
         every { activityRepository.findByConnectionIdAndExternalId(10L, "eur-1") } returns null
 
         val slot = slot<BrokerActivity>()
