@@ -23,6 +23,38 @@
   letter-spacing: 0.04em;
 }
 
+.irr-metrics {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.irr-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.irr-metric-label {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.irr-metric-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.irr-metric-value.positive { color: var(--green-text); }
+.irr-metric-value.negative { color: var(--red-text); }
+.irr-metric-value.neutral  { color: var(--text-secondary); }
+
 .irr-accounts {
   display: flex;
   flex-direction: column;
@@ -33,6 +65,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   padding: 0.25rem 0;
   border-bottom: 1px solid var(--border-light);
 }
@@ -47,13 +80,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 60%;
+  flex: 1;
+  min-width: 0;
 }
 
 .irr-account-value {
   font-size: 0.8125rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .irr-account-value.positive { color: var(--green-text); }
@@ -67,10 +102,4 @@
   min-height: 4rem;
   color: var(--text-tertiary);
   font-size: 0.8125rem;
-}
-
-.irr-period {
-  font-size: 0.6875rem;
-  color: var(--text-tertiary);
-  margin-top: 0.5rem;
 }

@@ -271,19 +271,25 @@ export type WidgetKey =
   | 'PORTFOLIO_SUMMARY'
   | 'IRR'
 
-// ========== IRR ==========
+// ========== Performance Metrics ==========
 
 export interface AccountIrr {
   connectionId: number
   brokerName: string | null
   accountName: string | null
   irr: number | null
+  totalReturn: number | null
+  totalReturnPct: number | null
+  dividendYield: number | null
   startDate: string | null
   endDate: string | null
 }
 
 export interface DashboardIrrResponse {
   portfolioIrr: number | null
+  portfolioTotalReturn: number | null
+  portfolioTotalReturnPct: number | null
+  portfolioDividendYield: number | null
   accounts: AccountIrr[]
 }
 
