@@ -51,3 +51,12 @@ broker-gateway:
     secret-key: ${BROKER_ENCRYPTION_KEY:}
   service-auth:
     api-key: ${GATEWAY_API_KEY:dev-gateway-key}
+  ibkr:
+    enabled: ${IBKR_GATEWAY_ENABLED:false}
+    host: ${IBKR_HOST:}
+    port: ${IBKR_PORT:4002}
+    client-id: ${IBKR_GATEWAY_CLIENT_ID:2}
+    connect-timeout-ms: ${IBKR_CONNECT_TIMEOUT:5000}
+    request-timeout-ms: ${IBKR_REQUEST_TIMEOUT:30000}
+    flex-token: ${IBKR_FLEX_TOKEN:}
+    flex-query-id: ${IBKR_FLEX_QUERY_ID:}
