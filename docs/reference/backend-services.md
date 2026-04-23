@@ -1219,6 +1219,17 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 | `IbkrContract` | Data class | symbol, secType (default "STK"), exchange (default "SMART"), currency (default "USD") |
 | `IbkrOrderSpec` | Data class | action, orderType, totalQuantity, limitPrice?, auxPrice?, timeInForce (default "DAY") |
 
+### Questrade Adapter (`adapter/questrade/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `QuestradeConfig` | `@ConfigurationProperties(prefix = "broker-gateway.questrade")` | Questrade settings: enabled (default false), authUrl (default `https://login.questrade.com/oauth2/token`), practiceAuthUrl, usePractice (default false), rateLimitPerSecond (default 1) |
+| `QuestradeDtoMappers` | `object` | Static mappers normalizing Questrade-specific values to unified enums: mapAccountType (TFSA/RRSP/FHSA/RESP/LIRA/LIF/RIF variants), mapInstrumentType, mapOrderStatus, mapOrderType, mapTimeInForce, mapOrderAction, mapActivityType |
+| `FakeQuestradeAdapter` | `@Component @Profile("dev","local","test")` | Mock adapter returning realistic Canadian data: positions (XIU.TO, VFV.TO, RY.TO, TD.TO), Canadian-specific accounts. For local development and testing without a Questrade account. |
+| `QuestradeAdapter` | `@Component @ConditionalOnProperty("broker-gateway.questrade.enabled")` | Production adapter implementing BrokerAdapter. Delegates to QuestradeRestClient for HTTP operations and QuestradeTokenManager for authentication. Uses QuestradeDtoMappers for all type normalization. |
+| `QuestradeRestClient` | Class | WebClient-based HTTP client with get/post/delete methods. Error handling maps 401 responses to authentication errors and 429 responses to rate-limit errors. |
+| `QuestradeTokenManager` | Class | OAuth token rotation manager handling Questrade's single-use refresh token model. Each token refresh returns a new refresh token and a dynamic `api_server` URL that subsequent API calls must use. |
+
 ---
 
 ## Common Module (`backend/common/`)

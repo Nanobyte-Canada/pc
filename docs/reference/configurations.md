@@ -547,6 +547,11 @@ spring.mvc.problemdetails.enabled: true
 | `IBKR_GATEWAY_CLIENT_ID` | TWS client ID for gateway (market-data uses `1`) | `2` | Broker gateway service |
 | `IBKR_FLEX_TOKEN` | Flex Web Service token for historical transactions | (empty) | Broker gateway service |
 | `IBKR_FLEX_QUERY_ID` | Pre-configured Flex Query ID | (empty) | Broker gateway service |
+| `QUESTRADE_ENABLED` | Enable Questrade adapter | `false` | Broker gateway service |
+| `QUESTRADE_AUTH_URL` | OAuth token endpoint | `https://login.questrade.com/oauth2/token` | Broker gateway service |
+| `QUESTRADE_PRACTICE_AUTH_URL` | Practice/sandbox auth URL | (empty) | Broker gateway service |
+| `QUESTRADE_USE_PRACTICE` | Use practice environment | `false` | Broker gateway service |
+| `QUESTRADE_RATE_LIMIT` | Requests per second limit | `1` | Broker gateway service |
 
 ---
 
