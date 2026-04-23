@@ -541,6 +541,12 @@ spring.mvc.problemdetails.enabled: true
 | `BROKER_ENCRYPTION_KEY` | AES-256-GCM key for encrypting broker credentials | (empty) | Broker gateway service |
 | `GATEWAY_API_KEY` | Service-to-service authentication key | `dev-gateway-key` | Broker gateway service |
 | `BROKER_GATEWAY_URL` | URL for portfolio service to reach the gateway | `http://broker-gateway-service:8084` | Portfolio service |
+| `IBKR_GATEWAY_ENABLED` | Enable IBKR adapter | `false` | Broker gateway service |
+| `IBKR_HOST` | TWS/IB Gateway host (shared with market-data) | (empty) | Broker gateway service |
+| `IBKR_PORT` | TWS/IB Gateway port | `4002` | Broker gateway service |
+| `IBKR_GATEWAY_CLIENT_ID` | TWS client ID for gateway (market-data uses `1`) | `2` | Broker gateway service |
+| `IBKR_FLEX_TOKEN` | Flex Web Service token for historical transactions | (empty) | Broker gateway service |
+| `IBKR_FLEX_QUERY_ID` | Pre-configured Flex Query ID | (empty) | Broker gateway service |
 
 ---
 

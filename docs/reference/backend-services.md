@@ -1199,6 +1199,28 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 
 ---
 
+## Broker Gateway Service (`backend/broker-gateway/`)
+
+**Port:** 8084 | **Schema:** `broker_gateway` | **Package:** `com.portfolio.brokergateway`
+
+### IBKR Adapter (`adapter/ibkr/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `IbkrConfig` | `@ConfigurationProperties(prefix = "broker-gateway.ibkr")` | IBKR settings: enabled, host, port, clientId (default 2), connectTimeoutMs, requestTimeoutMs, reconnectDelayMs (5s), maxReconnectDelayMs (60s), flexToken, flexQueryId |
+| `IbkrDtoMappers` | `object` | Static mappers normalizing IBKR-specific values to unified enums: mapAccountType (Individual/Cash/Margin/TFSA/RRSP/FHSA/RESP/LIRA/LIF/RIF), mapInstrumentType (STK/OPT/BOND/FUND/CASH/CRYPTO), mapOrderStatus (PendingSubmit/Submitted/Filled/Cancelled/Inactive/Error), mapActivityType (BUY/BOT/SELL/SLD/DIV/DEP/WITH/COMM/INT/EXP/ASSIGN/EXER/SPLIT/CA), mapOptionRight (C/P) |
+| `FakeIbkrAdapter` | `@Component @Profile("dev","local","test")` | Mock adapter returning realistic data: 5 positions (SPY, AAPL, MSFT, QQQ, NVDA), 2 accounts (DU1234567 margin USD, DU7654321 RRSP CAD), 4 activities (buy, dividend, sell, transfer), 2 orders (filled market, open limit). Supports placeOrder/cancelOrder with in-memory order ID sequence. |
+| `IbkrAdapter` | `@Component @ConditionalOnProperty("broker-gateway.ibkr.enabled")` | Production adapter implementing BrokerAdapter. Delegates to IbkrAccountClient for TWS operations. Uses IbkrDtoMappers for all type normalization. Creates IbkrConnectionManager on construction. Capabilities: orders, options, real-time data, historical activities via Flex Queries, no fractional shares. |
+| `IbkrConnectionManager` | Class (non-Spring) | Socket lifecycle manager with exponential backoff reconnection. Initial delay 5s, doubles each attempt, capped at 60s. Resets delay on successful connection. Daemon thread executor. Health status via AtomicBoolean. Graceful shutdown with 5s termination wait. |
+| `IbkrAccountClient` | Interface | TWS client abstraction: connect, disconnect, isConnected, getManagedAccounts, getAccountSummary, getPositions, getOpenOrders, getCompletedOrders, getExecutions, placeOrder(accountId, contract, orderSpec), cancelOrder(orderId) |
+| `IbkrPosition` | Data class | accountId, symbol, secType, exchange, currency, conId, quantity, averageCost, marketPrice?, marketValue?, unrealizedPnl?, strike?, expiry?, right? |
+| `IbkrOrder` | Data class | orderId, symbol, secType, action, orderType, totalQuantity, filledQuantity?, limitPrice?, auxPrice?, status, timeInForce?, avgFillPrice?, currency?, submittedAt?, filledAt? |
+| `IbkrExecution` | Data class | execId, symbol, secType, side, quantity, price, commission?, currency, time, accountId |
+| `IbkrContract` | Data class | symbol, secType (default "STK"), exchange (default "SMART"), currency (default "USD") |
+| `IbkrOrderSpec` | Data class | action, orderType, totalQuantity, limitPrice?, auxPrice?, timeInForce (default "DAY") |
+
+---
+
 ## Common Module (`backend/common/`)
 
 **Package:** `com.portfolio.common`
