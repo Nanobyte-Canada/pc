@@ -49,6 +49,7 @@ services:
       SNAPTRADE_CONSUMER_KEY: ${SNAPTRADE_CONSUMER_KEY:-}
       SNAPTRADE_REDIRECT_URI: ${SNAPTRADE_REDIRECT_URI:-http://localhost:3000/brokers/connections}
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY:-}
+      BROKER_GATEWAY_URL: http://broker-gateway-service:8084
       JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     ports:
       - "8080:8080"
@@ -153,6 +154,37 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - portfolio-network
+
+  broker-gateway-service:
+    build:
+      context: ./backend
+      dockerfile: broker-gateway/Dockerfile
+    container_name: portfolio-broker-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
+      DATABASE_USERNAME: ${POSTGRES_USER:-portfolio}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY:-}
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-}
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
       interval: 30s
       timeout: 5s
       retries: 3
