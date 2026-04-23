@@ -60,3 +60,9 @@ broker-gateway:
     request-timeout-ms: ${IBKR_REQUEST_TIMEOUT:30000}
     flex-token: ${IBKR_FLEX_TOKEN:}
     flex-query-id: ${IBKR_FLEX_QUERY_ID:}
+  questrade:
+    enabled: ${QUESTRADE_ENABLED:false}
+    auth-url: ${QUESTRADE_AUTH_URL:https://login.questrade.com/oauth2/token}
+    practice-auth-url: ${QUESTRADE_PRACTICE_AUTH_URL:https://practicelogin.questrade.com/oauth2/token}
+    use-practice: ${QUESTRADE_USE_PRACTICE:false}
+    rate-limit-per-second: ${QUESTRADE_RATE_LIMIT:1}
