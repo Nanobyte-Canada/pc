@@ -2,6 +2,7 @@ package com.portfolio.brokergateway.credential
 
 import com.portfolio.brokergateway.config.GatewayProperties
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.nio.ByteBuffer
 import java.security.SecureRandom
@@ -13,11 +14,11 @@ import javax.crypto.spec.SecretKeySpec
 
 @Service
 class TokenEncryptionService(
-    properties: GatewayProperties
+    @Value("\${broker-gateway.encryption.secret-key:}")
+    private val secretKeyBase64: String
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
     private val secureRandom = SecureRandom()
-    private val secretKeyBase64 = properties.encryption.secretKey
 
     companion object {
         private const val ALGORITHM = "AES/GCM/NoPadding"
@@ -26,12 +27,6 @@ class TokenEncryptionService(
         private const val GCM_TAG_LENGTH = 128
         private const val KEY_LENGTH = 32
     }
-
-    constructor(secretKeyBase64: String) : this(
-        GatewayProperties(
-            encryption = com.portfolio.brokergateway.config.EncryptionProperties(secretKey = secretKeyBase64)
-        )
-    )
 
     private val secretKey: SecretKey by lazy {
         if (secretKeyBase64.isBlank()) {
