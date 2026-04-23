@@ -181,6 +181,7 @@ services:
       IBKR_PORT: ${IBKR_PORT:-4002}
       IBKR_GATEWAY_CLIENT_ID: ${IBKR_GATEWAY_CLIENT_ID:-2}
       QUESTRADE_ENABLED: ${QUESTRADE_ENABLED:-false}
+      WEALTHSIMPLE_ENABLED: ${WEALTHSIMPLE_ENABLED:-false}
     ports:
       - "8084:8084"
     depends_on:

@@ -66,3 +66,9 @@ broker-gateway:
     practice-auth-url: ${QUESTRADE_PRACTICE_AUTH_URL:https://practicelogin.questrade.com/oauth2/token}
     use-practice: ${QUESTRADE_USE_PRACTICE:false}
     rate-limit-per-second: ${QUESTRADE_RATE_LIMIT:1}
+  wealthsimple:
+    enabled: ${WEALTHSIMPLE_ENABLED:false}
+    auth-url: ${WEALTHSIMPLE_AUTH_URL:https://api.production.wealthsimple.com/v1/oauth/v2/token}
+    graphql-url: ${WEALTHSIMPLE_GRAPHQL_URL:https://my.wealthsimple.com/graphql}
+    client-id: ${WEALTHSIMPLE_CLIENT_ID:4da53ac2b03225bed1550eba8e4611e086c7b905a3855571f1c77e1bbdc5f62b}
+    order-rate-limit-per-hour: ${WS_ORDER_RATE_LIMIT:7}
