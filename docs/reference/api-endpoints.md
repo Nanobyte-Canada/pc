@@ -552,6 +552,62 @@ Separate Spring Boot application at `backend/ingestion/`. No authentication requ
 
 ---
 
+## Broker Gateway Service (Port 8084)
+
+**Base URL:** `http://localhost:8084`
+
+Broker data gateway microservice for connecting to IBKR, Questrade, and Wealthsimple. Provides a unified API for account data and order execution across multiple brokerages.
+
+### Connection Management
+
+**Prefix:** `/api/v1/gateway/connections`
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `POST` | `/api/v1/gateway/connections` | API Key | Register a new broker connection. | `ConnectionDto` |
+| `GET` | `/api/v1/gateway/connections?userId={id}` | API Key | List all connections for a user. | `List<ConnectionDto>` |
+| `GET` | `/api/v1/gateway/connections/{id}` | API Key | Get connection details by ID. | `ConnectionDto` |
+| `DELETE` | `/api/v1/gateway/connections/{id}` | API Key | Remove a broker connection. | 204 No Content |
+| `POST` | `/api/v1/gateway/connections/{id}/validate` | API Key | Test connectivity to the broker. | `ValidationResult` |
+| `POST` | `/api/v1/gateway/connections/{id}/refresh` | API Key | Rotate OAuth tokens for the connection. | `ConnectionDto` |
+
+### Data Retrieval
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/gateway/connections/{id}/accounts` | API Key | List accounts for a connection. | `List<AccountDto>` |
+| `GET` | `/api/v1/gateway/connections/{id}/accounts/{accId}/balances` | API Key | Get account balances. | `List<BalanceDto>` |
+| `GET` | `/api/v1/gateway/connections/{id}/accounts/{accId}/positions` | API Key | Get account positions. | `List<PositionDto>` |
+| `GET` | `/api/v1/gateway/connections/{id}/accounts/{accId}/activities` | API Key | Get account transactions. | `List<ActivityDto>` |
+| `GET` | `/api/v1/gateway/connections/{id}/accounts/{accId}/orders` | API Key | Get account orders. | `List<OrderDto>` |
+
+**`GET .../activities` query params:**
+| Param | Type | Description |
+|---|---|---|
+| `startDate` | String (ISO date) | Start of date range |
+| `endDate` | String (ISO date) | End of date range |
+
+**`GET .../orders` query params:**
+| Param | Type | Description |
+|---|---|---|
+| `status` | String | Filter by order status |
+
+### Order Execution
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `POST` | `/api/v1/gateway/connections/{id}/accounts/{accId}/orders` | API Key | Place a new order. | `OrderDto` |
+| `DELETE` | `/api/v1/gateway/connections/{id}/accounts/{accId}/orders/{orderId}` | API Key | Cancel an existing order. | 204 No Content |
+
+### Health
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/gateway/health` | None | Overall gateway health with per-broker status. | `GatewayHealthResponse` |
+| `GET` | `/api/v1/gateway/health/{brokerType}` | None | Health status for a specific broker (IBKR, QUESTRADE, WEALTHSIMPLE). | `BrokerHealthResponse` |
+
+---
+
 ## Strategy Service (Port 8083)
 
 **Base URL:** `http://localhost:8083`

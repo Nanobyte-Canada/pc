@@ -185,6 +185,14 @@ Every environment variable referenced in `application.yml`, organized by categor
 | `SNAPTRADE_HEALTH_CHECK_ENABLED` | Enable SnapTrade health checks | `false` | All profiles |
 | `SNAPTRADE_HEALTH_CHECK_CRON` | Cron for health checks | `0 */15 * * * *` (every 15 min) | All profiles |
 
+### Broker Gateway
+
+| Variable | Description | Default | Used By |
+|----------|-------------|---------|---------|
+| `BROKER_ENCRYPTION_KEY` | AES-256-GCM key for encrypting broker credentials in the gateway | (empty) | Broker gateway service |
+| `GATEWAY_API_KEY` | Service-to-service authentication key for the broker gateway | `dev-gateway-key` | Broker gateway service |
+| `BROKER_GATEWAY_URL` | URL for portfolio service to reach the broker gateway | `http://broker-gateway-service:8084` | Portfolio service |
+
 ### Frontend
 
 | Variable | Description | Default | Used By |
@@ -511,6 +519,28 @@ spring.mvc.problemdetails.enabled: true
 | `REDIS_PORT` | Redis port | `6379` | Strategy service |
 | `MARKET_DATA_SERVICE_URL` | Market data service base URL | `http://localhost:8082` | Strategy service |
 | `PORTFOLIO_SERVICE_URL` | Portfolio backend base URL | `http://localhost:8080` | Strategy service |
+
+---
+
+## Broker Gateway Service Configuration
+
+**File:** `backend/broker-gateway/src/main/resources/application.yml`
+**Port:** 8084
+**DB Schema:** `broker_gateway`
+
+### Broker Gateway Service Environment Variables
+
+| Variable | Description | Default | Used By |
+|---|---|---|---|
+| `PORT` | Server port | `8084` | Broker gateway service |
+| `DATABASE_URL` | JDBC connection string | `jdbc:postgresql://localhost:5432/portfolio` | Broker gateway service |
+| `DATABASE_USERNAME` | Database username | `portfolio` | Broker gateway service |
+| `DATABASE_PASSWORD` | Database password | `portfolio` | Broker gateway service |
+| `REDIS_HOST` | Redis hostname | `localhost` | Broker gateway service |
+| `REDIS_PORT` | Redis port | `6379` | Broker gateway service |
+| `BROKER_ENCRYPTION_KEY` | AES-256-GCM key for encrypting broker credentials | (empty) | Broker gateway service |
+| `GATEWAY_API_KEY` | Service-to-service authentication key | `dev-gateway-key` | Broker gateway service |
+| `BROKER_GATEWAY_URL` | URL for portfolio service to reach the gateway | `http://broker-gateway-service:8084` | Portfolio service |
 
 ---
 

@@ -138,6 +138,22 @@ Simplified runtime image for VPS deployments where `app.jar` is pre-built by CI.
 - Same health check as full Dockerfile
 - No CA certificate installation (VPS uses Nginx for TLS termination)
 
+### backend/broker-gateway/Dockerfile -- Full Multi-Stage Build
+
+Two-stage build for the broker gateway microservice.
+
+**Stage 1: Build** (`gradle:8.10-jdk21-alpine`)
+- Copies `build.gradle.kts`, `settings.gradle.kts`, and `gradle/` first for dependency caching
+- Runs `gradle dependencies --no-daemon` to warm cache (tolerates failures with `|| true`)
+- Copies `src/` and builds with `gradle build -x test --no-daemon`
+
+**Stage 2: Runtime** (`eclipse-temurin:21-jre`)
+- Creates non-root user `appuser:appgroup` (UID/GID 1001)
+- Copies `app.jar` from build stage
+- Health check: `curl --fail --silent http://localhost:8084/actuator/health` (30s interval, 3s timeout, 30s start period, 3 retries)
+- Entrypoint: `java -jar app.jar`
+- Exposes port 8084
+
 ### frontend/Dockerfile -- Full Multi-Stage Build
 
 Three-stage build.
@@ -177,6 +193,7 @@ Full-stack local development environment.
 | ingestion-service | Build from `./backend/ingestion/Dockerfile` | 8081:8081 | Separate ingestion microservice with own `ingestion` DB schema, depends on postgres + redis, `restart: unless-stopped` |
 | market-data-service | Build from `./backend` context, `market-data/Dockerfile` | 8082:8082 | IBKR market data + WebSocket streaming, `market_data` DB schema, depends on postgres + redis |
 | strategy-service | Build from `./backend` context, `strategy/Dockerfile` | 8083:8083 | Strategy engine + wheel writer, `strategy` DB schema, depends on postgres + redis |
+| broker-gateway-service | Build from `./backend/broker-gateway/Dockerfile` | 8084:8084 | Broker data gateway (IBKR, Questrade, Wealthsimple), `broker_gateway` DB schema, depends on postgres + redis |
 | frontend | Build from `./frontend/Dockerfile` target=development | 3000:3000 | Bind mounts `src/`, `public/`, `index.html` as read-only for hot reload |
 
 **Key configuration:**
@@ -188,6 +205,7 @@ Full-stack local development environment.
 - Ingestion health check: `wget http://localhost:8081/actuator/health` (30s interval, 60s start period)
 - Market data health check: `wget http://localhost:8082/actuator/health` (30s interval, 60s start period)
 - Strategy health check: `wget http://localhost:8083/actuator/health` (30s interval, 60s start period)
+- Broker gateway health check: `wget http://localhost:8084/actuator/health` (30s interval, 60s start period)
 - All backend services have `restart: unless-stopped` for Docker DNS race condition resilience
 - All services depend on postgres + redis (both `service_healthy`)
 - Environment variables use defaults: `POSTGRES_DB=portfolio`, `POSTGRES_USER=portfolio`, `POSTGRES_PASSWORD=portfolio`

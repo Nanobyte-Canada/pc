@@ -1665,3 +1665,32 @@ Open/closed positions with P&L tracking. FK to orders for entry/exit.
 ### strategy.wheel_accounts / wheel_configs / wheel_recommendations / wheel_holdings
 
 Wheel writer automation tables for CSP/CC strategy management.
+
+---
+
+## Broker Gateway Schema (`broker_gateway`)
+
+**Service:** broker-gateway-service (port 8084)
+**Migration:** `backend/broker-gateway/src/main/resources/db/migration/V1__broker_gateway_schema.sql`
+
+### broker_gateway.connections
+
+Stores encrypted broker credentials and connection metadata for IBKR, Questrade, and Wealthsimple integrations.
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | VARCHAR(36) | NO | (PK) |
+| user_id | BIGINT | NO | |
+| broker_type | VARCHAR(20) | NO | CHECK (IBKR, QUESTRADE, WEALTHSIMPLE) |
+| status | VARCHAR(20) | NO | |
+| credentials_encrypted | TEXT | YES | |
+| accounts_json | JSONB | YES | |
+| last_validated_at | TIMESTAMPTZ | YES | |
+| last_refreshed_at | TIMESTAMPTZ | YES | |
+| error_message | TEXT | YES | |
+| created_at | TIMESTAMPTZ | NO | now() |
+| updated_at | TIMESTAMPTZ | NO | now() |
+
+- **PK**: `id`
+- **Indexes**: `idx_connections_user_id` (user_id), `idx_connections_user_broker` (user_id, broker_type), `idx_connections_status` (status)
+- **Notes**: `credentials_encrypted` is AES-256-GCM encrypted using `BROKER_ENCRYPTION_KEY`. `accounts_json` caches discovered account metadata as JSONB. `broker_type` is constrained to IBKR, QUESTRADE, or WEALTHSIMPLE via CHECK constraint.
