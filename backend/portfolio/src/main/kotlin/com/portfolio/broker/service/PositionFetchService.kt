@@ -1,12 +1,11 @@
 package com.portfolio.broker.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.auth.entity.AuditEventType
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
-import com.portfolio.broker.adapter.SnapTradeBalanceDto
-import com.portfolio.broker.adapter.SnapTradeOptionPositionDto
-import com.portfolio.broker.adapter.SnapTradePositionDto
+import com.portfolio.broker.client.BrokerGatewayClient
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
 import org.slf4j.LoggerFactory
@@ -15,7 +14,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
@@ -27,7 +25,7 @@ class PositionFetchService(
     private val balanceRepository: BrokerBalanceRepository,
     private val tradeOrderRepository: TradeOrderRepository,
     private val userRepository: UserRepository,
-    private val snapTradeService: SnapTradeService,
+    private val gatewayClient: BrokerGatewayClient,
     private val auditService: AuditService,
     private val objectMapper: ObjectMapper,
     private val jdbcTemplate: NamedParameterJdbcTemplate,
@@ -67,74 +65,76 @@ class PositionFetchService(
             IllegalArgumentException("User not found: $userId")
         }
 
+        val gwConnId = connection.gatewayConnectionId
+            ?: throw IllegalStateException("No gateway connection ID for connection: $connectionId")
+
         val accountId = connection.accountIdExternal
             ?: throw IllegalStateException("No account ID for connection: $connectionId")
 
         try {
-            // Use holdings endpoint: positions + balances + total_value in one call
-            val holdings = snapTradeService.getHoldings(user, accountId)
-            val snapPositions: List<SnapTradePositionDto> = holdings.positions
+            // Fetch positions and balances from broker gateway
+            val positionsResponse = gatewayClient.getPositions(gwConnId, accountId)
+            val balanceResponse = gatewayClient.getBalances(gwConnId, accountId)
 
             // Mark old positions as non-current
             positionRepository.markAllNonCurrent(connectionId)
 
-            // Save new positions
-            val positions = snapPositions.map { snapPos: SnapTradePositionDto ->
-                val units: BigDecimal? = snapPos.units?.let { BigDecimal.valueOf(it) }
-                val price: BigDecimal? = snapPos.price?.let { BigDecimal.valueOf(it) }
-                val currentValue = if (units != null && price != null) units.multiply(price) else null
+            // Map gateway position nodes to BrokerPosition entities
+            val positionNodes = positionsResponse.path("positions")
+            val positions = mutableListOf<BrokerPosition>()
+            for (node in positionNodes) {
+                val symbol = node.path("symbol").asText("UNKNOWN")
+                val quantity = node.path("quantity").decimalValue() ?: BigDecimal.ZERO
+                val currentPrice = node.path("currentPrice").decimalValueOrNull()
+                val averageCost = node.path("averageCost").decimalValueOrNull()
+                val currentValue = node.path("currentValue").decimalValueOrNull()
+                val totalPnl = node.path("totalPnl").decimalValueOrNull()
+                val totalPnlPercent = node.path("totalPnlPercent").decimalValueOrNull()
+                val currency = node.path("currency").asText("CAD")
+                val instrumentTypeStr = node.path("instrumentType").asText(null)
 
-                val avgCost: BigDecimal? = snapPos.averagePurchasePrice?.let { BigDecimal.valueOf(it) }
-                val qty = units ?: BigDecimal.ZERO
-                val totalPnl = if (currentValue != null && avgCost != null) {
-                    currentValue - avgCost.multiply(qty)
-                } else null
-                val costBasis = if (avgCost != null) avgCost.multiply(qty) else null
-                val totalPnlPercent = if (totalPnl != null && costBasis != null && costBasis.compareTo(BigDecimal.ZERO) > 0) {
-                    totalPnl.divide(costBasis, 4, RoundingMode.HALF_UP).multiply(BigDecimal(100))
-                } else null
+                // Option fields from gateway (already included in position data)
+                val strikePrice = node.path("strikePrice").decimalValueOrNull()
+                val expirationDateStr = node.path("expirationDate").asText(null)
+                val expirationDate = expirationDateStr?.let { parseLocalDate(it) }
+                val optionType = node.path("optionType").asText(null)
+                val underlyingSymbol = node.path("underlyingSymbol").asText(null)
 
-                val currencyCode: String = snapPos.currencyCode ?: "CAD"
+                val instrumentType = resolveInstrumentType(symbol, instrumentTypeStr)
 
-                BrokerPosition(
-                    connection = connection,
-                    symbol = snapPos.symbol ?: "UNKNOWN",
-                    symbolIdExternal = snapPos.symbolId,
-                    securityName = snapPos.symbolDescription,
-                    instrumentType = resolveInstrumentType(snapPos.symbol ?: "UNKNOWN", snapPos.symbolTypeCode),
-                    quantity = qty,
-                    averageCost = avgCost,
-                    currentPrice = price,
-                    currentValue = currentValue,
-                    dayPnl = null,
-                    totalPnl = totalPnl,
-                    totalPnlPercent = totalPnlPercent,
-                    currency = currencyCode,
-                    asOfDate = LocalDate.now(),
-                    asOfTimestamp = OffsetDateTime.now(),
-                    isCurrent = true
+                positions.add(
+                    BrokerPosition(
+                        connection = connection,
+                        symbol = symbol,
+                        instrumentType = instrumentType,
+                        quantity = quantity,
+                        averageCost = averageCost,
+                        currentPrice = currentPrice,
+                        currentValue = currentValue,
+                        dayPnl = null,
+                        totalPnl = totalPnl,
+                        totalPnlPercent = totalPnlPercent,
+                        currency = currency,
+                        asOfDate = LocalDate.now(),
+                        asOfTimestamp = OffsetDateTime.now(),
+                        isCurrent = true,
+                        strikePrice = strikePrice,
+                        expirationDate = expirationDate,
+                        optionType = optionType,
+                        underlyingSymbol = underlyingSymbol
+                    )
                 )
             }
             positionRepository.saveAll(positions)
 
-            // Fetch option-specific data and merge into option positions
-            enrichOptionPositions(user, accountId, connection, positions)
+            // Use totalEquity from balance response as portfolio value
+            val portfolioValue = balanceResponse.path("totalEquity").decimalValueOrNull()
 
-            // Use SnapTrade's FX-converted total_value as the portfolio value
-            val portfolioValue = holdings.totalValue?.let { BigDecimal.valueOf(it) }
-
-            // Use dedicated balance endpoint for per-currency breakdown (CAD + USD)
-            val balances = try {
-                snapTradeService.getAccountBalance(user, accountId)
-            } catch (e: Exception) {
-                log.warn("Dedicated balance fetch failed for connection {}, falling back to holdings balance: {}",
-                    connectionId, e.message)
-                holdings.balances
-            }
-            saveBalanceSnapshot(connection, balances, portfolioValue)
+            // Save balance snapshot from gateway balance response
+            saveBalanceSnapshot(connection, balanceResponse, portfolioValue)
 
             // Sync broker orders into trade_orders table
-            syncOrders(connection, user, accountId)
+            syncOrders(connection, user, gwConnId, accountId)
 
             // Update connection
             connection.lastPositionsFetchedAt = OffsetDateTime.now()
@@ -196,87 +196,26 @@ class PositionFetchService(
         }
     }
 
-    private fun enrichOptionPositions(
-        user: com.portfolio.auth.entity.User,
-        accountId: String,
-        connection: BrokerConnection,
-        savedPositions: List<BrokerPosition>
-    ) {
-        try {
-            val optionHoldings = snapTradeService.fetchOptionPositions(user, accountId)
-            if (optionHoldings.isEmpty()) return
-
-            log.info("Fetched {} option holdings for connection {}", optionHoldings.size, connection.id)
-
-            for (optionDto in optionHoldings) {
-                val symbol = optionDto.symbol ?: continue
-
-                // Try to find a matching position by symbol
-                val matchingPosition = savedPositions.find {
-                    it.symbol.equals(symbol, ignoreCase = true) ||
-                    (optionDto.underlyingSymbol != null && it.symbol.equals(optionDto.underlyingSymbol, ignoreCase = true) && it.instrumentType == InstrumentType.OPTION)
-                }
-
-                if (matchingPosition != null) {
-                    // Enrich existing position with option-specific fields
-                    matchingPosition.strikePrice = optionDto.strikePrice?.let { BigDecimal.valueOf(it) }
-                    matchingPosition.expirationDate = optionDto.expirationDate
-                    matchingPosition.optionType = optionDto.optionType
-                    matchingPosition.underlyingSymbol = optionDto.underlyingSymbol
-                    positionRepository.save(matchingPosition)
-                } else {
-                    // Create a new option position not found in regular positions
-                    val units = optionDto.units?.let { BigDecimal.valueOf(it) } ?: BigDecimal.ZERO
-                    val price = optionDto.price?.let { BigDecimal.valueOf(it) }
-                    val currentValue = if (price != null) units.multiply(price) else null
-                    val avgCost = optionDto.averagePurchasePrice?.let { BigDecimal.valueOf(it) }
-
-                    val newPosition = BrokerPosition(
-                        connection = connection,
-                        symbol = symbol,
-                        instrumentType = InstrumentType.OPTION,
-                        quantity = units,
-                        averageCost = avgCost,
-                        currentPrice = price,
-                        currentValue = currentValue,
-                        currency = optionDto.currencyCode ?: "CAD",
-                        asOfDate = LocalDate.now(),
-                        asOfTimestamp = OffsetDateTime.now(),
-                        isCurrent = true,
-                        strikePrice = optionDto.strikePrice?.let { BigDecimal.valueOf(it) },
-                        expirationDate = optionDto.expirationDate,
-                        optionType = optionDto.optionType,
-                        underlyingSymbol = optionDto.underlyingSymbol
-                    )
-                    positionRepository.save(newPosition)
-                }
-            }
-        } catch (e: Exception) {
-            log.warn("Failed to enrich option positions for connection {}: {}", connection.id, e.message)
-            // Non-fatal — regular positions are already saved
-        }
-    }
-
     private fun saveBalanceSnapshot(
         connection: BrokerConnection,
-        balances: List<SnapTradeBalanceDto>,
+        balanceResponse: JsonNode,
         portfolioValue: BigDecimal?
     ) {
         val cashMap = mutableMapOf<String, BigDecimal>()
-        val buyingPowerMap = mutableMapOf<String, BigDecimal>()
 
-        for (balance in balances) {
-            val curr = balance.currency ?: "CAD"
-            val amount = balance.cash?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
+        val cashBalances = balanceResponse.path("cashBalances")
+        for (entry in cashBalances) {
+            val curr = entry.path("currency").asText("CAD")
+            val amount = entry.path("amount").decimalValueOrNull() ?: BigDecimal.ZERO
             cashMap["cash_$curr"] = (cashMap["cash_$curr"] ?: BigDecimal.ZERO) + amount
-
-            val bp = balance.buyingPower?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
-            if (bp > BigDecimal.ZERO) {
-                buyingPowerMap["buying_power_$curr"] = (buyingPowerMap["buying_power_$curr"] ?: BigDecimal.ZERO) + bp
-            }
         }
 
-        val combined = cashMap + buyingPowerMap
+        val buyingPower = balanceResponse.path("buyingPower").decimalValueOrNull()
+        if (buyingPower != null && buyingPower > BigDecimal.ZERO) {
+            val bpCurrency = balanceResponse.path("currency").asText("CAD")
+            cashMap["buying_power_$bpCurrency"] = buyingPower
+        }
+
         val today = LocalDate.now()
 
         val existing = balanceRepository.findByConnectionIdAndAsOfDate(connection.id, today)
@@ -288,8 +227,8 @@ class PositionFetchService(
         val snapshot = BrokerBalanceSnapshot(
             connection = connection,
             totalValue = portfolioValue,
-            cash = objectMapper.writeValueAsString(combined),
-            currency = "CAD",
+            cash = objectMapper.writeValueAsString(cashMap),
+            currency = balanceResponse.path("currency").asText("CAD"),
             asOfDate = today
         )
         balanceRepository.save(snapshot)
@@ -300,25 +239,31 @@ class PositionFetchService(
     private fun syncOrders(
         connection: BrokerConnection,
         user: com.portfolio.auth.entity.User,
+        gwConnId: String,
         accountId: String
     ) {
         try {
-            val orders = snapTradeService.listOrders(user, accountId)
-            log.info("Fetched {} orders for connection {}", orders.size, connection.id)
+            val ordersResponse = gatewayClient.getOrders(gwConnId, accountId)
+            val orderNodes = ordersResponse.path("orders")
+            log.info("Fetched {} orders for connection {}", orderNodes.size(), connection.id)
 
-            for (orderDto in orders) {
-                val brokerOrderId = orderDto.brokerageOrderId ?: continue
-                val symbol = orderDto.symbol ?: continue
+            val syncedBrokerOrderIds = mutableSetOf<String>()
 
-                val status = mapSnapTradeOrderStatus(orderDto.status)
-                val action = mapSnapTradeOrderAction(orderDto.action) ?: continue
-                val orderType = mapSnapTradeOrderType(orderDto.orderType)
-                val timeInForce = mapSnapTradeTimeInForce(orderDto.timeInForce)
+            for (node in orderNodes) {
+                val brokerOrderId = node.path("brokerOrderId").asText(null) ?: continue
+                val symbol = node.path("symbol").asText(null) ?: continue
 
-                val totalQty = orderDto.totalQuantity?.let { BigDecimal.valueOf(it) } ?: BigDecimal.ZERO
-                val filledQty = orderDto.filledQuantity?.let { BigDecimal.valueOf(it) }
-                val execPrice = orderDto.executionPrice?.let { BigDecimal.valueOf(it) }
-                val limitPrice = orderDto.limitPrice?.let { BigDecimal.valueOf(it) }
+                syncedBrokerOrderIds.add(brokerOrderId)
+
+                val status = mapOrderStatus(node.path("status").asText(null))
+                val action = mapOrderAction(node.path("action").asText(null)) ?: continue
+                val orderType = mapOrderType(node.path("orderType").asText(null))
+                val timeInForce = mapTimeInForce(node.path("timeInForce").asText(null))
+
+                val totalQty = node.path("totalQuantity").decimalValueOrNull() ?: BigDecimal.ZERO
+                val filledQty = node.path("filledQuantity").decimalValueOrNull()
+                val execPrice = node.path("executionPrice").decimalValueOrNull()
+                val limitPrice = node.path("limitPrice").decimalValueOrNull()
                 val requestedPrice = limitPrice ?: execPrice ?: BigDecimal.ZERO
                 val requestedAmount = totalQty.multiply(requestedPrice)
 
@@ -330,10 +275,10 @@ class PositionFetchService(
                     existing.filledAmount = filledQty?.multiply(execPrice ?: BigDecimal.ZERO)
                     existing.updatedAt = OffsetDateTime.now()
                     if (status == OrderStatus.FILLED && existing.filledAt == null) {
-                        existing.filledAt = orderDto.timeExecuted?.let { parseOffsetDateTime(it) }
+                        existing.filledAt = node.path("filledAt").asText(null)?.let { parseOffsetDateTime(it) }
                     }
                     if (status == OrderStatus.CANCELLED && existing.cancelledAt == null) {
-                        existing.cancelledAt = orderDto.timeUpdated?.let { parseOffsetDateTime(it) }
+                        existing.cancelledAt = node.path("filledAt").asText(null)?.let { parseOffsetDateTime(it) }
                     }
                     tradeOrderRepository.save(existing)
                 } else {
@@ -352,17 +297,16 @@ class PositionFetchService(
                         status = status,
                         brokerOrderId = brokerOrderId,
                         accountIdExternal = connection.accountIdExternal,
-                        currency = orderDto.currency ?: "CAD",
+                        currency = node.path("currency").asText("CAD"),
                         filledUnits = filledQty,
                         filledPrice = execPrice,
-                        submittedAt = orderDto.timePlaced?.let { parseOffsetDateTime(it) }
+                        submittedAt = node.path("submittedAt").asText(null)?.let { parseOffsetDateTime(it) }
                     )
                     tradeOrderRepository.save(newOrder)
                 }
             }
 
             // Clean up stale orders: delete local open orders not returned by broker
-            val syncedBrokerOrderIds = orders.mapNotNull { it.brokerageOrderId }.toSet()
             val localOpenOrders = tradeOrderRepository.findByConnectionIdAndStatusIn(
                 connection.id,
                 listOf(OrderStatus.PENDING, OrderStatus.SUBMITTED, OrderStatus.PARTIALLY_FILLED)
@@ -378,17 +322,19 @@ class PositionFetchService(
         }
     }
 
-    private fun mapSnapTradeOrderStatus(status: String?): OrderStatus {
+    private fun mapOrderStatus(status: String?): OrderStatus {
         return when (status?.uppercase()) {
-            "EXECUTED" -> OrderStatus.FILLED
+            "EXECUTED", "FILLED" -> OrderStatus.FILLED
             "CANCELED", "CANCELLED" -> OrderStatus.CANCELLED
-            "PARTIAL" -> OrderStatus.PARTIALLY_FILLED
+            "PARTIAL", "PARTIALLY_FILLED" -> OrderStatus.PARTIALLY_FILLED
             "REJECTED" -> OrderStatus.REJECTED
+            "SUBMITTED" -> OrderStatus.SUBMITTED
+            "FAILED" -> OrderStatus.FAILED
             else -> OrderStatus.PENDING
         }
     }
 
-    private fun mapSnapTradeOrderAction(action: String?): OrderAction? {
+    private fun mapOrderAction(action: String?): OrderAction? {
         return when (action?.uppercase()) {
             "BUY" -> OrderAction.BUY
             "SELL" -> OrderAction.SELL
@@ -396,14 +342,14 @@ class PositionFetchService(
         }
     }
 
-    private fun mapSnapTradeOrderType(type: String?): OrderType {
+    private fun mapOrderType(type: String?): OrderType {
         return when (type?.lowercase()) {
             "limit" -> OrderType.LIMIT
             else -> OrderType.MARKET
         }
     }
 
-    private fun mapSnapTradeTimeInForce(tif: String?): TimeInForce {
+    private fun mapTimeInForce(tif: String?): TimeInForce {
         return when (tif?.uppercase()) {
             "GTC" -> TimeInForce.GTC
             else -> TimeInForce.DAY
@@ -422,8 +368,16 @@ class PositionFetchService(
         }
     }
 
-    private fun resolveInstrumentType(symbol: String, snapTradeTypeCode: String?): InstrumentType {
-        val mappedType = mapInstrumentType(snapTradeTypeCode)
+    private fun parseLocalDate(value: String): LocalDate? {
+        return try {
+            LocalDate.parse(value)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun resolveInstrumentType(symbol: String, gatewayTypeStr: String?): InstrumentType {
+        val mappedType = mapInstrumentType(gatewayTypeStr)
 
         // DB takes priority: look up instrument type from ingestion schema
         if (mappedType == InstrumentType.STOCK || mappedType == InstrumentType.OTHER) {
@@ -433,12 +387,12 @@ class PositionFetchService(
                     "ETF" -> InstrumentType.ETF
                     "STOCK", "COMMON_STOCK" -> InstrumentType.STOCK
                     "MUTUAL_FUND" -> InstrumentType.MUTUAL_FUND
-                    else -> mappedType ?: InstrumentType.OTHER
+                    else -> mappedType
                 }
             }
         }
 
-        return mappedType ?: InstrumentType.OTHER
+        return mappedType
     }
 
     /**
@@ -458,15 +412,22 @@ class PositionFetchService(
         }
     }
 
-    private fun mapInstrumentType(typeCode: String?): InstrumentType? {
+    private fun mapInstrumentType(typeCode: String?): InstrumentType {
         return when (typeCode?.lowercase()) {
-            "cs", "equity", "stock" -> InstrumentType.STOCK
-            "et", "etf" -> InstrumentType.ETF
-            "mf", "mutual_fund", "mutualfund" -> InstrumentType.MUTUAL_FUND
-            "op", "option" -> InstrumentType.OPTION
-            "bnd", "bond", "fixed_income" -> InstrumentType.BOND
+            "stock", "equity", "cs", "common_stock" -> InstrumentType.STOCK
+            "etf", "et" -> InstrumentType.ETF
+            "mutual_fund", "mf", "mutualfund" -> InstrumentType.MUTUAL_FUND
+            "option", "op" -> InstrumentType.OPTION
+            "bond", "bnd", "fixed_income" -> InstrumentType.BOND
             "cash", "currency" -> InstrumentType.CASH
             else -> InstrumentType.OTHER
         }
+    }
+
+    /**
+     * Extension to safely extract a BigDecimal from a JsonNode, returning null for missing/null nodes.
+     */
+    private fun JsonNode.decimalValueOrNull(): BigDecimal? {
+        return if (this.isNull || this.isMissingNode) null else this.decimalValue()
     }
 }
