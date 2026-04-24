@@ -32,12 +32,11 @@ com.portfolio
 │       ├── PasswordService.kt
 │       └── RefreshTokenService.kt
 ├── broker/
-│   ├── adapter/
-│   │   ├── SnapTradeAdapter.kt         # Interface - abstraction over SDK
-│   │   ├── SnapTradeAdapterImpl.kt     # Implementation - sole SDK import point
-│   │   └── SnapTradeDtos.kt            # SnapTrade-specific DTOs
+│   ├── client/
+│   │   ├── BrokerGatewayClient.kt      # HTTP client for broker-gateway service
+│   │   └── BrokerGatewayConfig.kt      # Gateway connection configuration
 │   ├── config/
-│   │   └── BrokerConfig.kt             # SnapTradeConfig, BrokerEncryptionConfig, etc.
+│   │   └── BrokerConfig.kt             # BrokerEncryptionConfig, BrokerSyncConfig, etc.
 │   ├── controller/
 │   │   ├── BrokerController.kt
 │   │   ├── DashboardController.kt
@@ -51,8 +50,7 @@ com.portfolio
 │   ├── repository/
 │   ├── scheduler/
 │   │   ├── AccountDataSyncScheduler.kt
-│   │   ├── RebalanceScheduler.kt
-│   │   └── SnapTradeHealthScheduler.kt
+│   │   └── RebalanceScheduler.kt
 │   ├── security/
 │   │   └── TokenEncryptionService.kt   # AES-256-GCM for broker tokens
 │   └── service/
@@ -75,9 +73,7 @@ com.portfolio
 │       ├── PortfolioSnapshotService.kt
 │       ├── PositionFetchService.kt
 │       ├── RebalanceService.kt
-│       ├── ReportingService.kt
-│       ├── SnapTradeService.kt
-│       └── SnapTradeStatusService.kt
+│       └── ReportingService.kt
 ├── config/
 │   ├── CacheConfig.kt                 # Redis cache manager with per-cache TTLs
 │   ├── GlobalExceptionHandler.kt      # @RestControllerAdvice
@@ -208,68 +204,38 @@ com.portfolio
 ### BrokerService
 
 **File:** `broker/service/BrokerService.kt`
-**Dependencies:** `BrokerConnectionRepository`, `BrokerPositionRepository`, `BrokerBalanceRepository`, `UserRepository`, `SnapTradeService`, `AuditService`, `ObjectMapper`
+**Dependencies:** `BrokerConnectionRepository`, `BrokerPositionRepository`, `BrokerBalanceRepository`, `UserRepository`, `BrokerGatewayClient`, `AuditService`, `ObjectMapper`
 
 | Method | Signature | Description |
 |---|---|---|
-| `getAvailableBrokers` | `(): List<BrokerDto>` | Lists enabled brokerages from SnapTrade with auth types |
-| `getBrokerageAuthorizationTypes` | `(brokerageSlug: String?): List<BrokerAuthTypeDto>` | Lists auth types, optionally filtered by brokerage |
 | `getUserConnections` | `(userId: Long): List<BrokerConnectionDto>` | Lists non-disconnected connections for user |
 | `getUserConnectionEntities` | `(userId: Long): List<BrokerConnection>` | Lists raw connection entities |
 | `getActiveConnections` | `(userId: Long): List<BrokerConnectionDto>` | Lists only ACTIVE connections |
 | `getConnection` | `(connectionId: Long, userId: Long): BrokerConnection` | Gets single connection with auth check |
-| `getConnectionPortalUrl` | `(userId: Long, broker?, reconnectAuthId?, connectionType?): String` | Generates SnapTrade OAuth portal URL |
-| `syncConnections` | `(userId: Long)` | Syncs SnapTrade authorizations and accounts to local DB |
-| `disconnectBroker` | `(authorizationId: String, userId: Long)` | Disconnects via SnapTrade and marks as DISCONNECTED |
+| `createGatewayConnection` | `(userId: Long, brokerType: String, credentials: Map<String, String>): BrokerConnectionDto` | Creates a new connection via the broker-gateway and stores the gateway connection ID locally |
+| `syncConnections` | `(userId: Long)` | Syncs accounts from the broker-gateway for all active connections |
+| `disconnectBroker` | `(authorizationId: String, userId: Long)` | Disconnects via broker-gateway and marks as DISCONNECTED |
 | `getPositionsForConnection` | `(connectionId: Long, userId: Long): ConnectionPositionsResponse` | Returns positions with P&L summary for one connection |
 | `getAggregatedPositions` | `(userId: Long): AggregatedPositionsResponse` | Aggregates positions across all active connections, grouped by symbol |
 | `getBalanceHistory` | `(connectionId: Long, startDate: LocalDate, endDate: LocalDate): BalanceHistoryResponse` | Returns balance snapshots for date range |
 
-### SnapTradeService
-
-**File:** `broker/service/SnapTradeService.kt`
-**Dependencies:** `SnapTradeConfig`, `UserRepository`, `TokenEncryptionService`, `SnapTradeAdapter`
-
-Wraps the SnapTradeAdapter with user registration/authentication logic. Generates deterministic SnapTrade user IDs from email SHA-256 hashes. Encrypts/decrypts user secrets via TokenEncryptionService. Automatically recovers from stale credentials (error 1083) by re-registering the user.
-
-| Method | Signature | Description |
-|---|---|---|
-| `ensureUserRegistered` | `(user: User): SnapTradeUserInfo` | Registers with SnapTrade if needed, stores encrypted secret |
-| `getConnectionPortalUrl` | `(user, broker?, reconnectAuthId?, connectionType?): String` | Gets OAuth redirect URL from SnapTrade; auto-retries with fresh credentials on 401 |
-| `resetAndReRegister` | `(user: User): SnapTradeUserInfo` | (private) Clears stored credentials and re-registers with SnapTrade |
-| `listAccounts` | `(user: User): List<SnapTradeAccountDto>` | Lists all accounts |
-| `listConnections` | `(user: User): List<SnapTradeConnectionDto>` | Lists all brokerage authorizations |
-| `fetchPositions` | `(user: User, accountId: String): List<SnapTradePositionDto>` | Fetches positions for account |
-| `getHoldings` | `(user: User, accountId: String): SnapTradeHoldingsDto` | Fetches complete holdings (positions + balances + total_value) |
-| `fetchOptionPositions` | `(user: User, accountId: String): List<SnapTradeOptionPositionDto>` | Fetches option-specific data |
-| `disconnectBrokerage` | `(user: User, authorizationId: String)` | Disconnects a brokerage |
-| `listAvailableBrokerages` | `(): List<SnapTradeBrokerageDto>` | Lists all brokerages |
-| `listBrokerageAuthorizationTypes` | `(brokerageSlug: String?): List<SnapTradeBrokerageAuthTypeDto>` | Lists auth types |
-| `getActivities` | `(user, startDate?, endDate?, accounts?, type?): List<SnapTradeActivityDto>` | Fetches transaction activities (deprecated endpoint) |
-| `getAllAccountActivities` | `(user, accountId, startDate?, endDate?, type?): List<SnapTradeActivityDto>` | Fetches all activities for an account using paginated API (loops until all pages fetched) |
-| `getAccountBalance` | `(user: User, accountId: String): List<SnapTradeBalanceDto>` | Fetches account balances |
-| `placeOrder` | `(user, accountId, action, symbol, units, orderType, limitPrice?, timeInForce): SnapTradeOrderDto` | Places an order |
-| `cancelOrder` | `(user: User, accountId: String, brokerOrderId: String)` | Cancels an order |
-| `listOrders` | `(user: User, accountId: String): List<SnapTradeAccountOrderDto>` | Lists account orders |
-
 ### PositionFetchService
 
 **File:** `broker/service/PositionFetchService.kt`
-**Dependencies:** `BrokerConnectionRepository`, `BrokerPositionRepository`, `PositionFetchLogRepository`, `BrokerBalanceRepository`, `TradeOrderRepository`, `UserRepository`, `SnapTradeService`, `AccountAnalyticsComputeService`, `AuditService`, `ObjectMapper`, `StockRepository`, `EtfRepository`
+**Dependencies:** `BrokerConnectionRepository`, `BrokerPositionRepository`, `PositionFetchLogRepository`, `BrokerBalanceRepository`, `TradeOrderRepository`, `UserRepository`, `BrokerGatewayClient`, `AccountAnalyticsComputeService`, `AuditService`, `ObjectMapper`
 
 | Method | Signature | Description |
 |---|---|---|
 | `triggerManualFetch` | `(connectionId: Long, userId: Long): PositionFetchLog` | Creates fetch log, triggers async fetch, returns immediately |
 | `executeAsyncFetch` | `@Async (connectionId, fetchLogId, userId)` | Asynchronous position fetch wrapper |
-| `executePositionFetch` | `(connectionId, fetchLogId, userId): PositionFetchLog` | Full fetch: positions, option enrichment, balance snapshot, order sync, analytics computation |
+| `executePositionFetch` | `(connectionId, fetchLogId, userId): PositionFetchLog` | Full fetch: positions, balance snapshot, order sync, analytics computation |
 
 Internal responsibilities:
+- Fetches positions, balances, and orders from the broker-gateway via `BrokerGatewayClient`
 - Marks old positions as non-current before saving new ones
-- Resolves instrument types (ETF/STOCK/OPTION) by checking local DB
-- Enriches option positions with strike price, expiration, underlying symbol
+- Resolves instrument types (ETF/STOCK/OPTION) from gateway-provided data
 - Saves balance snapshots (cash + buying power by currency in JSONB)
 - Syncs broker orders into `trade_orders` table
-- Maps SnapTrade order statuses (EXECUTED->FILLED, CANCELED->CANCELLED, etc.)
 - Triggers `AccountAnalyticsComputeService.computeForConnection()` after successful position sync to pre-compute analytics snapshots
 
 ### DashboardDataService
@@ -477,15 +443,15 @@ Internal responsibilities:
 ### ActivityIngestionService
 
 **File:** `broker/service/ActivityIngestionService.kt`
-**Dependencies:** `BrokerConnectionRepository`, `BrokerActivityRepository`, `BrokerBalanceRepository`, `SnapTradeService`, `UserRepository`, `ObjectMapper`, `ExchangeRateService`
+**Dependencies:** `BrokerConnectionRepository`, `BrokerActivityRepository`, `BrokerBalanceRepository`, `BrokerGatewayClient`, `UserRepository`, `ObjectMapper`, `ExchangeRateService`
 
 | Method | Signature | Description |
 |---|---|---|
-| `syncActivitiesForConnection` | `(connectionId: Long): Int` | If no activities exist, fetches full history (configurable, default 25 years) in a single request. Otherwise incremental sync from latest date (overlaps by 1 day). Normalizes types (TRANSFERS->TRANSFER_IN), computes CAD amounts. |
-| `syncBalanceForConnection` | `(connectionId: Long)` | Fetches balance from SnapTrade and saves snapshot |
+| `syncActivitiesForConnection` | `(connectionId: Long): Int` | If no activities exist, fetches full history (configurable, default 25 years). Otherwise incremental sync from latest date (overlaps by 1 day). Activity type normalization is done by the broker-gateway; computes CAD amounts locally. |
+| `syncBalanceForConnection` | `(connectionId: Long)` | Fetches balance from broker-gateway and saves snapshot |
 | `syncAllConnections` | `()` | Syncs activities + balances for all non-disconnected connections |
 
-Activity type normalization: BUY, SELL, DIVIDEND, TRANSFER_IN (from CONTRIBUTION/DEPOSIT/TRANSFERS), TRANSFER_OUT (from WITHDRAWAL/WITHDRAWALS), FEE, COMMISSION, INTEREST, OPTIONEXPIRATION, OPTIONASSIGNMENT, OPTIONEXERCISE.
+Activity type normalization (done by gateway): BUY, SELL, DIVIDEND, TRANSFER_IN, TRANSFER_OUT, FEE, COMMISSION, INTEREST, OPTIONEXPIRATION, OPTIONASSIGNMENT, OPTIONEXERCISE.
 
 ### ReportingService
 
@@ -523,53 +489,36 @@ Activity type normalization: BUY, SELL, DIVIDEND, TRANSFER_IN (from CONTRIBUTION
 
 Supports 28 currencies via BoC series mapping (USD, EUR, GBP, JPY, AUD, CHF, CNY, HKD, MXN, NOK, NZD, SEK, SGD, BRL, INR, KRW, ZAR, TRY, TWD, DKK, SAR, MYR, PLN, RUB, THB, PEN, IDR, COP).
 
-### SnapTradeStatusService
+### BrokerGatewayClient
 
-**File:** `broker/service/SnapTradeStatusService.kt`
-**Dependencies:** `SnapTradeStatusRepository`, `SnapTradeAdapter`
+**File:** `broker/client/BrokerGatewayClient.kt`
+**Dependencies:** `BrokerGatewayConfig`, `ObjectMapper`
+
+HTTP client for communicating with the broker-gateway microservice (port 8084). Authenticates via API key header. All broker data operations (positions, activities, balances, orders) are routed through this client instead of directly calling broker SDKs.
 
 | Method | Signature | Description |
 |---|---|---|
-| `checkAndStoreStatus` | `(): SnapTradeStatusCheck` | Pings SnapTrade API, measures response time, stores result |
-| `getLatestStatus` | `(): SnapTradeStatusDto?` | Returns latest health check with 24h uptime percentage |
-| `getUptimePercentage` | `(hours: Int): Double` | Calculates uptime from stored checks |
+| `createConnection` | `(userId, brokerType, credentials): GatewayConnectionDto` | Registers a new broker connection in the gateway |
+| `getAccounts` | `(gatewayConnectionId): List<GatewayAccountDto>` | Lists accounts for a gateway connection |
+| `getPositions` | `(gatewayConnectionId, accountId): List<GatewayPositionDto>` | Fetches positions for an account |
+| `getBalances` | `(gatewayConnectionId, accountId): List<GatewayBalanceDto>` | Fetches account balances |
+| `getActivities` | `(gatewayConnectionId, accountId, startDate?, endDate?): List<GatewayActivityDto>` | Fetches account activities |
+| `getOrders` | `(gatewayConnectionId, accountId): List<GatewayOrderDto>` | Fetches account orders |
+| `placeOrder` | `(gatewayConnectionId, accountId, orderRequest): GatewayOrderDto` | Places an order |
+| `cancelOrder` | `(gatewayConnectionId, accountId, orderId)` | Cancels an order |
+| `deleteConnection` | `(gatewayConnectionId)` | Removes a gateway connection |
+| `getGatewayHealth` | `(): GatewayHealthResponse` | Checks broker-gateway health status |
 
----
+### BrokerGatewayConfig
 
-## SnapTrade Adapter
+**File:** `broker/client/BrokerGatewayConfig.kt`
+**Prefix:** `broker-gateway`
 
-### SnapTradeAdapter (Interface)
-
-**File:** `broker/adapter/SnapTradeAdapter.kt`
-
-Abstraction over the SnapTrade Java SDK. All SDK types are mapped to internal DTOs.
-
-| Method | Signature |
-|---|---|
-| `registerUser` | `(snapUserId: String): String` |
-| `getLoginRedirectUrl` | `(userId, userSecret, redirectUri, broker?, reconnectAuthId?, connectionType?): String` |
-| `listAccounts` | `(userId, userSecret): List<SnapTradeAccountDto>` |
-| `listConnections` | `(userId, userSecret): List<SnapTradeConnectionDto>` |
-| `getPositions` | `(userId, userSecret, accountId): List<SnapTradePositionDto>` |
-| `getOptionPositions` | `(userId, userSecret, accountId): List<SnapTradeOptionPositionDto>` |
-| `getBalances` | `(userId, userSecret, accountId): List<SnapTradeBalanceDto>` |
-| `getHoldings` | `(userId, userSecret, accountId): SnapTradeHoldingsDto` |
-| `getActivities` | `(userId, userSecret, startDate?, endDate?, accounts?, type?): List<SnapTradeActivityDto>` |
-| `getAccountActivities` | `(userId, userSecret, accountId, startDate?, endDate?, offset, limit, type?): PaginatedActivitiesResult` |
-| `disconnectBrokerage` | `(userId, userSecret, authorizationId)` |
-| `listBrokerages` | `(): List<SnapTradeBrokerageDto>` |
-| `listBrokerageAuthorizationTypes` | `(brokerageSlug?): List<SnapTradeBrokerageAuthTypeDto>` |
-| `placeOrder` | `(userId, userSecret, accountId, action, symbol, units, orderType, limitPrice?, timeInForce): SnapTradeOrderDto` |
-| `cancelOrder` | `(userId, userSecret, accountId, brokerOrderId)` |
-| `listAccountOrders` | `(userId, userSecret, accountId): List<SnapTradeAccountOrderDto>` |
-| `checkApiStatus` | `(): SnapTradeApiStatusDto` |
-
-### SnapTradeAdapterImpl
-
-**File:** `broker/adapter/SnapTradeAdapterImpl.kt`
-**Dependencies:** `SnapTradeConfig`, `ObjectMapper`
-
-The ONLY class that imports and calls the SnapTrade Java SDK (`com.snaptrade.client.*`). All SDK types are mapped to internal DTOs before leaving this class. Uses lazy initialization of the `Snaptrade` client. Maps API exceptions to `SnapTradeApiException` with error code extraction.
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `broker-gateway.url` | String | `http://broker-gateway-service:8084` | Base URL for the broker-gateway service |
+| `broker-gateway.api-key` | String | `dev-gateway-key` | API key for service-to-service auth |
+| `broker-gateway.timeout` | Duration | `30s` | HTTP request timeout |
 
 ---
 
@@ -760,15 +709,6 @@ The portfolio app now reads instrument data via cross-schema SQL queries to `ing
 |---|---|---|---|
 | Nightly sync | `${broker.sync.cron:0 30 22 * * *}` (default: 10:30 PM) | `runNightlySync()` | Syncs activities + balances for all connections, refreshes positions for active connections, takes daily portfolio snapshots |
 
-### SnapTradeHealthScheduler
-
-**File:** `broker/scheduler/SnapTradeHealthScheduler.kt`
-**Condition:** `snaptrade.health-check.enabled=true`
-
-| Schedule | Cron | Method | Description |
-|---|---|---|---|
-| Health check | `${snaptrade.health-check.cron:0 */15 * * * *}` (default: every 15 min) | `runHealthCheck()` | Pings SnapTrade API and stores status |
-
 ### RebalanceScheduler
 
 **File:** `broker/scheduler/RebalanceScheduler.kt`
@@ -829,17 +769,6 @@ Spring Security filter chain configuration:
 - Authenticated: /auth/me, /auth/change-password, /auth/profile, /api/**
 - JWT filter added before UsernamePasswordAuthenticationFilter
 
-### SnapTradeConfig
-
-**File:** `broker/config/BrokerConfig.kt`
-**Prefix:** `snaptrade`
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `snaptrade.clientId` | String | "" | SnapTrade client ID |
-| `snaptrade.consumerKey` | String | "" | SnapTrade consumer key |
-| `snaptrade.redirectUri` | String | "http://localhost:3000/brokers/connections" | OAuth redirect URI |
-
 ### BrokerEncryptionConfig
 
 **File:** `broker/config/BrokerConfig.kt`
@@ -848,16 +777,6 @@ Spring Security filter chain configuration:
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `broker.encryption.secretKey` | String | "" | AES-256 key (Base64-encoded 32 bytes) |
-
-### SnapTradeHealthConfig
-
-**File:** `broker/config/BrokerConfig.kt`
-**Prefix:** `snaptrade.health-check`
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `snaptrade.health-check.enabled` | Boolean | false | Enable health check scheduler |
-| `snaptrade.health-check.cron` | String | "0 */15 * * * *" | Health check cron expression |
 
 ### BrokerSyncConfig
 
@@ -976,12 +895,6 @@ Creates `StringRedisTemplate` bean for ingestion hash cache.
 ---
 
 ## Health Indicators
-
-### SnapTradeHealthIndicator
-
-**File:** `health/SnapTradeHealthIndicator.kt`
-
-Custom Spring Boot `HealthIndicator` that checks SnapTrade API connectivity. Reports UP/DOWN with response time.
 
 ### IngestionServiceHealthIndicator
 

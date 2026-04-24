@@ -12,7 +12,7 @@ Monorepo for a portfolio construction and analysis application using public ETFs
 | Frontend | React 18.3.1, TypeScript 5.6.3, Vite 5.4.9, React Query, Zustand, AG Grid/Charts |
 | Database | PostgreSQL 16 (53 tables, 1 view, managed by Flyway) |
 | Cache | Redis 7 (Spring Data Redis) |
-| Broker | SnapTrade SDK 5.0.168 |
+| Broker | Broker Gateway Service (port 8084) |
 | Auth | Spring Security + JWT (HttpOnly cookies) + Google OAuth2 |
 | Ingestion | Separate Spring Boot 3.3.5 microservice (port 8081), `ingestion` schema |
 | Infra | Docker Compose (local), Terraform (GCP), Nginx (VPS) |
@@ -44,8 +44,8 @@ Monorepo for a portfolio construction and analysis application using public ETFs
 
 ### Adding a Database Table
 
-1. Find the highest migration number in [database-schema.md](database-schema.md) (currently V65) and increment by 1
-2. Create `V66__description.sql` in `backend/portfolio/src/main/resources/db/migration/`
+1. Find the highest migration number in [database-schema.md](database-schema.md) (currently V72) and increment by 1
+2. Create `V73__description.sql` in `backend/portfolio/src/main/resources/db/migration/`
 3. Create JPA entity in the appropriate `entity/` package -- see [entity-relationships.md](entity-relationships.md)
 4. Create Spring Data repository interface -- see [backend-services.md](backend-services.md)
 5. Add DTO for API responses -- never expose entities directly
@@ -80,11 +80,11 @@ The ingestion pipeline has been moved to a separate microservice at `backend/ing
 
 ### Adding a Broker Integration Feature
 
-1. Extend `SnapTradeAdapter` interface and `SnapTradeAdapterImpl` -- see [backend-services.md](backend-services.md)
+1. Add methods to `BrokerGatewayClient` for new gateway endpoints -- see [backend-services.md](backend-services.md)
 2. Add service method in `BrokerService` or specialized service
 3. Add controller endpoint -- see [api-endpoints.md](api-endpoints.md)
 4. Key tables: `broker_connections`, `broker_positions`, `broker_activities` -- see [database-schema.md](database-schema.md)
-5. Tokens are AES-256 encrypted using `BROKER_ENCRYPTION_KEY` -- see [configurations.md](configurations.md)
+5. Broker credentials are managed by the broker-gateway service; portfolio service communicates via `BrokerGatewayClient` using `GATEWAY_API_KEY` -- see [configurations.md](configurations.md)
 
 ### Debugging a Schema Issue
 

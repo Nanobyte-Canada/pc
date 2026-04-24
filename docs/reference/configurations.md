@@ -175,23 +175,13 @@ Every environment variable referenced in `application.yml`, organized by categor
 | `BROKER_SYNC_CRON` | Cron for broker sync | `0 30 22 * * *` (10:30 PM) | All profiles |
 | `BROKER_SYNC_MAX_LOOKBACK_YEARS` | Max years of historical activity data to fetch on first sync | `25` | All profiles |
 
-### SnapTrade
+### Broker Gateway (Portfolio Service)
 
 | Variable | Description | Default | Used By |
 |----------|-------------|---------|---------|
-| `SNAPTRADE_CLIENT_ID` | SnapTrade API client ID | (empty) | All profiles |
-| `SNAPTRADE_CONSUMER_KEY` | SnapTrade API consumer key | (empty) | All profiles |
-| `SNAPTRADE_REDIRECT_URI` | OAuth redirect URI | `http://localhost:3000/brokers/connections` | All profiles |
-| `SNAPTRADE_HEALTH_CHECK_ENABLED` | Enable SnapTrade health checks | `false` | All profiles |
-| `SNAPTRADE_HEALTH_CHECK_CRON` | Cron for health checks | `0 */15 * * * *` (every 15 min) | All profiles |
-
-### Broker Gateway
-
-| Variable | Description | Default | Used By |
-|----------|-------------|---------|---------|
-| `BROKER_ENCRYPTION_KEY` | AES-256-GCM key for encrypting broker credentials in the gateway | (empty) | Broker gateway service |
-| `GATEWAY_API_KEY` | Service-to-service authentication key for the broker gateway | `dev-gateway-key` | Broker gateway service |
 | `BROKER_GATEWAY_URL` | URL for portfolio service to reach the broker gateway | `http://broker-gateway-service:8084` | Portfolio service |
+| `GATEWAY_API_KEY` | Service-to-service authentication key for the broker gateway | `dev-gateway-key` | Portfolio service, Broker gateway service |
+| `BROKER_GATEWAY_TIMEOUT` | HTTP request timeout for gateway calls | `30s` | Portfolio service |
 
 ### Frontend
 
@@ -211,7 +201,6 @@ All feature flags default to values in `application.yml` and can be overridden v
 | AlphaVantage enrichment | `AV_ENRICHMENT_ENABLED` | `true` | Enable stock data enrichment from AlphaVantage |
 | ETF.com enrichment | `ETFCOM_ENABLED` | `true` | Enable ETF data enrichment from ETF.com |
 | Broker sync | `BROKER_SYNC_ENABLED` | `false` | Automated position/balance sync from brokers |
-| SnapTrade health check | `SNAPTRADE_HEALTH_CHECK_ENABLED` | `false` | Periodic SnapTrade API connectivity checks |
 
 ---
 
@@ -354,7 +343,6 @@ Health details are shown only when the request is authenticated (`when-authorize
 |------|--------------|---------|-------------|
 | Data ingestion | `INGESTION_SCHEDULE` | `0 0 22 * * *` (10 PM daily) | `INGESTION_ENABLED` |
 | Broker position sync | `BROKER_SYNC_CRON` | `0 30 22 * * *` (10:30 PM daily) | `BROKER_SYNC_ENABLED` |
-| SnapTrade health check | `SNAPTRADE_HEALTH_CHECK_CRON` | `0 */15 * * * *` (every 15 min) | `SNAPTRADE_HEALTH_CHECK_ENABLED` |
 
 ---
 
@@ -404,10 +392,10 @@ SPRING_PROFILES_ACTIVE=local
 # Frontend Configuration
 VITE_API_URL=http://localhost:8080
 
-# SnapTrade Configuration (obtain from https://snaptrade.com)
-SNAPTRADE_CLIENT_ID=
-SNAPTRADE_CONSUMER_KEY=
-SNAPTRADE_REDIRECT_URI=http://localhost:3000/brokers/connections
+# Broker Gateway Configuration
+BROKER_GATEWAY_URL=http://broker-gateway-service:8084
+GATEWAY_API_KEY=dev-gateway-key
+BROKER_GATEWAY_TIMEOUT=30s
 
 # Broker Encryption Key (Base64-encoded 32-byte key for AES-256)
 BROKER_ENCRYPTION_KEY=
@@ -540,7 +528,6 @@ spring.mvc.problemdetails.enabled: true
 | `REDIS_PORT` | Redis port | `6379` | Broker gateway service |
 | `BROKER_ENCRYPTION_KEY` | AES-256-GCM key for encrypting broker credentials | (empty) | Broker gateway service |
 | `GATEWAY_API_KEY` | Service-to-service authentication key | `dev-gateway-key` | Broker gateway service |
-| `BROKER_GATEWAY_URL` | URL for portfolio service to reach the gateway | `http://broker-gateway-service:8084` | Portfolio service |
 | `IBKR_GATEWAY_ENABLED` | Enable IBKR adapter | `false` | Broker gateway service |
 | `IBKR_HOST` | TWS/IB Gateway host (shared with market-data) | (empty) | Broker gateway service |
 | `IBKR_PORT` | TWS/IB Gateway port | `4002` | Broker gateway service |

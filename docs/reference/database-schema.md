@@ -10,7 +10,7 @@ Complete database schema reference for AI coding agents. All column definitions 
 - **Views**: 1 (`v_aggregated_positions`)
 - **Indexes**: 218 (including primary keys)
 - **Foreign Keys**: 53
-- **Migration tool**: Flyway (63 applied migrations, V1 through V69, gaps at V4, V5, V19, V20)
+- **Migration tool**: Flyway (64 applied migrations, V1 through V72, gaps at V4, V5, V19, V20, V70, V71)
 - **Hibernate DDL mode**: `validate` (schema managed exclusively by Flyway)
 - **Migration files**: `backend/portfolio/src/main/resources/db/migration/V{N}__{description}.sql`
 
@@ -40,13 +40,11 @@ User accounts. Central identity table referenced by most other domains.
 | last_login_ip | varchar(45) | YES | |
 | created_at | timestamptz | NO | now() |
 | updated_at | timestamptz | NO | now() |
-| snaptrade_user_id | varchar(255) | YES | |
-| snaptrade_user_secret_encrypted | text | YES | |
 
 - **PK**: `id`
-- **Unique**: `email`, `snaptrade_user_id`
-- **Indexes**: `idx_users_email`, `idx_users_email_verified` (partial: email_verified=false), `idx_users_snaptrade_user_id` (unique), `idx_users_status`
-- **Notes**: `password_hash` is nullable because OAuth-only users have no password. `snaptrade_user_secret_encrypted` is AES-256 encrypted. Account lockout after 5 failed attempts (30min via `locked_until`).
+- **Unique**: `email`
+- **Indexes**: `idx_users_email`, `idx_users_email_verified` (partial: email_verified=false), `idx_users_status`
+- **Notes**: `password_hash` is nullable because OAuth-only users have no password. Account lockout after 5 failed attempts (30min via `locked_until`). **V72:** Dropped `snaptrade_user_id` and `snaptrade_user_secret_encrypted` columns (SnapTrade replaced by broker-gateway).
 
 #### roles
 
@@ -565,12 +563,13 @@ Links a user's brokerage account to the system. Central to all brokerage data.
 | model_accuracy | numeric | YES | |
 | last_rebalanced_at | timestamp | YES | |
 | connection_type | varchar(20) | YES | |
+| gateway_connection_id | varchar(36) | YES | |
 
 - **PK**: `id`
 - **Unique**: `(user_id, account_id_external)`
 - **FKs**: `user_id -> users.id`, `broker_id -> brokers.id`, `model_portfolio_id -> model_portfolios.id`
 - **Indexes**: `idx_broker_connections_user`, `idx_broker_connections_broker`, `idx_broker_connections_status`, `idx_broker_connections_snaptrade_auth`, `idx_broker_connections_user_active` (partial: status='ACTIVE'), `idx_broker_connections_model`
-- **Notes**: `status` values: PENDING, ACTIVE, DISABLED, ERROR. `connection_type` added in V62. `model_portfolio_id` links to the assigned model portfolio for drift calculation. `broker_name` and `broker_logo_url` are denormalized from the `brokers` table for display.
+- **Notes**: `status` values: PENDING, ACTIVE, DISABLED, ERROR. `connection_type` added in V62. `model_portfolio_id` links to the assigned model portfolio for drift calculation. `broker_name` and `broker_logo_url` are denormalized from the `brokers` table for display. **V72:** Added `gateway_connection_id` (references `broker_gateway.connections.id`). The `snaptrade_authorization_id` column is legacy and no longer used by active code.
 
 #### broker_positions
 
@@ -687,7 +686,9 @@ Audit log for position sync operations. Tracks success/failure and timing.
 - **FKs**: `connection_id -> broker_connections.id`, `user_id -> users.id`
 - **Indexes**: `idx_position_fetch_log_conn`, `idx_position_fetch_log_user`, `idx_position_fetch_log_started`, `idx_position_fetch_log_status`, `idx_position_fetch_log_type_status` (composite)
 
-#### snaptrade_status_checks
+#### snaptrade_status_checks (DROPPED IN V72)
+
+**Status:** This table was dropped in V72 as part of the SnapTrade to broker-gateway migration.
 
 Health check records for the SnapTrade API.
 
@@ -1337,7 +1338,7 @@ All other tables: 24-40 kB each (empty or near-empty).
 
 ## Flyway Migration History
 
-63 applied migrations from V1 through V69 (gaps at V4, V5, V19, V20).
+64 applied migrations from V1 through V72 (gaps at V4, V5, V19, V20, V70, V71).
 
 | Version | Description | Notes |
 |---------|------------|-------|
@@ -1406,8 +1407,9 @@ All other tables: 24-40 kB each (empty or near-empty).
 | V67 | drop broker positions instrument id fk | Dropped `instrument_id` FK column from `broker_positions` (V67 screener migration prep) |
 | V68 | drop legacy screener tables | Dropped all public schema instrument/GICS/ingestion tables (stocks, etfs, etf_holdings, gics_*, data_sources, ingestion_batches, ingestion_runs/steps/errors, etf_sector_allocations_factset). Portfolio app now reads from `ingestion` schema. |
 | V69 | account analytics | `account_analytics` table for pre-computed per-connection analytics snapshots (sector exposure, geography exposure, risk profile, holdings, weighted MER). UNIQUE constraint on `connection_id`, INDEX on `user_id`. |
+| V72 | snaptrade to gateway migration | Added `gateway_connection_id` column to `broker_connections`. Dropped `snaptrade_status_checks` table. Dropped `snaptrade_user_id` and `snaptrade_user_secret_encrypted` columns from `users`. Part of SnapTrade to broker-gateway migration. |
 
-**Next migration**: V70 (always check by running `ls backend/portfolio/src/main/resources/db/migration/` to confirm)
+**Next migration**: V73 (always check by running `ls backend/portfolio/src/main/resources/db/migration/` to confirm)
 
 ---
 

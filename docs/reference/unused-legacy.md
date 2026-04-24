@@ -26,22 +26,11 @@ These items were evaluated during the audit and confirmed as actively used or in
 - **Status:** Keep. The code is wired and functional; it just needs benchmark data to be populated (likely via a future ingestion step or manual import).
 - **Impact of removal:** Would break `PerformanceCalculationService` and `PerformanceController`.
 
-### snaptrade_status_checks
+### snaptrade_status_checks (REMOVED)
 
 - **Created in:** `V35__snaptrade_status_checks.sql`
-- **Entity:** `backend/portfolio/src/main/kotlin/com/portfolio/broker/entity/SnapTradeStatusCheck.kt`
-- **Repository:** `backend/portfolio/src/main/kotlin/com/portfolio/broker/repository/SnapTradeStatusRepository.kt`
-- **Service:** `backend/portfolio/src/main/kotlin/com/portfolio/broker/service/SnapTradeStatusService.kt`
-- **Scheduler:** `backend/portfolio/src/main/kotlin/com/portfolio/broker/scheduler/SnapTradeHealthScheduler.kt`
-- **Controller:** `BrokerController.kt` injects `SnapTradeStatusService`
-- **Evidence of usage (keep, but dormant):**
-  - Full code path exists: Scheduler -> Service -> Repository -> Entity
-  - Scheduler is gated by `@ConditionalOnProperty(prefix = "snaptrade.health-check", name = ["enabled"], havingValue = "true", matchIfMissing = false)`
-  - Default: `SNAPTRADE_HEALTH_CHECK_ENABLED=false` -- scheduler never runs
-  - Table has 0 rows because the scheduler has never been activated
-  - Tests exist: `SnapTradeStatusServiceTest.kt`
-- **Status:** Keep. Fully functional but opt-in via feature flag.
-- **Impact of removal:** Would lose health monitoring capability for SnapTrade API.
+- **Dropped in:** `V72__snaptrade_to_gateway_migration.sql`
+- **Status:** Removed. Table dropped, entity/repository/service/scheduler all deleted as part of the SnapTrade to broker-gateway migration. Gateway health monitoring is now handled via `GET /api/v1/brokers/gateway/health` which calls the broker-gateway service directly.
 
 ### portfolio_cash_flows
 
@@ -127,7 +116,6 @@ The following optional variables remain undocumented in `config/.env.example` (f
 | `AV_ENRICHMENT_ENABLED` | `true` | Feature flag |
 | `ETFCOM_ENABLED` | `true` | Feature flag |
 | `BROKER_SYNC_ENABLED` | `false` | Feature flag |
-| `SNAPTRADE_HEALTH_CHECK_ENABLED` | `false` | Feature flag |
 | `EMAIL_PROVIDER` | `console` | Email configuration |
 | `EMAIL_FROM` | `noreply@portfolio.local` | Email configuration |
 
@@ -138,7 +126,7 @@ The following optional variables remain undocumented in `config/.env.example` (f
 | Item | Type | Status | Action |
 |------|------|--------|--------|
 | `benchmark_returns` entity+repo | Active code, empty data | Used by PerformanceCalculationService | Keep |
-| `snaptrade_status_checks` entity+repo | Dormant (feature-flagged off) | Full code path exists | Keep |
+| `snaptrade_status_checks` entity+repo | **Removed** (V72) | SnapTrade replaced by broker-gateway | Removed |
 | `portfolio_cash_flows` entity+repo | Active code, empty data | Used by PerformanceCalculationService | Keep |
 | `portfolio_excluded_assets` entity+repo | Active code | Used by drift calculation | Keep |
 | `adminService.ts` | Active code | Used by AdminPage | Keep |

@@ -192,17 +192,14 @@ Returns count of instruments by type from the ingestion schema.
 ## BrokerController
 
 **File:** `broker/controller/BrokerController.kt`
-**Dependencies:** `BrokerService`, `PositionFetchService`, `SnapTradeConfig`, `SnapTradeStatusService`, `ActivityIngestionService`, `ReportingService`, `DriftCalculationService`, `RebalanceService`
+**Dependencies:** `BrokerService`, `PositionFetchService`, `BrokerGatewayClient`, `ActivityIngestionService`, `ReportingService`, `DriftCalculationService`, `RebalanceService`
 
 | Method | Path | Auth | Service Method | Response |
 |---|---|---|---|---|
-| `GET` | `/api/v1/brokers` | Authenticated | `brokerService.getAvailableBrokers()` | `BrokersResponse` |
-| `GET` | `/api/v1/brokers/authorization-types` | Authenticated | `brokerService.getBrokerageAuthorizationTypes()` | `List<BrokerAuthTypeDto>` |
-| `GET` | `/api/v1/brokers/config-status` | Authenticated | (inline) | `Map<String, Any>` |
-| `GET` | `/api/v1/brokers/snaptrade/status` | Authenticated | `snapTradeStatusService.getLatestStatus()` | `SnapTradeStatusResponse` |
 | `POST` | `/api/v1/brokers/connections/sync` | Authenticated | `brokerService.syncConnections()` | `ConnectionSyncResponse` |
 | `GET` | `/api/v1/brokers/connections` | Authenticated | `brokerService.getUserConnections()` | `BrokerConnectionsResponse` |
-| `POST` | `/api/v1/brokers/connect` | Authenticated | `brokerService.getConnectionPortalUrl()` | `ConnectBrokerResponse` |
+| `POST` | `/api/v1/brokers/connect` | Authenticated | `brokerService.createGatewayConnection()` | `ConnectBrokerResponse` |
+| `GET` | `/api/v1/brokers/gateway/health` | Authenticated | `brokerGatewayClient.getGatewayHealth()` | `GatewayHealthResponse` |
 | `DELETE` | `/api/v1/brokers/connections/{authorizationId}` | Authenticated | `brokerService.disconnectBroker()` | 204 No Content |
 | `POST` | `/api/v1/brokers/connections/{connectionId}/fetch` | Authenticated | `positionFetchService.triggerManualFetch()` | `PositionFetchResponse` (202) |
 | `GET` | `/api/v1/brokers/connections/{connectionId}/positions` | Authenticated | `brokerService.getPositionsForConnection()` | `ConnectionPositionsResponse` |
@@ -220,11 +217,8 @@ Returns count of instruments by type from the ingestion schema.
 | `GET` | `/api/v1/brokers/connections/{connectionId}/rebalance-progress` | Authenticated | `driftCalculationService.getRebalanceProgress()` | `RebalanceProgressDto` |
 | `GET` | `/api/v1/brokers/connections/{connectionId}/pending-orders` | Authenticated | `rebalanceService.calculateTradesForAccount()` | `PendingOrdersResponse` |
 
-### `GET /api/v1/brokers/authorization-types`
-**Query params:** `brokerage: String?` -- Filter by brokerage slug
-
 ### `POST /api/v1/brokers/connect`
-**Request body:** `ConnectBrokerRequest? { broker: String?, reconnectAuthId: String?, connectionType: String? }`
+**Request body:** `ConnectBrokerRequest { brokerType: String, credentials: Map<String, String> }`
 
 ### `GET /api/v1/brokers/connections/{connectionId}/activities`
 **Query params:**
@@ -457,7 +451,7 @@ Additional param: `benchmark: String?` -- Benchmark symbol (e.g., `SPY`, `XIU`) 
 - Credentials allowed
 
 ### Rate Limiting
-Currently no global rate limiting is implemented. Resilience4j rate limiters are used for external API calls (SnapTrade, EODHD, AlphaVantage).
+Currently no global rate limiting is implemented. Resilience4j rate limiters are used for external API calls (EODHD, AlphaVantage).
 
 ---
 
