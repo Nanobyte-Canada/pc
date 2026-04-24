@@ -1,16 +1,15 @@
 package com.portfolio.broker.service
 
 import com.portfolio.auth.entity.AuditEventType
+import com.portfolio.auth.entity.User
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.portfolio.broker.client.BrokerGatewayClient
 import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
-import com.portfolio.broker.adapter.SnapTradeAccountDto
-import com.portfolio.broker.adapter.SnapTradeApiException
-import com.portfolio.broker.adapter.SnapTradeConnectionDto
 import com.portfolio.exception.ExternalServiceException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -24,7 +23,7 @@ class BrokerService(
     private val positionRepository: BrokerPositionRepository,
     private val balanceRepository: BrokerBalanceRepository,
     private val userRepository: UserRepository,
-    private val snapTradeService: SnapTradeService,
+    private val gatewayClient: BrokerGatewayClient,
     private val auditService: AuditService,
     private val objectMapper: ObjectMapper
 ) {
@@ -34,57 +33,20 @@ class BrokerService(
 
     fun getAvailableBrokers(): List<BrokerDto> {
         return try {
-            val brokerages = snapTradeService.listAvailableBrokerages()
-            val authTypes = try {
-                snapTradeService.listBrokerageAuthorizationTypes()
-                    .groupBy { it.brokerageId }
-            } catch (e: Exception) {
-                log.warn("Failed to fetch brokerage authorization types", e)
-                emptyMap()
-            }
+            val health = gatewayClient.getHealth()
+            val brokersNode = health.get("brokers") ?: return emptyList()
 
-            brokerages
-                .filter { it.enabled != false }
-                .map { brokerage ->
-                    val brokerAuthTypes = authTypes[brokerage.id]?.mapNotNull { at ->
-                        if (at.type != null && at.authType != null) {
-                            BrokerAuthTypeDto(type = at.type, authType = at.authType)
-                        } else null
-                    }
-
+            brokersNode.filter { it.get("enabled")?.asBoolean() == true }
+                .map { broker ->
                     BrokerDto(
-                        name = brokerage.displayName ?: brokerage.name ?: "Unknown",
-                        slug = brokerage.slug,
-                        logoUrl = brokerage.logoUrl,
-                        description = brokerage.description,
-                        url = brokerage.url,
-                        openUrl = brokerage.openUrl,
-                        enabled = brokerage.enabled,
-                        maintenanceMode = brokerage.maintenanceMode,
-                        isDegraded = brokerage.isDegraded,
-                        allowsTrading = brokerage.allowsTrading,
-                        allowsFractionalUnits = brokerage.allowsFractionalUnits,
-                        hasReporting = brokerage.hasReporting,
-                        isRealTimeConnection = brokerage.isRealTimeConnection,
-                        brokerageType = brokerage.brokerageType?.name,
-                        authTypes = brokerAuthTypes
+                        name = broker.get("brokerType")?.asText() ?: "Unknown",
+                        slug = broker.get("brokerType")?.asText()?.lowercase(),
+                        enabled = broker.get("enabled")?.asBoolean(),
+                        status = broker.get("status")?.asText()
                     )
                 }
         } catch (e: Exception) {
-            log.error("Failed to fetch available brokerages from SnapTrade", e)
-            emptyList()
-        }
-    }
-
-    fun getBrokerageAuthorizationTypes(brokerageSlug: String? = null): List<BrokerAuthTypeDto> {
-        return try {
-            snapTradeService.listBrokerageAuthorizationTypes(brokerageSlug).mapNotNull { at ->
-                if (at.type != null && at.authType != null) {
-                    BrokerAuthTypeDto(type = at.type, authType = at.authType)
-                } else null
-            }
-        } catch (e: Exception) {
-            log.error("Failed to fetch brokerage authorization types", e)
+            log.error("Failed to fetch available brokers from gateway", e)
             emptyList()
         }
     }
@@ -111,15 +73,14 @@ class BrokerService(
             ?: throw IllegalArgumentException("Connection not found: $connectionId")
     }
 
-    // ========== SnapTrade Connection Flow ==========
+    // ========== Gateway Connection Flow ==========
 
     @Transactional
-    fun getConnectionPortalUrl(userId: Long, broker: String? = null, reconnectAuthId: String? = null, connectionType: String? = null): String {
-        val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
-        val redirectUrl = try {
-            snapTradeService.getConnectionPortalUrl(user, broker, reconnectAuthId, connectionType)
-        } catch (e: SnapTradeApiException) {
-            log.error("SnapTrade API error for user {} connecting broker={}: {}", userId, broker, e.message)
+    fun createGatewayConnection(user: User, brokerType: String, credentials: Map<String, Any>): BrokerConnection {
+        val response = try {
+            gatewayClient.createConnection(user.id!!, brokerType, credentials)
+        } catch (e: Exception) {
+            log.error("Gateway API error for user {} connecting brokerType={}: {}", user.id, brokerType, e.message)
             throw ExternalServiceException(
                 code = "BROKER_CONNECTION_FAILED",
                 message = "Failed to connect to broker service. Please try again later.",
@@ -127,102 +88,99 @@ class BrokerService(
             )
         }
 
-        log.info("Generated SnapTrade connection portal URL for user {}, broker={}", userId, broker)
-        return redirectUrl
+        val gatewayConnectionId = response.get("connectionId")?.asText()
+            ?: throw ExternalServiceException(
+                code = "BROKER_CONNECTION_FAILED",
+                message = "Gateway did not return a connectionId."
+            )
+
+        val connection = BrokerConnection(
+            user = user,
+            gatewayConnectionId = gatewayConnectionId,
+            brokerName = brokerType,
+            connectionType = brokerType,
+            status = ConnectionStatus.ACTIVE
+        )
+
+        // Fetch accounts from gateway and store the first account's details
+        try {
+            val accountsNode = gatewayClient.listAccounts(gatewayConnectionId)
+            val firstAccount = if (accountsNode.isArray && accountsNode.size() > 0) accountsNode.get(0) else null
+            if (firstAccount != null) {
+                connection.accountIdExternal = firstAccount.get("accountId")?.asText()
+                connection.accountNumber = firstAccount.get("accountNumber")?.asText()
+                connection.accountName = firstAccount.get("accountName")?.asText()
+                connection.accountType = firstAccount.get("accountType")?.asText()
+            }
+        } catch (e: Exception) {
+            log.warn("Failed to fetch accounts from gateway for connection {}: {}", gatewayConnectionId, e.message)
+        }
+
+        connectionRepository.save(connection)
+        log.info("Created gateway connection {} for user {}, brokerType={}", gatewayConnectionId, user.id, brokerType)
+        return connection
     }
 
     @Transactional
     fun syncConnections(userId: Long) {
         val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
-        log.info("Starting connection sync for user {}: calling SnapTrade listConnections...", userId)
+        log.info("Starting connection sync for user {}: validating gateway connections...", userId)
 
-        val snapConnections = try {
-            snapTradeService.listConnections(user)
-        } catch (e: Exception) {
-            log.error("Failed to sync connections for user {}: {}", userId, e.message, e)
-            return
-        }
+        val connections = connectionRepository.findByUserId(userId)
+        var validatedCount = 0
+        var skippedCount = 0
 
-        val accounts = try {
-            snapTradeService.listAccounts(user)
-        } catch (e: Exception) {
-            log.error("Failed to list accounts for user {}: {}", userId, e.message, e)
-            return
-        }
+        for (connection in connections) {
+            val gwId = connection.gatewayConnectionId
+            if (gwId == null) {
+                // Legacy connection without gateway ID - leave as-is
+                skippedCount++
+                continue
+            }
 
-        log.info("SnapTrade returned {} connections and {} accounts for user {}",
-            snapConnections.size, accounts.size, userId)
+            try {
+                val validationResult = gatewayClient.validateConnection(gwId)
+                val status = validationResult.get("status")?.asText()
 
-        // Sync each SnapTrade authorization as a connection
-        var createdCount = 0
-        var updatedCount = 0
-        for (auth in snapConnections) {
-            val authId = auth.id?.toString() ?: continue
-
-            // Find related accounts
-            val relatedAccounts = accounts.filter { it.brokerageAuthorization == auth.id }
-            log.info("Processing auth {}: {} related accounts found (disabled={})",
-                authId, relatedAccounts.size, auth.disabled)
-
-            for (account in relatedAccounts) {
-                val accountId = account.id?.toString() ?: continue
-                connectionRepository.flush()
-                val existingConnection = connectionRepository.findByUserIdAndAccountIdExternal(userId, accountId)
-
-                if (existingConnection != null) {
-                    existingConnection.snaptradeAuthorizationId = authId
-                    existingConnection.accountNumber = account.number
-                    existingConnection.accountType = account.metaType ?: account.institutionName
-                    existingConnection.accountName = account.name
-                    existingConnection.accountNumberActual = account.metaAccountNumber
-                    existingConnection.accountMetaType = account.metaType
-                    existingConnection.brokerName = auth.brokerageName
-                    existingConnection.brokerLogoUrl = auth.brokerLogoUrl
-                    existingConnection.connectionType = auth.type
-                    existingConnection.status = if (auth.disabled == true) ConnectionStatus.ERROR else ConnectionStatus.ACTIVE
-                    if (auth.disabled != true) existingConnection.clearError()
-                    connectionRepository.save(existingConnection)
-                    updatedCount++
+                if (status == "VALID" || status == "OK" || status == "ACTIVE") {
+                    connection.status = ConnectionStatus.ACTIVE
+                    connection.clearError()
                 } else {
-                    val connection = BrokerConnection(
-                        user = user,
-                        snaptradeAuthorizationId = authId,
-                        accountIdExternal = accountId,
-                        accountNumber = account.number,
-                        accountType = account.metaType ?: account.institutionName,
-                        accountName = account.name,
-                        accountNumberActual = account.metaAccountNumber,
-                        accountMetaType = account.metaType,
-                        brokerName = auth.brokerageName,
-                        brokerLogoUrl = auth.brokerLogoUrl,
-                        connectionType = auth.type,
-                        status = if (auth.disabled == true) ConnectionStatus.ERROR else ConnectionStatus.ACTIVE
-                    )
-                    connectionRepository.save(connection)
-                    createdCount++
+                    connection.status = ConnectionStatus.ERROR
+                    connection.connectionErrorCode = "VALIDATION_FAILED"
+                    connection.connectionErrorMessage = validationResult.get("message")?.asText() ?: "Connection validation failed"
                 }
+                connectionRepository.save(connection)
+                validatedCount++
+            } catch (e: Exception) {
+                log.warn("Failed to validate gateway connection {} for user {}: {}", gwId, userId, e.message)
+                connection.markAsError("VALIDATION_ERROR", e.message ?: "Failed to validate connection")
+                connectionRepository.save(connection)
+                validatedCount++
             }
         }
 
-        log.info("Sync complete for user {}: {} created, {} updated (from {} authorizations)",
-            userId, createdCount, updatedCount, snapConnections.size)
+        log.info("Sync complete for user {}: {} validated, {} skipped (legacy)", userId, validatedCount, skippedCount)
     }
 
     @Transactional
     fun disconnectBroker(authorizationId: String, userId: Long) {
         val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
 
-        try {
-            snapTradeService.disconnectBrokerage(user, authorizationId)
-        } catch (e: Exception) {
-            log.warn("Failed to disconnect from SnapTrade for authorizationId {}: {}", authorizationId, e.message)
-        }
-
-        // Mark all connections with this authorization as disconnected
+        // Find connections matching this authorizationId (could be gatewayConnectionId or snaptradeAuthorizationId)
         val connections = connectionRepository.findByUserId(userId)
-            .filter { it.snaptradeAuthorizationId == authorizationId }
+            .filter { it.gatewayConnectionId == authorizationId || it.snaptradeAuthorizationId == authorizationId }
 
+        // If connection has a gatewayConnectionId, revoke it on the gateway side
         connections.forEach { connection ->
+            val gwId = connection.gatewayConnectionId
+            if (gwId != null) {
+                try {
+                    gatewayClient.deleteConnection(gwId)
+                } catch (e: Exception) {
+                    log.warn("Failed to delete gateway connection {}: {}", gwId, e.message)
+                }
+            }
             connection.status = ConnectionStatus.DISCONNECTED
             connectionRepository.save(connection)
         }
@@ -308,7 +266,7 @@ class BrokerService(
         val totalValue = aggregatedPositions.sumOf { it.totalValue }
         val totalPnl = aggregatedPositions.sumOf { it.totalPnl ?: BigDecimal.ZERO }
         val totalCost = totalValue - totalPnl
-        val brokerCount = positions.map { it.connection.snaptradeAuthorizationId ?: it.connection.id }.distinct().size
+        val brokerCount = positions.map { it.connection.gatewayConnectionId ?: it.connection.snaptradeAuthorizationId ?: it.connection.id }.distinct().size
         val accountCount = positions.map { it.connection.id }.distinct().size
 
         return AggregatedPositionsResponse(
