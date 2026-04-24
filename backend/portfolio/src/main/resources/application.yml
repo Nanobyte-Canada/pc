@@ -74,6 +74,12 @@ management:
       show-details: when-authorized
       show-components: when-authorized
 
+# Broker gateway configuration
+broker-gateway:
+  url: ${BROKER_GATEWAY_URL:http://localhost:8084}
+  api-key: ${GATEWAY_API_KEY:dev-gateway-key}
+  timeout-ms: ${BROKER_GATEWAY_TIMEOUT:30000}
+
 # Broker configuration
 broker:
   encryption:
