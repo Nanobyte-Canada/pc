@@ -1230,6 +1230,18 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 | `QuestradeRestClient` | Class | WebClient-based HTTP client with get/post/delete methods. Error handling maps 401 responses to authentication errors and 429 responses to rate-limit errors. |
 | `QuestradeTokenManager` | Class | OAuth token rotation manager handling Questrade's single-use refresh token model. Each token refresh returns a new refresh token and a dynamic `api_server` URL that subsequent API calls must use. |
 
+### Wealthsimple Adapter (`adapter/wealthsimple/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `WealthsimpleConfig` | `@ConfigurationProperties(prefix = "broker-gateway.wealthsimple")` | Wealthsimple settings: enabled (default false), authUrl, graphqlUrl, clientId, orderRateLimitPerHour (default 7) |
+| `WealthsimpleDtoMappers` | `object` | Static mappers normalizing Wealthsimple-specific values to unified enums: mapAccountType (ca_tfsa/ca_rrsp/ca_fhsa/ca_lira/ca_crypto), mapInstrumentType (equity/etf), mapOrderStatus, mapActivityType |
+| `FakeWealthsimpleAdapter` | `@Component @Profile("dev","local","test")` | Mock adapter returning realistic Canadian data: positions (XEQT.TO, SHOP.TO, BN.TO, VEQT.TO), Canadian-specific accounts including Crypto account. For local development and testing without a Wealthsimple account. |
+| `WealthsimpleAdapter` | `@Component @ConditionalOnProperty("broker-gateway.wealthsimple.enabled")` | Production adapter implementing BrokerAdapter. Uses WealthsimpleGraphQlClient for API operations (FetchAllAccounts, FetchAccountFinancials, FetchIdentityPositions, FetchActivityFeedItems, SoOrdersOrderCreate, SoOrdersOrderCancel), WealthsimpleTokenManager for authentication, and WealthsimpleRateLimiter for order throttling. Uses WealthsimpleDtoMappers for all type normalization. |
+| `WealthsimpleGraphQlClient` | Class | Custom HTTP client for Wealthsimple's GraphQL API. Sends raw HTTP POST requests with WS-specific headers (x-ws-api-version, x-platform-os, x-ws-locale, x-ws-profile). Detects 2FA challenges via x-wealthsimple-otp-required response header. |
+| `WealthsimpleTokenManager` | Class | Password-grant OAuth token manager. Handles token refresh and expiry detection for Wealthsimple's OAuth flow. |
+| `WealthsimpleRateLimiter` | Class | Sliding-window rate limiter enforcing 7 trades per hour using ConcurrentLinkedDeque. Prevents exceeding Wealthsimple's order submission limits. |
+
 ---
 
 ## Common Module (`backend/common/`)

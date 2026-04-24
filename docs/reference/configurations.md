@@ -552,6 +552,11 @@ spring.mvc.problemdetails.enabled: true
 | `QUESTRADE_PRACTICE_AUTH_URL` | Practice/sandbox auth URL | (empty) | Broker gateway service |
 | `QUESTRADE_USE_PRACTICE` | Use practice environment | `false` | Broker gateway service |
 | `QUESTRADE_RATE_LIMIT` | Requests per second limit | `1` | Broker gateway service |
+| `WEALTHSIMPLE_ENABLED` | Enable Wealthsimple adapter | `false` | Broker gateway service |
+| `WEALTHSIMPLE_AUTH_URL` | OAuth token endpoint | (empty) | Broker gateway service |
+| `WEALTHSIMPLE_GRAPHQL_URL` | GraphQL API URL | (empty) | Broker gateway service |
+| `WEALTHSIMPLE_CLIENT_ID` | OAuth client ID (hardcoded from WS web app) | (empty) | Broker gateway service |
+| `WS_ORDER_RATE_LIMIT` | Max orders per hour | `7` | Broker gateway service |
 
 ---
 
