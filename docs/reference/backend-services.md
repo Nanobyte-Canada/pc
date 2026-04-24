@@ -445,15 +445,15 @@ Constants: `RISK_FREE_RATE = 4%` annual, used for Sharpe/Sortino.
 ### OrderExecutionService
 
 **File:** `broker/service/OrderExecutionService.kt`
-**Dependencies:** `TradeOrderRepository`, `BrokerConnectionRepository`, `PortfolioGroupService`, `SnapTradeService`
+**Dependencies:** `TradeOrderRepository`, `BrokerConnectionRepository`, `PortfolioGroupService`, `BrokerGatewayClient`
 
 | Method | Signature | Description |
 |---|---|---|
-| `executeTradesForGroup` | `(user, request): ExecuteTradesResponse` | Executes batch trades: creates TradeOrder records, submits to SnapTrade, tracks success/failure |
+| `executeTradesForGroup` | `(user, request): ExecuteTradesResponse` | Executes batch trades: creates TradeOrder records, submits via BrokerGatewayClient, tracks success/failure |
 | `executeSingleTrade` | `(user, groupId, tradeInput): TradeOrderDto` | Executes a single trade (wraps executeTradesForGroup) |
 | `getOrdersForGroup` | `(userId, groupId): OrderStatusResponse` | Lists orders for a portfolio group |
 | `getOrdersForBatch` | `(userId, batchId: UUID): OrderStatusResponse` | Lists orders by batch ID |
-| `cancelOrder` | `(user, orderId): TradeOrderDto` | Cancels order locally and via SnapTrade |
+| `cancelOrder` | `(user, orderId): TradeOrderDto` | Cancels order locally and via BrokerGatewayClient |
 
 ### AccountAnalyticsComputeService
 

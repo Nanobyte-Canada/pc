@@ -1,11 +1,13 @@
 package com.portfolio.broker.service
 
 import com.portfolio.auth.entity.User
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.portfolio.broker.client.BrokerGatewayClient
 import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.BrokerConnectionRepository
 import com.portfolio.broker.repository.TradeOrderRepository
-import com.portfolio.broker.adapter.SnapTradeOrderDto
 import io.mockk.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,20 +24,21 @@ class OrderExecutionServiceTest {
     private lateinit var tradeOrderRepository: TradeOrderRepository
     private lateinit var connectionRepository: BrokerConnectionRepository
     private lateinit var portfolioGroupService: PortfolioGroupService
-    private lateinit var snapTradeService: SnapTradeService
+    private lateinit var gatewayClient: BrokerGatewayClient
+    private val objectMapper = ObjectMapper()
 
     @BeforeEach
     fun setup() {
         tradeOrderRepository = mockk()
         connectionRepository = mockk()
         portfolioGroupService = mockk()
-        snapTradeService = mockk()
+        gatewayClient = mockk()
 
         service = OrderExecutionService(
             tradeOrderRepository = tradeOrderRepository,
             connectionRepository = connectionRepository,
             portfolioGroupService = portfolioGroupService,
-            snapTradeService = snapTradeService
+            gatewayClient = gatewayClient
         )
     }
 
@@ -49,11 +52,10 @@ class OrderExecutionServiceTest {
         every { connectionRepository.findByIdAndUserId(10L, 1L) } returns connection
         every { tradeOrderRepository.save(any()) } answers { firstArg() }
 
-        val brokerResponse = SnapTradeOrderDto(
-            brokerageOrderId = "BROKER-123", status = "SUBMITTED",
-            symbol = "VFV", action = "BUY", units = 10.0, price = null
-        )
-        every { snapTradeService.placeOrder(any(), any(), any(), any(), any(), any(), any(), any()) } returns brokerResponse
+        val brokerResponse: ObjectNode = objectMapper.createObjectNode()
+            .put("brokerOrderId", "BROKER-123")
+            .put("status", "SUBMITTED")
+        every { gatewayClient.placeOrder(any(), any(), any()) } returns brokerResponse
 
         val request = ExecuteTradesRequest(
             groupId = 1L,
@@ -138,7 +140,7 @@ class OrderExecutionServiceTest {
 
         every { tradeOrderRepository.findByIdAndUserId(1L, 1L) } returns order
         every { tradeOrderRepository.save(any()) } answers { firstArg() }
-        every { snapTradeService.cancelOrder(any(), any(), any()) } just runs
+        every { gatewayClient.cancelOrder(any(), any(), any()) } just runs
 
         val result = service.cancelOrder(user, 1L)
 
@@ -189,6 +191,7 @@ class OrderExecutionServiceTest {
             accountNumber = "ACC-$id",
             accountName = "Test Account",
             accountIdExternal = "ext-$id",
+            gatewayConnectionId = "gw-$id",
             status = ConnectionStatus.ACTIVE
         )
     }

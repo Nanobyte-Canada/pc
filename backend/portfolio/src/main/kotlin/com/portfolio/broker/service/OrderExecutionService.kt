@@ -1,6 +1,7 @@
 package com.portfolio.broker.service
 
 import com.portfolio.auth.entity.User
+import com.portfolio.broker.client.BrokerGatewayClient
 import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.BrokerConnectionRepository
@@ -16,7 +17,7 @@ class OrderExecutionService(
     private val tradeOrderRepository: TradeOrderRepository,
     private val connectionRepository: BrokerConnectionRepository,
     private val portfolioGroupService: PortfolioGroupService,
-    private val snapTradeService: SnapTradeService
+    private val gatewayClient: BrokerGatewayClient
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -64,22 +65,25 @@ class OrderExecutionService(
 
             // Submit to broker
             try {
+                val gwConnId = connection.gatewayConnectionId
+                    ?: throw IllegalStateException("No gateway connection for connection ${connection.id}")
                 val accountId = connection.accountIdExternal
                     ?: throw IllegalStateException("No external account ID for connection ${connection.id}")
 
-                val brokerResponse = snapTradeService.placeOrder(
-                    user = user,
-                    accountId = accountId,
-                    action = tradeInput.action,
-                    symbol = tradeInput.symbol,
-                    units = tradeInput.units,
-                    orderType = request.orderType,
-                    limitPrice = tradeInput.limitPrice,
-                    timeInForce = request.timeInForce
+                val orderBody = mapOf(
+                    "symbol" to savedOrder.symbol,
+                    "action" to savedOrder.action.name,
+                    "quantity" to savedOrder.requestedUnits,
+                    "orderType" to savedOrder.orderType.name,
+                    "limitPrice" to savedOrder.limitPrice,
+                    "timeInForce" to savedOrder.timeInForce.name,
+                    "currency" to savedOrder.currency
                 )
+                val result = gatewayClient.placeOrder(gwConnId, accountId, orderBody)
+                val brokerOrderId = result.get("brokerOrderId")?.asText()
 
                 savedOrder.status = OrderStatus.SUBMITTED
-                savedOrder.brokerOrderId = brokerResponse.brokerageOrderId
+                savedOrder.brokerOrderId = brokerOrderId
                 savedOrder.submittedAt = OffsetDateTime.now()
                 submittedCount++
 
@@ -149,9 +153,11 @@ class OrderExecutionService(
         // Try to cancel with broker if submitted
         if (order.status == OrderStatus.SUBMITTED && order.brokerOrderId != null) {
             try {
+                val gwConnId = order.connection.gatewayConnectionId
+                    ?: throw IllegalStateException("No gateway connection for connection")
                 val accountId = order.connection.accountIdExternal
                     ?: throw IllegalStateException("No external account ID for connection")
-                snapTradeService.cancelOrder(user, accountId, order.brokerOrderId!!)
+                gatewayClient.cancelOrder(gwConnId, accountId, order.brokerOrderId!!)
             } catch (e: Exception) {
                 log.warn("Failed to cancel order {} with broker: {}", orderId, e.message)
             }
