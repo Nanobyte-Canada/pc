@@ -29,6 +29,9 @@ class BrokerConnection(
     @Column(name = "snaptrade_authorization_id", length = 255)
     var snaptradeAuthorizationId: String? = null,
 
+    @Column(name = "gateway_connection_id", length = 36)
+    var gatewayConnectionId: String? = null,
+
     @Column(name = "account_id_external", length = 100)
     var accountIdExternal: String? = null,
 
