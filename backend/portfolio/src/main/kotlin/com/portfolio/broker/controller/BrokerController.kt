@@ -1,20 +1,25 @@
 package com.portfolio.broker.controller
 
+import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.security.UserPrincipal
+import com.portfolio.broker.client.BrokerGatewayClient
 import com.portfolio.broker.dto.*
-import com.portfolio.broker.config.SnapTradeConfig
 import com.portfolio.broker.service.ActivityIngestionService
 import com.portfolio.broker.service.BrokerService
 import com.portfolio.broker.service.DriftCalculationService
 import com.portfolio.broker.service.PositionFetchService
 import com.portfolio.broker.service.RebalanceService
 import com.portfolio.broker.service.ReportingService
-import com.portfolio.broker.service.SnapTradeStatusService
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
+
+data class ConnectBrokerGatewayRequest(
+    val brokerType: String,
+    val credentials: Map<String, Any>
+)
 
 @RestController
 @RequestMapping("/api/v1/brokers")
@@ -22,12 +27,12 @@ import org.springframework.web.bind.annotation.*
 class BrokerController(
     private val brokerService: BrokerService,
     private val positionFetchService: PositionFetchService,
-    private val snapTradeConfig: SnapTradeConfig,
-    private val snapTradeStatusService: SnapTradeStatusService,
     private val activityIngestionService: ActivityIngestionService,
     private val reportingService: ReportingService,
     private val driftCalculationService: DriftCalculationService,
-    private val rebalanceService: RebalanceService
+    private val rebalanceService: RebalanceService,
+    private val gatewayClient: BrokerGatewayClient,
+    private val userRepository: UserRepository
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -39,41 +44,12 @@ class BrokerController(
         return ResponseEntity.ok(BrokersResponse(brokers))
     }
 
-    @GetMapping("/authorization-types")
-    fun getBrokerageAuthorizationTypes(
-        @RequestParam(required = false) brokerage: String?
-    ): ResponseEntity<List<BrokerAuthTypeDto>> {
-        val authTypes = brokerService.getBrokerageAuthorizationTypes(brokerage)
-        return ResponseEntity.ok(authTypes)
-    }
+    // ========== Gateway Health ==========
 
-    @GetMapping("/config-status")
-    fun getConfigStatus(): ResponseEntity<Map<String, Any>> {
-        val status = mapOf(
-            "clientIdConfigured" to snapTradeConfig.clientId.isNotBlank(),
-            "consumerKeyConfigured" to snapTradeConfig.consumerKey.isNotBlank(),
-            "redirectUri" to snapTradeConfig.redirectUri
-        )
-        return ResponseEntity.ok(status)
-    }
-
-    // ========== SnapTrade Status ==========
-
-    @GetMapping("/snaptrade/status")
-    fun getSnapTradeStatus(): ResponseEntity<SnapTradeStatusResponse> {
-        val status = snapTradeStatusService.getLatestStatus()
-            ?: return ResponseEntity.ok(
-                SnapTradeStatusResponse(
-                    SnapTradeStatusDto(
-                        status = "UNKNOWN",
-                        responseTimeMs = null,
-                        version = null,
-                        uptimePercent24h = 100.0,
-                        lastChecked = java.time.OffsetDateTime.now()
-                    )
-                )
-            )
-        return ResponseEntity.ok(SnapTradeStatusResponse(status))
+    @GetMapping("/gateway/health")
+    fun getGatewayHealth(): ResponseEntity<*> {
+        val health = gatewayClient.getHealth()
+        return ResponseEntity.ok(health)
     }
 
     // ========== Connection Sync ==========
@@ -104,16 +80,13 @@ class BrokerController(
 
     @PostMapping("/connect")
     fun connectBroker(
-        @RequestBody(required = false) request: ConnectBrokerRequest?,
+        @RequestBody request: ConnectBrokerGatewayRequest,
         @AuthenticationPrincipal principal: UserPrincipal
-    ): ResponseEntity<ConnectBrokerResponse> {
-        val redirectUrl = brokerService.getConnectionPortalUrl(
-            userId = principal.id,
-            broker = request?.broker,
-            reconnectAuthId = request?.reconnectAuthId,
-            connectionType = request?.connectionType
-        )
-        return ResponseEntity.ok(ConnectBrokerResponse(redirectUrl = redirectUrl))
+    ): ResponseEntity<BrokerConnectionDto> {
+        val user = userRepository.findById(principal.id)
+            .orElseThrow { IllegalArgumentException("User not found") }
+        val connection = brokerService.createGatewayConnection(user, request.brokerType, request.credentials)
+        return ResponseEntity.status(201).body(connection.toDto())
     }
 
     @DeleteMapping("/connections/{authorizationId}")
