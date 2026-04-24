@@ -88,12 +88,3 @@ broker:
     enabled: ${BROKER_SYNC_ENABLED:false}
     cron: ${BROKER_SYNC_CRON:0 30 22 * * *}
     max-lookback-years: ${BROKER_SYNC_MAX_LOOKBACK_YEARS:25}
-
-# SnapTrade integration configuration
-snaptrade:
-  client-id: ${SNAPTRADE_CLIENT_ID:}
-  consumer-key: ${SNAPTRADE_CONSUMER_KEY:}
-  redirect-uri: ${SNAPTRADE_REDIRECT_URI:http://localhost:3000/brokers/connections}
-  health-check:
-    enabled: ${SNAPTRADE_HEALTH_CHECK_ENABLED:false}
-    cron: ${SNAPTRADE_HEALTH_CHECK_CRON:0 */15 * * * *}

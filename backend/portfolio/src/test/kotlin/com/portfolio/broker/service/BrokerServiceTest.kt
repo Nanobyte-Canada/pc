@@ -1,9 +1,11 @@
 package com.portfolio.broker.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.portfolio.auth.entity.User
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
+import com.portfolio.broker.client.BrokerGatewayClient
 import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
@@ -23,7 +25,7 @@ class BrokerServiceTest {
     private lateinit var positionRepository: BrokerPositionRepository
     private lateinit var balanceRepository: BrokerBalanceRepository
     private lateinit var userRepository: UserRepository
-    private lateinit var snapTradeService: SnapTradeService
+    private lateinit var gatewayClient: BrokerGatewayClient
     private lateinit var auditService: AuditService
     private val objectMapper = ObjectMapper()
 
@@ -33,7 +35,7 @@ class BrokerServiceTest {
         positionRepository = mockk()
         balanceRepository = mockk()
         userRepository = mockk()
-        snapTradeService = mockk()
+        gatewayClient = mockk()
         auditService = mockk(relaxed = true)
 
         service = BrokerService(
@@ -41,7 +43,7 @@ class BrokerServiceTest {
             positionRepository = positionRepository,
             balanceRepository = balanceRepository,
             userRepository = userRepository,
-            snapTradeService = snapTradeService,
+            gatewayClient = gatewayClient,
             auditService = auditService,
             objectMapper = objectMapper
         )
@@ -124,46 +126,23 @@ class BrokerServiceTest {
         }
     }
 
-    // ========== Connection Portal URL Tests ==========
-
-    @Test
-    fun `getConnectionPortalUrl calls SnapTradeService`() {
-        val user = createUser(1L)
-        every { userRepository.findById(1L) } returns Optional.of(user)
-        every { snapTradeService.getConnectionPortalUrl(user, "questrade", null) } returns "https://snaptrade.com/portal"
-
-        val result = service.getConnectionPortalUrl(1L, "questrade")
-
-        assertEquals("https://snaptrade.com/portal", result)
-        verify { snapTradeService.getConnectionPortalUrl(user, "questrade", null) }
-    }
-
-    @Test
-    fun `getConnectionPortalUrl throws when user not found`() {
-        every { userRepository.findById(999L) } returns Optional.empty()
-
-        assertThrows<IllegalArgumentException> {
-            service.getConnectionPortalUrl(999L)
-        }
-    }
-
     // ========== Disconnect Tests ==========
 
     @Test
     fun `disconnectBroker marks connections as disconnected`() {
         val user = createUser(1L)
         val connection = createConnection(1L, user, "12345", ConnectionStatus.ACTIVE).apply {
-            snaptradeAuthorizationId = "auth-uuid-123"
+            gatewayConnectionId = "gw-conn-123"
         }
         every { userRepository.findById(1L) } returns Optional.of(user)
-        every { snapTradeService.disconnectBrokerage(user, "auth-uuid-123") } just runs
+        every { gatewayClient.deleteConnection("gw-conn-123") } just runs
         every { connectionRepository.findByUserId(1L) } returns listOf(connection)
         every { connectionRepository.save(any()) } answers { firstArg() }
 
-        service.disconnectBroker("auth-uuid-123", 1L)
+        service.disconnectBroker("gw-conn-123", 1L)
 
         verify { connectionRepository.save(match { it.status == ConnectionStatus.DISCONNECTED }) }
-        verify { snapTradeService.disconnectBrokerage(user, "auth-uuid-123") }
+        verify { gatewayClient.deleteConnection("gw-conn-123") }
     }
 
     // ========== Helper Methods ==========

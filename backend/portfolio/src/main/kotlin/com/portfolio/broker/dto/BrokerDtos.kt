@@ -5,13 +5,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
-// Request DTOs
-data class ConnectBrokerRequest(
-    val broker: String? = null,          // SnapTrade brokerage slug to pre-select
-    val reconnectAuthId: String? = null, // SnapTrade authorization UUID for reconnecting
-    val connectionType: String? = null   // "read", "trade", or "trade-if-available"
-)
-
 // Response DTOs
 data class BrokerDto(
     val id: Long? = null,
@@ -64,10 +57,6 @@ data class BrokerConnectionDto(
 
 data class BrokerConnectionsResponse(
     val connections: List<BrokerConnectionDto>
-)
-
-data class ConnectBrokerResponse(
-    val redirectUrl: String
 )
 
 data class PositionFetchResponse(
@@ -197,18 +186,6 @@ fun BrokerPosition.toDto() = BrokerPositionDto(
     optionType = optionType,
     underlyingSymbol = underlyingSymbol
 )
-
-// ========== SnapTrade Status DTOs ==========
-
-data class SnapTradeStatusDto(
-    val status: String,
-    val responseTimeMs: Int?,
-    val version: String?,
-    val uptimePercent24h: Double,
-    val lastChecked: OffsetDateTime
-)
-
-data class SnapTradeStatusResponse(val status: SnapTradeStatusDto)
 
 data class ConnectionSyncResponse(
     val syncedCount: Int,

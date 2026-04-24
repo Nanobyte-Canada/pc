@@ -38,7 +38,7 @@ class DashboardCashService(
 
             try {
                 val parsed = objectMapper.readValue(cashJson, cashTypeRef)
-                // SnapTrade stores cash and buying_power in the JSONB
+                // Cash and buying_power are stored in the JSONB
                 for ((key, value) in parsed) {
                     if (key.startsWith("buying_power_")) {
                         val currency = key.removePrefix("buying_power_").uppercase()

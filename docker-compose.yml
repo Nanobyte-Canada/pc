@@ -45,9 +45,6 @@ services:
       REDIS_PORT: 6379
       APP_VERSION: ${APP_VERSION:-0.0.1-SNAPSHOT}
       APP_ENVIRONMENT: local
-      SNAPTRADE_CLIENT_ID: ${SNAPTRADE_CLIENT_ID:-}
-      SNAPTRADE_CONSUMER_KEY: ${SNAPTRADE_CONSUMER_KEY:-}
-      SNAPTRADE_REDIRECT_URI: ${SNAPTRADE_REDIRECT_URI:-http://localhost:3000/brokers/connections}
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY:-}
       BROKER_GATEWAY_URL: http://broker-gateway-service:8084
       JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"

@@ -251,7 +251,7 @@ class DashboardDataService(
             positionRepository.findCurrentPositionsByUserIdFromActiveConnections(userId)
         }
 
-        // Portfolio Value from connection.totalValue (SnapTrade's FX-converted total, includes cash)
+        // Portfolio Value from connection.totalValue (FX-converted total, includes cash)
         val connections = if (connectionId != null) {
             connectionRepository.findById(connectionId).map { listOf(it) }.orElse(emptyList())
         } else {

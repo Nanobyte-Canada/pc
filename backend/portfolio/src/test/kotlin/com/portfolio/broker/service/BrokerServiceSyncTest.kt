@@ -1,11 +1,11 @@
 package com.portfolio.broker.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.portfolio.auth.entity.User
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
-import com.portfolio.broker.adapter.SnapTradeAccountDto
-import com.portfolio.broker.adapter.SnapTradeConnectionDto
+import com.portfolio.broker.client.BrokerGatewayClient
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
 import io.mockk.*
@@ -21,7 +21,7 @@ class BrokerServiceSyncTest {
     private lateinit var positionRepository: BrokerPositionRepository
     private lateinit var balanceRepository: BrokerBalanceRepository
     private lateinit var userRepository: UserRepository
-    private lateinit var snapTradeService: SnapTradeService
+    private lateinit var gatewayClient: BrokerGatewayClient
     private lateinit var auditService: AuditService
     private val objectMapper = ObjectMapper()
 
@@ -31,7 +31,7 @@ class BrokerServiceSyncTest {
         positionRepository = mockk()
         balanceRepository = mockk()
         userRepository = mockk()
-        snapTradeService = mockk()
+        gatewayClient = mockk()
         auditService = mockk(relaxed = true)
 
         service = BrokerService(
@@ -39,135 +39,120 @@ class BrokerServiceSyncTest {
             positionRepository = positionRepository,
             balanceRepository = balanceRepository,
             userRepository = userRepository,
-            snapTradeService = snapTradeService,
+            gatewayClient = gatewayClient,
             auditService = auditService,
             objectMapper = objectMapper
         )
     }
 
     @Test
-    fun `syncConnections creates new connection for new account`() {
+    fun `syncConnections validates active gateway connections`() {
         val user = createUser(1L)
-        val authId = UUID.randomUUID()
-        val accountId = UUID.randomUUID()
-
-        val auth = SnapTradeConnectionDto(id = authId, disabled = false, brokerageName = null, brokerLogoUrl = null, type = null)
-        val account = SnapTradeAccountDto(
-            id = accountId, brokerageAuthorization = authId,
-            number = "12345", institutionName = "Questrade", name = "TFSA", currency = null
-        )
-
-        every { userRepository.findById(1L) } returns Optional.of(user)
-        every { snapTradeService.listConnections(user) } returns listOf(auth)
-        every { snapTradeService.listAccounts(user) } returns listOf(account)
-        every { connectionRepository.findByUserIdAndAccountIdExternal(1L, accountId.toString()) } returns null
-        every { connectionRepository.save(any()) } answers { firstArg() }
-
-        service.syncConnections(1L)
-
-        verify {
-            connectionRepository.save(match {
-                it.accountIdExternal == accountId.toString() &&
-                it.status == ConnectionStatus.ACTIVE &&
-                it.accountNumber == "12345" &&
-                it.accountName == "TFSA"
-            })
-        }
-    }
-
-    @Test
-    fun `syncConnections updates existing connection without duplicating`() {
-        val user = createUser(1L)
-        val authId = UUID.randomUUID()
-        val accountId = UUID.randomUUID()
-
-        val existingConnection = BrokerConnection(
+        val connection = BrokerConnection(
             id = 10L,
             user = user,
-            accountIdExternal = accountId.toString(),
-            accountNumber = "OLD-NUMBER",
-            accountType = "OldBroker",
-            accountName = "Old Name",
-            status = ConnectionStatus.PENDING
-        )
-
-        val auth = SnapTradeConnectionDto(id = authId, disabled = false, brokerageName = null, brokerLogoUrl = null, type = null)
-        val account = SnapTradeAccountDto(
-            id = accountId, brokerageAuthorization = authId,
-            number = "NEW-NUMBER", institutionName = "Questrade", name = "Updated TFSA", currency = null
+            gatewayConnectionId = "gw-conn-1",
+            accountIdExternal = "acc-ext-1",
+            accountNumber = "12345",
+            accountType = "TFSA",
+            accountName = "Test Account",
+            status = ConnectionStatus.ACTIVE
         )
 
         every { userRepository.findById(1L) } returns Optional.of(user)
-        every { snapTradeService.listConnections(user) } returns listOf(auth)
-        every { snapTradeService.listAccounts(user) } returns listOf(account)
-        every { connectionRepository.findByUserIdAndAccountIdExternal(1L, accountId.toString()) } returns existingConnection
+        every { connectionRepository.findByUserId(1L) } returns listOf(connection)
+
+        val validationResult = objectMapper.createObjectNode().apply {
+            put("status", "VALID")
+        }
+        every { gatewayClient.validateConnection("gw-conn-1") } returns validationResult
         every { connectionRepository.save(any()) } answers { firstArg() }
 
         service.syncConnections(1L)
 
         verify {
             connectionRepository.save(match {
-                it.id == 10L &&
-                it.accountNumber == "NEW-NUMBER" &&
-                it.accountName == "Updated TFSA" &&
-                it.status == ConnectionStatus.ACTIVE
+                it.id == 10L && it.status == ConnectionStatus.ACTIVE
             })
         }
     }
 
     @Test
-    fun `syncConnections is idempotent - calling twice does not create duplicates`() {
+    fun `syncConnections marks connection as ERROR when validation fails`() {
         val user = createUser(1L)
-        val authId = UUID.randomUUID()
-        val accountId = UUID.randomUUID()
-
-        val auth = SnapTradeConnectionDto(id = authId, disabled = false, brokerageName = null, brokerLogoUrl = null, type = null)
-        val account = SnapTradeAccountDto(
-            id = accountId, brokerageAuthorization = authId,
-            number = "12345", institutionName = "Questrade", name = "TFSA", currency = null
+        val connection = BrokerConnection(
+            id = 10L,
+            user = user,
+            gatewayConnectionId = "gw-conn-1",
+            accountIdExternal = "acc-ext-1",
+            accountNumber = "12345",
+            accountType = "TFSA",
+            accountName = "Test Account",
+            status = ConnectionStatus.ACTIVE
         )
 
         every { userRepository.findById(1L) } returns Optional.of(user)
-        every { snapTradeService.listConnections(user) } returns listOf(auth)
-        every { snapTradeService.listAccounts(user) } returns listOf(account)
+        every { connectionRepository.findByUserId(1L) } returns listOf(connection)
 
-        // First call: no existing connection
-        every { connectionRepository.findByUserIdAndAccountIdExternal(1L, accountId.toString()) } returns null
-        val savedSlot = slot<BrokerConnection>()
-        every { connectionRepository.save(capture(savedSlot)) } answers { firstArg() }
-
-        service.syncConnections(1L)
-
-        val createdConnection = savedSlot.captured
-
-        // Second call: connection exists now
-        every { connectionRepository.findByUserIdAndAccountIdExternal(1L, accountId.toString()) } returns createdConnection
+        val validationResult = objectMapper.createObjectNode().apply {
+            put("status", "INVALID")
+            put("message", "Token expired")
+        }
+        every { gatewayClient.validateConnection("gw-conn-1") } returns validationResult
         every { connectionRepository.save(any()) } answers { firstArg() }
 
         service.syncConnections(1L)
 
-        // Verify save was called exactly twice (once create, once update) - not 3 times
-        verify(exactly = 2) { connectionRepository.save(any()) }
+        verify {
+            connectionRepository.save(match {
+                it.id == 10L && it.status == ConnectionStatus.ERROR
+            })
+        }
     }
 
     @Test
-    fun `syncConnections sets status to ERROR when authorization is disabled`() {
+    fun `syncConnections skips connections without gateway ID`() {
         val user = createUser(1L)
-        val authId = UUID.randomUUID()
-        val accountId = UUID.randomUUID()
-
-        val auth = SnapTradeConnectionDto(id = authId, disabled = true, brokerageName = null, brokerLogoUrl = null, type = null)
-        val account = SnapTradeAccountDto(
-            id = accountId, brokerageAuthorization = authId,
-            number = "12345", institutionName = "Questrade", name = "TFSA", currency = null
+        val legacyConnection = BrokerConnection(
+            id = 10L,
+            user = user,
+            gatewayConnectionId = null,
+            accountIdExternal = "acc-ext-1",
+            accountNumber = "12345",
+            accountType = "TFSA",
+            accountName = "Test Account",
+            status = ConnectionStatus.ACTIVE
         )
 
         every { userRepository.findById(1L) } returns Optional.of(user)
-        every { snapTradeService.listConnections(user) } returns listOf(auth)
-        every { snapTradeService.listAccounts(user) } returns listOf(account)
-        every { connectionRepository.findByUserIdAndAccountIdExternal(1L, accountId.toString()) } returns null
+        every { connectionRepository.findByUserId(1L) } returns listOf(legacyConnection)
+
+        service.syncConnections(1L)
+
+        verify(exactly = 0) { gatewayClient.validateConnection(any()) }
+        verify(exactly = 0) { connectionRepository.save(any()) }
+    }
+
+    @Test
+    fun `syncConnections handles gateway API failure gracefully`() {
+        val user = createUser(1L)
+        val connection = BrokerConnection(
+            id = 10L,
+            user = user,
+            gatewayConnectionId = "gw-conn-1",
+            accountIdExternal = "acc-ext-1",
+            accountNumber = "12345",
+            accountType = "TFSA",
+            accountName = "Test Account",
+            status = ConnectionStatus.ACTIVE
+        )
+
+        every { userRepository.findById(1L) } returns Optional.of(user)
+        every { connectionRepository.findByUserId(1L) } returns listOf(connection)
+        every { gatewayClient.validateConnection("gw-conn-1") } throws RuntimeException("Gateway unavailable")
         every { connectionRepository.save(any()) } answers { firstArg() }
 
+        // Should not throw
         service.syncConnections(1L)
 
         verify {
@@ -175,18 +160,6 @@ class BrokerServiceSyncTest {
                 it.status == ConnectionStatus.ERROR
             })
         }
-    }
-
-    @Test
-    fun `syncConnections handles SnapTrade API failure gracefully`() {
-        val user = createUser(1L)
-        every { userRepository.findById(1L) } returns Optional.of(user)
-        every { snapTradeService.listConnections(user) } throws RuntimeException("API unavailable")
-
-        // Should not throw
-        service.syncConnections(1L)
-
-        verify(exactly = 0) { connectionRepository.save(any()) }
     }
 
     private fun createUser(id: Long): User {

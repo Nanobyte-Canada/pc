@@ -10,35 +10,35 @@ import org.junit.jupiter.api.Assertions.*
 class PositionFetchServiceOrderMappingTest {
 
     @Test
-    fun `mapSnapTradeOrderStatus maps EXECUTED to FILLED`() {
+    fun `mapOrderStatus maps EXECUTED to FILLED`() {
         assertEquals(OrderStatus.FILLED, mapStatus("EXECUTED"))
     }
 
     @Test
-    fun `mapSnapTradeOrderStatus maps CANCELED to CANCELLED`() {
+    fun `mapOrderStatus maps CANCELED to CANCELLED`() {
         assertEquals(OrderStatus.CANCELLED, mapStatus("CANCELED"))
         assertEquals(OrderStatus.CANCELLED, mapStatus("CANCELLED"))
     }
 
     @Test
-    fun `mapSnapTradeOrderStatus maps PENDING and unknown to PENDING`() {
+    fun `mapOrderStatus maps PENDING and unknown to PENDING`() {
         assertEquals(OrderStatus.PENDING, mapStatus("PENDING"))
         assertEquals(OrderStatus.PENDING, mapStatus("NONE"))
         assertEquals(OrderStatus.PENDING, mapStatus(null))
     }
 
     @Test
-    fun `mapSnapTradeOrderStatus maps PARTIAL to PARTIALLY_FILLED`() {
+    fun `mapOrderStatus maps PARTIAL to PARTIALLY_FILLED`() {
         assertEquals(OrderStatus.PARTIALLY_FILLED, mapStatus("PARTIAL"))
     }
 
     @Test
-    fun `mapSnapTradeOrderStatus maps REJECTED to REJECTED`() {
+    fun `mapOrderStatus maps REJECTED to REJECTED`() {
         assertEquals(OrderStatus.REJECTED, mapStatus("REJECTED"))
     }
 
     @Test
-    fun `mapSnapTradeOrderAction maps BUY and SELL`() {
+    fun `mapOrderAction maps BUY and SELL`() {
         assertEquals(OrderAction.BUY, mapAction("BUY"))
         assertEquals(OrderAction.SELL, mapAction("SELL"))
         assertNull(mapAction(null))
@@ -46,7 +46,7 @@ class PositionFetchServiceOrderMappingTest {
     }
 
     @Test
-    fun `mapSnapTradeOrderType maps Limit and defaults to MARKET`() {
+    fun `mapOrderType maps Limit and defaults to MARKET`() {
         assertEquals(OrderType.LIMIT, mapOrderType("Limit"))
         assertEquals(OrderType.LIMIT, mapOrderType("limit"))
         assertEquals(OrderType.MARKET, mapOrderType("Market"))
@@ -54,7 +54,7 @@ class PositionFetchServiceOrderMappingTest {
     }
 
     @Test
-    fun `mapSnapTradeTimeInForce maps GTC and defaults to DAY`() {
+    fun `mapTimeInForce maps GTC and defaults to DAY`() {
         assertEquals(TimeInForce.GTC, mapTimeInForce("GTC"))
         assertEquals(TimeInForce.DAY, mapTimeInForce("Day"))
         assertEquals(TimeInForce.DAY, mapTimeInForce(null))
