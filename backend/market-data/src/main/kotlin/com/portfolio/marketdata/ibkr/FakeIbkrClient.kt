@@ -105,6 +105,23 @@ class FakeIbkrClient : IbkrClient {
         return contracts
     }
 
+    override fun requestMarketDataSnapshot(conId: Int): MarketDataSnapshot {
+        val basePrice = 450.0 + Random.nextDouble(-50.0, 50.0)
+        val spread = Random.nextDouble(0.05, 0.30)
+        return MarketDataSnapshot(
+            conId = conId,
+            bid = basePrice - spread / 2,
+            ask = basePrice + spread / 2,
+            last = basePrice,
+            volume = Random.nextLong(100, 50000),
+            impliedVol = Random.nextDouble(0.15, 0.45),
+            delta = Random.nextDouble(-1.0, 1.0),
+            gamma = Random.nextDouble(0.0, 0.05),
+            theta = -Random.nextDouble(0.01, 0.15),
+            vega = Random.nextDouble(0.01, 0.50)
+        )
+    }
+
     override fun requestContractDetails(
         symbol: String,
         secType: String,

@@ -37,8 +37,20 @@ class TwsIbkrClient(
     private val pendingRequests = ConcurrentHashMap<Int, CompletableFuture<Any>>()
     private val contractAccumulators = ConcurrentHashMap<Int, MutableList<OptionContractDetails>>()
     private val optionParamAccumulators = ConcurrentHashMap<Int, MutableList<OptionContractDetails>>()
+    private val snapshotAccumulators = ConcurrentHashMap<Int, MarketDataSnapshot>()
+    private val greeksStore = ConcurrentHashMap<Int, GreeksData>()
 
     private val requestTimeout = properties.reconnectDelayMs.coerceAtLeast(10000)
+
+    data class GreeksData(
+        val impliedVol: Double = Double.MAX_VALUE,
+        val delta: Double = Double.MAX_VALUE,
+        val gamma: Double = Double.MAX_VALUE,
+        val theta: Double = Double.MAX_VALUE,
+        val vega: Double = Double.MAX_VALUE
+    )
+
+    fun getGreeks(conId: Int): GreeksData? = greeksStore[conId]
 
     // === IbkrClient interface ===
 
@@ -129,6 +141,42 @@ class TwsIbkrClient(
             } catch (e: Exception) {
                 log.error("TwsIbkrClient: failed to cancel market data for conId={}", conId, e)
             }
+        }
+    }
+
+    override fun requestMarketDataSnapshot(conId: Int): MarketDataSnapshot? {
+        val reqId = nextReqId.getAndIncrement()
+        @Suppress("UNCHECKED_CAST")
+        val future = CompletableFuture<Any>()
+        val snapshot = MarketDataSnapshot(conId = conId)
+        snapshotAccumulators[reqId] = snapshot
+        reqIdToConId[reqId] = conId
+        pendingRequests[reqId] = future
+
+        val contract = Contract().apply {
+            conid(conId)
+            exchange("SMART")
+        }
+
+        sendExecutor.submit {
+            try {
+                client.reqMktData(reqId, contract, "", true, false, null)
+            } catch (e: Exception) {
+                future.completeExceptionally(e)
+            }
+        }
+
+        return try {
+            @Suppress("UNCHECKED_CAST")
+            future.get(5000, TimeUnit.MILLISECONDS) as? MarketDataSnapshot
+        } catch (e: Exception) {
+            log.debug("TwsIbkrClient: snapshot timed out for conId={}", conId)
+            val partial = snapshotAccumulators[reqId]
+            if (partial != null && (partial.bid != null || partial.ask != null)) partial else null
+        } finally {
+            pendingRequests.remove(reqId)
+            snapshotAccumulators.remove(reqId)
+            reqIdToConId.remove(reqId)
         }
     }
 
@@ -229,17 +277,29 @@ class TwsIbkrClient(
 
     override fun tickPrice(tickerId: Int, field: Int, price: Double, attribs: TickAttrib?) {
         val conId = reqIdToConId[tickerId] ?: return
+        // Populate snapshot accumulator if this is a snapshot request
+        snapshotAccumulators[tickerId]?.let { snap ->
+            when (field) {
+                1 -> snapshotAccumulators[tickerId] = snap.copy(bid = price)
+                2 -> snapshotAccumulators[tickerId] = snap.copy(ask = price)
+                4 -> snapshotAccumulators[tickerId] = snap.copy(last = price)
+                9 -> if (snap.last == null) snapshotAccumulators[tickerId] = snap.copy(last = price)
+            }
+        }
         tickCallbacks[conId]?.invoke(field, price)
     }
 
     override fun tickSize(tickerId: Int, field: Int, size: Decimal?) {
         val conId = reqIdToConId[tickerId] ?: return
         val value = size?.longValue()?.toDouble() ?: return
+        snapshotAccumulators[tickerId]?.let { snap ->
+            if (field == 8) snapshotAccumulators[tickerId] = snap.copy(volume = value.toLong())
+        }
         tickCallbacks[conId]?.invoke(field, value)
     }
 
     override fun tickString(tickerId: Int, tickType: Int, value: String?) {
-        // Tick type 45 = last timestamp, 84 = dividends — log for debugging
+        // Tick type 45 = last timestamp, 84 = dividends
     }
 
     override fun tickGeneric(tickerId: Int, tickType: Int, value: Double) {
@@ -252,8 +312,38 @@ class TwsIbkrClient(
         impliedVol: Double, delta: Double, optPrice: Double,
         pvDividend: Double, gamma: Double, vega: Double, theta: Double, undPrice: Double
     ) {
-        log.debug("TwsIbkrClient: option Greeks tickerId={} field={} IV={} delta={} gamma={} theta={} vega={}",
-            tickerId, field, impliedVol, delta, gamma, theta, vega)
+        val conId = reqIdToConId[tickerId] ?: return
+        // field 13 = model-based, most reliable for Greeks
+        if (field == 13 || field == 10 || field == 11 || field == 12) {
+            val validIV = if (impliedVol >= 0 && impliedVol < 10) impliedVol else null
+            val validDelta = if (delta > -2 && delta < 2) delta else null
+
+            greeksStore[conId] = GreeksData(
+                impliedVol = validIV ?: Double.MAX_VALUE,
+                delta = validDelta ?: Double.MAX_VALUE,
+                gamma = if (gamma >= 0) gamma else Double.MAX_VALUE,
+                theta = if (theta != Double.MAX_VALUE) theta else Double.MAX_VALUE,
+                vega = if (vega >= 0) vega else Double.MAX_VALUE
+            )
+
+            snapshotAccumulators[tickerId]?.let { snap ->
+                snapshotAccumulators[tickerId] = snap.copy(
+                    impliedVol = validIV,
+                    delta = validDelta,
+                    gamma = if (gamma >= 0) gamma else null,
+                    theta = if (theta != Double.MAX_VALUE) theta else null,
+                    vega = if (vega >= 0) vega else null
+                )
+            }
+        }
+        log.debug("TwsIbkrClient: Greeks conId={} field={} IV={} delta={}", conId, field, impliedVol, delta)
+    }
+
+    override fun tickSnapshotEnd(reqId: Int) {
+        val snapshot = snapshotAccumulators[reqId]
+        @Suppress("UNCHECKED_CAST")
+        val future = pendingRequests[reqId] as? CompletableFuture<Any>
+        future?.complete(snapshot ?: MarketDataSnapshot(conId = reqIdToConId[reqId] ?: 0))
     }
 
     override fun contractDetails(reqId: Int, contractDetails: ContractDetails?) {

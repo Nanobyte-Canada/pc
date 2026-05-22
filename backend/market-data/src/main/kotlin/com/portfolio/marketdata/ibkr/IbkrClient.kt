@@ -17,6 +17,7 @@ interface IbkrClient {
         strike: BigDecimal? = null,
         right: String? = null
     ): List<OptionContractDetails>
+    fun requestMarketDataSnapshot(conId: Int): MarketDataSnapshot?
 }
 
 data class OptionContractDetails(
@@ -27,4 +28,17 @@ data class OptionContractDetails(
     val expiry: LocalDate?,
     val strike: BigDecimal?,
     val right: String?
+)
+
+data class MarketDataSnapshot(
+    val conId: Int,
+    val bid: Double? = null,
+    val ask: Double? = null,
+    val last: Double? = null,
+    val volume: Long? = null,
+    val impliedVol: Double? = null,
+    val delta: Double? = null,
+    val gamma: Double? = null,
+    val theta: Double? = null,
+    val vega: Double? = null
 )
