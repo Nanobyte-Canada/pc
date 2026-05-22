@@ -9,6 +9,7 @@ import com.portfolio.brokergateway.api.dto.CreateConnectionRequest
 import com.portfolio.brokergateway.config.AdapterRegistry
 import com.portfolio.brokergateway.credential.CredentialService
 import com.portfolio.brokergateway.credential.GatewayConnection
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -20,11 +21,24 @@ class ConnectionController(
     private val adapterRegistry: AdapterRegistry,
     private val objectMapper: ObjectMapper
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @PostMapping
     fun createConnection(@RequestBody request: CreateConnectionRequest): ResponseEntity<ConnectionResponse> {
         val adapter = adapterRegistry.getAdapter(request.brokerType)
-        val credentials = parseCredentials(request)
+        var credentials = parseCredentials(request)
         val connectionId = credentialService.createConnection(request.userId, credentials)
+
+        // Exchange initial tokens before validation (e.g., Questrade refresh_token → access_token + api_server)
+        try {
+            val refreshed = adapter.refreshAuth(credentials)
+            if (refreshed !== credentials) {
+                credentials = refreshed
+                credentialService.updateCredentials(connectionId, credentials)
+            }
+        } catch (e: Exception) {
+            log.warn("Initial auth refresh failed for {}: {}", request.brokerType, e.message)
+        }
 
         val validation = adapter.validateConnection(credentials)
         if (!validation.connected) {
