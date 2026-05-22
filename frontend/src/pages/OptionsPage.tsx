@@ -16,7 +16,7 @@ import './OptionsPage.css'
 export function OptionsPage() {
   const { selectedUnderlying, setSelectedUnderlying, setQuote, setChain, quotes, chains } = useQuoteStore()
   const { legs, setIsCalculating, isCalculating, setStrategies, strategies, selectedStrategy } = useStrategyStore()
-  const { isConnected, subscribe } = useMarketDataWebSocket()
+  const { isConnected, subscribe, subscribeChain, unsubscribeChain } = useMarketDataWebSocket()
 
   const [isLoadingChain, setIsLoadingChain] = useState(false)
   const [calcResult, setCalcResult] = useState<CalculationResult | null>(null)
@@ -35,6 +35,11 @@ export function OptionsPage() {
       setChain(symbol, chainData)
       subscribe(symbol)
 
+      if (selectedUnderlying && selectedUnderlying !== symbol) {
+        unsubscribeChain(selectedUnderlying)
+      }
+      subscribeChain(symbol)
+
       if (!strategiesLoaded) {
         const strats = await getStrategies()
         setStrategies(strats)
@@ -45,7 +50,7 @@ export function OptionsPage() {
     } finally {
       setIsLoadingChain(false)
     }
-  }, [setSelectedUnderlying, setQuote, setChain, subscribe, setStrategies, strategiesLoaded])
+  }, [setSelectedUnderlying, setQuote, setChain, subscribe, subscribeChain, unsubscribeChain, selectedUnderlying, setStrategies, strategiesLoaded])
 
   const handleCalculate = useCallback(async () => {
     if (!selectedUnderlying || legs.length === 0) return

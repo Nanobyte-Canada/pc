@@ -34,6 +34,8 @@ class QuoteWebSocketHandler(
 
     private val optionSubscriptions = ConcurrentHashMap<String, MutableSet<String>>()
     private val contractToSessions = ConcurrentHashMap<String, MutableSet<String>>()
+    private val chainSubscriptions = ConcurrentHashMap<String, MutableSet<String>>()
+    private val chainToSessions = ConcurrentHashMap<String, MutableSet<String>>()
 
     override fun afterConnectionEstablished(session: WebSocketSession) {
         logger.info("WebSocket connection established: {}", session.id)
@@ -70,6 +72,14 @@ class QuoteWebSocketHandler(
                     val optionType = tree.get("optionType")?.asText() ?: return
                     unsubscribeOption(session.id, symbol, expiry, strike, optionType)
                 }
+                "subscribe_chain" -> {
+                    val underlying = tree.get("underlying")?.asText() ?: return
+                    subscribeChain(session.id, underlying)
+                }
+                "unsubscribe_chain" -> {
+                    val underlying = tree.get("underlying")?.asText() ?: return
+                    unsubscribeChain(session.id, underlying)
+                }
             }
         } catch (e: Exception) {
             logger.error("Error processing WebSocket message from {}", session.id, e)
@@ -95,8 +105,17 @@ class QuoteWebSocketHandler(
             }
         }
 
+        chainSubscriptions[session.id]?.forEach { underlying ->
+            chainToSessions[underlying]?.remove(session.id)
+            if (chainToSessions[underlying]?.isEmpty() == true) {
+                chainToSessions.remove(underlying)
+                optionStreamingService.stopStreamingChain(underlying)
+            }
+        }
+
         subscriptions.remove(session.id)
         optionSubscriptions.remove(session.id)
+        chainSubscriptions.remove(session.id)
         sessions.remove(session.id)
     }
 
@@ -153,12 +172,37 @@ class QuoteWebSocketHandler(
         }
     }
 
+    private fun subscribeChain(sessionId: String, underlying: String) {
+        chainSubscriptions.computeIfAbsent(sessionId) { ConcurrentHashMap.newKeySet() }.add(underlying)
+        chainToSessions.computeIfAbsent(underlying) { ConcurrentHashMap.newKeySet() }.add(sessionId)
+        optionStreamingService.startStreamingChain(underlying)
+        logger.info("Session {} subscribed to chain {}", sessionId, underlying)
+    }
+
+    private fun unsubscribeChain(sessionId: String, underlying: String) {
+        chainSubscriptions[sessionId]?.remove(underlying)
+        chainToSessions[underlying]?.remove(sessionId)
+        if (chainToSessions[underlying]?.isEmpty() == true) {
+            chainToSessions.remove(underlying)
+            optionStreamingService.stopStreamingChain(underlying)
+        }
+        logger.info("Session {} unsubscribed from chain {}", sessionId, underlying)
+    }
+
     fun broadcastOptionQuote(optionQuote: OptionQuote) {
         val contractKey = "${optionQuote.underlying}:${optionQuote.expiry}:${optionQuote.strike}:${optionQuote.optionType}"
-        val subscribedSessions = contractToSessions[contractKey] ?: return
-        val json = try { objectMapper.writeValueAsString(optionQuote) } catch (e: Exception) { return }
+        val json = try { objectMapper.writeValueAsString(mapOf(
+            "type" to "option_quote",
+            "data" to optionQuote
+        )) } catch (e: Exception) { return }
         val message = TextMessage(json)
-        subscribedSessions.forEach { sessionId ->
+
+        val recipients = mutableSetOf<String>()
+        contractToSessions[contractKey]?.let { recipients.addAll(it) }
+        chainToSessions[optionQuote.underlying]?.let { recipients.addAll(it) }
+        if (recipients.isEmpty()) return
+
+        recipients.forEach { sessionId ->
             sessions[sessionId]?.let { session ->
                 try { if (session.isOpen) session.sendMessage(message) } catch (_: Exception) {}
             }

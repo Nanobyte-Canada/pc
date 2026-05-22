@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useQuoteStore } from '@/stores/quoteStore'
-import type { Quote } from '@/types/options'
+import type { Quote, OptionQuoteData } from '@/types/options'
 
 interface UseMarketDataWebSocketOptions {
   autoConnect?: boolean
@@ -12,8 +12,10 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
   const reconnectDelayRef = useRef(1000)
   const subscribedSymbolsRef = useRef<Set<string>>(new Set())
+  const subscribedChainsRef = useRef<Set<string>>(new Set())
   const [isConnected, setIsConnected] = useState(false)
   const setQuote = useQuoteStore((state) => state.setQuote)
+  const updateChainQuote = useQuoteStore((state) => state.updateChainQuote)
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return
@@ -29,11 +31,22 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
       subscribedSymbolsRef.current.forEach((symbol) => {
         ws.send(JSON.stringify({ action: 'subscribe', symbol }))
       })
+      subscribedChainsRef.current.forEach((underlying) => {
+        ws.send(JSON.stringify({ action: 'subscribe_chain', underlying }))
+      })
     }
 
     ws.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data) as Quote
+        const raw = JSON.parse(event.data)
+        if (raw.type === 'option_quote' && raw.data) {
+          const oq = raw.data as OptionQuoteData
+          if (oq.underlying) {
+            updateChainQuote(oq.underlying, oq)
+          }
+          return
+        }
+        const data = raw as Quote
         if (data.symbol) {
           setQuote(data.symbol, data)
         }
@@ -79,6 +92,20 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
     }
   }, [])
 
+  const subscribeChain = useCallback((underlying: string) => {
+    subscribedChainsRef.current.add(underlying)
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'subscribe_chain', underlying }))
+    }
+  }, [])
+
+  const unsubscribeChain = useCallback((underlying: string) => {
+    subscribedChainsRef.current.delete(underlying)
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'unsubscribe_chain', underlying }))
+    }
+  }, [])
+
   const subscribeOption = useCallback(
     (symbol: string, expiry: string, strike: string, optionType: string) => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -112,6 +139,8 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
     disconnect,
     subscribe,
     unsubscribe,
+    subscribeChain,
+    unsubscribeChain,
     subscribeOption,
     unsubscribeOption,
   }
