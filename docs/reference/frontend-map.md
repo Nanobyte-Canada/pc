@@ -51,13 +51,12 @@
 | `BrokerCard.tsx` | BrokerCard | Card displaying a single broker with logo, name, and connect button |
 | `BrokerConnectionCard.tsx` | BrokerConnectionCard | Card showing a connected broker account with status, value, and actions |
 | `ConnectionStatus.tsx` | ConnectionStatus | Badge-style status indicator for broker connection status |
-| `SnapTradeBadge.tsx` | SnapTradeBadge | Badge showing SnapTrade API status (ONLINE/DEGRADED/OFFLINE) |
+| `ConnectBrokerDialog.tsx` | ConnectBrokerDialog | Dialog with manual token entry form for connecting to brokers (e.g., Questrade refresh token). Replaces the old SnapTrade redirect flow. |
 | `CashBalanceCards.tsx` | CashBalanceCards | Cards displaying cash balances by currency |
 | `AccountActivitiesGrid.tsx` | AccountActivitiesGrid | AG Grid table showing broker account activities (trades, dividends, etc.) |
 | `BrokerageMatrix.tsx` | BrokerageMatrix | Grid showing available brokerages with features (trading, fractional, etc.) |
 | `BrokerCard.css` | -- | Styles for BrokerCard |
 | `BrokerConnectionCard.css` | -- | Styles for BrokerConnectionCard |
-| `SnapTradeBadge.css` | -- | Styles for SnapTradeBadge |
 | `AccountActivitiesGrid.css` | -- | Styles for AccountActivitiesGrid |
 | `BrokerageMatrix.css` | -- | Styles for BrokerageMatrix |
 
@@ -236,7 +235,7 @@
 | `ScreenerPage.tsx` | ScreenerPage | `/screener/:type` | Unified instrument screener with filters, grid, and sidebar for all instrument types (STOCK, ETF, MUTUAL_FUND, PREFERRED_STOCK, INDEX, BOND) |
 | `InstrumentDetailPage.tsx` | InstrumentDetailPage | `/instruments/:type/:ticker` | Unified instrument detail page with hero metrics, section nav, and type-specific sections |
 | `AnalyticsPage.tsx` | AnalyticsPage | `/analytics` | Portfolio analysis builder with sector, geography, and risk charts |
-| `BrokerConnectionsPage.tsx` | BrokerConnectionsPage | `/brokers/connections` | Broker connection management (connect, disconnect, status) |
+| `BrokerConnectionsPage.tsx` | BrokerConnectionsPage | `/brokers/connections` | Broker connection management (dialog-based connect flow via ConnectBrokerDialog, disconnect, status) |
 | `BrokerPositionsPage.tsx` | BrokerPositionsPage | `/brokers/positions` | Aggregated positions view across all broker accounts |
 | `PositionDetailsPage.tsx` | PositionDetailsPage | `/brokers/positions/:connectionId` | Detailed positions for a single broker connection |
 | `AccountDetailPage.tsx` | AccountDetailPage | `/brokers/accounts/:connectionId` | Individual account detail with widgets and activities |
@@ -275,6 +274,8 @@ Defined in `App.tsx`. All pages are lazy-loaded with `React.lazy()` and wrapped 
   /brokers/positions/:connectionId  -- PositionDetailsPage
   /brokers/accounts/:connectionId   -- AccountDetailPage
   /brokers/reporting                -- ReportingPage
+  /options                          -- OptionsPage
+  /wheel                            -- WheelPage
   /profile                          -- ProfilePage
   /admin                            -- AdminPage (ProtectedRoute with ADMIN role)
 
@@ -293,7 +294,6 @@ Defined in `App.tsx`. All pages are lazy-loaded with `React.lazy()` and wrapped 
 | `useBrokerConnections` | Query | `['brokers', 'connections']` | `getUserConnections()` | 30 sec | -- |
 | `useConnectionPositions(id)` | Query | `['brokers', 'positions', id]` | `getConnectionPositions(id)` | 1 min | -- |
 | `useAggregatedPositions` | Query | `['brokers', 'positions', 'aggregated']` | `getAggregatedPositions()` | 1 min | -- |
-| `useSnapTradeStatus` | Query | `['brokers', 'snaptrade-status']` | `getSnapTradeStatus()` | 1 min | 5 min |
 | `useConnectionActivities(id, params)` | Query | `['brokers', 'activities', id, params]` | `getConnectionActivities(id, params)` | 1 min | -- |
 | `useBalanceHistory(id, days)` | Query | `['brokers', 'balance-history', id, days]` | `getBalanceHistory(id, days)` | 1 min | -- |
 | `useConnectBroker` | Mutation | -- | `connectBroker(request)` | -- | -- |
@@ -448,12 +448,11 @@ Base API utility module. All other services depend on this.
 |--------|-----------|----------|--------|
 | `getAvailableBrokers()` | -- | `/api/v1/brokers` | GET |
 | `getUserConnections()` | -- | `/api/v1/brokers/connections` | GET |
-| `connectBroker(request?)` | `ConnectBrokerRequest?` | `/api/v1/brokers/connect` | POST |
+| `connectBroker(request)` | `ConnectBrokerRequest { brokerType: string, credentials: Record<string, unknown> }` | `/api/v1/brokers/connect` | POST |
 | `disconnectBroker(authId)` | `authorizationId: string` | `/api/v1/brokers/connections/{authId}` | DELETE |
 | `triggerPositionFetch(id)` | `connectionId: number` | `/api/v1/brokers/connections/{id}/fetch` | POST |
 | `getConnectionPositions(id)` | `connectionId: number` | `/api/v1/brokers/connections/{id}/positions` | GET |
 | `getAggregatedPositions()` | -- | `/api/v1/brokers/positions` | GET |
-| `getSnapTradeStatus()` | -- | `/api/v1/brokers/snaptrade/status` | GET |
 | `syncConnections()` | -- | `/api/v1/brokers/connections/sync` | POST |
 | `getConnectionActivities(id, params)` | `connectionId, {page, size, startDate, endDate, type}` | `/api/v1/brokers/connections/{id}/activities` | GET |
 | `syncConnectionActivities(id)` | `connectionId: number` | `/api/v1/brokers/connections/{id}/sync-activities` | POST |
@@ -705,7 +704,6 @@ interface PortfolioStore {
 | `AggregatedPosition` | symbol, totalQuantity, totalValue, brokerBreakdown[] |
 | `BrokerActivityDto` | id, type, symbol, amount, fee, tradeDate |
 | `BalanceSnapshotDto` | totalValue, cash: Record, currency, asOfDate |
-| `SnapTradeStatus` | status ('ONLINE'\|'DEGRADED'\|'OFFLINE'\|'UNKNOWN'), responseTimeMs, uptimePercent24h |
 | `ReportingPerformanceResponse` | contributionsWithdrawals[], totalValueHistory[], dividendHistory[], kpis |
 | `ConnectionStatusType` | Union: 'PENDING'\|'ACTIVE'\|'EXPIRED'\|'ERROR'\|'DISCONNECTED' |
 
@@ -815,7 +813,7 @@ interface PortfolioStore {
 ### By directory
 - `components/analytics/` -- SummaryCards.css, ChartStyles.css, TopHoldingsGrid.css
 - `components/auth/` -- (none, styled inline or in auth pages)
-- `components/broker/` -- BrokerCard.css, BrokerConnectionCard.css, SnapTradeBadge.css, AccountActivitiesGrid.css, BrokerageMatrix.css
+- `components/broker/` -- BrokerCard.css, BrokerConnectionCard.css, AccountActivitiesGrid.css, BrokerageMatrix.css
 - `components/dashboard/` -- DashboardGrid.css, DashboardEditMode.css, AccountTabs.css, PositionsHoldingsTabs.css, WidgetWrapper.css
 - `components/dashboard/widgets/` -- 18 widget CSS files (one per widget that has custom styles)
 - `components/instruments/` -- InstrumentSearchAutocomplete.css, InstrumentTabs.css
@@ -992,3 +990,40 @@ interface PortfolioStore {
 | `/market-data-api/*` | `http://market-data-service:8082` | Market data REST API (path prefix stripped) |
 | `/ws/quotes` | `ws://market-data-service:8082` | WebSocket for real-time quotes |
 | `/strategy-api/*` | `http://strategy-service:8083` | Strategy REST API (path prefix stripped) |
+
+---
+
+## Wheel Strategy Module
+
+### Pages
+
+| File | Route | Description |
+|---|---|---|
+| `pages/WheelPage.tsx` + `.css` | `/wheel` | Wheel positions management: timeline grid of CSP/CC positions by expiry (Y-axis) and ticker (X-axis), account tabs, capital summary, close position dialog |
+
+### Components (`components/wheel/`)
+
+| File | Description |
+|---|---|
+| `WheelGrid.tsx` + `.css` | Timeline grid table: expiry rows, ticker columns, position cards in cells, empty slots, DTE badges, sticky header/footer with totals |
+| `PositionCard.tsx` + `.css` | Individual position card: strike/premium/P&L/OTM labels, CSP (blue) vs CC (pink) color coding, optional account badge |
+| `CapitalSummary.tsx` + `.css` | Capital metrics bar: available cash, deployed CSPs, shares held, CCs written, total premium, unrealized P&L |
+| `ClosePositionDialog.tsx` + `.css` | Modal dialog for closing a position (buy-to-close) with position details and confirmation |
+
+### Hooks
+
+| File | Description |
+|---|---|
+| `hooks/useWheelPositions.ts` | Fetches positions via React Query, filters to options, groups into grid structure by expiry/ticker. Exports: `useWheelPositions`, `buildWheelGrid`, `computeTickerTotals`, `computeCapitalMetrics` |
+
+### Types
+
+| File | Description |
+|---|---|
+| `types/wheel.ts` | WheelTicker, WheelPosition, WheelCell, WheelExpiryRow, WheelGridData, TickerTotals, CapitalMetrics, DteUrgency, getDteUrgency(), isMonthlyExpiry() |
+
+### Tests
+
+| File | Description |
+|---|---|
+| `hooks/__tests__/useWheelPositions.test.ts` | 9 unit tests: position placement (CSP/CC), filtering (non-options, beyond 90 DTE), stacking, DTE calculation, available expiries, ticker totals, capital metrics |
