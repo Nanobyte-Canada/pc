@@ -1,0 +1,33 @@
+.wheel-capital-bar {
+  display: flex;
+  gap: 28px;
+  padding: 14px 20px;
+  background: var(--card-bg);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.wheel-capital-label {
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 3px;
+  font-weight: 500;
+}
+
+.wheel-capital-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.wheel-pnl-positive {
+  color: var(--success);
+}
+
+.wheel-pnl-negative {
+  color: var(--error);
+}
