@@ -91,7 +91,7 @@ function toWheelPosition(
     currentPrice: p.currentPrice,
     pnl: p.totalPnl,
     otmPercent: null,
-    quantity: Math.abs(p.quantity),
+    quantity: Math.abs(p.quantity ?? (p as Record<string, unknown>).totalQuantity as number ?? 1),
     accountName,
     accountNumber,
     connectionId,
