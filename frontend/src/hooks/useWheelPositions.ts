@@ -31,14 +31,48 @@ function isMonthlyExpiry(dateStr: string): boolean {
   return d.getDate() === thirdFriday.getDate()
 }
 
+interface ParsedOption {
+  underlying: string
+  expiry: string
+  optionType: 'CALL' | 'PUT'
+  strike: number
+}
+
+const MONTH_MAP: Record<string, string> = {
+  Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+  Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12',
+}
+
+const OPTION_SYMBOL_RE = /^([A-Z]+)(\d{2})([A-Z][a-z]{2})(\d{2})([CP])(\d+(?:\.\d+)?)$/
+
+function parseOptionSymbol(symbol: string): ParsedOption | null {
+  const m = symbol.match(OPTION_SYMBOL_RE)
+  if (!m) return null
+  const [, underlying, day, monthStr, year, cp, strike] = m
+  const month = MONTH_MAP[monthStr]
+  if (!month) return null
+  return {
+    underlying,
+    expiry: `20${year}-${month}-${day}`,
+    optionType: cp === 'C' ? 'CALL' : 'PUT',
+    strike: parseFloat(strike),
+  }
+}
+
 function isOptionPosition(p: BrokerPosition): boolean {
-  return (
-    p.instrumentType === 'OPTION' &&
-    p.optionType != null &&
-    p.strikePrice != null &&
-    p.expirationDate != null &&
-    p.underlyingSymbol != null
-  )
+  if (p.instrumentType === 'OPTION' && p.optionType != null && p.strikePrice != null && p.expirationDate != null && p.underlyingSymbol != null) {
+    return true
+  }
+  return parseOptionSymbol(p.symbol) != null
+}
+
+function resolveOptionFields(p: BrokerPosition): { optionType: string, strikePrice: number, expirationDate: string, underlyingSymbol: string } | null {
+  if (p.optionType != null && p.strikePrice != null && p.expirationDate != null && p.underlyingSymbol != null) {
+    return { optionType: p.optionType, strikePrice: p.strikePrice, expirationDate: p.expirationDate, underlyingSymbol: p.underlyingSymbol }
+  }
+  const parsed = parseOptionSymbol(p.symbol)
+  if (!parsed) return null
+  return { optionType: parsed.optionType, strikePrice: parsed.strike, expirationDate: parsed.expiry, underlyingSymbol: parsed.underlying }
 }
 
 function toWheelPosition(
@@ -46,11 +80,13 @@ function toWheelPosition(
   accountName: string | null,
   accountNumber: string | null,
   connectionId: number,
-): WheelPosition {
+): WheelPosition | null {
+  const fields = resolveOptionFields(p)
+  if (!fields) return null
   return {
     id: p.id,
-    type: p.optionType === 'CALL' ? 'CC' : 'CSP',
-    strike: p.strikePrice!,
+    type: fields.optionType === 'CALL' ? 'CC' : 'CSP',
+    strike: fields.strikePrice,
     premium: p.averageCost != null ? Math.abs(p.averageCost) * 100 : null,
     currentPrice: p.currentPrice,
     pnl: p.totalPnl,
@@ -72,18 +108,20 @@ export function buildWheelGrid(
   connectionId: number = 0,
   underlyingPrices: Record<string, number> = {},
 ): WheelGridData {
-  const optionPositions = positions.filter(
-    p => isOptionPosition(p) && tickers.includes(p.underlyingSymbol!)
-  )
+  const resolvedPositions = positions
+    .map(p => ({ position: p, fields: resolveOptionFields(p) }))
+    .filter((r): r is { position: BrokerPosition; fields: NonNullable<ReturnType<typeof resolveOptionFields>> } =>
+      r.fields != null && tickers.includes(r.fields.underlyingSymbol)
+    )
 
   const expirySet = new Set<string>()
   availableExpiries.forEach(e => {
     const dte = diffDays(today, new Date(e + 'T00:00:00'))
     if (dte >= 0 && dte <= MAX_DTE) expirySet.add(e)
   })
-  optionPositions.forEach(p => {
-    const dte = diffDays(today, new Date(p.expirationDate! + 'T00:00:00'))
-    if (dte >= 0 && dte <= MAX_DTE) expirySet.add(p.expirationDate!)
+  resolvedPositions.forEach(({ fields }) => {
+    const dte = diffDays(today, new Date(fields.expirationDate + 'T00:00:00'))
+    if (dte >= 0 && dte <= MAX_DTE) expirySet.add(fields.expirationDate)
   })
 
   const sortedExpiries = Array.from(expirySet).sort()
@@ -94,16 +132,18 @@ export function buildWheelGrid(
 
     const cells: Record<string, WheelCell> = {}
     tickers.forEach(ticker => {
-      const matching = optionPositions
-        .filter(p => p.underlyingSymbol === ticker && p.expirationDate === expiry)
-        .map(p => {
-          const wp = toWheelPosition(p, accountName, accountNumber, connectionId)
+      const matching = resolvedPositions
+        .filter(({ fields }) => fields.underlyingSymbol === ticker && fields.expirationDate === expiry)
+        .map(({ position }) => {
+          const wp = toWheelPosition(position, accountName, accountNumber, connectionId)
+          if (!wp) return null
           const underlyingPrice = underlyingPrices[ticker]
           if (underlyingPrice && underlyingPrice > 0) {
             wp.otmPercent = Math.abs(wp.strike - underlyingPrice) / underlyingPrice * 100
           }
           return wp
         })
+        .filter((wp): wp is WheelPosition => wp != null)
       cells[ticker] = { positions: matching }
     })
 
@@ -166,12 +206,13 @@ export function computeCapitalMetrics(
   let unrealizedPnl = 0
 
   optionPositions.forEach(p => {
-    if (!isOptionPosition(p) || !tickers.includes(p.underlyingSymbol!)) return
-    const strike = p.strikePrice!
+    const fields = resolveOptionFields(p)
+    if (!fields || !tickers.includes(fields.underlyingSymbol)) return
+    const strike = fields.strikePrice
     const qty = Math.abs(p.quantity)
     const cost = Math.abs(p.averageCost ?? 0)
 
-    if (p.optionType === 'PUT') {
+    if (fields.optionType === 'PUT') {
       deployedCsp += strike * 100 * qty
     } else {
       ccsWritten += strike * 100 * qty

@@ -142,6 +142,51 @@ describe('computeTickerTotals', () => {
   })
 })
 
+describe('buildWheelGrid with symbol-parsed positions', () => {
+  const tickers = ['SOXL', 'TQQQ']
+  const today = new Date('2026-05-23')
+
+  it('parses option data from symbol when fields are null', () => {
+    const positions = [
+      makePosition({
+        symbol: 'SOXL29May26P70.00',
+        instrumentType: 'OTHER',
+        optionType: null,
+        strikePrice: null,
+        expirationDate: null,
+        underlyingSymbol: null,
+      }),
+    ]
+    const grid = buildWheelGrid(positions, tickers, [], today)
+
+    const row = grid.expiryRows.find(r => r.expiryDate === '2026-05-29')
+    expect(row).toBeDefined()
+    expect(row!.cells['SOXL'].positions).toHaveLength(1)
+    expect(row!.cells['SOXL'].positions[0].type).toBe('CSP')
+    expect(row!.cells['SOXL'].positions[0].strike).toBe(70)
+  })
+
+  it('parses call options from symbol', () => {
+    const positions = [
+      makePosition({
+        symbol: 'TQQQ18Jun26C48.00',
+        instrumentType: 'OTHER',
+        optionType: null,
+        strikePrice: null,
+        expirationDate: null,
+        underlyingSymbol: null,
+      }),
+    ]
+    const grid = buildWheelGrid(positions, tickers, [], today)
+
+    const row = grid.expiryRows.find(r => r.expiryDate === '2026-06-18')
+    expect(row).toBeDefined()
+    expect(row!.cells['TQQQ'].positions).toHaveLength(1)
+    expect(row!.cells['TQQQ'].positions[0].type).toBe('CC')
+    expect(row!.cells['TQQQ'].positions[0].strike).toBe(48)
+  })
+})
+
 describe('computeCapitalMetrics', () => {
   it('computes capital metrics from positions and cash', () => {
     const optionPositions = [
