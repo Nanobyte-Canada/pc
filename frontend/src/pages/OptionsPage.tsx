@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuoteStore } from '@/stores/quoteStore'
 import { useStrategyStore } from '@/stores/strategyStore'
 import { useMarketDataWebSocket } from '@/hooks/useMarketDataWebSocket'
@@ -17,11 +18,21 @@ export function OptionsPage() {
   const { selectedUnderlying, setSelectedUnderlying, setQuote, setChain, quotes, chains } = useQuoteStore()
   const { legs, setIsCalculating, isCalculating, setStrategies, strategies, selectedStrategy } = useStrategyStore()
   const { isConnected, subscribe, subscribeChain, unsubscribeChain } = useMarketDataWebSocket()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [isLoadingChain, setIsLoadingChain] = useState(false)
   const [calcResult, setCalcResult] = useState<CalculationResult | null>(null)
   const [calcWarnings, setCalcWarnings] = useState<string[]>([])
   const [strategiesLoaded, setStrategiesLoaded] = useState(false)
+
+  useEffect(() => {
+    const ticker = searchParams.get('ticker')
+    if (ticker && !selectedUnderlying) {
+      handleSearch(ticker)
+      setSearchParams({}, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSearch = useCallback(async (symbol: string) => {
     setIsLoadingChain(true)
