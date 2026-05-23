@@ -25,8 +25,12 @@ export const useQuoteStore = create<QuoteState>()((set) => ({
       const chain = state.chains[underlying]
       if (!chain) return state
 
-      const expiryKey = optionQuote.expiry
-      const strikeKey = String(optionQuote.strike)
+      // Normalize expiry: backend may send [2026,8,21] array or "2026-08-21" string
+      const rawExpiry = optionQuote.expiry as unknown
+      const expiryKey = Array.isArray(rawExpiry)
+        ? `${rawExpiry[0]}-${String(rawExpiry[1]).padStart(2, '0')}-${String(rawExpiry[2]).padStart(2, '0')}`
+        : String(rawExpiry)
+      const strikeKey = String(optionQuote.strike) + (String(optionQuote.strike).includes('.') ? '' : '.0')
       const expiryData = chain.expirations[expiryKey]
       if (!expiryData) return state
 

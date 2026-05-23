@@ -31,7 +31,7 @@ export function OptionsChainTable({ chain }: OptionsChainTableProps) {
   const strikes = chain.expirations[selectedExpiry]
   if (!strikes) return null
 
-  const strikeKeys = Object.keys(strikes).map(Number).sort((a, b) => a - b)
+  const strikeEntries = Object.entries(strikes).sort(([a], [b]) => parseFloat(a) - parseFloat(b))
   const spot = chain.spotPrice
 
   return (
@@ -70,15 +70,15 @@ export function OptionsChainTable({ chain }: OptionsChainTableProps) {
           </tr>
         </thead>
         <tbody>
-          {strikeKeys.map((strike) => {
-            const data = strikes[strike.toString()]
+          {strikeEntries.map(([strikeKey, data]) => {
+            const strike = parseFloat(strikeKey)
             if (!data) return null
             const isATM = Math.abs(strike - spot) <= (spot * 0.01)
             const callITM = strike < spot
             const putITM = strike > spot
 
             return (
-              <tr key={strike} className={isATM ? 'chain-table__atm-row' : ''}>
+              <tr key={strikeKey} className={isATM ? 'chain-table__atm-row' : ''}>
                 <td
                   className={`chain-table__call-side ${callITM ? 'chain-table__itm' : ''}`}
                   onClick={() => data.call && handleClickOption(data.call, 'BUY')}
@@ -92,7 +92,7 @@ export function OptionsChainTable({ chain }: OptionsChainTableProps) {
                 <td className={callITM ? 'chain-table__itm' : ''}>{data.call?.last.toFixed(2) ?? '-'}</td>
                 <td className={callITM ? 'chain-table__itm' : ''}>{data.call?.greeks?.delta.toFixed(3) ?? '-'}</td>
                 <td className={callITM ? 'chain-table__itm' : ''}>{data.call?.volume.toLocaleString() ?? '-'}</td>
-                <td className="chain-table__strike-cell">{strike.toFixed(0)}</td>
+                <td className="chain-table__strike-cell">{Math.round(strike)}</td>
                 <td
                   className={`chain-table__put-side ${putITM ? 'chain-table__itm' : ''}`}
                   onClick={() => data.put && handleClickOption(data.put, 'BUY')}

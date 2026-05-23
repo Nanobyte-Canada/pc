@@ -69,7 +69,7 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
     }
 
     wsRef.current = ws
-  }, [setQuote])
+  }, [setQuote, updateChainQuote])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)

@@ -167,7 +167,9 @@ class QuoteWebSocketHandler(
         val message = TextMessage(json)
         subscribedSessions.forEach { sessionId ->
             sessions[sessionId]?.let { session ->
-                try { if (session.isOpen) session.sendMessage(message) } catch (_: Exception) {}
+                synchronized(session) {
+                    try { if (session.isOpen) session.sendMessage(message) } catch (_: Exception) {}
+                }
             }
         }
     }
@@ -204,7 +206,9 @@ class QuoteWebSocketHandler(
 
         recipients.forEach { sessionId ->
             sessions[sessionId]?.let { session ->
-                try { if (session.isOpen) session.sendMessage(message) } catch (_: Exception) {}
+                synchronized(session) {
+                    try { if (session.isOpen) session.sendMessage(message) } catch (_: Exception) {}
+                }
             }
         }
     }
