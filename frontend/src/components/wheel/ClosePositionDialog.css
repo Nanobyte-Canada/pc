@@ -1,0 +1,97 @@
+.wheel-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.wheel-dialog {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 420px;
+  max-width: 90vw;
+}
+
+.wheel-dialog-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.wheel-dialog-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.wheel-dialog-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.wheel-dialog-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wheel-dialog-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.wheel-dialog-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.wheel-dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.wheel-dialog-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+.wheel-dialog-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wheel-dialog-btn-cancel {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.wheel-dialog-btn-cancel:hover:not(:disabled) {
+  background: var(--bg-secondary);
+}
+
+.wheel-dialog-btn-confirm {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.wheel-dialog-btn-confirm:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
