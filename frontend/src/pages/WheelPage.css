@@ -1,0 +1,68 @@
+.wheel-page {
+  padding: 24px;
+  max-width: 1600px;
+}
+
+.wheel-page-header {
+  margin-bottom: 20px;
+}
+
+.wheel-page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+  margin-bottom: 4px;
+}
+
+.wheel-page-subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.wheel-account-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--card-bg);
+  padding: 3px;
+  border-radius: 10px;
+  width: fit-content;
+  margin-bottom: 20px;
+}
+
+.wheel-account-tab {
+  padding: 7px 16px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wheel-account-tab:hover {
+  color: var(--text-secondary);
+}
+
+.wheel-account-tab-active {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.wheel-loading,
+.wheel-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.wheel-error {
+  color: var(--error);
+}
