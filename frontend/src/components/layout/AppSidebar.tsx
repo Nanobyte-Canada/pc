@@ -20,6 +20,7 @@ import {
   Activity,
   Banknote,
   LineChart,
+  RotateCw,
 } from 'lucide-react'
 import { useDashboardAccounts, useRefreshAll } from '@/hooks/useDashboardWidgets'
 import { useTypeCounts } from '@/hooks/useNewScreener'
@@ -83,6 +84,7 @@ const navSections: NavSection[] = [
     title: 'Options',
     items: [
       { to: '/options', icon: LineChart, label: 'Options Trading' },
+      { to: '/wheel', icon: RotateCw, label: 'Wheel Strategy' },
     ],
   },
 ]
