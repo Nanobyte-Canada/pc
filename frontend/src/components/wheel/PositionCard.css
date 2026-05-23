@@ -1,0 +1,107 @@
+.wheel-position-card {
+  padding: 9px 11px;
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.wheel-position-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.wheel-position-card + .wheel-position-card {
+  margin-top: 6px;
+}
+
+.wheel-card-csp {
+  background: linear-gradient(135deg, #1d2750, #263168);
+  border: 1px solid rgba(100, 140, 220, 0.2);
+  border-left: 3px solid rgba(100, 150, 230, 0.6);
+}
+
+.wheel-card-cc {
+  background: linear-gradient(135deg, #3d1f35, #4e2845);
+  border: 1px solid rgba(200, 130, 170, 0.2);
+  border-left: 3px solid rgba(200, 130, 170, 0.6);
+}
+
+html:not(.dark) .wheel-card-csp {
+  background: linear-gradient(135deg, #dde4f8, #e8edfb);
+  border-color: rgba(80, 110, 180, 0.2);
+  border-left-color: rgba(80, 110, 180, 0.5);
+}
+
+html:not(.dark) .wheel-card-cc {
+  background: linear-gradient(135deg, #f4dde9, #f8e6ef);
+  border-color: rgba(170, 90, 130, 0.2);
+  border-left-color: rgba(170, 90, 130, 0.5);
+}
+
+.wheel-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.wheel-card-row:last-child {
+  margin-bottom: 0;
+}
+
+.wheel-card-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  min-width: 52px;
+  font-weight: 500;
+}
+
+.wheel-card-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 12px;
+  text-align: right;
+  color: var(--text-primary);
+}
+
+.wheel-card-strike {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wheel-card-small {
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.wheel-account-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.wheel-account-0 {
+  background: rgba(90, 140, 200, 0.12);
+  color: var(--info);
+  border: 1px solid rgba(90, 140, 200, 0.2);
+}
+
+.wheel-account-1 {
+  background: rgba(80, 180, 130, 0.12);
+  color: var(--success);
+  border: 1px solid rgba(80, 180, 130, 0.2);
+}
+
+.wheel-account-2 {
+  background: rgba(200, 170, 70, 0.12);
+  color: var(--warning);
+  border: 1px solid rgba(200, 170, 70, 0.2);
+}
