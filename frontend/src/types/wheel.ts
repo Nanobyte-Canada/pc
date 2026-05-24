@@ -1,5 +1,3 @@
-// frontend/src/types/wheel.ts
-
 export interface WheelTicker {
   symbol: string
   currentPrice: number | null
@@ -14,6 +12,7 @@ export interface WheelPosition {
   pnl: number | null
   otmPercent: number | null
   quantity: number
+  currency: string
   accountName: string | null
   accountNumber: string | null
   connectionId: number
@@ -31,10 +30,15 @@ export interface WheelExpiryRow {
   cells: Record<string, WheelCell>
 }
 
+export interface DualCurrency {
+  usd: number
+  cad: number
+}
+
 export interface TickerTotals {
   positionCount: number
-  cspExposure: number
-  totalPnl: number
+  cspExposure: DualCurrency
+  totalPnl: DualCurrency
 }
 
 export interface WheelGridData {
@@ -44,12 +48,14 @@ export interface WheelGridData {
 }
 
 export interface CapitalMetrics {
-  availableCash: number
-  deployedCsp: number
-  sharesHeld: number
-  ccsWritten: number
-  totalPremium: number
-  unrealizedPnl: number
+  cashUsd: number
+  cashCad: number
+  cashTotalUsd: number
+  cashTotalCad: number
+  deployedCsp: DualCurrency
+  ccsWritten: DualCurrency
+  totalPremium: DualCurrency
+  unrealizedPnl: DualCurrency
 }
 
 export type DteUrgency = 'critical' | 'warning' | 'normal' | 'safe' | 'far'
