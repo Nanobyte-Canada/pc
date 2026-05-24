@@ -1,12 +1,17 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueries } from '@tanstack/react-query'
 import { useBrokerConnections } from '@/hooks/useBrokerConnections'
 import { useWheelPositions } from '@/hooks/useWheelPositions'
 import { useDashboardCash } from '@/hooks/useDashboardWidgets'
+import { useExchangeRate } from '@/hooks/useExchangeRate'
+import { useWheelActivities } from '@/hooks/useWheelActivities'
+import { computeTickerTotals } from '@/hooks/useWheelPositions'
+import { getQuote } from '@/services/marketDataService'
 import { CapitalSummary } from '@/components/wheel/CapitalSummary'
 import { WheelGrid } from '@/components/wheel/WheelGrid'
 import { ClosePositionDialog } from '@/components/wheel/ClosePositionDialog'
-import type { WheelPosition } from '@/types/wheel'
+import type { WheelPosition, CapitalMetrics } from '@/types/wheel'
 import './WheelPage.css'
 
 const WHEEL_TICKERS = ['SOXL', 'TECL', 'TQQQ', 'UPRO']
@@ -25,41 +30,127 @@ export function WheelPage() {
   const { data: connectionsData } = useBrokerConnections()
   const connections = connectionsData?.connections ?? []
   const activeConnections = connections.filter(c => c.status === 'ACTIVE')
+  const connectionIds = activeConnections.map(c => c.id)
 
-  const { gridData, isLoading, error } = useWheelPositions(WHEEL_TICKERS, selectedConnectionId)
+  const { data: fxData } = useExchangeRate('USD')
+  const fxRate = fxData?.rateToCAD ?? 1.38
+
+  const { premiumMap, isLoading: activitiesLoading } = useWheelActivities(connectionIds)
+
+  const { gridData: rawGridData, isLoading: positionsLoading, error } = useWheelPositions(WHEEL_TICKERS, selectedConnectionId)
   const { data: cashData } = useDashboardCash(selectedConnectionId)
 
-  const capitalMetrics = useMemo(() => {
+  const quotesQuery = useQueries({
+    queries: WHEEL_TICKERS.map(ticker => ({
+      queryKey: ['wheel-quote', ticker],
+      queryFn: async () => {
+        const response = await getQuote(ticker)
+        return { ticker, price: response.last ?? response.mid ?? 0 }
+      },
+      staleTime: 30_000,
+    })),
+  })
+
+  const underlyingPrices = useMemo(() => {
+    const prices: Record<string, number> = {}
+    quotesQuery.forEach(q => {
+      if (q.data) prices[q.data.ticker] = q.data.price
+    })
+    return prices
+  }, [quotesQuery])
+
+  // Re-build grid with premium map, underlying prices, and FX rate
+  const gridData = useMemo(() => {
+    if (!rawGridData) return null
+
+    // Get the raw positions from the query data to rebuild with premium lookup
+    // Since rawGridData is already built without premium/prices, we rebuild
+    // by extracting positions from the existing grid and enriching
+    const enrichedGrid = { ...rawGridData }
+
+    // Update ticker prices from quotes
+    enrichedGrid.tickers = enrichedGrid.tickers.map(t => ({
+      ...t,
+      currentPrice: underlyingPrices[t.symbol] ?? t.currentPrice,
+    }))
+
+    // Update positions with premium from activities and OTM from quotes
+    enrichedGrid.expiryRows = enrichedGrid.expiryRows.map(row => ({
+      ...row,
+      cells: Object.fromEntries(
+        Object.entries(row.cells).map(([ticker, cell]) => [
+          ticker,
+          {
+            positions: cell.positions.map(pos => {
+              let premium = pos.premium
+              if (premium == null) {
+                // Try to find a matching activity by constructing possible symbol patterns
+                // The premiumMap is keyed by the full option symbol from activities
+                for (const [sym, info] of premiumMap.entries()) {
+                  if (sym.includes(ticker) && sym.includes(String(pos.strike))) {
+                    premium = info.premium
+                    break
+                  }
+                }
+              }
+
+              const underlyingPrice = underlyingPrices[ticker]
+              let otmPercent = pos.otmPercent
+              if (underlyingPrice && underlyingPrice > 0) {
+                otmPercent = Math.abs(pos.strike - underlyingPrice) / underlyingPrice * 100
+              }
+
+              return { ...pos, premium, otmPercent }
+            }),
+          },
+        ])
+      ),
+    }))
+
+    // Recompute totals with FX rate
+    enrichedGrid.totals = computeTickerTotals(enrichedGrid, fxRate)
+
+    return enrichedGrid
+  }, [rawGridData, underlyingPrices, premiumMap, fxRate])
+
+  const capitalMetrics: CapitalMetrics | null = useMemo(() => {
     if (!gridData) return null
-    const cashBalance = cashData?.totalCashCAD ?? 0
+
+    const cashItems = cashData?.availableCash ?? []
+    const cashUsd = cashItems.find(c => c.currency === 'USD')?.amount ?? 0
+    const cashCad = cashItems.find(c => c.currency === 'CAD')?.amount ?? 0
+    const cashTotalCad = cashData?.totalCashCAD ?? (cashCad + cashUsd * fxRate)
+    const cashTotalUsd = cashCad / fxRate + cashUsd
+
     const allPositions = gridData.expiryRows.flatMap(row =>
       Object.values(row.cells).flatMap(cell => cell.positions)
     )
-    let deployedCsp = 0
-    let ccsWritten = 0
-    let totalPremium = 0
-    let unrealizedPnl = 0
+
+    let deployedCspUsd = 0
+    let ccsWrittenUsd = 0
+    let totalPremiumUsd = 0
+    let unrealizedPnlUsd = 0
 
     allPositions.forEach(p => {
-      if (p.type === 'CSP') {
-        deployedCsp += p.strike * 100 * p.quantity
-      } else {
-        ccsWritten += p.strike * 100 * p.quantity
-      }
-      totalPremium += p.premium ?? 0
-      unrealizedPnl += p.pnl ?? 0
+      if (p.type === 'CSP') deployedCspUsd += p.strike * 100 * p.quantity
+      else ccsWrittenUsd += p.strike * 100 * p.quantity
+      totalPremiumUsd += p.premium ?? 0
+      unrealizedPnlUsd += p.pnl ?? 0
     })
 
     return {
-      availableCash: cashBalance,
-      deployedCsp,
-      sharesHeld: 0,
-      ccsWritten,
-      totalPremium,
-      unrealizedPnl,
+      cashUsd,
+      cashCad,
+      cashTotalUsd,
+      cashTotalCad,
+      deployedCsp: { usd: deployedCspUsd, cad: deployedCspUsd * fxRate },
+      ccsWritten: { usd: ccsWrittenUsd, cad: ccsWrittenUsd * fxRate },
+      totalPremium: { usd: totalPremiumUsd, cad: totalPremiumUsd * fxRate },
+      unrealizedPnl: { usd: unrealizedPnlUsd, cad: unrealizedPnlUsd * fxRate },
     }
-  }, [gridData, cashData])
+  }, [gridData, cashData, fxRate])
 
+  const isLoading = positionsLoading || activitiesLoading
   const showAccount = selectedConnectionId === undefined
 
   const handlePositionClick = useCallback((position: WheelPosition, ticker: string, expiryDate: string) => {
