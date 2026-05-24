@@ -1,6 +1,6 @@
 // frontend/src/hooks/__tests__/useWheelPositions.test.ts
 import { describe, it, expect } from 'vitest'
-import { buildWheelGrid, computeCapitalMetrics, computeTickerTotals } from '../useWheelPositions'
+import { buildWheelGrid, computeTickerTotals } from '../useWheelPositions'
 import type { BrokerPosition } from '@/types/broker'
 
 function makePosition(overrides: Partial<BrokerPosition> = {}): BrokerPosition {
@@ -117,10 +117,27 @@ describe('buildWheelGrid', () => {
     expect(jun6).toBeDefined()
     expect(jun6!.cells['SOXL'].positions).toHaveLength(0)
   })
+
+  it('adds currency field to positions', () => {
+    const positions = [makePosition({ currency: 'USD' })]
+    const grid = buildWheelGrid(positions, tickers, [], today)
+
+    const row = grid.expiryRows.find(r => r.expiryDate === '2026-05-30')
+    expect(row!.cells['SOXL'].positions[0].currency).toBe('USD')
+  })
+
+  it('fills premium from premiumMap when averageCost is null', () => {
+    const positions = [makePosition({ averageCost: null })]
+    const premiumMap = new Map([['SOXL 250530P00020000', { premium: 125, currency: 'USD' }]])
+    const grid = buildWheelGrid(positions, tickers, [], today, null, null, 0, {}, premiumMap)
+
+    const row = grid.expiryRows.find(r => r.expiryDate === '2026-05-30')
+    expect(row!.cells['SOXL'].positions[0].premium).toBe(125)
+  })
 })
 
 describe('computeTickerTotals', () => {
-  it('computes position count, CSP exposure, and total P&L', () => {
+  it('computes position count, CSP exposure (dual currency), and total P&L (dual currency)', () => {
     const positions = [
       makePosition(),
       makePosition({
@@ -133,12 +150,15 @@ describe('computeTickerTotals', () => {
     ]
     const tickers = ['SOXL']
     const today = new Date('2026-05-23')
-    const grid = buildWheelGrid(positions, tickers, [], today)
-    const totals = computeTickerTotals(grid)
+    const fxRate = 1.40
+    const grid = buildWheelGrid(positions, tickers, [], today, null, null, 0, {}, new Map(), fxRate)
+    const totals = computeTickerTotals(grid, fxRate)
 
     expect(totals['SOXL'].positionCount).toBe(2)
-    expect(totals['SOXL'].cspExposure).toBe(2000)
-    expect(totals['SOXL'].totalPnl).toBe(90)
+    expect(totals['SOXL'].cspExposure.usd).toBe(2000)
+    expect(totals['SOXL'].cspExposure.cad).toBe(2800)
+    expect(totals['SOXL'].totalPnl.usd).toBe(90)
+    expect(totals['SOXL'].totalPnl.cad).toBeCloseTo(126, 2)
   })
 })
 
@@ -184,43 +204,5 @@ describe('buildWheelGrid with symbol-parsed positions', () => {
     expect(row!.cells['TQQQ'].positions).toHaveLength(1)
     expect(row!.cells['TQQQ'].positions[0].type).toBe('CC')
     expect(row!.cells['TQQQ'].positions[0].strike).toBe(48)
-  })
-})
-
-describe('computeCapitalMetrics', () => {
-  it('computes capital metrics from positions and cash', () => {
-    const optionPositions = [
-      makePosition({ optionType: 'PUT', strikePrice: 20, quantity: -1, averageCost: 0.85, totalPnl: 62 }),
-      makePosition({
-        id: 2,
-        optionType: 'CALL',
-        strikePrice: 26,
-        underlyingSymbol: 'SOXL',
-        quantity: -1,
-        averageCost: 0.65,
-        totalPnl: 28,
-      }),
-    ]
-    const stockPositions = [
-      makePosition({
-        id: 3,
-        instrumentType: 'STOCK',
-        symbol: 'SOXL',
-        underlyingSymbol: null,
-        optionType: null,
-        strikePrice: null,
-        currentValue: 2245,
-        quantity: 100,
-      }),
-    ]
-    const tickers = ['SOXL']
-    const metrics = computeCapitalMetrics(optionPositions, stockPositions, tickers, 5000)
-
-    expect(metrics.availableCash).toBe(5000)
-    expect(metrics.deployedCsp).toBe(2000)
-    expect(metrics.sharesHeld).toBe(2245)
-    expect(metrics.ccsWritten).toBe(2600)
-    expect(metrics.totalPremium).toBe(150)
-    expect(metrics.unrealizedPnl).toBe(90)
   })
 })

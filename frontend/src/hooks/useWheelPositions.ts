@@ -5,8 +5,9 @@ import { getConnectionPositions, getAggregatedPositions } from '@/services/broke
 import type { BrokerPosition, ConnectionPositionsResponse, AggregatedPositionsResponse } from '@/types/broker'
 import type {
   WheelGridData, WheelExpiryRow, WheelCell, WheelPosition,
-  WheelTicker, TickerTotals, CapitalMetrics,
+  WheelTicker, TickerTotals,
 } from '@/types/wheel'
+import type { PremiumInfo } from '@/hooks/useWheelActivities'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const MAX_DTE = 90
@@ -59,13 +60,6 @@ function parseOptionSymbol(symbol: string): ParsedOption | null {
   }
 }
 
-function isOptionPosition(p: BrokerPosition): boolean {
-  if (p.instrumentType === 'OPTION' && p.optionType != null && p.strikePrice != null && p.expirationDate != null && p.underlyingSymbol != null) {
-    return true
-  }
-  return parseOptionSymbol(p.symbol) != null
-}
-
 function resolveOptionFields(p: BrokerPosition): { optionType: string, strikePrice: number, expirationDate: string, underlyingSymbol: string } | null {
   if (p.optionType != null && p.strikePrice != null && p.expirationDate != null && p.underlyingSymbol != null) {
     return { optionType: p.optionType, strikePrice: p.strikePrice, expirationDate: p.expirationDate, underlyingSymbol: p.underlyingSymbol }
@@ -80,18 +74,27 @@ function toWheelPosition(
   accountName: string | null,
   accountNumber: string | null,
   connectionId: number,
+  premiumMap: Map<string, PremiumInfo> = new Map(),
 ): WheelPosition | null {
   const fields = resolveOptionFields(p)
   if (!fields) return null
+  let premium = p.averageCost != null ? Math.abs(p.averageCost) * 100 : null
+  if (premium == null) {
+    const lookup = premiumMap.get(p.symbol)
+    if (lookup) {
+      premium = lookup.premium
+    }
+  }
   return {
     id: p.id,
     type: fields.optionType === 'CALL' ? 'CC' : 'CSP',
     strike: fields.strikePrice,
-    premium: p.averageCost != null ? Math.abs(p.averageCost) * 100 : null,
+    premium,
     currentPrice: p.currentPrice,
     pnl: p.totalPnl,
     otmPercent: null,
-    quantity: Math.abs(p.quantity ?? (p as Record<string, unknown>).totalQuantity as number ?? 1),
+    quantity: Math.abs(p.quantity ?? ((p as unknown as Record<string, unknown>).totalQuantity as number) ?? 1),
+    currency: p.currency ?? 'USD',
     accountName,
     accountNumber,
     connectionId,
@@ -107,6 +110,8 @@ export function buildWheelGrid(
   accountNumber: string | null = null,
   connectionId: number = 0,
   underlyingPrices: Record<string, number> = {},
+  premiumMap: Map<string, PremiumInfo> = new Map(),
+  fxRate: number = 1.38,
 ): WheelGridData {
   const resolvedPositions = positions
     .map(p => ({ position: p, fields: resolveOptionFields(p) }))
@@ -135,7 +140,7 @@ export function buildWheelGrid(
       const matching = resolvedPositions
         .filter(({ fields }) => fields.underlyingSymbol === ticker && fields.expirationDate === expiry)
         .map(({ position }) => {
-          const wp = toWheelPosition(position, accountName, accountNumber, connectionId)
+          const wp = toWheelPosition(position, accountName, accountNumber, connectionId, premiumMap)
           if (!wp) return null
           const underlyingPrice = underlyingPrices[ticker]
           if (underlyingPrice && underlyingPrice > 0) {
@@ -161,20 +166,23 @@ export function buildWheelGrid(
     currentPrice: underlyingPrices[symbol] ?? null,
   }))
 
-  return {
+  const gridData: WheelGridData = {
     tickers: tickerList,
     expiryRows,
-    totals: computeTickerTotals({ tickers: tickerList, expiryRows, totals: {} }),
+    totals: {},
   }
+  gridData.totals = computeTickerTotals(gridData, fxRate)
+
+  return gridData
 }
 
-export function computeTickerTotals(grid: WheelGridData): Record<string, TickerTotals> {
+export function computeTickerTotals(grid: WheelGridData, fxRate: number = 1.38): Record<string, TickerTotals> {
   const totals: Record<string, TickerTotals> = {}
 
   grid.tickers.forEach(({ symbol }) => {
     let positionCount = 0
-    let cspExposure = 0
-    let totalPnl = 0
+    let cspExposureUsd = 0
+    let totalPnlUsd = 0
 
     grid.expiryRows.forEach(row => {
       const cell = row.cells[symbol]
@@ -182,57 +190,20 @@ export function computeTickerTotals(grid: WheelGridData): Record<string, TickerT
       cell.positions.forEach(pos => {
         positionCount++
         if (pos.type === 'CSP') {
-          cspExposure += pos.strike * 100 * pos.quantity
+          cspExposureUsd += pos.strike * 100 * pos.quantity
         }
-        totalPnl += pos.pnl ?? 0
+        totalPnlUsd += pos.pnl ?? 0
       })
     })
 
-    totals[symbol] = { positionCount, cspExposure, totalPnl }
+    totals[symbol] = {
+      positionCount,
+      cspExposure: { usd: cspExposureUsd, cad: cspExposureUsd * fxRate },
+      totalPnl: { usd: totalPnlUsd, cad: totalPnlUsd * fxRate },
+    }
   })
 
   return totals
-}
-
-export function computeCapitalMetrics(
-  optionPositions: BrokerPosition[],
-  stockPositions: BrokerPosition[],
-  tickers: string[],
-  cashBalance: number,
-): CapitalMetrics {
-  let deployedCsp = 0
-  let ccsWritten = 0
-  let totalPremium = 0
-  let unrealizedPnl = 0
-
-  optionPositions.forEach(p => {
-    const fields = resolveOptionFields(p)
-    if (!fields || !tickers.includes(fields.underlyingSymbol)) return
-    const strike = fields.strikePrice
-    const qty = Math.abs(p.quantity)
-    const cost = Math.abs(p.averageCost ?? 0)
-
-    if (fields.optionType === 'PUT') {
-      deployedCsp += strike * 100 * qty
-    } else {
-      ccsWritten += strike * 100 * qty
-    }
-    totalPremium += cost * 100 * qty
-    unrealizedPnl += p.totalPnl ?? 0
-  })
-
-  const sharesHeld = stockPositions
-    .filter(p => tickers.includes(p.symbol))
-    .reduce((sum, p) => sum + (p.currentValue ?? 0), 0)
-
-  return {
-    availableCash: cashBalance,
-    deployedCsp,
-    sharesHeld,
-    ccsWritten,
-    totalPremium,
-    unrealizedPnl,
-  }
 }
 
 export function useWheelPositions(
