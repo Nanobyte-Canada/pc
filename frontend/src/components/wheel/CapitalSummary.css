@@ -8,6 +8,10 @@
   border: 1px solid var(--border);
 }
 
+.wheel-capital-item {
+  min-width: 0;
+}
+
 .wheel-capital-label {
   color: var(--text-muted);
   font-size: 10px;
@@ -30,4 +34,41 @@
 
 .wheel-pnl-negative {
   color: var(--error);
+}
+
+.wheel-capital-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.wheel-capital-usd {
+  color: var(--text-primary);
+}
+
+.wheel-capital-sep {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.wheel-capital-cad {
+  color: var(--text-secondary);
+}
+
+.wheel-capital-total {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.wheel-capital-cad-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
 }
