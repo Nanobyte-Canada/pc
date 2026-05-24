@@ -66,26 +66,23 @@ export function WheelGrid({ data, showAccount, onPositionClick, onEmptySlotClick
                     return (
                       <td key={t.symbol} className="wheel-grid-cell">
                         <div className="wheel-cell-content">
-                          {hasPositions ? (
-                            cell.positions.map(pos => (
-                              <PositionCard
-                                key={pos.id}
-                                position={pos}
-                                showAccount={showAccount}
-                                onClick={p => onPositionClick(p, t.symbol, row.expiryDate)}
-                              />
-                            ))
-                          ) : (
-                            <div
-                              className="wheel-empty-slot"
-                              onClick={() => onEmptySlotClick(t.symbol)}
-                              role="button"
-                              tabIndex={0}
-                              onKeyDown={e => { if (e.key === 'Enter') onEmptySlotClick(t.symbol) }}
-                            >
-                              +
-                            </div>
-                          )}
+                          {hasPositions && cell.positions.map(pos => (
+                            <PositionCard
+                              key={pos.id}
+                              position={pos}
+                              showAccount={showAccount}
+                              onClick={p => onPositionClick(p, t.symbol, row.expiryDate)}
+                            />
+                          ))}
+                          <div
+                            className={`wheel-empty-slot${hasPositions ? ' wheel-empty-slot-compact' : ''}`}
+                            onClick={() => onEmptySlotClick(t.symbol)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={e => { if (e.key === 'Enter') onEmptySlotClick(t.symbol) }}
+                          >
+                            +
+                          </div>
                         </div>
                       </td>
                     )

@@ -186,6 +186,12 @@ html:not(.dark) .wheel-legend-cc {
   background: rgba(84, 109, 132, 0.05);
 }
 
+.wheel-empty-slot-compact {
+  min-height: 28px;
+  margin-top: 6px;
+  font-size: 14px;
+}
+
 /* Footer / Totals — sticky at bottom */
 .wheel-grid-table tfoot {
   position: sticky;
