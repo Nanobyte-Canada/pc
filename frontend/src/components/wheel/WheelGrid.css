@@ -238,3 +238,11 @@ html:not(.dark) .wheel-legend-cc {
   font-size: 12px;
   color: var(--text-primary);
 }
+
+.wheel-totals-cad {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}

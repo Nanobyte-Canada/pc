@@ -98,6 +98,9 @@ export function WheelGrid({ data, showAccount, onPositionClick, onEmptySlotClick
               </td>
               {data.tickers.map(t => {
                 const totals = data.totals[t.symbol]
+                const pnlClass = (totals?.totalPnl.usd ?? 0) >= 0 ? 'wheel-pnl-positive' : 'wheel-pnl-negative'
+                const pnlPrefix = (totals?.totalPnl.usd ?? 0) >= 0 ? '+' : ''
+                const cadPnlPrefix = (totals?.totalPnl.cad ?? 0) >= 0 ? '+' : ''
                 return (
                   <td key={t.symbol} className="wheel-grid-cell">
                     <div className="wheel-totals-data">
@@ -107,20 +110,25 @@ export function WheelGrid({ data, showAccount, onPositionClick, onEmptySlotClick
                       </div>
                       <div className="wheel-totals-item">
                         <span className="wheel-totals-item-label">CSP Exposure</span>
-                        <span className="wheel-totals-item-value">
-                          {formatCurrency(totals?.cspExposure ?? 0, 'USD')}
-                        </span>
+                        <div>
+                          <span className="wheel-totals-item-value">
+                            {formatCurrency(totals?.cspExposure.usd ?? 0, 'USD')}
+                          </span>
+                          <span className="wheel-totals-cad">
+                            {formatCurrency(totals?.cspExposure.cad ?? 0, 'CAD')}
+                          </span>
+                        </div>
                       </div>
                       <div className="wheel-totals-item">
                         <span className="wheel-totals-item-label">P&L</span>
-                        <span
-                          className={`wheel-totals-item-value ${
-                            (totals?.totalPnl ?? 0) >= 0 ? 'wheel-pnl-positive' : 'wheel-pnl-negative'
-                          }`}
-                        >
-                          {(totals?.totalPnl ?? 0) >= 0 ? '+' : ''}
-                          {formatCurrency(totals?.totalPnl ?? 0, 'USD')}
-                        </span>
+                        <div>
+                          <span className={`wheel-totals-item-value ${pnlClass}`}>
+                            {pnlPrefix}{formatCurrency(totals?.totalPnl.usd ?? 0, 'USD')}
+                          </span>
+                          <span className={`wheel-totals-cad ${pnlClass}`}>
+                            {cadPnlPrefix}{formatCurrency(totals?.totalPnl.cad ?? 0, 'CAD')}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </td>
