@@ -236,73 +236,33 @@ code {
     monospace;
 }
 
-/* AG Grid theme overrides for light mode */
-.ag-theme-quartz {
+.ag-theme-quartz,
+.ag-theme-quartz-dark {
   --ag-background-color: var(--bg-secondary);
-  --ag-header-background-color: #ededf1;
-  --ag-odd-row-background-color: #f8f8fa;
-  --ag-row-hover-color: rgba(132, 107, 84, 0.06);
-  --ag-selected-row-background-color: rgba(132, 107, 84, 0.10);
+  --ag-header-background-color: var(--bg-tertiary);
+  --ag-odd-row-background-color: transparent;
+  --ag-row-hover-color: var(--bg-tertiary);
   --ag-border-color: var(--border);
-  --ag-header-foreground-color: var(--text-secondary);
+  --ag-header-foreground-color: var(--text-muted);
   --ag-foreground-color: var(--text-primary);
+  --ag-secondary-foreground-color: var(--text-secondary);
+  --ag-font-family: 'DM Sans', sans-serif;
   --ag-font-size: 13px;
+  --ag-row-height: 42px;
   --ag-header-height: 40px;
-  --ag-row-height: 40px;
-  --ag-border-radius: 8px;
-  --ag-wrapper-border-radius: 8px;
   --ag-cell-horizontal-padding: 12px;
+  --ag-borders: none;
+  --ag-row-border-color: var(--border);
+  --ag-header-column-separator-display: none;
+  --ag-range-selection-border-color: var(--accent);
 }
 
-.ag-theme-quartz .ag-header-cell {
-  font-weight: 600;
+.ag-theme-quartz .ag-header-cell-label,
+.ag-theme-quartz-dark .ag-header-cell-label {
   text-transform: uppercase;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-}
-
-.ag-theme-quartz .ag-row {
-  border-bottom: 1px solid #ededf1;
-}
-
-/* AG Grid dark mode overrides */
-html.dark .ag-theme-quartz {
-  --ag-background-color: var(--bg-secondary);
-  --ag-header-background-color: #252830;
-  --ag-odd-row-background-color: #1e2128;
-  --ag-row-hover-color: rgba(132, 107, 84, 0.10);
-  --ag-selected-row-background-color: rgba(132, 107, 84, 0.16);
-  --ag-border-color: #2e3139;
-  --ag-header-foreground-color: #9b9da8;
-  --ag-foreground-color: #e8e8ed;
-}
-
-html.dark .ag-theme-quartz .ag-row {
-  border-bottom: 1px solid #282b33;
-}
-
-/* AG Grid pagination – light mode */
-.ag-theme-quartz .ag-paging-panel {
-  border-top: 1px solid var(--border);
-}
-
-/* AG Grid pagination – dark mode */
-html.dark .ag-theme-quartz .ag-paging-panel {
-  background-color: #252830;
-  color: #9b9da8;
-  border-top: 1px solid #2e3139;
-}
-
-html.dark .ag-theme-quartz .ag-paging-button {
-  color: #9b9da8;
-}
-
-html.dark .ag-theme-quartz .ag-paging-button:hover {
-  color: #e8e8ed;
-}
-
-html.dark .ag-theme-quartz .ag-disabled .ag-paging-button {
-  color: #3a3d46;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 /* Screener pagination buttons – dark mode */
