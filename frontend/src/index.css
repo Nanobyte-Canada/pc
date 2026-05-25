@@ -10,40 +10,51 @@ html, body, #root {
 }
 
 :root {
-  --bg-primary: #e8e9ed;
-  --bg-secondary: #f0f1f4;
-  --bg-tertiary: #dcdee3;
-  --card-bg: #f0f1f4;
-  --text-primary: #111318;
-  --text-secondary: #3a3f4e;
-  --text-muted: #555b6e;
-  --accent: #846b54;
-  --accent-hover: #6e5843;
-  --accent-light: #b89a7e;
-  --accent-secondary: #546d84;
-  --accent-secondary-hover: #456078;
-  --border: #c8ccd4;
-  --nav-bg: #546d84;
-  --nav-text: #ffffff;
+  --bg-primary: #f8fafb;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-surface: #f8fafb;
+  --card-bg: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent: #059669;
+  --accent-hover: #047857;
+  --accent-light: rgba(5,150,105,0.1);
+  --accent-secondary: #047857;
+  --accent-secondary-hover: #065f46;
+  --accent-subtle: rgba(5,150,105,0.06);
+  --accent-border: rgba(5,150,105,0.15);
+  --border: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --nav-bg: #f8fafb;
+  --nav-text: #0f172a;
   --error: #dc2626;
   --success: #059669;
   --warning: #d97706;
   --info: #3b82f6;
   --info-hover: #2563eb;
   --input-bg: #ffffff;
-  --input-border: #dfe2e8;
-  --ring: #846b54;
+  --input-border: #e2e8f0;
+  --ring: #059669;
   --popover-bg: #ffffff;
-  --popover-text: #1a1d24;
+  --popover-text: #0f172a;
   --destructive: #dc2626;
-  --secondary-bg: #ededf1;
-  --secondary-text: #1a1d24;
-  --muted-bg: #ededf1;
-  --model-badge-bg: rgba(84,109,132,0.12);
-  --model-badge-text: #546d84;
+  --secondary-bg: #f1f5f9;
+  --secondary-text: #0f172a;
+  --muted-bg: #f1f5f9;
+  --model-badge-bg: rgba(5,150,105,0.1);
+  --model-badge-text: #059669;
   --error-dark: #991b1b;
   --warning-dark: #92400e;
   --success-dark: #065f46;
+
+  --csp: #4f46e5;
+  --csp-bg: rgba(79,70,229,0.06);
+  --csp-border: rgba(79,70,229,0.2);
+  --cc: #ea580c;
+  --cc-bg: rgba(234,88,12,0.06);
+  --cc-border: rgba(234,88,12,0.2);
 
   --success-light: #dcfce7;
   --success-text: #059669;
@@ -73,9 +84,9 @@ html, body, #root {
   --green-text: #059669;
   --yellow-light: #fef9c3;
   --yellow-text: #ca8a04;
-  --gray-light: #eef0f4;
-  --gray-text: #6b7280;
-  --gray-stroke: #dce0e7;
+  --gray-light: #f1f5f9;
+  --gray-text: #64748b;
+  --gray-stroke: #e2e8f0;
 }
 
 /* ====== Dark theme ====== */
