@@ -79,3 +79,16 @@ function getThirdFriday(year: number, month: number): Date {
   const firstFriday = dayOfWeek <= 5 ? (5 - dayOfWeek + 1) : (5 + 7 - dayOfWeek + 1)
   return new Date(year, month, firstFriday + 14)
 }
+
+export interface WheelChainStrike {
+  strike: number
+  bid: number | null
+  ask: number | null
+  delta: number | null
+  bidDiscount: number | null
+  askDiscount: number | null
+  bidYield: number | null
+  askYield: number | null
+  isATM: boolean
+  isITM: boolean
+}

@@ -8,7 +8,7 @@ interface WheelGridProps {
   data: WheelGridData
   showAccount: boolean
   onPositionClick: (position: WheelPosition, ticker: string, expiryDate: string) => void
-  onEmptySlotClick: (ticker: string) => void
+  onEmptySlotClick: (ticker: string, expiryDate: string) => void
 }
 
 export function WheelGrid({ data, showAccount, onPositionClick, onEmptySlotClick }: WheelGridProps) {
@@ -76,10 +76,10 @@ export function WheelGrid({ data, showAccount, onPositionClick, onEmptySlotClick
                           ))}
                           <div
                             className={`wheel-empty-slot${hasPositions ? ' wheel-empty-slot-compact' : ''}`}
-                            onClick={() => onEmptySlotClick(t.symbol)}
+                            onClick={() => onEmptySlotClick(t.symbol, row.expiryDate)}
                             role="button"
                             tabIndex={0}
-                            onKeyDown={e => { if (e.key === 'Enter') onEmptySlotClick(t.symbol) }}
+                            onKeyDown={e => { if (e.key === 'Enter') onEmptySlotClick(t.symbol, row.expiryDate) }}
                           >
                             +
                           </div>
