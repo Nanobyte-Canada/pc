@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useQueries } from '@tanstack/react-query'
 import { useBrokerConnections } from '@/hooks/useBrokerConnections'
 import { useWheelPositions } from '@/hooks/useWheelPositions'
@@ -11,6 +10,7 @@ import { getQuote } from '@/services/marketDataService'
 import { CapitalSummary } from '@/components/wheel/CapitalSummary'
 import { WheelGrid } from '@/components/wheel/WheelGrid'
 import { ClosePositionDialog } from '@/components/wheel/ClosePositionDialog'
+import { WheelChainPanel } from '@/components/wheel/WheelChainPanel'
 import type { WheelPosition, CapitalMetrics } from '@/types/wheel'
 import './WheelPage.css'
 
@@ -23,9 +23,9 @@ interface CloseDialogState {
 }
 
 export function WheelPage() {
-  const navigate = useNavigate()
   const [selectedConnectionId, setSelectedConnectionId] = useState<number | undefined>(undefined)
   const [closeDialog, setCloseDialog] = useState<CloseDialogState | null>(null)
+  const [chainPanel, setChainPanel] = useState<{ ticker: string; expiryDate: string } | null>(null)
 
   const { data: connectionsData } = useBrokerConnections()
   const connections = connectionsData?.connections ?? []
@@ -157,9 +157,9 @@ export function WheelPage() {
     setCloseDialog({ position, ticker, expiryDate })
   }, [])
 
-  const handleEmptySlotClick = useCallback((ticker: string) => {
-    navigate(`/options?ticker=${encodeURIComponent(ticker)}`)
-  }, [navigate])
+  const handleEmptySlotClick = useCallback((ticker: string, expiryDate: string) => {
+    setChainPanel({ ticker, expiryDate })
+  }, [])
 
   const handleCloseConfirm = useCallback(() => {
     setCloseDialog(null)
@@ -217,6 +217,15 @@ export function WheelPage() {
           expiryDate={closeDialog.expiryDate}
           onConfirm={handleCloseConfirm}
           onCancel={() => setCloseDialog(null)}
+        />
+      )}
+
+      {chainPanel && (
+        <WheelChainPanel
+          ticker={chainPanel.ticker}
+          expiryDate={chainPanel.expiryDate}
+          spotPrice={underlyingPrices[chainPanel.ticker] ?? 0}
+          onClose={() => setChainPanel(null)}
         />
       )}
     </div>
