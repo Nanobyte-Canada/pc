@@ -1,6 +1,6 @@
 .app-layout {
   display: flex;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -9,15 +9,9 @@
 .sidebar-container {
   display: none;
   flex-shrink: 0;
-  width: 15rem;
-  transition: width 0.2s ease;
 }
 
-.sidebar-is-collapsed .sidebar-container {
-  width: 4rem;
-}
-
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .sidebar-container {
     display: flex;
   }

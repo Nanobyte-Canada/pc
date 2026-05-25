@@ -1,27 +1,21 @@
 import { Outlet } from 'react-router-dom'
-import { AppSidebar } from './AppSidebar'
-import { MobileHeader } from './MobileHeader'
+import { IconRail } from './IconRail'
+import { BottomTabBar } from './BottomTabBar'
 import { ToastContainer } from '@/components/ui/toast'
-import { useSidebarStore } from '@/stores/sidebarStore'
 import './AppLayout.css'
 
 export function AppLayout() {
-  const collapsed = useSidebarStore((s) => s.collapsed)
-
   return (
-    <div className={`app-layout${collapsed ? ' sidebar-is-collapsed' : ''}`}>
-      {/* Desktop sidebar */}
+    <div className="app-layout">
       <aside className="sidebar-container">
-        <AppSidebar />
+        <IconRail />
       </aside>
 
       <div className="main-wrapper">
-        {/* Mobile-only header */}
-        <MobileHeader />
-
         <main className="main-content">
           <Outlet />
         </main>
+        <BottomTabBar />
       </div>
       <ToastContainer />
     </div>
