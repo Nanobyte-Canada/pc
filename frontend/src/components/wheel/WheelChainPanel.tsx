@@ -20,6 +20,7 @@ export function WheelChainPanel({ ticker, expiryDate, spotPrice: initialSpotPric
   const [loading, setLoading] = useState(true)
   const [orderStrike, setOrderStrike] = useState<WheelChainStrike | null>(null)
   const [ordering, setOrdering] = useState(false)
+  const [expiryOverride, setExpiryOverride] = useState<string | null>(null)
 
   const chain = useQuoteStore(s => s.chains[ticker])
   const quote = useQuoteStore(s => s.quotes[ticker])
@@ -28,12 +29,37 @@ export function WheelChainPanel({ ticker, expiryDate, spotPrice: initialSpotPric
 
   const spotPrice = quote?.last ?? quote?.mid ?? initialSpotPrice
 
-  // Compute DTE from expiryDate
+  // Find best matching expiry in chain data (handles ±2 day offsets between broker and chain)
+  const [selectedExpiry, availableExpiries] = useMemo(() => {
+    if (!chain?.expirations) return [expiryDate, []]
+    const keys = Object.keys(chain.expirations).sort()
+    if (keys.length === 0) return [expiryDate, []]
+
+    // Try exact match first
+    if (chain.expirations[expiryDate]) return [expiryDate, keys]
+
+    // Find closest within ±3 days
+    const target = new Date(expiryDate + 'T00:00:00').getTime()
+    let bestKey = keys[0]
+    let bestDiff = Infinity
+    for (const k of keys) {
+      const diff = Math.abs(new Date(k + 'T00:00:00').getTime() - target)
+      if (diff < bestDiff) { bestDiff = diff; bestKey = k }
+    }
+    // Only use closest if within 3 days
+    if (bestDiff <= 3 * 86400000) return [bestKey, keys]
+    // No close match — show first available
+    return [keys[0], keys]
+  }, [chain, expiryDate])
+
+  const activeExpiry = expiryOverride ?? selectedExpiry
+
+  // Compute DTE from active expiry
   const dte = useMemo(() => {
     const now = new Date()
-    const exp = new Date(expiryDate + 'T00:00:00')
+    const exp = new Date(activeExpiry + 'T00:00:00')
     return Math.max(1, Math.round((exp.getTime() - now.getTime()) / 86400000))
-  }, [expiryDate])
+  }, [activeExpiry])
 
   // Load chain on mount, subscribe to streaming
   useEffect(() => {
@@ -66,7 +92,7 @@ export function WheelChainPanel({ ticker, expiryDate, spotPrice: initialSpotPric
   const strikes: WheelChainStrike[] = useMemo(() => {
     if (!chain?.expirations) return []
 
-    const expiryData = chain.expirations[expiryDate]
+    const expiryData = chain.expirations[activeExpiry]
     if (!expiryData) return []
 
     const rows: WheelChainStrike[] = []
@@ -115,7 +141,7 @@ export function WheelChainPanel({ ticker, expiryDate, spotPrice: initialSpotPric
     }
 
     return rows.sort((a, b) => b.strike - a.strike) // Descending: ITM at top, OTM at bottom
-  }, [chain, expiryDate, spotPrice, dte])
+  }, [chain, activeExpiry, spotPrice, dte])
 
   const handleStrikeClick = useCallback((strike: WheelChainStrike) => {
     setOrderStrike(strike)
@@ -132,7 +158,7 @@ export function WheelChainPanel({ ticker, expiryDate, spotPrice: initialSpotPric
           action: 'SELL',
           optionType: 'PUT',
           strike: orderStrike.strike,
-          expiry: expiryDate,
+          expiry: activeExpiry,
           quantity: 1,
           price: orderStrike.bid,
         }],
@@ -148,7 +174,7 @@ export function WheelChainPanel({ ticker, expiryDate, spotPrice: initialSpotPric
     } finally {
       setOrdering(false)
     }
-  }, [orderStrike, ticker, expiryDate, onClose])
+  }, [orderStrike, ticker, activeExpiry, onClose])
 
   return (
     <div className="wcp-overlay" onClick={onClose}>
@@ -156,11 +182,26 @@ export function WheelChainPanel({ ticker, expiryDate, spotPrice: initialSpotPric
         {/* Header */}
         <div className="wcp-header">
           <div>
-            <h3 className="wcp-title">{ticker} CSP — {formatExpiryDate(expiryDate)} ({dte} DTE)</h3>
+            <h3 className="wcp-title">{ticker} CSP — {formatExpiryDate(activeExpiry)} ({dte} DTE)</h3>
             <div className="wcp-spot">Spot: {formatCurrency(spotPrice, 'USD')}</div>
           </div>
           <button className="wcp-close" onClick={onClose} aria-label="Close">&times;</button>
         </div>
+
+        {/* Expiry tabs when multiple available */}
+        {availableExpiries.length > 1 && (
+          <div className="wcp-expiry-tabs">
+            {availableExpiries.map(exp => (
+              <button
+                key={exp}
+                className={`wcp-expiry-tab ${(expiryOverride ?? selectedExpiry) === exp ? 'wcp-expiry-tab-active' : ''}`}
+                onClick={() => setExpiryOverride(exp)}
+              >
+                {formatExpiryDate(exp)}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Column labels */}
         <div className="wcp-col-labels">
