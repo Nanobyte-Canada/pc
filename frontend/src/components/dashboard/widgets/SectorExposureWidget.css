@@ -1,3 +1,5 @@
+/* ===== Sector Exposure - Horizontal Progress Bars ===== */
+
 .se-empty {
   display: flex;
   flex-direction: column;
@@ -15,33 +17,47 @@
   font-size: 0.875rem;
 }
 
-.se-legend {
-  margin-top: 0.75rem;
+.se-bars {
   display: flex;
-  flex-wrap: wrap;
-  column-gap: 1rem;
-  row-gap: 0.375rem;
-  padding: 0 0.25rem;
+  flex-direction: column;
+  gap: 7px;
 }
 
-.se-legend-item {
+.se-bar-row {
   display: flex;
-  align-items: center;
-  gap: 0.375rem;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.se-legend-dot {
-  height: 0.625rem;
-  width: 0.625rem;
-  border-radius: 9999px;
+.se-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
 }
 
-.se-legend-label {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+.se-bar-label {
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+  line-height: 1;
 }
 
-.se-legend-value {
-  font-size: 0.75rem;
+.se-bar-pct {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
   font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.se-bar-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.se-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
 }
