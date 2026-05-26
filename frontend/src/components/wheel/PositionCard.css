@@ -1,82 +1,108 @@
+/* ── Position Card ── */
 .wheel-position-card {
-  padding: 9px 11px;
-  border-radius: 8px;
+  position: relative;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 6px);
   font-size: 11px;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform var(--transition-fast, 0.15s),
+              box-shadow var(--transition-fast, 0.15s);
 }
 
 .wheel-position-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .wheel-position-card + .wheel-position-card {
   margin-top: 6px;
 }
 
+/* CSP: indigo */
 .wheel-card-csp {
-  background: linear-gradient(135deg, #1d2750, #263168);
-  border: 1px solid rgba(100, 140, 220, 0.2);
-  border-left: 3px solid rgba(100, 150, 230, 0.6);
+  background: var(--csp-bg);
+  border: 1.5px solid var(--csp-border);
 }
 
+/* CC: orange */
 .wheel-card-cc {
-  background: linear-gradient(135deg, #3d1f35, #4e2845);
-  border: 1px solid rgba(200, 130, 170, 0.2);
-  border-left: 3px solid rgba(200, 130, 170, 0.6);
+  background: var(--cc-bg);
+  border: 1.5px solid var(--cc-border);
 }
 
-html:not(.dark) .wheel-card-csp {
-  background: linear-gradient(135deg, #dde4f8, #e8edfb);
-  border-color: rgba(80, 110, 180, 0.2);
-  border-left-color: rgba(80, 110, 180, 0.5);
+/* ── Emerald "+" circle (top-right) ── */
+.wheel-card-add-btn {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-fast, 0.15s);
+  pointer-events: none;
 }
 
-html:not(.dark) .wheel-card-cc {
-  background: linear-gradient(135deg, #f4dde9, #f8e6ef);
-  border-color: rgba(170, 90, 130, 0.2);
-  border-left-color: rgba(170, 90, 130, 0.5);
+.wheel-position-card:hover .wheel-card-add-btn {
+  opacity: 1;
 }
 
+/* ── Card layout rows ── */
 .wheel-card-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3px;
+  align-items: baseline;
+  margin-bottom: 2px;
 }
 
 .wheel-card-row:last-child {
   margin-bottom: 0;
 }
 
-.wheel-card-label {
-  font-size: 9px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  min-width: 52px;
-  font-weight: 500;
-}
-
-.wheel-card-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 500;
-  font-size: 12px;
-  text-align: right;
+/* Row 1: Strike + OTM */
+.wheel-card-strike {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
   color: var(--text-primary);
 }
 
-.wheel-card-strike {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.wheel-card-small {
-  font-size: 11px;
+.wheel-card-otm {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
   font-weight: 400;
 }
 
+/* Row 2: Premium + P&L */
+.wheel-card-premium {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.wheel-card-pnl {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* P&L colors (shared) */
+.wheel-pnl-positive {
+  color: var(--success);
+}
+
+.wheel-pnl-negative {
+  color: var(--error);
+}
+
+/* ── Account badge ── */
 .wheel-account-badge {
   display: inline-block;
   padding: 2px 7px;
@@ -85,7 +111,7 @@ html:not(.dark) .wheel-card-cc {
   font-weight: 600;
   letter-spacing: 0.3px;
   text-transform: uppercase;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .wheel-account-0 {
@@ -104,4 +130,15 @@ html:not(.dark) .wheel-card-cc {
   background: rgba(200, 170, 70, 0.12);
   color: var(--warning);
   border: 1px solid rgba(200, 170, 70, 0.2);
+}
+
+/* ── Mobile card variant ── */
+@media (max-width: 768px) {
+  .wheel-position-card {
+    padding: 10px 12px;
+  }
+
+  .wheel-card-add-btn {
+    opacity: 0.7;
+  }
 }

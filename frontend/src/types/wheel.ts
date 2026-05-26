@@ -58,14 +58,12 @@ export interface CapitalMetrics {
   unrealizedPnl: DualCurrency
 }
 
-export type DteUrgency = 'critical' | 'warning' | 'normal' | 'safe' | 'far'
+export type DteUrgency = 'critical' | 'warning' | 'safe'
 
 export function getDteUrgency(dte: number): DteUrgency {
-  if (dte <= 10) return 'critical'
-  if (dte <= 21) return 'warning'
-  if (dte <= 45) return 'normal'
-  if (dte <= 70) return 'safe'
-  return 'far'
+  if (dte <= 5) return 'critical'
+  if (dte <= 20) return 'warning'
+  return 'safe'
 }
 
 export function isMonthlyExpiry(date: Date): boolean {

@@ -12,9 +12,25 @@ import { WheelGrid } from '@/components/wheel/WheelGrid'
 import { ClosePositionDialog } from '@/components/wheel/ClosePositionDialog'
 import { WheelChainPanel } from '@/components/wheel/WheelChainPanel'
 import type { WheelPosition, CapitalMetrics } from '@/types/wheel'
+import { Plus } from 'lucide-react'
 import './WheelPage.css'
 
 const WHEEL_TICKERS = ['SOXL', 'TECL', 'TQQQ', 'UPRO']
+
+const BROKER_BRANDS: Record<string, { icon: string; color: string }> = {
+  questrade: { icon: 'Q', color: '#4ade80' },
+  wealthsimple: { icon: 'W', color: '#a78bfa' },
+  ibkr: { icon: 'IB', color: '#f87171' },
+  'interactive brokers': { icon: 'IB', color: '#f87171' },
+}
+
+function getBrokerBrand(brokerName: string) {
+  const key = brokerName.toLowerCase()
+  for (const [k, v] of Object.entries(BROKER_BRANDS)) {
+    if (key.includes(k)) return v
+  }
+  return { icon: brokerName.charAt(0).toUpperCase(), color: 'var(--text-muted)' }
+}
 
 interface CloseDialogState {
   position: WheelPosition
@@ -63,9 +79,6 @@ export function WheelPage() {
   const gridData = useMemo(() => {
     if (!rawGridData) return null
 
-    // Get the raw positions from the query data to rebuild with premium lookup
-    // Since rawGridData is already built without premium/prices, we rebuild
-    // by extracting positions from the existing grid and enriching
     const enrichedGrid = { ...rawGridData }
 
     // Update ticker prices from quotes
@@ -84,8 +97,6 @@ export function WheelPage() {
             positions: cell.positions.map(pos => {
               let premium = pos.premium
               if (premium == null) {
-                // Try to find a matching activity by constructing possible symbol patterns
-                // The premiumMap is keyed by the full option symbol from activities
                 for (const [sym, info] of premiumMap.entries()) {
                   if (sym.includes(ticker) && sym.includes(String(pos.strike))) {
                     premium = info.premium
@@ -165,13 +176,61 @@ export function WheelPage() {
     setCloseDialog(null)
   }, [])
 
+  const handleMobileAdd = useCallback(() => {
+    // Open chain panel for first ticker with a reasonable expiry
+    if (WHEEL_TICKERS.length > 0) {
+      const expiry = gridData?.expiryRows[0]?.expiryDate
+      if (expiry) {
+        setChainPanel({ ticker: WHEEL_TICKERS[0], expiryDate: expiry })
+      }
+    }
+  }, [gridData])
+
   return (
     <div className="wheel-page">
       <div className="wheel-page-header">
-        <h1 className="wheel-page-title">Wheel Strategy</h1>
-        <p className="wheel-page-subtitle">Manage CSP and CC positions across your accounts</p>
+        <div className="wheel-header-left">
+          <h1 className="wheel-page-title">Wheel Strategy</h1>
+          {/* Mobile: abbreviated legend below title */}
+          <div className="wheel-legend-mobile">
+            <span className="wheel-legend-mobile-item">
+              <span className="wheel-legend-dot wheel-legend-dot-csp" />
+              CSP
+            </span>
+            <span className="wheel-legend-mobile-item">
+              <span className="wheel-legend-dot wheel-legend-dot-cc" />
+              CC
+            </span>
+            <span className="wheel-legend-mobile-item">
+              <span className="wheel-legend-dot wheel-legend-dot-open" />
+              Open
+            </span>
+          </div>
+        </div>
+        <div className="wheel-header-right">
+          {/* Desktop: full legend */}
+          <div className="wheel-legend-desktop">
+            <span className="wheel-legend-item">
+              <span className="wheel-legend-swatch wheel-legend-swatch-csp" />
+              Cash-Secured Put
+            </span>
+            <span className="wheel-legend-item">
+              <span className="wheel-legend-swatch wheel-legend-swatch-cc" />
+              Covered Call
+            </span>
+            <span className="wheel-legend-item">
+              <span className="wheel-legend-swatch wheel-legend-swatch-open" />
+              Open Slot
+            </span>
+          </div>
+          {/* Mobile: "+" button */}
+          <button className="wheel-mobile-add" onClick={handleMobileAdd} aria-label="Add position">
+            <Plus size={20} />
+          </button>
+        </div>
       </div>
 
+      {/* Desktop: account pill tabs */}
       <div className="wheel-account-tabs">
         <button
           className={`wheel-account-tab ${selectedConnectionId === undefined ? 'wheel-account-tab-active' : ''}`}
@@ -179,16 +238,39 @@ export function WheelPage() {
         >
           All Accounts
         </button>
-        {activeConnections.map(conn => (
-          <button
-            key={conn.id}
-            className={`wheel-account-tab ${selectedConnectionId === conn.id ? 'wheel-account-tab-active' : ''}`}
-            onClick={() => setSelectedConnectionId(conn.id)}
-          >
-            {conn.accountName || conn.broker?.name || 'Account'}
-            {conn.accountNumber ? ` ${conn.accountNumber}` : ''}
-          </button>
-        ))}
+        {activeConnections.map(conn => {
+          const brand = getBrokerBrand(conn.broker?.name ?? '')
+          return (
+            <button
+              key={conn.id}
+              className={`wheel-account-tab ${selectedConnectionId === conn.id ? 'wheel-account-tab-active' : ''}`}
+              onClick={() => setSelectedConnectionId(conn.id)}
+            >
+              <span className="wheel-tab-broker-icon" style={{ color: brand.color }}>
+                {brand.icon}
+              </span>
+              {conn.accountName || conn.broker?.name || 'Account'}
+              {conn.accountNumber ? ` ${conn.accountNumber}` : ''}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Mobile: account dropdown */}
+      <div className="wheel-account-dropdown-wrap">
+        <select
+          className="wheel-account-dropdown"
+          value={selectedConnectionId ?? ''}
+          onChange={e => setSelectedConnectionId(e.target.value ? Number(e.target.value) : undefined)}
+        >
+          <option value="">All Accounts</option>
+          {activeConnections.map(conn => (
+            <option key={conn.id} value={conn.id}>
+              {conn.accountName || conn.broker?.name || 'Account'}
+              {conn.accountNumber ? ` ${conn.accountNumber}` : ''}
+            </option>
+          ))}
+        </select>
       </div>
 
       <CapitalSummary metrics={capitalMetrics} />

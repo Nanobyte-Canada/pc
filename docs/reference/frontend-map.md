@@ -1000,16 +1000,16 @@ interface PortfolioStore {
 
 | File | Route | Description |
 |---|---|---|
-| `pages/WheelPage.tsx` + `.css` | `/wheel` | Wheel positions management: timeline grid of CSP/CC positions by expiry (Y-axis) and ticker (X-axis), account tabs, capital summary, close position dialog |
+| `pages/WheelPage.tsx` + `.css` | `/wheel` | Wheel positions management: header with inline legend (desktop) or abbreviated legend (mobile), account pill tabs (desktop) / dropdown (mobile), capital summary bar, desktop grid + mobile collapsible expiry groups, close position dialog. Mobile "+" button (40px emerald square) in top-right corner |
 
 ### Components (`components/wheel/`)
 
 | File | Description |
 |---|---|
-| `WheelGrid.tsx` + `.css` | Timeline grid table: expiry rows, ticker columns, position cards in cells, empty slots, DTE badges, sticky header/footer with totals |
-| `PositionCard.tsx` + `.css` | Individual position card: strike/premium/P&L/OTM labels, CSP (blue) vs CC (pink) color coding, optional account badge |
-| `CapitalSummary.tsx` + `.css` | Capital metrics bar: available cash, deployed CSPs, shares held, CCs written, total premium, unrealized P&L |
-| `ClosePositionDialog.tsx` + `.css` | Modal dialog for closing a position (buy-to-close) with position details and confirmation |
+| `WheelGrid.tsx` + `.css` | Desktop: sticky-header table grid (expiry rows x ticker columns) with position cards, dashed empty slots, sticky totals footer. Mobile: collapsible expiry-grouped card list with per-ticker add buttons. DTE badges: red (0-5d), yellow (6-20d), green (21+d) |
+| `PositionCard.tsx` + `.css` | Position card: CSP = indigo bg/border (var(--csp-*)), CC = orange bg/border (var(--cc-*)). Row 1: strike + OTM%. Row 2: premium + P&L. Emerald 20px "+" circle (top-right, visible on hover). No type text badges |
+| `CapitalSummary.tsx` + `.css` | Horizontal capital bar with vertical dividers: Available Cash (C$/US$ breakdown), CSP Deployed, CCs Written, Premium, Unrealized P&L. All values use var(--font-mono). Mobile: 2x2 grid layout |
+| `ClosePositionDialog.tsx` + `.css` | Close position dialog with CSP (indigo) / CC (orange) type indicator strip, X close button, detail rows, and confirm/cancel actions |
 
 ### Hooks
 
@@ -1021,7 +1021,7 @@ interface PortfolioStore {
 
 | File | Description |
 |---|---|
-| `types/wheel.ts` | WheelTicker, WheelPosition, WheelCell, WheelExpiryRow, WheelGridData, TickerTotals, CapitalMetrics, DteUrgency, getDteUrgency(), isMonthlyExpiry() |
+| `types/wheel.ts` | WheelTicker, WheelPosition, WheelCell, WheelExpiryRow, WheelGridData, TickerTotals, CapitalMetrics, DteUrgency (3 tiers: critical/warning/safe), getDteUrgency(), isMonthlyExpiry() |
 
 ### Tests
 

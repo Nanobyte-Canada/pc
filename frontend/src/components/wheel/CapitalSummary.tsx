@@ -14,17 +14,20 @@ export function CapitalSummary({ metrics }: CapitalSummaryProps) {
       <div className="wheel-capital-item">
         <div className="wheel-capital-label">Available Cash</div>
         <div className="wheel-capital-breakdown">
-          <span className="wheel-capital-usd">{formatCurrency(metrics.cashUsd, 'USD')}</span>
-          <span className="wheel-capital-sep">|</span>
-          <span className="wheel-capital-cad">{formatCurrency(metrics.cashCad, 'CAD')}</span>
-        </div>
-        <div className="wheel-capital-total">
-          Total: {formatCurrency(metrics.cashTotalUsd, 'USD')} / {formatCurrency(metrics.cashTotalCad, 'CAD')}
+          <span className="wheel-capital-currency">C$</span>
+          <span className="wheel-capital-amount">{formatCurrency(metrics.cashCad, 'CAD')}</span>
+          <span className="wheel-capital-divider" />
+          <span className="wheel-capital-currency">US$</span>
+          <span className="wheel-capital-amount">{formatCurrency(metrics.cashUsd, 'USD')}</span>
         </div>
       </div>
-      <DualMetric label="Deployed (CSPs)" value={metrics.deployedCsp} />
+      <span className="wheel-capital-separator" />
+      <DualMetric label="CSP Deployed" value={metrics.deployedCsp} />
+      <span className="wheel-capital-separator" />
       <DualMetric label="CCs Written" value={metrics.ccsWritten} />
-      <DualMetric label="Total Premium" value={metrics.totalPremium} isPnl />
+      <span className="wheel-capital-separator" />
+      <DualMetric label="Premium" value={metrics.totalPremium} isPnl />
+      <span className="wheel-capital-separator" />
       <DualMetric label="Unrealized P&L" value={metrics.unrealizedPnl} isPnl />
     </div>
   )
