@@ -48,15 +48,16 @@
 
 | File | Component | Description |
 |------|-----------|-------------|
-| `BrokerCard.tsx` | BrokerCard | Card displaying a single broker with logo, name, and connect button |
-| `BrokerConnectionCard.tsx` | BrokerConnectionCard | Card showing a connected broker account with status, value, and actions |
+| `BrokerCard.tsx` | BrokerCard | Card displaying a broker with brand-colored icon (Q/W/IB), name, auth badges, and connection state pill. Whole card is clickable to connect. |
+| `BrokerConnectionCard.tsx` | BrokerConnectionCard | Horizontal card for a connected account: brand icon, account type, masked number, status dot, sync time, value, Sync + More (3-dot) menu |
 | `ConnectionStatus.tsx` | ConnectionStatus | Badge-style status indicator for broker connection status |
 | `ConnectBrokerDialog.tsx` | ConnectBrokerDialog | Dialog with manual token entry form for connecting to brokers (e.g., Questrade refresh token). Replaces the old SnapTrade redirect flow. |
-| `CashBalanceCards.tsx` | CashBalanceCards | Cards displaying cash balances by currency |
+| `CashBalanceCards.tsx` | CashBalanceCards | Cash balance cards with dual-currency breakdown (total in C$ at top, divider, C$/US$ component rows) |
 | `AccountActivitiesGrid.tsx` | AccountActivitiesGrid | AG Grid table showing broker account activities (trades, dividends, etc.) |
 | `BrokerageMatrix.tsx` | BrokerageMatrix | Grid showing available brokerages with features (trading, fractional, etc.) |
 | `BrokerCard.css` | -- | Styles for BrokerCard |
 | `BrokerConnectionCard.css` | -- | Styles for BrokerConnectionCard |
+| `CashBalanceCards.css` | -- | Styles for CashBalanceCards |
 | `AccountActivitiesGrid.css` | -- | Styles for AccountActivitiesGrid |
 | `BrokerageMatrix.css` | -- | Styles for BrokerageMatrix |
 
@@ -238,7 +239,7 @@
 | `BrokerConnectionsPage.tsx` | BrokerConnectionsPage | `/brokers/connections` | Broker connection management (dialog-based connect flow via ConnectBrokerDialog, disconnect, status) |
 | `BrokerPositionsPage.tsx` | BrokerPositionsPage | `/brokers/positions` | Aggregated positions view across all broker accounts |
 | `PositionDetailsPage.tsx` | PositionDetailsPage | `/brokers/positions/:connectionId` | Detailed positions for a single broker connection |
-| `AccountDetailPage.tsx` | AccountDetailPage | `/brokers/accounts/:connectionId` | Individual account detail with widgets and activities |
+| `AccountDetailPage.tsx` | AccountDetailPage | `/brokers/accounts/:connectionId` | Individual account detail with breadcrumb nav ("Accounts > [Type]") and DashboardGrid in ACCOUNT context |
 | `ReportingPage.tsx` | ReportingPage | `/brokers/reporting` | Reporting dashboard with KPIs, charts, and activity table |
 | `ProfilePage.tsx` | ProfilePage | `/profile` | User profile management (name, avatar, password, linked identities) |
 | `admin/AdminPage.tsx` | AdminPage | `/admin` (ADMIN role required) | Admin panel rewired to ingestion-service (port 8081). Enhanced stats with per-instrument-type breakdowns, async triggers with live progress polling, auto-refresh every 10 seconds |
@@ -813,7 +814,7 @@ interface PortfolioStore {
 ### By directory
 - `components/analytics/` -- SummaryCards.css, ChartStyles.css, TopHoldingsGrid.css
 - `components/auth/` -- (none, styled inline or in auth pages)
-- `components/broker/` -- BrokerCard.css, BrokerConnectionCard.css, AccountActivitiesGrid.css, BrokerageMatrix.css
+- `components/broker/` -- BrokerCard.css, BrokerConnectionCard.css, CashBalanceCards.css, AccountActivitiesGrid.css, BrokerageMatrix.css
 - `components/dashboard/` -- DashboardGrid.css, DashboardEditMode.css, AccountTabs.css, PositionsHoldingsTabs.css, WidgetWrapper.css
 - `components/dashboard/widgets/` -- 18 widget CSS files (one per widget that has custom styles)
 - `components/instruments/` -- InstrumentSearchAutocomplete.css, InstrumentTabs.css

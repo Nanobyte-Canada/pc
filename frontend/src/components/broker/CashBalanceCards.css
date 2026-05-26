@@ -1,0 +1,76 @@
+/* ====== CashBalanceCards — Verdant Dark ====== */
+
+.cash-balance-cards {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.cash-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  min-width: 180px;
+}
+
+.cash-card-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.cash-card-value {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+/* -- Divider between total and currency breakdown -- */
+.cash-card-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+
+/* -- Currency breakdown rows -- */
+.cash-card-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cash-breakdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cash-breakdown-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.cash-breakdown-value {
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .cash-balance-cards {
+    flex-direction: column;
+  }
+
+  .cash-card {
+    min-width: auto;
+  }
+}
