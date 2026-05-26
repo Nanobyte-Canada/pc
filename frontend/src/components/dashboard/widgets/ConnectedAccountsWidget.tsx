@@ -4,33 +4,50 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Link2 } from 'lucide-react'
 import './ConnectedAccountsWidget.css'
 
-const CIRCLE_RADIUS = 17
-const CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS // ~106.81
-
-function getAccuracyColor(accuracy: number | null): string {
-  if (accuracy == null) return 'var(--text-muted)'
-  if (accuracy >= 85) return 'var(--success)'
-  if (accuracy >= 65) return 'var(--warning)'
-  return 'var(--error)'
+/** Broker brand configs for icon styling */
+const BROKER_BRANDS: Record<string, { icon: string; bg: string; color: string }> = {
+  questrade: { icon: 'Q', bg: '#1a5c3a', color: '#4ade80' },
+  wealthsimple: { icon: 'W', bg: '#1a1a3a', color: '#a78bfa' },
+  ibkr: { icon: 'IB', bg: '#3a1a1a', color: '#f87171' },
+  'interactive brokers': { icon: 'IB', bg: '#3a1a1a', color: '#f87171' },
 }
 
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'ACTIVE': return 'var(--success)'
-    case 'NEEDS_RECONNECTION': return 'var(--warning)'
-    case 'ERROR': return 'var(--error)'
-    default: return 'var(--text-muted)'
+function getBrokerBrand(brokerName: string) {
+  const key = brokerName.toLowerCase()
+  for (const [k, v] of Object.entries(BROKER_BRANDS)) {
+    if (key.includes(k)) return v
   }
+  return { icon: brokerName.charAt(0).toUpperCase(), bg: 'var(--bg-tertiary)', color: 'var(--text-primary)' }
 }
 
+function maskAccount(accountNumber: string | null): string {
+  if (!accountNumber) return ''
+  const last4 = accountNumber.slice(-4)
+  return `••${last4}`
+}
+
+function formatValue(value: number | null): string {
+  if (value === null) return '--'
+  return value.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
+
+function formatGainLoss(value: number | null, pct: number | null): { text: string; isPositive: boolean } {
+  if (value === null) return { text: '--', isPositive: true }
+  const sign = value >= 0 ? '+' : ''
+  const valStr = `${sign}$${Math.abs(value).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+  const pctStr = pct != null ? ` (${sign}${pct.toFixed(1)}%)` : ''
+  return { text: `${valStr}${pctStr}`, isPositive: value >= 0 }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function ConnectedAccountsWidget(_props: { connectionId?: number }) {
   const { data, isLoading } = useDashboardAccounts()
-  if (isLoading || !data) return <Skeleton style={{ height: '8rem', width: '100%' }} />
+  if (isLoading || !data) return <Skeleton style={{ height: '3.5rem', width: '100%' }} />
 
   if (data.accounts.length === 0) {
     return (
       <div className="ca-empty">
-        <Link2 style={{ height: '2.5rem', width: '2.5rem' }} />
+        <Link2 style={{ height: '1.5rem', width: '1.5rem' }} />
         <p>No connected accounts</p>
         <Button variant="outline" size="sm" onClick={() => window.location.href = '/brokers/connections'}>
           Connect Account
@@ -40,65 +57,43 @@ export default function ConnectedAccountsWidget(_props: { connectionId?: number 
   }
 
   return (
-    <div className="ca-row">
+    <div className="ca-strip">
       {data.accounts.map(account => {
-        const accuracy = account.linkedGroup?.accuracy ?? null
-        const fgColor = getAccuracyColor(accuracy)
-        const dashOffset = accuracy != null
-          ? CIRCUMFERENCE * (1 - accuracy / 100)
-          : CIRCUMFERENCE
-
-        const modelLabel = account.linkedGroup?.name
-          ?? account.modelPortfolioName
-          ?? null
+        const brand = getBrokerBrand(account.brokerName)
+        const masked = maskAccount(account.accountNumber)
+        const accountType = account.accountType || ''
+        const gainLoss = formatGainLoss(
+          account.investmentValue != null && account.totalValue != null
+            ? account.totalValue - account.investmentValue
+            : null,
+          null
+        )
 
         return (
           <div
             key={account.connectionId}
-            className="ca-card"
+            className="ca-account"
             onClick={() => window.location.href = `/brokers/accounts/${account.connectionId}`}
           >
-            <div className="ca-card-info">
-              <div className="ca-card-top">
-                <span
-                  className="ca-dot"
-                  style={{ backgroundColor: getStatusColor(account.status) }}
-                />
-                <span className="ca-card-name">
-                  {account.accountName || account.brokerName}
+            <div
+              className="ca-broker-icon"
+              style={{ backgroundColor: brand.bg, color: brand.color }}
+            >
+              {brand.icon}
+            </div>
+            <div className="ca-account-info">
+              <div className="ca-account-top">
+                <span className="ca-account-type">{accountType}</span>
+                {masked && <span className="ca-account-number">{masked}</span>}
+              </div>
+              <div className="ca-account-bottom">
+                <span className="ca-account-value">
+                  C$ {formatValue(account.totalValue)}
+                </span>
+                <span className={`ca-account-gain ${gainLoss.isPositive ? 'ca-gain-positive' : 'ca-gain-negative'}`}>
+                  {gainLoss.text}
                 </span>
               </div>
-              <div className="ca-card-broker">{account.brokerName}</div>
-              {modelLabel ? (
-                <span className="ca-card-model">{modelLabel}</span>
-              ) : (
-                <span className="ca-card-no-model">No model</span>
-              )}
-            </div>
-
-            <div className="ca-accuracy">
-              <svg viewBox="0 0 40 40" width="40" height="40">
-                <circle
-                  className="ca-bg-ring"
-                  cx="20"
-                  cy="20"
-                  r={CIRCLE_RADIUS}
-                />
-                <circle
-                  className="ca-fg-ring"
-                  cx="20"
-                  cy="20"
-                  r={CIRCLE_RADIUS}
-                  style={{
-                    stroke: fgColor,
-                    strokeDasharray: CIRCUMFERENCE,
-                    strokeDashoffset: dashOffset,
-                  }}
-                />
-              </svg>
-              <span className="ca-accuracy-text" style={{ color: fgColor }}>
-                {accuracy != null ? `${accuracy.toFixed(0)}%` : '\u2014'}
-              </span>
             </div>
           </div>
         )

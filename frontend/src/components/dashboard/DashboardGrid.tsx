@@ -13,46 +13,47 @@ interface DashboardGridProps {
   contextType?: string
 }
 
-// Dashboard context: 4-column grid
+// Dashboard context: 5-column grid
+// Row 1: Connected accounts strip (full width)
+// Row 2: 5 KPI cards (Investment, Cash, Buying Power, Returns, Sectors)
+// Row 3: Positions table (full width)
 const DASHBOARD_WIDGET_ORDER: WidgetKey[] = [
-  'PORTFOLIO_SUMMARY', 'RISK_PROFILE',
-  'SECTOR_EXPOSURE', 'IRR', 'FEES_COMMISSION', 'DIVIDEND_CALENDAR',
-  'ORDERS', 'REBALANCING_PROGRESS',
   'CONNECTED_ACCOUNTS',
+  'PORTFOLIO_SUMMARY', 'IRR',
+  'SECTOR_EXPOSURE', 'FEES_COMMISSION', 'DIVIDEND_CALENDAR',
+  'ORDERS', 'REBALANCING_PROGRESS',
   'POSITIONS_HOLDINGS',
 ]
 
 const DASHBOARD_COL_SPANS: Partial<Record<WidgetKey, number>> = {
+  CONNECTED_ACCOUNTS: 5,
   PORTFOLIO_SUMMARY: 3,
-  RISK_PROFILE: 1,
-  SECTOR_EXPOSURE: 1,
   IRR: 1,
+  SECTOR_EXPOSURE: 1,
   FEES_COMMISSION: 1,
   DIVIDEND_CALENDAR: 1,
-  ORDERS: 2,
+  ORDERS: 3,
   REBALANCING_PROGRESS: 2,
-  CONNECTED_ACCOUNTS: 4,
-  POSITIONS_HOLDINGS: 4,
+  POSITIONS_HOLDINGS: 5,
 }
 
-// Account context: 4-column grid
+// Account context: 5-column grid
 const ACCOUNT_WIDGET_ORDER: WidgetKey[] = [
-  'ACCOUNT_SUMMARY', 'RISK_PROFILE',
-  'SECTOR_EXPOSURE', 'IRR', 'FEES_COMMISSION', 'DIVIDEND_CALENDAR',
+  'ACCOUNT_SUMMARY',
+  'IRR', 'SECTOR_EXPOSURE', 'FEES_COMMISSION', 'DIVIDEND_CALENDAR',
   'ORDERS', 'REBALANCING_PROGRESS',
   'POSITIONS_HOLDINGS',
 ]
 
 const ACCOUNT_COL_SPANS: Partial<Record<WidgetKey, number>> = {
-  ACCOUNT_SUMMARY: 3,
-  RISK_PROFILE: 1,
-  SECTOR_EXPOSURE: 1,
+  ACCOUNT_SUMMARY: 5,
   IRR: 1,
+  SECTOR_EXPOSURE: 1,
   FEES_COMMISSION: 1,
   DIVIDEND_CALENDAR: 1,
-  ORDERS: 2,
+  ORDERS: 3,
   REBALANCING_PROGRESS: 2,
-  POSITIONS_HOLDINGS: 4,
+  POSITIONS_HOLDINGS: 5,
 }
 
 export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: DashboardGridProps) {
@@ -93,16 +94,22 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
   if (prefsLoading) {
     return (
       <div className="dashboard-grid-loading">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className={i === 0 ? 'dashboard-grid-loading-full' : ''}>
-            <Skeleton style={{ height: '9rem', width: '100%', borderRadius: '0.75rem' }} />
+        <div className="dashboard-grid-loading-full">
+          <Skeleton style={{ height: '4rem', width: '100%', borderRadius: 'var(--radius-md)' }} />
+        </div>
+        {[...Array(5)].map((_, i) => (
+          <div key={i}>
+            <Skeleton style={{ height: '8rem', width: '100%', borderRadius: 'var(--radius-md)' }} />
           </div>
         ))}
+        <div className="dashboard-grid-loading-full">
+          <Skeleton style={{ height: '16rem', width: '100%', borderRadius: 'var(--radius-md)' }} />
+        </div>
       </div>
     )
   }
 
-  // Shared 4-column grid renderer for both contexts
+  // Shared 5-column grid renderer for both contexts
   const widgetOrder = isAccountContext ? ACCOUNT_WIDGET_ORDER : DASHBOARD_WIDGET_ORDER
   const colSpans = isAccountContext ? ACCOUNT_COL_SPANS : DASHBOARD_COL_SPANS
 
@@ -121,12 +128,17 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
         {widgetsToRender.map(({ key, entry }) => {
           const Component = entry.component
           const colSpan = colSpans[key] ?? 1
+          const spanClass =
+            colSpan === 5 ? 'widget-col-span-5' :
+            colSpan === 4 ? 'widget-col-span-4' :
+            colSpan === 3 ? 'widget-col-span-3' :
+            colSpan === 2 ? 'widget-col-span-2' : undefined
           return (
             <WidgetWrapper
               key={key}
               title={entry.title}
               columnSpan={colSpan}
-              className={colSpan === 4 ? 'widget-col-span-4' : colSpan === 3 ? 'widget-col-span-3' : colSpan === 2 ? 'widget-col-span-2' : undefined}
+              className={spanClass}
             >
               <ErrorBoundary>
                 <Suspense fallback={<Skeleton style={{ height: '6rem', width: '100%' }} />}>

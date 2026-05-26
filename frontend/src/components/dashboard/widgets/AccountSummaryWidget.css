@@ -1,3 +1,5 @@
+/* ===== Account Summary Widget - Verdant Dark ===== */
+
 .as-skeleton {
   height: 7rem;
   width: 100%;
@@ -24,7 +26,8 @@
 }
 
 .as-value {
-  font-size: 1.5rem;
+  font-size: var(--text-xl);
+  font-family: var(--font-mono);
   font-weight: 800;
   letter-spacing: -0.025em;
   color: var(--text-primary);
@@ -38,34 +41,38 @@
   margin-top: 0.375rem;
 }
 
-.as-change {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
 .as-change-icon {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  vertical-align: -0.1em;
+  margin-right: 0.125rem;
 }
 
 .as-change-pct {
+  margin-left: 0.25rem;
+  opacity: 0.85;
+}
+
+.as-gain {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.8rem;
+  font-family: var(--font-mono);
   font-weight: 600;
+  color: var(--success-text);
 }
 
-.as-change--positive {
-  color: var(--success);
-}
-
-.as-change--negative {
-  color: var(--error);
-}
-
-.as-change--unavailable {
+.as-loss {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.8rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--danger-text);
+}
+
+.as-change-na {
+  font-size: var(--text-sm);
   color: var(--text-muted);
   font-style: italic;
 }
@@ -89,26 +96,26 @@
 
 .as-accuracy-pill {
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   padding: 0.2em 0.6em;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   white-space: nowrap;
 }
 
 .as-accuracy-pill--green {
-  color: var(--success);
-  background-color: rgba(34, 197, 94, 0.12);
+  color: var(--success-text);
+  background-color: var(--success-light);
 }
 
 .as-accuracy-pill--amber {
-  color: var(--warning);
-  background-color: rgba(245, 158, 11, 0.12);
+  color: var(--warning-text);
+  background-color: var(--warning-light);
 }
 
 .as-accuracy-pill--red {
-  color: var(--error);
-  background-color: rgba(239, 68, 68, 0.12);
+  color: var(--danger-text);
+  background-color: var(--danger-light);
 }
 
 /* ── Stats row ── */
@@ -129,25 +136,51 @@
 }
 
 .as-stat-label {
-  font-size: 0.65rem;
+  font-size: 0.625rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.5px;
   line-height: 1.2;
 }
 
 .as-stat-value {
   font-size: 0.85rem;
+  font-family: var(--font-mono);
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.3;
 }
 
-.as-stat-value--positive {
-  color: var(--success);
+.as-stat-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 0.125rem;
 }
 
-.as-stat-value--negative {
-  color: var(--error);
+.as-stat-sub {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 640px) {
+  .as-top {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .as-model-section {
+    align-items: flex-start;
+  }
+
+  .as-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
 }

@@ -1,3 +1,5 @@
+/* ===== Portfolio Summary / KPI Row - Verdant Dark ===== */
+
 .ps-skeleton {
   height: 7rem;
   width: 100%;
@@ -9,96 +11,158 @@
   gap: 0;
 }
 
-/* ── Top row: value ── */
-
-.ps-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+/* ── Mobile hero (hidden on desktop) ── */
+.ps-hero {
+  display: none;
 }
 
-.ps-value-section {
+/* ── KPI cards row (always visible) ── */
+.ps-kpi-row {
   display: flex;
-  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.ps-value {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
+.ps-kpi-card {
+  flex: 1;
+  min-width: 0;
+}
+
+.ps-kpi-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.ps-kpi-value {
+  font-size: var(--text-lg);
+  font-family: var(--font-mono);
+  font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
-.ps-change-row {
+.ps-kpi-delta {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* Dual-currency breakdown */
+.ps-kpi-breakdown {
+  margin-top: 0.5rem;
+}
+
+.ps-kpi-divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 0.375rem;
+}
+
+.ps-kpi-row-item {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.375rem;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.0625rem 0;
 }
 
-.ps-change {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.8rem;
+.ps-kpi-row-prefix {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ps-kpi-row-amount {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
   font-weight: 600;
+  color: var(--text-secondary);
 }
 
-.ps-change-icon {
-  width: 0.875rem;
-  height: 0.875rem;
+/* ── Gain/loss colors ── */
+.ps-gain {
+  color: var(--success-text);
 }
 
-.ps-change-pct {
-  font-size: 0.8rem;
-  font-weight: 600;
+.ps-loss {
+  color: var(--danger-text);
 }
 
-.ps-change--positive {
-  color: var(--success);
-}
-
-.ps-change--negative {
-  color: var(--error);
-}
-
-.ps-change--unavailable {
-  font-size: 0.8rem;
+.ps-change-na {
+  font-size: var(--text-sm);
   color: var(--text-muted);
   font-style: italic;
 }
 
-/* ── Stats row ── */
-
-.ps-stats {
-  display: flex;
-  gap: 1.5rem;
-  margin-top: 0.75rem;
-  padding-top: 0.625rem;
-  border-top: 1px solid var(--border);
-  flex-wrap: wrap;
+.ps-change-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  vertical-align: -0.1em;
+  margin-right: 0.125rem;
 }
 
-.ps-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
+.ps-change-pct {
+  margin-left: 0.25rem;
+  opacity: 0.85;
 }
 
-.ps-stat-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  line-height: 1.2;
-}
+/* ===== Mobile layout ===== */
+@media (max-width: 640px) {
+  /* Show mobile hero on small screens */
+  .ps-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0.5rem 0 0.75rem;
+  }
 
-.ps-stat-value {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.3;
+  .ps-hero-label {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+  }
+
+  .ps-hero-value {
+    font-size: var(--text-2xl);
+    font-family: var(--font-mono);
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .ps-hero-change {
+    margin-top: 0.25rem;
+    font-size: var(--text-sm);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  /* 2x2 grid on mobile instead of horizontal row */
+  .ps-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .ps-kpi-card {
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+  }
+
+  .ps-kpi-value {
+    font-size: var(--text-base);
+  }
 }
