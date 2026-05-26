@@ -11,8 +11,8 @@
   gap: 0;
 }
 
-/* ── Mobile hero (hidden on desktop) ── */
-.ps-hero {
+/* ── Mobile greeting hero (hidden on desktop) ── */
+.ps-hero-mobile {
   display: none;
 }
 
@@ -111,47 +111,84 @@
   opacity: 0.85;
 }
 
-/* ===== Mobile layout ===== */
-@media (max-width: 640px) {
-  /* Show mobile hero on small screens */
-  .ps-hero {
+/* ===== Mobile layout (<768px) ===== */
+@media (max-width: 767px) {
+  /* Show greeting hero on mobile */
+  .ps-hero-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0 0.75rem;
+  }
+
+  .ps-hero-mobile-left {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 0.5rem 0 0.75rem;
+    gap: 0.125rem;
   }
 
-  .ps-hero-label {
-    font-size: 0.625rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.25rem;
+  .ps-hero-greeting {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.3;
   }
 
-  .ps-hero-value {
-    font-size: var(--text-2xl);
+  .ps-hero-total {
+    font-size: 26px;
     font-family: var(--font-mono);
-    font-weight: 800;
+    font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.02em;
-    line-height: 1.1;
+    line-height: 1.2;
   }
 
-  .ps-hero-change {
-    margin-top: 0.25rem;
-    font-size: var(--text-sm);
+  .ps-hero-pill-row {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    margin-top: 0.125rem;
   }
 
-  /* 2x2 grid on mobile instead of horizontal row */
+  .ps-hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    line-height: 1.4;
+  }
+
+  .ps-hero-pill-gain {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+  }
+
+  .ps-hero-pill-loss {
+    color: var(--danger-text);
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .ps-hero-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+  }
+
+  /* 2x2 grid on mobile with reordered cards */
   .ps-kpi-row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
   }
 
@@ -165,4 +202,10 @@
   .ps-kpi-value {
     font-size: var(--text-base);
   }
+
+  /* Reorder: Investment (1), Cash (3), Buying Power (4)
+     Leaves order 2 conceptually open for the IRR widget in the parent grid */
+  .ps-stat:nth-child(1) { order: 1; } /* Investment */
+  .ps-stat:nth-child(2) { order: 3; } /* Cash → row 2 left */
+  .ps-stat:nth-child(3) { order: 4; } /* Buying Power → row 2 right */
 }
