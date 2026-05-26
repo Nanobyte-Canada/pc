@@ -132,16 +132,18 @@
 
 ### layout/ (5 files)
 
+**Navigation pattern:** Desktop uses a narrow `IconRail` pinned to the left edge; mobile uses a `BottomTabBar` fixed to the bottom. The old collapsible `AppSidebar` and `MobileHeader` (hamburger menu) were removed as part of the Verdant Dark redesign.
+
 | File | Component | Description |
 |------|-----------|-------------|
-| `AppLayout.tsx` | AppLayout | Main authenticated layout with sidebar, header, and Outlet for child routes |
-| `AppSidebar.tsx` | AppSidebar | Collapsible sidebar navigation with route links and icons |
-| `MobileHeader.tsx` | MobileHeader | Mobile-responsive header with hamburger menu |
+| `AppLayout.tsx` | AppLayout | Main authenticated layout: IconRail (desktop sidebar), BottomTabBar (mobile), main content area via Outlet, ToastContainer |
+| `IconRail.tsx` | IconRail | Narrow vertical icon-only navigation rail (desktop, hidden on mobile). Shows logo, nav items (Dashboard, Accounts, Screener, Options), theme toggle, admin link, and user avatar with initials. Active route highlighted with emerald accent |
+| `BottomTabBar.tsx` | BottomTabBar | Fixed bottom tab bar (mobile only, hidden on desktop). Five tabs: Home, Accounts, Screener, Options, More. "More" tab covers Wheel, Reporting, Admin, and Profile routes |
 | `ThemeToggle.tsx` | ThemeToggle | Dark/light theme toggle button |
 | `NotificationBell.tsx` | NotificationBell | Notification bell icon with unread count badge and dropdown |
 | `AppLayout.css` | -- | Styles for AppLayout |
-| `AppSidebar.css` | -- | Styles for AppSidebar |
-| `MobileHeader.css` | -- | Styles for MobileHeader |
+| `IconRail.css` | -- | Styles for IconRail |
+| `BottomTabBar.css` | -- | Styles for BottomTabBar |
 | `ThemeToggle.css` | -- | Styles for ThemeToggle |
 | `NotificationBell.css` | -- | Styles for NotificationBell |
 
@@ -626,7 +628,9 @@ interface ToastState {
 
 **Usage:** Import `useToast()` in components to show toast notifications for API errors, success confirmations, etc.
 
-### stores/sidebarStore.ts (Zustand with persist)
+### stores/sidebarStore.ts (Zustand with persist) -- UNUSED
+
+No longer imported by any component after AppSidebar removal. Retained for now; safe to delete.
 
 **State shape:**
 ```typescript
@@ -818,7 +822,7 @@ interface PortfolioStore {
 - `components/dashboard/` -- DashboardGrid.css, DashboardEditMode.css, AccountTabs.css, PositionsHoldingsTabs.css, WidgetWrapper.css
 - `components/dashboard/widgets/` -- 18 widget CSS files (one per widget that has custom styles)
 - `components/instruments/` -- InstrumentSearchAutocomplete.css, InstrumentTabs.css
-- `components/layout/` -- AppLayout.css, AppSidebar.css, MobileHeader.css, ThemeToggle.css, NotificationBell.css
+- `components/layout/` -- AppLayout.css, IconRail.css, BottomTabBar.css, ThemeToggle.css, NotificationBell.css
 - `components/portfolios/` -- ModelPortfolioCard.css, CustomPortfolioBuilder.css, ApplyToAccountModal.css, ModelAnalysisPanel.css
 - `components/screener/` -- ScreenerFilters.css, ScreenerGrid.css
 - `components/ui/` -- button.css, badge.css, card.css, dialog.css, sheet.css, skeleton.css, switch.css, separator.css, tooltip.css, Pagination.css, ErrorBoundary.css
