@@ -105,4 +105,8 @@
   .wheel-capital-breakdown {
     font-size: 12px;
   }
+
+  .wheel-capital-item:last-child {
+    grid-column: 1 / -1;
+  }
 }

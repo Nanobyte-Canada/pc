@@ -65,6 +65,13 @@ export default function PortfolioSummaryWidget(_props: { connectionId?: number }
         <div className="ps-kpi-card">
           <div className="ps-kpi-label">Investment</div>
           <div className="ps-kpi-value">C$ {fmtNum(investmentValue)}</div>
+          <div className="ps-kpi-breakdown">
+            <div className="ps-kpi-divider" />
+            <div className="ps-kpi-row-item">
+              <span className="ps-kpi-row-prefix">C$</span>
+              <span className="ps-kpi-row-amount">{fmtNum(investmentValue)}</span>
+            </div>
+          </div>
           {dayChangeAvailable && (
             <div className={`ps-kpi-delta ${isPositive ? 'ps-gain' : 'ps-loss'}`}>
               {sign}C$ {fmtNum(Math.abs(totalChange))} ({sign}{totalChangePercent.toFixed(1)}%)
@@ -76,34 +83,44 @@ export default function PortfolioSummaryWidget(_props: { connectionId?: number }
         <div className="ps-kpi-card">
           <div className="ps-kpi-label">Cash</div>
           <div className="ps-kpi-value">C$ {fmtNum(totalCash)}</div>
-          {cashBreakdown.length > 0 && (
-            <div className="ps-kpi-breakdown">
-              <div className="ps-kpi-divider" />
-              {cashBreakdown.map(c => (
+          <div className="ps-kpi-breakdown">
+            <div className="ps-kpi-divider" />
+            {cashBreakdown.length > 0 ? (
+              cashBreakdown.map(c => (
                 <div key={c.currency} className="ps-kpi-row-item">
                   <span className="ps-kpi-row-prefix">{currencyPrefix(c.currency)}</span>
                   <span className="ps-kpi-row-amount">{fmtNum(c.amount)}</span>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="ps-kpi-row-item">
+                <span className="ps-kpi-row-prefix">C$</span>
+                <span className="ps-kpi-row-amount">{fmtNum(totalCash)}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Buying Power card with dual-currency breakdown */}
         <div className="ps-kpi-card">
           <div className="ps-kpi-label">Buying Power</div>
           <div className="ps-kpi-value">C$ {fmtNum(totalBuyingPower)}</div>
-          {bpBreakdown.length > 0 && (
-            <div className="ps-kpi-breakdown">
-              <div className="ps-kpi-divider" />
-              {bpBreakdown.map(c => (
+          <div className="ps-kpi-breakdown">
+            <div className="ps-kpi-divider" />
+            {bpBreakdown.length > 0 ? (
+              bpBreakdown.map(c => (
                 <div key={c.currency} className="ps-kpi-row-item">
                   <span className="ps-kpi-row-prefix">{currencyPrefix(c.currency)}</span>
                   <span className="ps-kpi-row-amount">{fmtNum(c.amount)}</span>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="ps-kpi-row-item">
+                <span className="ps-kpi-row-prefix">C$</span>
+                <span className="ps-kpi-row-amount">{fmtNum(totalBuyingPower)}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

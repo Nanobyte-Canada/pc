@@ -6,6 +6,15 @@ interface StrategySelectorProps {
   strategies: StrategyInfo[]
 }
 
+/** Convert raw enum-style names like "BULL_CALL_SPREAD" to "Bull Call Spread" */
+function formatStrategyName(name: string): string {
+  if (!name.includes('_') && name !== name.toUpperCase()) return name
+  return name
+    .split('_')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export function StrategySelector({ strategies }: StrategySelectorProps) {
   const { selectedStrategy, setSelectedStrategy } = useStrategyStore()
 
@@ -20,7 +29,7 @@ export function StrategySelector({ strategies }: StrategySelectorProps) {
             onClick={() => setSelectedStrategy(selectedStrategy === s.type ? null : s.type)}
             title={s.description}
           >
-            {s.name}
+            {formatStrategyName(s.name)}
           </button>
         ))}
       </div>
@@ -35,7 +44,7 @@ export function StrategySelector({ strategies }: StrategySelectorProps) {
           <option value="">Strategy...</option>
           {strategies.map((s) => (
             <option key={s.type} value={s.type}>
-              {s.name}
+              {formatStrategyName(s.name)}
             </option>
           ))}
         </select>
