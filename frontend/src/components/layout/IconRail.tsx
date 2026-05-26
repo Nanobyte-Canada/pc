@@ -15,8 +15,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: LayoutGrid, path: '/', label: 'Dashboard' },
-  { icon: Layers, path: '/brokers', label: 'Accounts' },
-  { icon: ClipboardList, path: '/screener', label: 'Screener' },
+  { icon: Layers, path: '/brokers/connections', label: 'Accounts' },
+  { icon: ClipboardList, path: '/screener/stocks', label: 'Screener' },
   { icon: Clock, path: '/options', label: 'Options' },
 ]
 
@@ -37,6 +37,8 @@ export function IconRail() {
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/'
+    if (path === '/brokers/connections') return location.pathname.startsWith('/brokers')
+    if (path === '/screener/stocks') return location.pathname.startsWith('/screener')
     return location.pathname.startsWith(path)
   }
 
