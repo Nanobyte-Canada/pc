@@ -124,11 +124,13 @@ export function DashboardGrid({ connectionId, contextType = 'DASHBOARD' }: Dashb
         {widgetsToRender.map(({ key, entry }) => {
           const Component = entry.component
           const colSpan = colSpans[key] ?? 1
-          const spanClass =
+          const spanClass = [
             colSpan === 5 ? 'widget-col-span-5' :
             colSpan === 4 ? 'widget-col-span-4' :
             colSpan === 3 ? 'widget-col-span-3' :
-            colSpan === 2 ? 'widget-col-span-2' : undefined
+            colSpan === 2 ? 'widget-col-span-2' : undefined,
+            key === 'PORTFOLIO_SUMMARY' ? 'widget-content-fit' : undefined,
+          ].filter(Boolean).join(' ') || undefined
           return (
             <WidgetWrapper
               key={key}
