@@ -29,6 +29,22 @@ export function PnlChart({ result, warnings }: PnlChartProps) {
   const zeroY = toY(0)
   const pathD = pnlCurve.map((p, i) => `${i === 0 ? 'M' : 'L'}${toX(p.spotPrice).toFixed(1)},${toY(p.pnl).toFixed(1)}`).join(' ')
 
+  // Build fill areas: green above zero, red below zero
+  const fillAbove = pnlCurve
+    .filter((p) => p.pnl >= 0)
+    .map((p) => `${toX(p.spotPrice).toFixed(1)},${toY(p.pnl).toFixed(1)}`)
+  const fillBelow = pnlCurve
+    .filter((p) => p.pnl < 0)
+    .map((p) => `${toX(p.spotPrice).toFixed(1)},${toY(p.pnl).toFixed(1)}`)
+
+  // Simple gradient fill polygons
+  const abovePoints = fillAbove.length > 1
+    ? `${toX(pnlCurve.find((p) => p.pnl >= 0)!.spotPrice).toFixed(1)},${zeroY.toFixed(1)} ${fillAbove.join(' ')} ${toX(pnlCurve.filter((p) => p.pnl >= 0).slice(-1)[0].spotPrice).toFixed(1)},${zeroY.toFixed(1)}`
+    : ''
+  const belowPoints = fillBelow.length > 1
+    ? `${toX(pnlCurve.find((p) => p.pnl < 0)!.spotPrice).toFixed(1)},${zeroY.toFixed(1)} ${fillBelow.join(' ')} ${toX(pnlCurve.filter((p) => p.pnl < 0).slice(-1)[0].spotPrice).toFixed(1)},${zeroY.toFixed(1)}`
+    : ''
+
   return (
     <div className="pnl-chart">
       <div className="pnl-chart__title">P&L at Expiration</div>
@@ -61,18 +77,34 @@ export function PnlChart({ result, warnings }: PnlChartProps) {
       </div>
 
       <div className="pnl-chart__canvas">
-        <svg className="pnl-chart__svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
-          <line x1={pad.left} y1={zeroY} x2={width - pad.right} y2={zeroY} stroke="var(--text-secondary)" strokeWidth="1" strokeDasharray="4,4" />
-          <path d={pathD} fill="none" stroke="var(--accent)" strokeWidth="2" />
+        <svg className="pnl-chart__svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
+          {/* Profit fill */}
+          {abovePoints && (
+            <polygon points={abovePoints} fill="rgba(16, 185, 129, 0.1)" />
+          )}
+          {/* Loss fill */}
+          {belowPoints && (
+            <polygon points={belowPoints} fill="rgba(248, 113, 113, 0.1)" />
+          )}
+          {/* Zero line */}
+          <line x1={pad.left} y1={zeroY} x2={width - pad.right} y2={zeroY} stroke="var(--text-muted, #64748b)" strokeWidth="1" strokeDasharray="4,4" opacity="0.5" />
+          {/* P&L curve */}
+          <path d={pathD} fill="none" stroke="var(--accent, #10b981)" strokeWidth="2" />
+          {/* Break-even markers */}
           {breakEvens.map((be, i) => (
-            <circle key={i} cx={toX(be)} cy={zeroY} r="4" fill="var(--accent-secondary)" />
+            <g key={i}>
+              <circle cx={toX(be)} cy={zeroY} r="4" fill="var(--bg-secondary, #111827)" stroke="var(--accent, #10b981)" strokeWidth="2" />
+            </g>
           ))}
         </svg>
       </div>
 
       {breakEvens.length > 0 && (
         <div className="pnl-chart__breakeven">
-          Break-even: {breakEvens.map((b) => `$${b.toFixed(2)}`).join(', ')}
+          <span className="pnl-chart__breakeven-label">Break-even</span>
+          <span className="pnl-chart__breakeven-values">
+            {breakEvens.map((b) => `$${b.toFixed(2)}`).join('  /  ')}
+          </span>
         </div>
       )}
 

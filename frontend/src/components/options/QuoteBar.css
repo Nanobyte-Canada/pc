@@ -1,44 +1,114 @@
 .quote-bar {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 12px 16px;
-  background: var(--bg-secondary);
+  gap: 28px;
+  padding: 12px 20px;
+  background: var(--bg-secondary, #111827);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md, 10px);
+  margin-bottom: 14px;
+  overflow-x: auto;
 }
 
 .quote-bar__symbol {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.quote-bar__price {
   font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.quote-bar__price {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.quote-bar__change {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.quote-bar__change--positive {
+  color: var(--success-text, #6ee7b7);
+}
+
+.quote-bar__change--negative {
+  color: var(--danger-text, #f87171);
+}
+
+.quote-bar__divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.quote-bar__fields {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
 }
 
 .quote-bar__field {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .quote-bar__label {
-  font-size: 11px;
-  color: var(--text-secondary);
+  font-size: 10px;
+  color: var(--text-muted, #64748b);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  font-weight: 500;
 }
 
 .quote-bar__value {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-primary);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.quote-bar__spread {
-  color: var(--text-secondary);
+.quote-bar__value--muted {
+  color: var(--text-secondary, #94a3b8);
+}
+
+@media (max-width: 768px) {
+  .quote-bar {
+    gap: 16px;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+  }
+
+  .quote-bar__symbol {
+    font-size: 16px;
+  }
+
+  .quote-bar__price {
+    font-size: 18px;
+  }
+
+  .quote-bar__fields {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .quote-bar__divider {
+    display: none;
+  }
+
+  .quote-bar__value {
+    font-size: 13px;
+  }
 }

@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react'
-import { useQuoteStore } from '@/stores/quoteStore'
 import './UnderlyingSearch.css'
 
 interface UnderlyingSearchProps {
@@ -9,7 +8,6 @@ interface UnderlyingSearchProps {
 
 export function UnderlyingSearch({ onSearch, isLoading }: UnderlyingSearchProps) {
   const [input, setInput] = useState('')
-  const selectedUnderlying = useQuoteStore((s) => s.selectedUnderlying)
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -32,11 +30,6 @@ export function UnderlyingSearch({ onSearch, isLoading }: UnderlyingSearchProps)
       <button className="underlying-search__button" type="submit" disabled={isLoading || !input.trim()}>
         {isLoading ? 'Loading...' : 'Load Chain'}
       </button>
-      {selectedUnderlying && (
-        <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-          Active: {selectedUnderlying}
-        </span>
-      )}
     </form>
   )
 }

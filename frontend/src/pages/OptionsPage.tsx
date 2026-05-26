@@ -24,6 +24,7 @@ export function OptionsPage() {
   const [calcResult, setCalcResult] = useState<CalculationResult | null>(null)
   const [calcWarnings, setCalcWarnings] = useState<string[]>([])
   const [strategiesLoaded, setStrategiesLoaded] = useState(false)
+  const [bottomSheetOpen, setBottomSheetOpen] = useState(false)
 
   useEffect(() => {
     const ticker = searchParams.get('ticker')
@@ -97,24 +98,25 @@ export function OptionsPage() {
 
   return (
     <div className="options-page">
+      {/* ── Header: Title + Search + Live status ── */}
       <div className="options-page__header">
         <h1 className="options-page__title">Options Trading</h1>
-      </div>
-
-      <div className="options-page__toolbar">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="options-page__header-search">
           <UnderlyingSearch onSearch={handleSearch} isLoading={isLoadingChain} />
-          <div className="options-page__ws-status">
-            <div className={`options-page__ws-dot ${isConnected ? 'options-page__ws-dot--connected' : 'options-page__ws-dot--disconnected'}`} />
-            {isConnected ? 'Live' : 'Disconnected'}
-          </div>
         </div>
-
-        {strategies.length > 0 && <StrategySelector strategies={strategies} />}
+        <div className="options-page__ws-status">
+          <div className={`options-page__ws-dot ${isConnected ? 'options-page__ws-dot--connected' : 'options-page__ws-dot--disconnected'}`} />
+          {isConnected ? 'Live' : 'Disconnected'}
+        </div>
       </div>
 
+      {/* ── Quote bar ── */}
       {quote && <QuoteBar quote={quote} />}
 
+      {/* ── Strategy selector ── */}
+      {strategies.length > 0 && <StrategySelector strategies={strategies} />}
+
+      {/* ── Empty state ── */}
       {!selectedUnderlying && (
         <div className="options-page__empty">
           <p>Enter a symbol above to load the options chain</p>
@@ -122,8 +124,10 @@ export function OptionsPage() {
         </div>
       )}
 
+      {/* ── Loading state ── */}
       {isLoadingChain && <div className="options-page__loading">Loading options chain...</div>}
 
+      {/* ── Main content: two-column layout ── */}
       {chain && !isLoadingChain && (
         <div className="options-page__content">
           <div className="options-page__chain-section">
@@ -138,6 +142,40 @@ export function OptionsPage() {
           </div>
         </div>
       )}
+
+      {/* ── Mobile: floating bar showing leg count ── */}
+      {chain && !isLoadingChain && legs.length > 0 && (
+        <div className="options-page__mobile-bar">
+          <span className="options-page__mobile-bar-info">
+            {legs.length} Leg{legs.length !== 1 ? 's' : ''} Selected
+          </span>
+          <button
+            className="options-page__mobile-bar-btn"
+            onClick={() => setBottomSheetOpen(true)}
+          >
+            {calcResult ? 'View P&L' : 'Calculate'}
+          </button>
+        </div>
+      )}
+
+      {/* ── Mobile: bottom sheet with leg builder + P&L ── */}
+      <div
+        className={`options-page__bottom-sheet-overlay ${bottomSheetOpen ? 'options-page__bottom-sheet-overlay--open' : ''}`}
+        onClick={() => setBottomSheetOpen(false)}
+      />
+      <div className={`options-page__bottom-sheet ${bottomSheetOpen ? 'options-page__bottom-sheet--open' : ''}`}>
+        <div className="options-page__bottom-sheet-handle" onClick={() => setBottomSheetOpen(false)} />
+        <div className="options-page__bottom-sheet-close">
+          <button className="options-page__bottom-sheet-close-btn" onClick={() => setBottomSheetOpen(false)}>
+            Close
+          </button>
+        </div>
+        <LegBuilder
+          onCalculate={handleCalculate}
+          isCalculating={isCalculating}
+        />
+        {calcResult && <PnlChart result={calcResult} warnings={calcWarnings} />}
+      </div>
     </div>
   )
 }

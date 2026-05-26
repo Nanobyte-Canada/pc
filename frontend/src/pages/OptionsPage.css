@@ -1,24 +1,30 @@
 .options-page {
-  padding: 24px;
-  max-width: 1400px;
+  padding: 20px 24px;
+  max-width: 1600px;
 }
 
+/* ── Header row: title + search + live indicator ── */
 .options-page__header {
-  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .options-page__title {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 16px;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  margin: 0;
 }
 
-.options-page__toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
+.options-page__header-search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 420px;
 }
 
 .options-page__ws-status {
@@ -26,27 +32,35 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--text-secondary);
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-left: auto;
 }
 
 .options-page__ws-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .options-page__ws-dot--connected {
-  background: var(--success, #22c55e);
+  background: var(--accent, #10b981);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
 }
 
 .options-page__ws-dot--disconnected {
-  background: var(--error, #ef4444);
+  background: var(--danger-text, #f87171);
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.4);
 }
 
+/* ── Two-column layout: 55% chain / 45% sidebar ── */
 .options-page__content {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 55fr 45fr;
   gap: 20px;
+  align-items: start;
 }
 
 .options-page__chain-section {
@@ -57,26 +71,201 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  position: sticky;
+  top: 20px;
 }
 
+/* ── Empty / Loading states ── */
 .options-page__loading {
   text-align: center;
-  padding: 40px;
-  color: var(--text-secondary);
+  padding: 60px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 .options-page__empty {
   text-align: center;
-  padding: 60px 20px;
-  color: var(--text-secondary);
+  padding: 80px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 .options-page__empty p {
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
-@media (max-width: 1024px) {
+.options-page__empty p:first-child {
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+/* ── Mobile floating bar ── */
+.options-page__mobile-bar {
+  display: none;
+}
+
+/* ── Mobile bottom sheet ── */
+.options-page__bottom-sheet-overlay {
+  display: none;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .options-page {
+    padding: 16px;
+    padding-bottom: 80px;
+  }
+
+  .options-page__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .options-page__header-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .options-page__header-search {
+    max-width: none;
+  }
+
+  .options-page__ws-status {
+    margin-left: 0;
+  }
+
   .options-page__content {
     grid-template-columns: 1fr;
+  }
+
+  /* Hide desktop sidebar on mobile — use bottom sheet instead */
+  .options-page__sidebar {
+    display: none;
+  }
+
+  /* Floating bar at bottom */
+  .options-page__mobile-bar {
+    display: flex;
+    position: fixed;
+    bottom: 64px; /* above bottom tab bar */
+    left: 16px;
+    right: 16px;
+    z-index: 50;
+    background: var(--bg-secondary, #111827);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    padding: 10px 16px;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px);
+  }
+
+  .options-page__mobile-bar-info {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .options-page__mobile-bar-btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--accent, #10b981);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast, 150ms ease-out);
+  }
+
+  .options-page__mobile-bar-btn:hover {
+    filter: brightness(1.1);
+  }
+
+  /* Bottom sheet overlay */
+  .options-page__bottom-sheet-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .options-page__bottom-sheet-overlay--open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .options-page__bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 101;
+    background: var(--bg-secondary, #111827);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    max-height: 85vh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    padding: 0 16px 24px;
+  }
+
+  .options-page__bottom-sheet--open {
+    transform: translateY(0);
+  }
+
+  .options-page__bottom-sheet-handle {
+    display: flex;
+    justify-content: center;
+    padding: 12px 0 8px;
+    cursor: grab;
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary, #111827);
+    z-index: 1;
+  }
+
+  .options-page__bottom-sheet-handle::after {
+    content: '';
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--text-muted, #64748b);
+    opacity: 0.5;
+  }
+
+  .options-page__bottom-sheet-close {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+
+  .options-page__bottom-sheet-close-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 6px);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+  }
+}
+
+/* Tablet breakpoint */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .options-page__content {
+    grid-template-columns: 1fr;
+  }
+
+  .options-page__sidebar {
+    position: static;
   }
 }

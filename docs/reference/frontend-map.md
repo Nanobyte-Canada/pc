@@ -945,18 +945,18 @@ interface PortfolioStore {
 
 | File | Route | Description |
 |---|---|---|
-| `pages/OptionsPage.tsx` | `/options` | Full options trading UI: symbol search, quote bar, strategy selector, options chain, leg builder, P&L chart |
+| `pages/OptionsPage.tsx` + `.css` | `/options` | Two-column layout (55% chain / 45% sidebar). Header with integrated search + live indicator. Mobile: floating "N Legs Selected" bar, bottom sheet for leg builder + P&L results |
 
 ### Components (`components/options/`)
 
 | File | Description |
 |---|---|
-| `UnderlyingSearch.tsx` + `.css` | Symbol input with submit button, shows active underlying |
-| `QuoteBar.tsx` + `.css` | Real-time quote display: symbol, price, bid, ask, spread, volume |
-| `StrategySelector.tsx` + `.css` | 7 strategy type buttons with active state toggle |
-| `OptionsChainTable.tsx` + `.css` | Full options chain: expiry tabs, calls/puts columns, strike prices, Greeks, click-to-add-leg |
-| `LegBuilder.tsx` + `.css` | Shows selected legs with action/type/strike/expiry/price, clear all, calculate button |
-| `PnlChart.tsx` + `.css` | SVG P&L curve at expiration, metrics (max profit/loss, net debit, risk/reward), break-even markers, warnings |
+| `UnderlyingSearch.tsx` + `.css` | Symbol search input joined to "Load Chain" button, monospace uppercase input |
+| `QuoteBar.tsx` + `.css` | Full-width quote bar: symbol (20px), price (22px), change indicator, bid/ask/spread/volume (15px) with vertical divider |
+| `StrategySelector.tsx` + `.css` | Desktop: pill buttons (rounded, 13px). Mobile: dropdown select. Supports toggle on/off via store |
+| `OptionsChainTable.tsx` + `.css` | Desktop: 7-column bidirectional (Bid,Ask,Delta | Strike | Delta,Bid,Ask) with expiry tabs. ATM row emerald left border. Mobile: expiry dropdown + calls/puts segmented toggle, 4-column (Strike,Bid,Ask,Delta). JetBrains Mono 14px data |
+| `LegBuilder.tsx` + `.css` | Card-based leg display with BUY/SELL + CALL/PUT color-coded badges (12px), 3-column fields (Strike, Mid, Expiry). Clear All + Calculate P&L buttons |
+| `PnlChart.tsx` + `.css` | SVG P&L curve with green/red fill areas, 2x2 metrics grid (18px values), styled break-even row, warning cards |
 
 ### Hooks
 
