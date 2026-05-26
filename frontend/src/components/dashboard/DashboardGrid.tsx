@@ -19,10 +19,9 @@ interface DashboardGridProps {
 // Row 3: Positions table (full width)
 const DASHBOARD_WIDGET_ORDER: WidgetKey[] = [
   'CONNECTED_ACCOUNTS',
-  'PORTFOLIO_SUMMARY', 'IRR',
-  'SECTOR_EXPOSURE', 'FEES_COMMISSION', 'DIVIDEND_CALENDAR',
-  'ORDERS', 'REBALANCING_PROGRESS',
+  'PORTFOLIO_SUMMARY', 'IRR', 'SECTOR_EXPOSURE',
   'POSITIONS_HOLDINGS',
+  'ORDERS',
 ]
 
 const DASHBOARD_COL_SPANS: Partial<Record<WidgetKey, number>> = {
@@ -30,11 +29,8 @@ const DASHBOARD_COL_SPANS: Partial<Record<WidgetKey, number>> = {
   PORTFOLIO_SUMMARY: 3,
   IRR: 1,
   SECTOR_EXPOSURE: 1,
-  FEES_COMMISSION: 1,
-  DIVIDEND_CALENDAR: 1,
-  ORDERS: 3,
-  REBALANCING_PROGRESS: 2,
   POSITIONS_HOLDINGS: 5,
+  ORDERS: 5,
 }
 
 // Account context: 5-column grid
