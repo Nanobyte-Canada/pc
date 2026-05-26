@@ -1,4 +1,4 @@
-import type { Broker } from '../../types/broker'
+import type { Broker, BrokerConnection } from '../../types/broker'
 import './BrokerCard.css'
 
 interface BrokerCardProps {
@@ -6,6 +6,14 @@ interface BrokerCardProps {
   onConnect: (brokerSlug?: string) => void
   isConnecting: boolean
   hasExistingConnection: boolean
+  connections?: BrokerConnection[]
+}
+
+/* Broker brand colours */
+const BROKER_BRAND: Record<string, { abbr: string; bg: string; color: string }> = {
+  questrade:     { abbr: 'Q',  bg: '#1a5c3a', color: '#4ade80' },
+  wealthsimple:  { abbr: 'W',  bg: '#1a1a3a', color: '#a78bfa' },
+  ibkr:          { abbr: 'IB', bg: '#3a1a1a', color: '#f87171' },
 }
 
 const AUTH_TYPE_LABELS: Record<string, string> = {
@@ -34,7 +42,7 @@ function getAuthTypeClass(broker: Broker): string {
   return AUTH_TYPE_CLASSES[broker.authTypes[0].authType] ?? ''
 }
 
-export function BrokerCard({ broker, onConnect, isConnecting, hasExistingConnection }: BrokerCardProps) {
+export function BrokerCard({ broker, onConnect, isConnecting, hasExistingConnection, connections }: BrokerCardProps) {
   const isDisabled = isConnecting || broker.maintenanceMode || broker.enabled === false
 
   const handleClick = () => {
@@ -43,6 +51,13 @@ export function BrokerCard({ broker, onConnect, isConnecting, hasExistingConnect
   }
 
   const authLabel = getAuthTypeLabel(broker)
+  const slug = broker.slug?.toLowerCase() || ''
+  const brand = BROKER_BRAND[slug]
+
+  /* Connection state: count connected accounts, detect reconnection needs */
+  const brokerConns = connections?.filter(c => c.broker.slug === broker.slug) || []
+  const activeCount = brokerConns.filter(c => c.status === 'ACTIVE').length
+  const needsReconnect = brokerConns.some(c => c.status === 'EXPIRED' || c.status === 'ERROR')
 
   return (
     <div
@@ -58,10 +73,6 @@ export function BrokerCard({ broker, onConnect, isConnecting, hasExistingConnect
         : `Connect to ${broker.name}`
       }
     >
-      {hasExistingConnection && (
-        <span className="broker-card-connected-badge">&#10003;</span>
-      )}
-
       {broker.maintenanceMode && (
         <span className="broker-card-status-badge maintenance">Maintenance</span>
       )}
@@ -70,20 +81,30 @@ export function BrokerCard({ broker, onConnect, isConnecting, hasExistingConnect
         <span className="broker-card-status-badge degraded">Degraded</span>
       )}
 
+      {/* Broker icon — brand-colored letter badge */}
       {broker.logoUrl ? (
         <img
           src={broker.logoUrl}
           alt={broker.name}
           className="broker-card-logo"
         />
+      ) : brand ? (
+        <div
+          className="broker-card-icon"
+          style={{ backgroundColor: brand.bg, color: brand.color }}
+        >
+          {brand.abbr}
+        </div>
       ) : (
         <div className="broker-card-placeholder">
           {broker.name.charAt(0)}
         </div>
       )}
 
+      {/* Name */}
       <div className="broker-card-name">{broker.name}</div>
 
+      {/* Account type badges */}
       <div className="broker-card-badges">
         {authLabel && (
           <span className={`broker-badge ${getAuthTypeClass(broker)}`}>{authLabel}</span>
@@ -95,6 +116,20 @@ export function BrokerCard({ broker, onConnect, isConnecting, hasExistingConnect
           <span className="broker-badge badge-feature">Real-time</span>
         )}
       </div>
+
+      {/* Connection state pill */}
+      {hasExistingConnection && !needsReconnect && activeCount > 0 && (
+        <span className="broker-card-state broker-card-state--connected">
+          <span className="state-dot" />
+          {activeCount} Account{activeCount !== 1 ? 's' : ''} Connected
+        </span>
+      )}
+
+      {needsReconnect && (
+        <span className="broker-card-state broker-card-state--reconnect">
+          Reconnect
+        </span>
+      )}
     </div>
   )
 }

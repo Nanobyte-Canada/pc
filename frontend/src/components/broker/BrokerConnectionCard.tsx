@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { MoreVertical } from 'lucide-react'
 import type { BrokerConnection } from '../../types/broker'
-import { ConnectionStatus } from './ConnectionStatus'
 import { formatCurrency, getRelativeTime } from '../../services/brokerService'
 import './BrokerConnectionCard.css'
 
@@ -12,6 +12,24 @@ interface BrokerConnectionCardProps {
   isSyncing: boolean
 }
 
+/* Broker brand colours for icon */
+const BROKER_BRAND: Record<string, { abbr: string; bg: string; color: string }> = {
+  questrade:    { abbr: 'Q',  bg: '#1a5c3a', color: '#4ade80' },
+  wealthsimple: { abbr: 'W',  bg: '#1a1a3a', color: '#a78bfa' },
+  ibkr:         { abbr: 'IB', bg: '#3a1a1a', color: '#f87171' },
+}
+
+function getStatusDotClass(status: BrokerConnection['status']): string {
+  switch (status) {
+    case 'ACTIVE': return 'active'
+    case 'EXPIRED': return 'reconnect'
+    case 'ERROR': return 'error'
+    case 'PENDING': return 'pending'
+    case 'DISCONNECTED': return 'disconnected'
+    default: return 'disconnected'
+  }
+}
+
 export function BrokerConnectionCard({
   connection,
   onSyncAll,
@@ -19,24 +37,39 @@ export function BrokerConnectionCard({
   onReconnect,
   isSyncing
 }: BrokerConnectionCardProps) {
+  const [showMore, setShowMore] = useState(false)
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
 
   const canSync = connection.status === 'ACTIVE' && !isSyncing
   const needsReauth = connection.status === 'EXPIRED' || connection.status === 'ERROR'
+  const isError = needsReauth
 
   const displayAccountNumber = connection.accountNumberActual || connection.accountNumber
   const displayAccountType = connection.accountMetaType || connection.accountType
 
+  const slug = connection.broker.slug?.toLowerCase() || ''
+  const brand = BROKER_BRAND[slug]
+
   const [imgError, setImgError] = useState(false)
 
-  const brokerDisplayName = displayAccountType
-    ? `${connection.broker.name} - ${displayAccountType}`
-    : connection.broker.name
+  /* Close "more" menu on outside click */
+  useEffect(() => {
+    if (!showMore) return
+    function handleClickOutside(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setShowMore(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showMore])
 
   return (
-    <div className="broker-connection-card">
+    <div className={`broker-connection-card${isError ? ' error-state' : ''}`}>
       {/* Left: Broker info */}
       <div className="connection-info">
+        {/* Broker icon */}
         {connection.broker.logoUrl && !imgError ? (
           <img
             src={connection.broker.logoUrl}
@@ -44,30 +77,49 @@ export function BrokerConnectionCard({
             className="connection-logo"
             onError={() => setImgError(true)}
           />
+        ) : brand ? (
+          <div
+            className="connection-icon"
+            style={{ backgroundColor: brand.bg, color: brand.color }}
+          >
+            {brand.abbr}
+          </div>
         ) : (
-          <div className="connection-icon">
+          <div className="connection-icon" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
             {connection.broker.name.substring(0, 2)}
           </div>
         )}
 
-        <div>
+        <div className="connection-detail">
+          {/* Account type + number row */}
           <div className="connection-name-row">
-            <span className="connection-broker-name">{brokerDisplayName}</span>
+            <span className="connection-broker-name">
+              {displayAccountType || connection.broker.name}
+            </span>
           </div>
 
-          {displayAccountNumber && (
-            <div className="connection-account-number">
-              Account: {displayAccountNumber}
-            </div>
-          )}
-
-          <div className="connection-status-row">
-            <ConnectionStatus status={connection.status} />
-            {connection.lastPositionsFetchedAt && (
-              <span className="connection-last-fetched">
-                Last fetched: {getRelativeTime(connection.lastPositionsFetchedAt)}
-              </span>
+          {/* Meta row: masked account number, status dot, sync time, position count */}
+          <div className="connection-account-meta">
+            {displayAccountNumber && (
+              <>
+                <span className="connection-account-number">
+                  ••{displayAccountNumber.slice(-4)}
+                </span>
+                <span className="connection-meta-separator" />
+              </>
             )}
+            <span className={`connection-status-dot ${getStatusDotClass(connection.status)}`} />
+            {connection.lastPositionsFetchedAt && (
+              <>
+                <span className="connection-last-fetched">
+                  {getRelativeTime(connection.lastPositionsFetchedAt)}
+                </span>
+                <span className="connection-meta-separator" />
+              </>
+            )}
+            <span className="connection-positions-count">
+              {connection.positionsCount} position{connection.positionsCount !== 1 ? 's' : ''}
+            </span>
           </div>
 
           {connection.errorMessage && (
@@ -76,21 +128,20 @@ export function BrokerConnectionCard({
         </div>
       </div>
 
-      {/* Middle: Stats */}
+      {/* Middle: Value */}
       <div className="connection-stats">
-        {connection.totalValue !== null && (
-          <div className="connection-total-value">{formatCurrency(connection.totalValue)}</div>
+        {connection.totalValue != null && (
+          <div className="connection-total-value">
+            {formatCurrency(connection.totalValue)}
+          </div>
         )}
-        <div className="connection-positions-count">
-          {connection.positionsCount} position{connection.positionsCount !== 1 ? 's' : ''}
-        </div>
       </div>
 
-      {/* Right: Actions */}
+      {/* Right: Actions — Sync + More */}
       <div className="connection-actions">
-        {needsReauth && connection.snaptradeAuthorizationId ? (
+        {needsReauth && connection.gatewayConnectionId ? (
           <button
-            onClick={() => onReconnect(connection.snaptradeAuthorizationId!)}
+            onClick={() => onReconnect(connection.gatewayConnectionId!)}
             className="connection-btn reconnect"
           >
             Reconnect
@@ -101,38 +152,51 @@ export function BrokerConnectionCard({
             disabled={!canSync}
             className="connection-btn fetch"
           >
-            {isSyncing ? 'Syncing...' : 'Sync All'}
+            {isSyncing ? 'Syncing...' : 'Sync'}
           </button>
         )}
 
-        {showDisconnectConfirm ? (
-          <div className="connection-confirm-group">
-            <button
-              onClick={() => {
-                if (connection.snaptradeAuthorizationId) {
-                  onDisconnect(connection.snaptradeAuthorizationId)
-                }
-                setShowDisconnectConfirm(false)
-              }}
-              className="connection-btn confirm-delete"
-            >
-              Confirm
-            </button>
-            <button
-              onClick={() => setShowDisconnectConfirm(false)}
-              className="connection-btn cancel"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
+        {/* More menu */}
+        <div ref={moreRef} style={{ position: 'relative' }}>
           <button
-            onClick={() => setShowDisconnectConfirm(true)}
-            className="connection-btn disconnect"
+            className="connection-more-btn"
+            onClick={() => setShowMore(prev => !prev)}
+            title="More actions"
           >
-            Disconnect
+            <MoreVertical size={16} />
           </button>
-        )}
+
+          {showMore && (
+            <div className="connection-more-menu">
+              {showDisconnectConfirm ? (
+                <>
+                  <button
+                    className="danger"
+                    onClick={() => {
+                      if (connection.gatewayConnectionId) {
+                        onDisconnect(connection.gatewayConnectionId)
+                      }
+                      setShowDisconnectConfirm(false)
+                      setShowMore(false)
+                    }}
+                  >
+                    Confirm Disconnect
+                  </button>
+                  <button onClick={() => setShowDisconnectConfirm(false)}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="danger"
+                  onClick={() => setShowDisconnectConfirm(true)}
+                >
+                  Disconnect
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

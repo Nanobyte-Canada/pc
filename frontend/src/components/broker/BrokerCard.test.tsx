@@ -24,55 +24,7 @@ describe('BrokerCard', () => {
     expect(screen.getByText('Questrade')).toBeInTheDocument()
   })
 
-  it('renders broker description when provided', () => {
-    render(
-      <BrokerCard
-        broker={mockBroker}
-        onConnect={vi.fn()}
-        isConnecting={false}
-        hasExistingConnection={false}
-      />
-    )
-    expect(screen.getByText('Canadian discount brokerage')).toBeInTheDocument()
-  })
-
-  it('shows Connect button for new connection', () => {
-    render(
-      <BrokerCard
-        broker={mockBroker}
-        onConnect={vi.fn()}
-        isConnecting={false}
-        hasExistingConnection={false}
-      />
-    )
-    expect(screen.getByText('Connect')).toBeInTheDocument()
-  })
-
-  it('shows Add Account button when already connected', () => {
-    render(
-      <BrokerCard
-        broker={mockBroker}
-        onConnect={vi.fn()}
-        isConnecting={false}
-        hasExistingConnection={true}
-      />
-    )
-    expect(screen.getByText('Add Account')).toBeInTheDocument()
-  })
-
-  it('shows Connecting... when connecting', () => {
-    render(
-      <BrokerCard
-        broker={mockBroker}
-        onConnect={vi.fn()}
-        isConnecting={true}
-        hasExistingConnection={false}
-      />
-    )
-    expect(screen.getByText('Connecting...')).toBeInTheDocument()
-  })
-
-  it('calls onConnect with broker slug when button clicked', () => {
+  it('calls onConnect with broker slug when card clicked', () => {
     const mockOnConnect = vi.fn()
     render(
       <BrokerCard
@@ -83,25 +35,26 @@ describe('BrokerCard', () => {
       />
     )
 
-    fireEvent.click(screen.getByText('Connect'))
+    fireEvent.click(screen.getByRole('button'))
     expect(mockOnConnect).toHaveBeenCalledWith('questrade')
   })
 
-  it('disables button when isConnecting is true', () => {
+  it('does not call onConnect when disabled', () => {
+    const mockOnConnect = vi.fn()
     render(
       <BrokerCard
-        broker={mockBroker}
-        onConnect={vi.fn()}
-        isConnecting={true}
+        broker={{ ...mockBroker, maintenanceMode: true }}
+        onConnect={mockOnConnect}
+        isConnecting={false}
         hasExistingConnection={false}
       />
     )
 
-    const button = screen.getByRole('button')
-    expect(button).toBeDisabled()
+    fireEvent.click(screen.getByRole('button'))
+    expect(mockOnConnect).not.toHaveBeenCalled()
   })
 
-  it('renders broker initial as avatar', () => {
+  it('renders broker initial as icon when no logoUrl', () => {
     render(
       <BrokerCard
         broker={mockBroker}
@@ -112,5 +65,51 @@ describe('BrokerCard', () => {
     )
 
     expect(screen.getByText('Q')).toBeInTheDocument()
+  })
+
+  it('shows connected pill when connection exists', () => {
+    const connections = [{
+      id: 1,
+      broker: mockBroker,
+      gatewayConnectionId: 'gw-1',
+      accountNumber: '123456',
+      accountType: 'TFSA',
+      accountName: null,
+      accountNumberActual: null,
+      accountMetaType: null,
+      status: 'ACTIVE' as const,
+      lastPositionsFetchedAt: null,
+      positionsCount: 5,
+      totalValue: 10000,
+      errorMessage: null,
+      createdAt: '2024-01-01',
+      modelPortfolioId: null,
+      modelPortfolioName: null,
+    }]
+
+    render(
+      <BrokerCard
+        broker={mockBroker}
+        onConnect={vi.fn()}
+        isConnecting={false}
+        hasExistingConnection={true}
+        connections={connections}
+      />
+    )
+
+    expect(screen.getByText('1 Account Connected')).toBeInTheDocument()
+  })
+
+  it('shows maintenance badge when broker is in maintenance', () => {
+    render(
+      <BrokerCard
+        broker={{ ...mockBroker, maintenanceMode: true }}
+        onConnect={vi.fn()}
+        isConnecting={false}
+        hasExistingConnection={false}
+      />
+    )
+
+    expect(screen.getByText('Maintenance')).toBeInTheDocument()
   })
 })
