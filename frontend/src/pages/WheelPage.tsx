@@ -250,7 +250,7 @@ export function WheelPage() {
                 {brand.icon}
               </span>
               {conn.accountName || conn.broker?.name || 'Account'}
-              {conn.accountNumber ? ` ${conn.accountNumber}` : ''}
+              {conn.accountNumber ? ` ••${conn.accountNumber.slice(-4)}` : ''}
             </button>
           )
         })}
@@ -267,7 +267,7 @@ export function WheelPage() {
           {activeConnections.map(conn => (
             <option key={conn.id} value={conn.id}>
               {conn.accountName || conn.broker?.name || 'Account'}
-              {conn.accountNumber ? ` ${conn.accountNumber}` : ''}
+              {conn.accountNumber ? ` ••${conn.accountNumber.slice(-4)}` : ''}
             </option>
           ))}
         </select>

@@ -158,24 +158,28 @@ export function OptionsPage() {
         </div>
       )}
 
-      {/* ── Mobile: bottom sheet with leg builder + P&L ── */}
-      <div
-        className={`options-page__bottom-sheet-overlay ${bottomSheetOpen ? 'options-page__bottom-sheet-overlay--open' : ''}`}
-        onClick={() => setBottomSheetOpen(false)}
-      />
-      <div className={`options-page__bottom-sheet ${bottomSheetOpen ? 'options-page__bottom-sheet--open' : ''}`}>
-        <div className="options-page__bottom-sheet-handle" onClick={() => setBottomSheetOpen(false)} />
-        <div className="options-page__bottom-sheet-close">
-          <button className="options-page__bottom-sheet-close-btn" onClick={() => setBottomSheetOpen(false)}>
-            Close
-          </button>
-        </div>
-        <LegBuilder
-          onCalculate={handleCalculate}
-          isCalculating={isCalculating}
-        />
-        {calcResult && <PnlChart result={calcResult} warnings={calcWarnings} />}
-      </div>
+      {/* ── Mobile: bottom sheet with leg builder + P&L (only when chain loaded) ── */}
+      {chain && !isLoadingChain && (
+        <>
+          <div
+            className={`options-page__bottom-sheet-overlay ${bottomSheetOpen ? 'options-page__bottom-sheet-overlay--open' : ''}`}
+            onClick={() => setBottomSheetOpen(false)}
+          />
+          <div className={`options-page__bottom-sheet ${bottomSheetOpen ? 'options-page__bottom-sheet--open' : ''}`}>
+            <div className="options-page__bottom-sheet-handle" onClick={() => setBottomSheetOpen(false)} />
+            <div className="options-page__bottom-sheet-close">
+              <button className="options-page__bottom-sheet-close-btn" onClick={() => setBottomSheetOpen(false)}>
+                Close
+              </button>
+            </div>
+            <LegBuilder
+              onCalculate={handleCalculate}
+              isCalculating={isCalculating}
+            />
+            {calcResult && <PnlChart result={calcResult} warnings={calcWarnings} />}
+          </div>
+        </>
+      )}
     </div>
   )
 }

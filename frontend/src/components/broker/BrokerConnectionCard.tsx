@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { MoreVertical } from 'lucide-react'
 import type { BrokerConnection } from '../../types/broker'
-import { formatCurrency, getRelativeTime } from '../../services/brokerService'
+import { getRelativeTime } from '../../services/brokerService'
 import './BrokerConnectionCard.css'
 
 interface BrokerConnectionCardProps {
@@ -132,7 +132,13 @@ export function BrokerConnectionCard({
       <div className="connection-stats">
         {connection.totalValue != null && (
           <div className="connection-total-value">
-            {formatCurrency(connection.totalValue)}
+            {(() => {
+              const acctType = (connection.accountMetaType || connection.accountType || '').toUpperCase()
+              const isUsd = acctType.includes('USD') || acctType.includes('US ')
+              const prefix = isUsd ? 'US$' : 'C$'
+              const formatted = Math.round(Math.abs(connection.totalValue!)).toLocaleString('en-CA')
+              return `${connection.totalValue < 0 ? '-' : ''}${prefix} ${formatted}`
+            })()}
           </div>
         )}
       </div>

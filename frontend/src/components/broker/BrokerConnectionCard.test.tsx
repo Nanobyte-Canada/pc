@@ -66,7 +66,7 @@ describe('BrokerConnectionCard', () => {
         isSyncing={false}
       />
     )
-    expect(screen.getByText('$25,000.50')).toBeInTheDocument()
+    expect(screen.getByText('C$ 25,001')).toBeInTheDocument()
   })
 
   it('renders positions count', () => {
