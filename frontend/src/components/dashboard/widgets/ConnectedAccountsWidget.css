@@ -119,6 +119,49 @@
   color: var(--danger-text);
 }
 
+/* Percentage pill */
+.ca-gain-pct {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.ca-gain-pct-positive {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-text);
+}
+
+.ca-gain-pct-negative {
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--danger-text);
+}
+
+/* All Accounts aggregate card */
+.ca-account-all {
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+}
+
+.ca-account-all:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+  filter: brightness(1.05);
+}
+
+.ca-all-icon {
+  background-color: var(--accent-border) !important;
+  color: var(--accent-text, var(--success-text)) !important;
+  font-size: 0.75rem;
+}
+
+.ca-all-label {
+  color: var(--accent-text, var(--success-text));
+}
+
 /* ===== Mobile: stacked cards ===== */
 @media (max-width: 640px) {
   .ca-strip {

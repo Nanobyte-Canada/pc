@@ -31,12 +31,26 @@ function formatValue(value: number | null): string {
   return value.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 
-function formatGainLoss(value: number | null, pct: number | null): { text: string; isPositive: boolean } {
-  if (value === null) return { text: '--', isPositive: true }
+function computeGainLoss(
+  totalValue: number | null,
+  investmentValue: number | null
+): { gain: number | null; pct: number | null; isPositive: boolean } {
+  if (totalValue == null || investmentValue == null) return { gain: null, pct: null, isPositive: true }
+  const gain = totalValue - investmentValue
+  const pct = investmentValue !== 0 ? (gain / investmentValue) * 100 : null
+  return { gain, pct, isPositive: gain >= 0 }
+}
+
+function formatGainDollar(value: number | null): string {
+  if (value === null) return '--'
   const sign = value >= 0 ? '+' : ''
-  const valStr = `${sign}$${Math.abs(value).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-  const pctStr = pct != null ? ` (${sign}${pct.toFixed(1)}%)` : ''
-  return { text: `${valStr}${pctStr}`, isPositive: value >= 0 }
+  return `${sign}$${Math.abs(value).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+}
+
+function formatGainPct(pct: number | null): string | null {
+  if (pct == null) return null
+  const sign = pct >= 0 ? '+' : ''
+  return `${sign}${pct.toFixed(2)}%`
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -56,18 +70,48 @@ export default function ConnectedAccountsWidget(_props: { connectionId?: number 
     )
   }
 
+  /* Aggregate totals for the "All Accounts" card */
+  const aggTotalValue = data.accounts.reduce((sum, a) => sum + (a.totalValue ?? 0), 0)
+  const aggInvestmentValue = data.accounts.reduce((sum, a) => sum + (a.investmentValue ?? 0), 0)
+  const hasAnyValue = data.accounts.some(a => a.totalValue != null)
+  const aggGainLoss = hasAnyValue
+    ? computeGainLoss(aggTotalValue, aggInvestmentValue)
+    : { gain: null, pct: null, isPositive: true }
+  const aggPctStr = formatGainPct(aggGainLoss.pct)
+
   return (
     <div className="ca-strip">
+      {/* All Accounts aggregate card */}
+      <div className="ca-account ca-account-all">
+        <div className="ca-broker-icon ca-all-icon">
+          <span>$∑</span>
+        </div>
+        <div className="ca-account-info">
+          <div className="ca-account-top">
+            <span className="ca-account-type ca-all-label">All Accounts</span>
+          </div>
+          <div className="ca-account-bottom">
+            <span className="ca-account-value">
+              C$ {hasAnyValue ? formatValue(aggTotalValue) : '--'}
+            </span>
+            <span className={`ca-account-gain ${aggGainLoss.isPositive ? 'ca-gain-positive' : 'ca-gain-negative'}`}>
+              {formatGainDollar(aggGainLoss.gain)}
+            </span>
+            {aggPctStr && (
+              <span className={`ca-gain-pct ${aggGainLoss.isPositive ? 'ca-gain-pct-positive' : 'ca-gain-pct-negative'}`}>
+                {aggPctStr}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
       {data.accounts.map(account => {
         const brand = getBrokerBrand(account.brokerName)
         const masked = maskAccount(account.accountNumber)
         const accountType = account.accountType || ''
-        const gainLoss = formatGainLoss(
-          account.investmentValue != null && account.totalValue != null
-            ? account.totalValue - account.investmentValue
-            : null,
-          null
-        )
+        const gainLoss = computeGainLoss(account.totalValue, account.investmentValue)
+        const pctStr = formatGainPct(gainLoss.pct)
 
         return (
           <div
@@ -91,8 +135,13 @@ export default function ConnectedAccountsWidget(_props: { connectionId?: number 
                   C$ {formatValue(account.totalValue)}
                 </span>
                 <span className={`ca-account-gain ${gainLoss.isPositive ? 'ca-gain-positive' : 'ca-gain-negative'}`}>
-                  {gainLoss.text}
+                  {formatGainDollar(gainLoss.gain)}
                 </span>
+                {pctStr && (
+                  <span className={`ca-gain-pct ${gainLoss.isPositive ? 'ca-gain-pct-positive' : 'ca-gain-pct-negative'}`}>
+                    {pctStr}
+                  </span>
+                )}
               </div>
             </div>
           </div>
