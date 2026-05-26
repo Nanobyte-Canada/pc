@@ -59,7 +59,7 @@ describe('AdminPage', () => {
 
   it('renders the page title', () => {
     renderWithProviders(<AdminPage />)
-    expect(screen.getByText('Ingestion Management')).toBeTruthy()
+    expect(screen.getByText('Admin Panel')).toBeTruthy()
   })
 
   it('renders both workflow cards', () => {
