@@ -1,20 +1,3 @@
-// ========== Dashboard Preferences ==========
-
-export interface WidgetPreference {
-  key: string
-  visible: boolean
-  sortOrder: number
-  columnSpan: number
-}
-
-export interface DashboardPreferencesResponse {
-  widgets: WidgetPreference[]
-}
-
-export interface UpdateDashboardPreferencesRequest {
-  widgets: WidgetPreference[]
-}
-
 // ========== Dashboard Summary ==========
 
 export interface PortfolioValueData {
@@ -245,32 +228,6 @@ export interface RefreshAllResponse {
   message: string
 }
 
-// ========== Widget Registry Types ==========
-
-export type WidgetCategory = 'CATEGORY_1' | 'CATEGORY_2' | 'ALWAYS_VISIBLE'
-
-export type WidgetKey =
-  | 'PORTFOLIO_VALUE'
-  | 'AVAILABLE_CASH'
-  | 'BUYING_POWER'
-  | 'RISK_PROFILE'
-  | 'SECTOR_EXPOSURE'
-  | 'GEOGRAPHY_EXPOSURE'
-  | 'OPEN_ORDERS'
-  | 'FEES_COMMISSION'
-  | 'DIVIDEND_CALENDAR'
-  | 'POSITIONS_TABLE'
-  | 'HOLDINGS_TABLE'
-  | 'CONNECTED_ACCOUNTS'
-  | 'REBALANCING_PROGRESS'
-  | 'PENDING_ORDERS'
-  | 'ACCOUNT_SUMMARY'
-  | 'ORDERS'
-  | 'FEES_AND_DIVIDENDS'
-  | 'POSITIONS_HOLDINGS'
-  | 'PORTFOLIO_SUMMARY'
-  | 'IRR'
-
 // ========== Performance Metrics ==========
 
 export interface AccountIrr {
@@ -293,10 +250,3 @@ export interface DashboardIrrResponse {
   accounts: AccountIrr[]
 }
 
-export interface WidgetDefinition {
-  key: WidgetKey
-  title: string
-  defaultVisible: boolean
-  defaultColumnSpan: number
-  defaultSortOrder: number
-}

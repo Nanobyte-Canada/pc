@@ -10,57 +10,9 @@ import type {
   DividendCalendarResponse,
   HoldingsTableResponse,
   DashboardAccountsResponse,
-  DashboardPreferencesResponse,
-  UpdateDashboardPreferencesRequest,
   DashboardIrrResponse,
 } from '../types/dashboard'
 import type { AggregatedPositionsResponse } from '../types/broker'
-
-export async function getDashboardPreferences(
-  contextType?: string,
-  contextId?: number
-): Promise<DashboardPreferencesResponse> {
-  const params = new URLSearchParams()
-  if (contextType) params.set('contextType', contextType)
-  if (contextId) params.set('contextId', String(contextId))
-  const qs = params.toString()
-  const response = await apiFetch(`/api/v1/dashboard/preferences${qs ? '?' + qs : ''}`)
-  if (!response.ok) throw new Error('Failed to fetch dashboard preferences')
-  return response.json()
-}
-
-export async function updateDashboardPreferences(
-  request: UpdateDashboardPreferencesRequest,
-  contextType?: string,
-  contextId?: number
-): Promise<DashboardPreferencesResponse> {
-  const params = new URLSearchParams()
-  if (contextType) params.set('contextType', contextType)
-  if (contextId) params.set('contextId', String(contextId))
-  const qs = params.toString()
-  const response = await apiFetch(`/api/v1/dashboard/preferences${qs ? '?' + qs : ''}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  })
-  if (!response.ok) throw new Error('Failed to update dashboard preferences')
-  return response.json()
-}
-
-export async function resetDashboardPreferences(
-  contextType?: string,
-  contextId?: number
-): Promise<DashboardPreferencesResponse> {
-  const params = new URLSearchParams()
-  if (contextType) params.set('contextType', contextType)
-  if (contextId) params.set('contextId', String(contextId))
-  const qs = params.toString()
-  const response = await apiFetch(`/api/v1/dashboard/preferences/reset${qs ? '?' + qs : ''}`, {
-    method: 'POST',
-  })
-  if (!response.ok) throw new Error('Failed to reset dashboard preferences')
-  return response.json()
-}
 
 export async function getDashboardSummary(connectionId?: number): Promise<DashboardSummaryResponse> {
   const params = new URLSearchParams()
