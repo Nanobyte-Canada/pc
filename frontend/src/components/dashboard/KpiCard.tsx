@@ -69,12 +69,12 @@ export function KpiCard({ label, icon, value, breakdown, sectors, variant = 'def
               <div key={i} className="kpi-card__sector-row">
                 <div className="kpi-card__sector-info">
                   <span className="kpi-card__sector-name">{sector.name}</span>
-                  <span className="kpi-card__sector-pct">{sector.weight.toFixed(1)}%</span>
+                  <span className="kpi-card__sector-pct">{(sector.weight * 100).toFixed(1)}%</span>
                 </div>
                 <div className="kpi-card__sector-bar-track">
                   <div
                     className="kpi-card__sector-bar-fill"
-                    style={{ width: `${Math.min(sector.weight, 100)}%`, background: sector.color }}
+                    style={{ width: `${Math.min(sector.weight * 100, 100)}%`, background: sector.color }}
                   />
                 </div>
               </div>

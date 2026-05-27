@@ -56,15 +56,15 @@ export function PositionsTable({ connectionId }: PositionsTableProps) {
     {
       field: 'symbol',
       headerName: 'Symbol',
-      width: 160,
-      pinned: 'left' as const,
+      flex: 2,
+      minWidth: 160,
       cellRenderer: SymbolCellRenderer,
-      autoHeight: true,
     },
     {
       field: 'totalValue',
       headerName: 'Market Value',
-      width: 130,
+      flex: 1.2,
+      minWidth: 120,
       type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => fmtCurrency(p.value),
       cellClass: 'positions-table__mono',
@@ -72,7 +72,8 @@ export function PositionsTable({ connectionId }: PositionsTableProps) {
     {
       field: 'totalQuantity',
       headerName: 'Qty',
-      width: 80,
+      flex: 0.8,
+      minWidth: 70,
       type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => fmtNumber(p.value, 0),
       cellClass: 'positions-table__mono',
@@ -80,27 +81,30 @@ export function PositionsTable({ connectionId }: PositionsTableProps) {
     {
       field: 'averageCost',
       headerName: 'Avg Cost',
-      width: 100,
+      flex: 1,
+      minWidth: 100,
       type: 'numericColumn',
-      valueFormatter: (p: ValueFormatterParams) => fmtNumber(p.value),
+      valueFormatter: (p: ValueFormatterParams) => fmtCurrency(p.value),
       cellClass: 'positions-table__mono',
     },
     {
       headerName: 'Price',
-      width: 100,
+      flex: 1,
+      minWidth: 100,
       type: 'numericColumn',
       valueGetter: (params) => {
         const data = params.data
         if (!data || !data.totalQuantity) return null
         return data.totalValue / data.totalQuantity
       },
-      valueFormatter: (p: ValueFormatterParams) => fmtNumber(p.value),
+      valueFormatter: (p: ValueFormatterParams) => fmtCurrency(p.value),
       cellClass: 'positions-table__mono',
     },
     {
       field: 'totalPnl',
       headerName: 'P&L',
-      width: 120,
+      flex: 1,
+      minWidth: 110,
       type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => fmtCurrency(p.value),
       cellClass: 'positions-table__mono',
@@ -110,7 +114,8 @@ export function PositionsTable({ connectionId }: PositionsTableProps) {
     },
     {
       headerName: 'Weight',
-      width: 80,
+      flex: 0.8,
+      minWidth: 70,
       type: 'numericColumn',
       valueGetter: (params) => {
         const data = params.data
@@ -161,6 +166,15 @@ export function PositionsTable({ connectionId }: PositionsTableProps) {
   const holdingsData = positionsData?.positions ?? []
   const orders = ordersData?.orders ?? []
 
+  const filteredHoldings = useMemo(() => {
+    if (!searchText) return holdingsData
+    const q = searchText.toLowerCase()
+    return holdingsData.filter(p =>
+      p.symbol?.toLowerCase().includes(q) ||
+      p.securityName?.toLowerCase().includes(q)
+    )
+  }, [holdingsData, searchText])
+
   const isEmpty = activeTab === 'holdings' ? holdingsData.length === 0 : orders.length === 0
 
   return (
@@ -200,17 +214,61 @@ export function PositionsTable({ connectionId }: PositionsTableProps) {
           <TableProperties className="positions-table__empty-icon" />
           <span>{activeTab === 'holdings' ? 'No positions' : 'No open orders'}</span>
         </div>
+      ) : activeTab === 'holdings' ? (
+        <>
+          {/* Desktop: AG Grid */}
+          <div className={`${agTheme} positions-table__grid positions-table__desktop-only`}>
+            <AgGridReact
+              rowData={filteredHoldings}
+              columnDefs={holdingsColumns}
+              domLayout="autoHeight"
+              quickFilterText={searchText}
+              pagination={true}
+              paginationPageSize={15}
+              suppressCellFocus={true}
+              rowHeight={44}
+            />
+          </div>
+          {/* Mobile: Card list */}
+          <div className="positions-table__mobile-only">
+            {filteredHoldings.map((pos) => {
+              const pnl = pos.totalPnl ?? 0
+              const pnlPct = pos.totalValue && pos.averageCost && pos.totalQuantity
+                ? ((pos.totalValue - pos.averageCost * pos.totalQuantity) / (pos.averageCost * pos.totalQuantity) * 100)
+                : 0
+              const weight = positionsData?.aggregateSummary?.totalValue
+                ? (pos.totalValue / positionsData.aggregateSummary.totalValue * 100)
+                : 0
+              return (
+                <div key={pos.symbol} className="positions-table__card">
+                  <div className="positions-table__card-top">
+                    <div className="positions-table__card-left">
+                      <span className="positions-table__card-symbol">{pos.symbol}</span>
+                      <span className="positions-table__card-weight">{weight.toFixed(1)}%</span>
+                    </div>
+                    <div className="positions-table__card-right">
+                      <span className="positions-table__card-value">{fmtCurrency(pos.totalValue)}</span>
+                      <span className={`positions-table__card-pnl ${pnl >= 0 ? 'positions-table__card-pnl--positive' : 'positions-table__card-pnl--negative'}`}>
+                        {pnl >= 0 ? '+' : ''}{fmtCurrency(pnl)} ({pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(1)}%)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
       ) : (
         <div className={`${agTheme} positions-table__grid`}>
           <AgGridReact
-            rowData={activeTab === 'holdings' ? holdingsData : orders}
-            columnDefs={activeTab === 'holdings' ? holdingsColumns : ordersColumns}
+            rowData={orders}
+            columnDefs={ordersColumns}
             domLayout="autoHeight"
             quickFilterText={searchText}
             pagination={true}
             paginationPageSize={15}
             suppressCellFocus={true}
-            rowHeight={activeTab === 'holdings' ? 44 : 36}
+            rowHeight={36}
           />
         </div>
       )}
