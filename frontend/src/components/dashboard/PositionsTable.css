@@ -103,12 +103,22 @@
 /* Remove column separator lines */
 .positions-table__grid .ag-header-cell {
   border-right: none !important;
+  border-left: none !important;
+}
+
+.positions-table__grid .ag-header-cell::after {
+  display: none !important;
 }
 
 .positions-table__grid .ag-cell {
   border-right: none !important;
+  border-left: none !important;
   display: flex;
   align-items: center;
+}
+
+.positions-table__grid .ag-header-cell-resize {
+  display: none !important;
 }
 
 /* -- Symbol cell with name subtitle -- */
