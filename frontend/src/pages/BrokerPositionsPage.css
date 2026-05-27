@@ -115,8 +115,12 @@
 
 /* Grid container */
 .positions-grid-container {
-  height: calc(100% - 180px);
   width: 100%;
+}
+
+/* Hide the AG Grid page size selector */
+.positions-grid-container .ag-paging-page-size {
+  display: none;
 }
 
 /* Broker badge in grid cells */

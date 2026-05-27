@@ -216,7 +216,10 @@
 
 /* Grid container */
 .position-grid-container {
-  height: calc(100% - 320px);
-  min-height: 400px;
   width: 100%;
+}
+
+/* Hide the AG Grid page size selector */
+.position-grid-container .ag-paging-page-size {
+  display: none;
 }

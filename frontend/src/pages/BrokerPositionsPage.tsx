@@ -200,6 +200,9 @@ export function BrokerPositionsPage() {
                 sortable: true,
                 resizable: true
               }}
+              domLayout="autoHeight"
+              pagination={true}
+              paginationPageSize={15}
               animateRows={true}
               rowSelection="single"
               suppressCellFocus={true}

@@ -55,8 +55,6 @@
 
 .activities-grid-container {
   width: 100%;
-  flex: 1;
-  min-height: 0;
 }
 
 /* Hide the AG Grid page size selector */

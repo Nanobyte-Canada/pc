@@ -11,6 +11,9 @@ import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import { useAutoPageSize } from '@/hooks/useAutoPageSize'
 import './AccountActivitiesGrid.css'
 
+/* Reserved height: filters row ~60px + AG Grid column headers ~40px + pagination bar ~48px */
+const ACTIVITIES_RESERVED_HEIGHT = 148
+
 const ACTIVITY_TYPES = ['BUY', 'SELL', 'DIVIDEND', 'TRANSFER_IN', 'TRANSFER_OUT', 'FEE', 'INTEREST', 'OTHER']
 
 const typeColors: Record<string, string> = {
@@ -32,8 +35,8 @@ interface AccountActivitiesGridProps {
 
 export function AccountActivitiesGrid({ connectionId, connectionActive, autoFit }: AccountActivitiesGridProps) {
   const agTheme = useAgGridTheme()
-  const gridContainerRef = useRef<HTMLDivElement>(null)
-  const autoPageSize = useAutoPageSize(gridContainerRef, 44, 50)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const autoPageSize = useAutoPageSize(wrapperRef, 44, ACTIVITIES_RESERVED_HEIGHT)
   const [page, setPage] = useState(0)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -136,7 +139,7 @@ export function AccountActivitiesGrid({ connectionId, connectionActive, autoFit 
   ]
 
   return (
-    <div className="activities-grid-wrapper">
+    <div className="activities-grid-wrapper" ref={autoFit ? wrapperRef : undefined}>
       <div className="activities-filters">
         <div className="filter-group">
           <label>From</label>
@@ -177,14 +180,14 @@ export function AccountActivitiesGrid({ connectionId, connectionActive, autoFit 
       ) : (
         <>
           {/* Desktop: AG Grid */}
-          <div ref={autoFit ? gridContainerRef : undefined} className={`${agTheme} activities-grid-container activities-desktop-only`}>
+          <div className={`${agTheme} activities-grid-container activities-desktop-only`}>
             <AgGridReact
               rowData={activities}
               columnDefs={columnDefs}
               defaultColDef={{ sortable: true, resizable: true }}
               animateRows={true}
               suppressCellFocus={true}
-              domLayout={autoFit ? undefined : 'autoHeight'}
+              domLayout="autoHeight"
               pagination={autoFit}
               paginationPageSize={autoFit ? autoPageSize : undefined}
               rowHeight={44}

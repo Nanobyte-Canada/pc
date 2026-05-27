@@ -11,6 +11,9 @@ import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
 import './PositionsTable.css'
 
+/* Reserved height: header bar ~50px + AG Grid column headers ~40px + pagination bar ~48px */
+const POSITIONS_RESERVED_HEIGHT = 138
+
 function fmtCurrency(value: number | null | undefined): string {
   if (value == null) return '-'
   return `C$ ${value.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -44,8 +47,8 @@ function SymbolCellRenderer(params: ICellRendererParams<AggregatedPosition>) {
 
 export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
   const agTheme = useAgGridTheme()
-  const gridContainerRef = useRef<HTMLDivElement>(null)
-  const autoPageSize = useAutoPageSize(gridContainerRef, 44, 50)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const autoPageSize = useAutoPageSize(cardRef, 44, POSITIONS_RESERVED_HEIGHT)
   const { data: positionsData, isLoading: positionsLoading } = useDashboardPositions(connectionId)
   const { data: ordersData, isLoading: ordersLoading } = useOpenOrders()
   const [activeTab, setActiveTab] = useState<TabType>('holdings')
@@ -173,7 +176,7 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
 
   if (isLoading) {
     return (
-      <div className="positions-table">
+      <div className="positions-table" ref={autoFit ? cardRef : undefined}>
         <Skeleton style={{ height: 300, width: '100%', borderRadius: 10 }} />
       </div>
     )
@@ -182,7 +185,7 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
   const isEmpty = activeTab === 'holdings' ? holdingsData.length === 0 : orders.length === 0
 
   return (
-    <div className="positions-table">
+    <div className="positions-table" ref={autoFit ? cardRef : undefined}>
       <div className="positions-table__header">
         <div className="positions-table__header-left">
           <h3 className="positions-table__title">Positions</h3>
@@ -221,11 +224,11 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
       ) : activeTab === 'holdings' ? (
         <>
           {/* Desktop: AG Grid */}
-          <div ref={autoFit ? gridContainerRef : undefined} className={`${agTheme} positions-table__grid positions-table__desktop-only`}>
+          <div className={`${agTheme} positions-table__grid positions-table__desktop-only`}>
             <AgGridReact
               rowData={filteredHoldings}
               columnDefs={holdingsColumns}
-              domLayout={autoFit ? undefined : 'autoHeight'}
+              domLayout="autoHeight"
               quickFilterText={searchText}
               pagination={true}
               paginationPageSize={autoFit ? autoPageSize : 15}
@@ -263,11 +266,11 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
           </div>
         </>
       ) : (
-        <div ref={autoFit ? gridContainerRef : undefined} className={`${agTheme} positions-table__grid`}>
+        <div className={`${agTheme} positions-table__grid`}>
           <AgGridReact
             rowData={orders}
             columnDefs={ordersColumns}
-            domLayout={autoFit ? undefined : 'autoHeight'}
+            domLayout="autoHeight"
             quickFilterText={searchText}
             pagination={true}
             paginationPageSize={autoFit ? autoPageSize : 15}

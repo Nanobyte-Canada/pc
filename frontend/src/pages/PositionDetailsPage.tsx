@@ -256,6 +256,9 @@ export function PositionDetailsPage() {
                 sortable: true,
                 resizable: true
               }}
+              domLayout="autoHeight"
+              pagination={true}
+              paginationPageSize={15}
               animateRows={true}
               rowSelection="single"
               suppressCellFocus={true}
