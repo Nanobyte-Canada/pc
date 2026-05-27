@@ -100,31 +100,8 @@
   width: 100%;
 }
 
-/* Hide the AG Grid page size selector */
-.positions-table__grid .ag-paging-page-size {
-  display: none;
-}
-
-/* Remove column separator lines */
-.positions-table__grid .ag-header-cell {
-  border-right: none !important;
-  border-left: none !important;
-}
-
-.positions-table__grid .ag-header-cell::after {
-  display: none !important;
-}
-
-.positions-table__grid .ag-cell {
-  border-right: none !important;
-  border-left: none !important;
-  display: flex;
-  align-items: center;
-}
-
-.positions-table__grid .ag-header-cell-resize {
-  display: none !important;
-}
+/* Column separators, alignment, resize handles, and page size selector
+   are handled globally in index.css for all AG Grid themes */
 
 /* -- Symbol cell with name subtitle -- */
 .positions-table__symbol-cell {
@@ -154,6 +131,7 @@
 .positions-table__mono {
   font-family: var(--font-mono);
   font-size: 12px;
+  text-align: right;
 }
 
 /* -- P&L colors -- */

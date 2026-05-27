@@ -57,10 +57,7 @@
   width: 100%;
 }
 
-/* Hide the AG Grid page size selector */
-.activities-grid-container .ag-paging-page-size {
-  display: none;
-}
+/* Page size selector and column separators now handled globally in index.css */
 
 /* -- Mobile/Desktop toggle -- */
 .activities-mobile-only {

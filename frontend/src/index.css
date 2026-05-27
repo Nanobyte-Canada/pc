@@ -265,6 +265,46 @@ code {
   letter-spacing: 0.5px;
 }
 
+/* Ensure numeric columns align header and cell consistently */
+.ag-theme-quartz .ag-right-aligned-cell,
+.ag-theme-quartz-dark .ag-right-aligned-cell {
+  text-align: right !important;
+}
+
+.ag-theme-quartz .ag-right-aligned-header .ag-header-cell-label,
+.ag-theme-quartz-dark .ag-right-aligned-header .ag-header-cell-label {
+  justify-content: flex-end;
+}
+
+/* Remove column separators globally */
+.ag-theme-quartz .ag-header-cell,
+.ag-theme-quartz-dark .ag-header-cell {
+  border-right: none !important;
+  border-left: none !important;
+}
+
+.ag-theme-quartz .ag-header-cell::after,
+.ag-theme-quartz-dark .ag-header-cell::after {
+  display: none !important;
+}
+
+.ag-theme-quartz .ag-cell,
+.ag-theme-quartz-dark .ag-cell {
+  border-right: none !important;
+  border-left: none !important;
+}
+
+.ag-theme-quartz .ag-header-cell-resize,
+.ag-theme-quartz-dark .ag-header-cell-resize {
+  display: none !important;
+}
+
+/* Hide page size selector globally */
+.ag-theme-quartz .ag-paging-page-size,
+.ag-theme-quartz-dark .ag-paging-page-size {
+  display: none;
+}
+
 /* Screener pagination buttons – dark mode */
 html.dark .screener-pagination .pagination-controls button {
   background: var(--card-bg);
