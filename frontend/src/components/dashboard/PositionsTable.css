@@ -1,0 +1,177 @@
+/* ====== PositionsTable — Verdant Dark ====== */
+
+.positions-table {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+/* -- Header bar -- */
+.positions-table__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.positions-table__header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.positions-table__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* -- Tab pills -- */
+.positions-table__tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.positions-table__tab {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.positions-table__tab--active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+
+.positions-table__tab--inactive {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.positions-table__tab--inactive:hover {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}
+
+/* -- Search -- */
+.positions-table__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.positions-table__search-icon {
+  position: absolute;
+  left: 8px;
+  width: 13px;
+  height: 13px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.positions-table__search-input {
+  padding: 5px 8px 5px 28px;
+  font-size: 11px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  outline: none;
+  width: 160px;
+  transition: border-color 0.15s ease;
+}
+
+.positions-table__search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.positions-table__search-input:focus {
+  border-color: var(--accent);
+}
+
+/* -- Grid container -- */
+.positions-table__grid {
+  width: 100%;
+}
+
+/* -- Symbol cell with name subtitle -- */
+.positions-table__symbol-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.3;
+}
+
+.positions-table__symbol {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.positions-table__name {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* -- Numeric cell style -- */
+.positions-table__mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* -- P&L colors -- */
+.positions-table__pnl--positive {
+  color: #6ee7b7;
+}
+
+.positions-table__pnl--negative {
+  color: #f87171;
+}
+
+/* -- Empty state -- */
+.positions-table__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.positions-table__empty-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--text-muted);
+}
+
+/* -- Mobile -- */
+@media (max-width: 768px) {
+  .positions-table {
+    padding: 12px;
+  }
+
+  .positions-table__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .positions-table__search-input {
+    width: 100%;
+  }
+
+  .positions-table__search {
+    width: 100%;
+  }
+}
