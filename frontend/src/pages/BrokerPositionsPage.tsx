@@ -8,11 +8,13 @@ import type { AggregatedPosition, BrokerConnection } from '../types/broker'
 
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import './BrokerPositionsPage.css'
 
 type ViewMode = 'all' | 'by-broker'
 
 export function BrokerPositionsPage() {
+  const agTheme = useAgGridTheme()
   const [viewMode, setViewMode] = useState<ViewMode>('all')
   const { data: positionsData, isLoading: positionsLoading } = useAggregatedPositions()
   const { data: connectionsData } = useBrokerConnections()
@@ -190,7 +192,7 @@ export function BrokerPositionsPage() {
             <p>Connect a broker and fetch positions to see your portfolio here.</p>
           </div>
         ) : (
-          <div className="ag-theme-quartz positions-grid-container">
+          <div className={`${agTheme} positions-grid-container`}>
             <AgGridReact
               rowData={positions}
               columnDefs={columnDefs}

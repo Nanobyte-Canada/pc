@@ -3,6 +3,7 @@ import { ColDef } from 'ag-grid-community';
 import { TopHolding } from '../../types/portfolio';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
+import { useAgGridTheme } from '@/hooks/useAgGridTheme';
 import './TopHoldingsGrid.css';
 
 interface TopHoldingsGridProps {
@@ -21,6 +22,7 @@ const formatSources = (sources: TopHolding['sources']): string => {
 };
 
 export function TopHoldingsGrid({ data }: TopHoldingsGridProps) {
+  const agTheme = useAgGridTheme()
   const columnDefs: ColDef<TopHolding>[] = [
     {
       field: 'ticker',
@@ -57,7 +59,7 @@ export function TopHoldingsGrid({ data }: TopHoldingsGridProps) {
   };
 
   return (
-    <div className="top-holdings-grid ag-theme-quartz">
+    <div className={`top-holdings-grid ${agTheme}`}>
       <AgGridReact
         rowData={data}
         columnDefs={columnDefs}

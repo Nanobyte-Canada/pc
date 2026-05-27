@@ -6,6 +6,7 @@ import type { ColDef, ValueFormatterParams } from 'ag-grid-community'
 import { Search, TableProperties } from 'lucide-react'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import './PositionsTableWidget.css'
 
 function fmtCurrency(value: number | null) {
@@ -19,6 +20,7 @@ function fmtPercent(value: number | null) {
 }
 
 export default function PositionsTableWidget({ connectionId }: { connectionId?: number }) {
+  const agTheme = useAgGridTheme()
   const { data, isLoading } = useDashboardPositions(connectionId)
   const [searchText, setSearchText] = useState('')
 
@@ -77,7 +79,7 @@ export default function PositionsTableWidget({ connectionId }: { connectionId?: 
           className="pt-search-input"
         />
       </div>
-      <div className="ag-theme-quartz pt-grid-container">
+      <div className={`${agTheme} pt-grid-container`}>
         <AgGridReact
           rowData={data.positions}
           columnDefs={columnDefs}

@@ -7,9 +7,11 @@ import type { ColDef, ValueFormatterParams } from 'ag-grid-community'
 import { Search, Layers } from 'lucide-react'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import './HoldingsTableWidget.css'
 
 export default function HoldingsTableWidget({ connectionId }: { connectionId?: number }) {
+  const agTheme = useAgGridTheme()
   const { data, isLoading } = useDashboardHoldings(connectionId)
   const [searchText, setSearchText] = useState('')
 
@@ -62,7 +64,7 @@ export default function HoldingsTableWidget({ connectionId }: { connectionId?: n
           <Badge variant="secondary">{data.coveragePercent.toFixed(1)}% coverage</Badge>
         </div>
       </div>
-      <div className="ag-theme-quartz ht-grid-container">
+      <div className={`${agTheme} ht-grid-container`}>
         <AgGridReact
           rowData={data.holdings}
           columnDefs={columnDefs}

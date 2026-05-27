@@ -7,6 +7,7 @@ import type { BrokerActivityDto } from '../../types/broker'
 
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import './AccountActivitiesGrid.css'
 
 const ACTIVITY_TYPES = ['BUY', 'SELL', 'DIVIDEND', 'TRANSFER_IN', 'TRANSFER_OUT', 'FEE', 'INTEREST', 'OTHER']
@@ -28,6 +29,7 @@ interface AccountActivitiesGridProps {
 }
 
 export function AccountActivitiesGrid({ connectionId, connectionActive }: AccountActivitiesGridProps) {
+  const agTheme = useAgGridTheme()
   const [page, setPage] = useState(0)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -170,7 +172,7 @@ export function AccountActivitiesGrid({ connectionId, connectionActive }: Accoun
         </div>
       ) : (
         <>
-          <div className="ag-theme-quartz activities-grid-container">
+          <div className={`${agTheme} activities-grid-container`}>
             <AgGridReact
               rowData={activities}
               columnDefs={columnDefs}
