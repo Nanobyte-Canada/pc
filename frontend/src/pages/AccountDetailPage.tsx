@@ -217,7 +217,7 @@ export function AccountDetailPage() {
       {/* Tab content */}
       <div className="account-detail-section">
         {activeTab === 'positions' && (
-          <PositionsTable connectionId={connId} />
+          <PositionsTable connectionId={connId} autoFit />
         )}
         {activeTab === 'activities' && connId && (
           <AccountActivitiesGrid

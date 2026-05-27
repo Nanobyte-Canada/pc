@@ -98,6 +98,13 @@
 /* -- Grid container -- */
 .positions-table__grid {
   width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Hide the AG Grid page size selector */
+.positions-table__grid .ag-paging-page-size {
+  display: none;
 }
 
 /* Remove column separator lines */

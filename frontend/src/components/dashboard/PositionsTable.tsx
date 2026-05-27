@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import { Search, TableProperties } from 'lucide-react'
 import { useDashboardPositions, useOpenOrders } from '@/hooks/useDashboardWidgets'
@@ -6,6 +6,7 @@ import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { ColDef, ValueFormatterParams, ICellRendererParams } from 'ag-grid-community'
 import type { AggregatedPosition } from '@/types/broker'
+import { useAutoPageSize } from '@/hooks/useAutoPageSize'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
 import './PositionsTable.css'
@@ -27,6 +28,7 @@ function fmtPercent(value: number | null | undefined): string {
 
 interface PositionsTableProps {
   connectionId?: number
+  autoFit?: boolean
 }
 
 type TabType = 'holdings' | 'orders'
@@ -40,8 +42,10 @@ function SymbolCellRenderer(params: ICellRendererParams<AggregatedPosition>) {
   )
 }
 
-export function PositionsTable({ connectionId }: PositionsTableProps) {
+export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
   const agTheme = useAgGridTheme()
+  const gridContainerRef = useRef<HTMLDivElement>(null)
+  const autoPageSize = useAutoPageSize(gridContainerRef, 44, 50)
   const { data: positionsData, isLoading: positionsLoading } = useDashboardPositions(connectionId)
   const { data: ordersData, isLoading: ordersLoading } = useOpenOrders()
   const [activeTab, setActiveTab] = useState<TabType>('holdings')
@@ -217,14 +221,14 @@ export function PositionsTable({ connectionId }: PositionsTableProps) {
       ) : activeTab === 'holdings' ? (
         <>
           {/* Desktop: AG Grid */}
-          <div className={`${agTheme} positions-table__grid positions-table__desktop-only`}>
+          <div ref={autoFit ? gridContainerRef : undefined} className={`${agTheme} positions-table__grid positions-table__desktop-only`}>
             <AgGridReact
               rowData={filteredHoldings}
               columnDefs={holdingsColumns}
-              domLayout="autoHeight"
+              domLayout={autoFit ? undefined : 'autoHeight'}
               quickFilterText={searchText}
               pagination={true}
-              paginationPageSize={15}
+              paginationPageSize={autoFit ? autoPageSize : 15}
               suppressCellFocus={true}
               rowHeight={44}
             />
@@ -259,14 +263,14 @@ export function PositionsTable({ connectionId }: PositionsTableProps) {
           </div>
         </>
       ) : (
-        <div className={`${agTheme} positions-table__grid`}>
+        <div ref={autoFit ? gridContainerRef : undefined} className={`${agTheme} positions-table__grid`}>
           <AgGridReact
             rowData={orders}
             columnDefs={ordersColumns}
-            domLayout="autoHeight"
+            domLayout={autoFit ? undefined : 'autoHeight'}
             quickFilterText={searchText}
             pagination={true}
-            paginationPageSize={15}
+            paginationPageSize={autoFit ? autoPageSize : 15}
             suppressCellFocus={true}
             rowHeight={36}
           />

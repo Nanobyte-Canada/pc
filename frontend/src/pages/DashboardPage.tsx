@@ -194,7 +194,7 @@ export function DashboardPage() {
 
       {/* Positions table */}
       <div className="dashboard-section">
-        <PositionsTable />
+        <PositionsTable autoFit />
       </div>
     </div>
   )
