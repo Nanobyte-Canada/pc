@@ -33,5 +33,6 @@
 @media (min-width: 1024px) {
   .main-content {
     padding: 1.5rem;
+    overflow: hidden;
   }
 }

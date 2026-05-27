@@ -2,6 +2,26 @@
 
 .dashboard-page {
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* The positions table wrapper should grow to fill remaining space */
+.dashboard-page > .dashboard-section:last-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-page > .dashboard-section:last-child > .positions-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* -- Header row -- */
@@ -98,6 +118,13 @@
 }
 
 /* ====== Mobile layout ====== */
+@media (max-width: 767px) {
+  .dashboard-page {
+    height: auto;
+    overflow-y: auto;
+  }
+}
+
 @media (max-width: 768px) {
   /* Hide desktop header */
   .dashboard-header {
