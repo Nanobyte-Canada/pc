@@ -153,16 +153,6 @@ export function PositionsTable({ connectionId }: PositionsTableProps) {
     { field: 'accountName', headerName: 'Account', flex: 1, minWidth: 100 },
   ], [])
 
-  const isLoading = activeTab === 'holdings' ? positionsLoading : ordersLoading
-
-  if (isLoading) {
-    return (
-      <div className="positions-table">
-        <Skeleton style={{ height: 300, width: '100%', borderRadius: 10 }} />
-      </div>
-    )
-  }
-
   const holdingsData = positionsData?.positions ?? []
   const orders = ordersData?.orders ?? []
 
@@ -174,6 +164,16 @@ export function PositionsTable({ connectionId }: PositionsTableProps) {
       p.securityName?.toLowerCase().includes(q)
     )
   }, [holdingsData, searchText])
+
+  const isLoading = activeTab === 'holdings' ? positionsLoading : ordersLoading
+
+  if (isLoading) {
+    return (
+      <div className="positions-table">
+        <Skeleton style={{ height: 300, width: '100%', borderRadius: 10 }} />
+      </div>
+    )
+  }
 
   const isEmpty = activeTab === 'holdings' ? holdingsData.length === 0 : orders.length === 0
 
