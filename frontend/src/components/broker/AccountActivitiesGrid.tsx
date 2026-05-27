@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import type { ColDef, ValueFormatterParams } from 'ag-grid-community'
 import { useConnectionActivities, useSyncActivities } from '../../hooks/useBrokerConnections'
@@ -8,6 +8,7 @@ import type { BrokerActivityDto } from '../../types/broker'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
 import { useAgGridTheme } from '@/hooks/useAgGridTheme'
+import { useAutoPageSize } from '@/hooks/useAutoPageSize'
 import './AccountActivitiesGrid.css'
 
 const ACTIVITY_TYPES = ['BUY', 'SELL', 'DIVIDEND', 'TRANSFER_IN', 'TRANSFER_OUT', 'FEE', 'INTEREST', 'OTHER']
@@ -26,10 +27,13 @@ const typeColors: Record<string, string> = {
 interface AccountActivitiesGridProps {
   connectionId: number
   connectionActive: boolean
+  autoFit?: boolean
 }
 
-export function AccountActivitiesGrid({ connectionId, connectionActive }: AccountActivitiesGridProps) {
+export function AccountActivitiesGrid({ connectionId, connectionActive, autoFit }: AccountActivitiesGridProps) {
   const agTheme = useAgGridTheme()
+  const gridContainerRef = useRef<HTMLDivElement>(null)
+  const autoPageSize = useAutoPageSize(gridContainerRef, 44, 50)
   const [page, setPage] = useState(0)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -172,16 +176,50 @@ export function AccountActivitiesGrid({ connectionId, connectionActive }: Accoun
         </div>
       ) : (
         <>
-          <div className={`${agTheme} activities-grid-container`}>
+          {/* Desktop: AG Grid */}
+          <div ref={autoFit ? gridContainerRef : undefined} className={`${agTheme} activities-grid-container activities-desktop-only`}>
             <AgGridReact
               rowData={activities}
               columnDefs={columnDefs}
               defaultColDef={{ sortable: true, resizable: true }}
               animateRows={true}
               suppressCellFocus={true}
-              domLayout="autoHeight"
+              domLayout={autoFit ? undefined : 'autoHeight'}
+              pagination={autoFit}
+              paginationPageSize={autoFit ? autoPageSize : undefined}
+              rowHeight={44}
             />
           </div>
+
+          {/* Mobile: Card list */}
+          <div className="activities-mobile-only">
+            {activities.map((activity, idx) => {
+              const amt = activity.amount ?? 0
+              const isPositive = amt >= 0
+              const typeColor = typeColors[activity.type] || typeColors.OTHER
+              return (
+                <div key={idx} className="activity-card">
+                  <div className="activity-card__left">
+                    <span className="activity-card__date">
+                      {activity.tradeDate ? new Date(activity.tradeDate).toLocaleDateString() : '-'}
+                    </span>
+                  </div>
+                  <div className="activity-card__center">
+                    <span className="activity-card__type-badge" style={{ color: typeColor, background: `${typeColor}15` }}>
+                      {activity.type}
+                    </span>
+                    <span className="activity-card__symbol">{activity.symbol || '-'}</span>
+                  </div>
+                  <div className="activity-card__right">
+                    <span className={`activity-card__amount ${isPositive ? 'activity-card__amount--positive' : 'activity-card__amount--negative'}`}>
+                      {isPositive ? '+' : ''}{formatCurrency(amt)}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
           <div className="activities-pagination">
             <span className="pagination-info">
               Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, totalCount)} of {totalCount}

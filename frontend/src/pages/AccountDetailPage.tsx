@@ -223,6 +223,7 @@ export function AccountDetailPage() {
           <AccountActivitiesGrid
             connectionId={connId}
             connectionActive={status === 'ACTIVE'}
+            autoFit
           />
         )}
         {activeTab === 'dividends' && (
@@ -245,34 +246,57 @@ function DividendsList({ data }: { data: ReturnType<typeof useDividendCalendar>[
 
   return (
     <div className="account-activities">
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Date</th>
-            <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Symbol</th>
-            <th style={{ textAlign: 'right', padding: '8px 12px', fontSize: 11, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Amount</th>
-            <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Currency</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.entries.map((entry, i) => (
-            <tr key={i}>
-              <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>
-                {new Date(entry.date).toLocaleDateString()}
-              </td>
-              <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid var(--border)' }}>
-                {entry.symbol ?? '-'}
-              </td>
-              <td style={{ padding: '8px 12px', fontSize: 12, fontFamily: 'var(--font-mono)', color: '#6ee7b7', textAlign: 'right', borderBottom: '1px solid var(--border)' }}>
-                {entry.amount.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </td>
-              <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
-                {entry.currency}
-              </td>
+      {/* Desktop: table */}
+      <div className="dividends-desktop-only">
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Date</th>
+              <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Symbol</th>
+              <th style={{ textAlign: 'right', padding: '8px 12px', fontSize: 11, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Amount</th>
+              <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Currency</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.entries.map((entry, i) => (
+              <tr key={i}>
+                <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>
+                  {new Date(entry.date).toLocaleDateString()}
+                </td>
+                <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid var(--border)' }}>
+                  {entry.symbol ?? '-'}
+                </td>
+                <td style={{ padding: '8px 12px', fontSize: 12, fontFamily: 'var(--font-mono)', color: '#6ee7b7', textAlign: 'right', borderBottom: '1px solid var(--border)' }}>
+                  {entry.amount.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
+                  {entry.currency}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile: card list */}
+      <div className="dividends-mobile-only">
+        {data.entries.map((entry, i) => (
+          <div key={i} className="dividend-card">
+            <div className="dividend-card__left">
+              <span className="dividend-card__date">
+                {new Date(entry.date).toLocaleDateString()}
+              </span>
+              <span className="dividend-card__symbol">{entry.symbol ?? '-'}</span>
+            </div>
+            <div className="dividend-card__right">
+              <span className="dividend-card__amount">
+                {entry.amount.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="dividend-card__currency">{entry.currency}</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
