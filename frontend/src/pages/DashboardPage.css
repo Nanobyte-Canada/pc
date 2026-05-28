@@ -24,12 +24,28 @@
   flex-direction: column;
 }
 
+.dashboard-page > .dashboard-section:last-child > .activities-grid-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* -- Header row -- */
 .dashboard-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 16px;
+  gap: 16px;
+}
+
+.dashboard-header__left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+  flex: 1;
 }
 
 .dashboard-header__title {
@@ -37,12 +53,14 @@
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  flex-shrink: 0;
 }
 
 .dashboard-header__actions {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .dashboard-header__search {
@@ -99,6 +117,285 @@
   color: var(--text-primary);
 }
 
+/* ====== Account Switcher — Desktop Pill Tabs ====== */
+
+.acct-switcher {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.acct-switcher__pills {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.acct-switcher__pills::-webkit-scrollbar {
+  display: none;
+}
+
+.acct-switcher__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.acct-switcher__pill:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.acct-switcher__pill--active {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.acct-switcher__pill--active:hover {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent);
+}
+
+.acct-switcher__broker-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.acct-switcher__broker-icon--questrade {
+  background: #1a5c3a;
+  color: #4ade80;
+}
+
+.acct-switcher__broker-icon--wealthsimple {
+  background: #1a1a3a;
+  color: #a78bfa;
+}
+
+.acct-switcher__broker-icon--ibkr {
+  background: #3a1a1a;
+  color: #f87171;
+}
+
+.acct-switcher__pill-type {
+  font-size: 12px;
+}
+
+.acct-switcher__pill-number {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.acct-switcher__pill--active .acct-switcher__pill-number {
+  color: rgba(16, 185, 129, 0.6);
+}
+
+/* ====== Mobile Account Switcher (dropdown + dots) ====== */
+
+.mobile-acct-switcher {
+  display: none;
+}
+
+/* ====== Account Switcher Bottom Sheet (mobile) ====== */
+
+.acct-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+
+.acct-sheet {
+  width: 100%;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 0 16px 80px;
+}
+
+.acct-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 10px auto 14px;
+}
+
+.acct-sheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.acct-sheet__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.acct-sheet__close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.acct-sheet__items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.acct-sheet__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.acct-sheet__item:hover {
+  background: var(--bg-tertiary);
+}
+
+.acct-sheet__item--active {
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--accent);
+}
+
+.acct-sheet__item-label {
+  font-weight: 500;
+}
+
+/* ====== Content Tabs (Positions / Activities / Dividends) ====== */
+
+.dashboard-content-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 24px;
+  margin-bottom: 16px;
+}
+
+.dashboard-content-tab {
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dashboard-content-tab--active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+
+.dashboard-content-tab--inactive {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.dashboard-content-tab--inactive:hover {
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+}
+
+/* ====== Dividends list ====== */
+
+.dashboard-dividends__empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.dashboard-dividends__mobile {
+  display: none;
+}
+
+.dashboard-dividend-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-dividend-card:last-child {
+  border-bottom: none;
+}
+
+.dashboard-dividend-card__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-dividend-card__date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dashboard-dividend-card__symbol {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dashboard-dividend-card__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-dividend-card__amount {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: #6ee7b7;
+}
+
+.dashboard-dividend-card__currency {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 /* -- Section spacing -- */
 .dashboard-section {
   padding: 0 24px;
@@ -130,6 +427,9 @@
   .dashboard-header {
     display: none;
   }
+
+  /* Hide desktop sheet overlay (only show on mobile) */
+  /* Sheet is always rendered but only visible via mobile trigger */
 
   .dashboard-section {
     padding: 0 16px;
@@ -215,6 +515,62 @@
     flex-shrink: 0;
   }
 
+  /* Show mobile account switcher */
+  .mobile-acct-switcher {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px 12px;
+  }
+
+  .mobile-acct-switcher__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .mobile-acct-switcher__label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .mobile-acct-switcher__chevron {
+    color: var(--text-muted);
+  }
+
+  .mobile-acct-switcher__dots {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mobile-acct-switcher__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .mobile-acct-switcher__dot--active {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+  }
+
+  /* Content tabs mobile */
+  .dashboard-content-tabs {
+    padding: 0 16px;
+    margin-bottom: 12px;
+  }
+
   /* KPI grid: 2x2 */
   .dashboard-kpi-row {
     grid-template-columns: 1fr 1fr;
@@ -223,5 +579,14 @@
   /* Sectors card spans full width on mobile */
   .dashboard-kpi-row .kpi-card:last-child {
     grid-column: 1 / -1;
+  }
+
+  /* Dividends mobile */
+  .dashboard-dividends__desktop {
+    display: none;
+  }
+
+  .dashboard-dividends__mobile {
+    display: block;
   }
 }
