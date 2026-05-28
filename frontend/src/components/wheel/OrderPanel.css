@@ -1,0 +1,451 @@
+/* ================================================================
+   OrderPanel — Desktop side-panel + Mobile bottom-sheet
+   ================================================================ */
+
+/* ── Desktop panel ── */
+.order-panel--desktop {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.order-panel__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+/* ── Header ── */
+.order-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.order-panel__header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-panel__symbol {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+.order-panel__description {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.order-panel__close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm, 6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast, 0.15s);
+}
+
+.order-panel__close:hover {
+  color: var(--text-primary);
+}
+
+/* ── Live Quote ── */
+.order-panel__quote {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.order-panel__quote-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.order-panel__quote-price {
+  font-size: 20px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.order-panel__quote-change {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.order-panel__quote-change--up {
+  color: var(--success, #10b981);
+}
+
+.order-panel__quote-change--down {
+  color: var(--error, #f87171);
+}
+
+.order-panel__quote-cards {
+  display: flex;
+  gap: 6px;
+}
+
+.order-panel__quote-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 6px;
+}
+
+.order-panel__quote-card-label {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.order-panel__quote-card-value {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* ── Contract Section ── */
+.order-panel__contract-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.2px;
+  margin-bottom: 2px;
+}
+
+.order-panel__contract-last {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.order-panel__contract-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ── Form Fields ── */
+.order-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.order-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.order-panel__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.order-panel__select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.order-panel__select {
+  width: 100%;
+  padding: 6px 26px 6px 10px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--text-primary);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  transition: border-color var(--transition-fast, 0.15s);
+}
+
+.order-panel__select:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.order-panel__select:focus {
+  border-color: var(--accent);
+}
+
+.order-panel__select-chevron {
+  position: absolute;
+  right: 8px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* ── Quantity Stepper ── */
+.order-panel__stepper {
+  display: flex;
+  align-items: center;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: fit-content;
+}
+
+.order-panel__stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 7px 14px;
+  transition: background var(--transition-fast, 0.15s);
+}
+
+.order-panel__stepper-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.order-panel__stepper-btn:active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.order-panel__stepper-value {
+  min-width: 40px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 7px 4px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── Limit Price Input ── */
+.order-panel__price-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  transition: border-color var(--transition-fast, 0.15s);
+}
+
+.order-panel__price-input-wrap:focus-within {
+  border-color: var(--accent);
+}
+
+.order-panel__price-currency {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 6px 0 6px 10px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.order-panel__price-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  padding: 6px 10px 6px 6px;
+  min-width: 0;
+}
+
+.order-panel__price-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* ── Account Selector ── */
+.order-panel__account-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.order-panel__account-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.order-panel__broker-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: -0.3px;
+}
+
+.order-panel__account-select-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Estimated Total ── */
+.order-panel__estimated {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.order-panel__estimated-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.order-panel__estimated-value {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Buy / Sell Buttons ── */
+.order-panel__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.order-panel__action-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: var(--radius-sm, 6px);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast, 0.15s);
+  letter-spacing: 0.3px;
+}
+
+.order-panel__action-btn--buy {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.order-panel__action-btn--buy:hover {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.order-panel__action-btn--sell {
+  background: rgba(248, 113, 113, 0.15);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #f87171;
+}
+
+.order-panel__action-btn--sell:hover {
+  background: rgba(248, 113, 113, 0.25);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+/* ================================================================
+   Mobile bottom sheet — visible only on mobile
+   ================================================================ */
+.order-sheet-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  align-items: flex-end;
+}
+
+.order-sheet {
+  width: 100%;
+  max-height: 85vh;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl, 16px) var(--radius-xl, 16px) 0 0;
+  overflow-y: auto;
+  padding-bottom: 80px; /* Clear bottom tab bar */
+}
+
+.order-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 10px auto 4px;
+}
+
+/* ================================================================
+   Responsive
+   ================================================================ */
+
+/* Desktop: show inline panel, hide bottom sheet */
+@media (min-width: 768px) {
+  .order-panel--desktop {
+    display: flex;
+  }
+
+  .order-sheet-overlay {
+    display: none !important;
+  }
+}
+
+/* Mobile: hide inline panel, show bottom sheet */
+@media (max-width: 767px) {
+  .order-panel--desktop {
+    display: none;
+  }
+
+  .order-sheet-overlay {
+    display: flex;
+  }
+
+  /* Adjust contract grid to stack on very narrow screens */
+  .order-panel__contract-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
