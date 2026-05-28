@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  LayoutGrid, Layers, ClipboardList, Clock,
+  LayoutGrid, Target, Link2,
   Sun, Moon, Settings
 } from 'lucide-react'
 import { useThemeStore } from '@/stores/themeStore'
@@ -14,10 +14,9 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { icon: LayoutGrid, path: '/', label: 'Dashboard' },
-  { icon: Layers, path: '/brokers/connections', label: 'Accounts' },
-  { icon: ClipboardList, path: '/screener/stocks', label: 'Screener' },
-  { icon: Clock, path: '/options', label: 'Options' },
+  { icon: LayoutGrid, path: '/', label: 'Portfolio' },
+  { icon: Target, path: '/wheel', label: 'Wheel' },
+  { icon: Link2, path: '/brokers/connections', label: 'Connections' },
 ]
 
 function getInitials(name: string | null | undefined): string {
@@ -38,7 +37,7 @@ export function IconRail() {
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/'
     if (path === '/brokers/connections') return location.pathname.startsWith('/brokers')
-    if (path === '/screener/stocks') return location.pathname.startsWith('/screener')
+    if (path === '/wheel') return location.pathname.startsWith('/wheel')
     return location.pathname.startsWith(path)
   }
 

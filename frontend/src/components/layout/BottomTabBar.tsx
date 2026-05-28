@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { LayoutGrid, Layers, Search, Clock, Menu, X, Target, FileText, Shield, User } from 'lucide-react'
+import { LayoutGrid, Target, Link2, Menu, X, Clock, Search, FileText, Shield, User } from 'lucide-react'
 import './BottomTabBar.css'
 
 interface TabItem {
@@ -10,14 +10,14 @@ interface TabItem {
 }
 
 const tabs: TabItem[] = [
-  { icon: LayoutGrid, path: '/', label: 'Home' },
-  { icon: Layers, path: '/brokers/connections', label: 'Accounts' },
-  { icon: Search, path: '/screener/stocks', label: 'Screener' },
-  { icon: Clock, path: '/options', label: 'Options' },
+  { icon: LayoutGrid, path: '/', label: 'Portfolio' },
+  { icon: Target, path: '/wheel', label: 'Wheel' },
+  { icon: Link2, path: '/brokers/connections', label: 'Connections' },
 ]
 
 const moreItems: TabItem[] = [
-  { icon: Target, path: '/wheel', label: 'Wheel Strategy' },
+  { icon: Clock, path: '/options', label: 'Options Trading' },
+  { icon: Search, path: '/screener/stocks', label: 'Screener' },
   { icon: FileText, path: '/brokers/reporting', label: 'Reporting' },
   { icon: Shield, path: '/admin', label: 'Admin' },
   { icon: User, path: '/profile', label: 'Profile' },
@@ -30,12 +30,13 @@ export function BottomTabBar() {
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/'
-    if (path === '/brokers/connections') return location.pathname.startsWith('/brokers')
-    if (path === '/screener/stocks') return location.pathname.startsWith('/screener')
+    if (path === '/brokers/connections') return location.pathname.startsWith('/brokers') && !location.pathname.startsWith('/brokers/reporting')
+    if (path === '/wheel') return location.pathname.startsWith('/wheel')
     return location.pathname.startsWith(path)
   }
 
-  const isMoreActive = moreItems.some((item) => location.pathname.startsWith(item.path))
+  const moreOverflowPaths = ['/options', '/screener', '/brokers/reporting', '/admin', '/profile']
+  const isMoreActive = moreOverflowPaths.some((p) => location.pathname.startsWith(p))
 
   return (
     <>

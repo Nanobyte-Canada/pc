@@ -112,7 +112,7 @@ export function DashboardPage() {
     <div className="dashboard-page">
       {/* Desktop header */}
       <div className="dashboard-header">
-        <h1 className="dashboard-header__title">Dashboard</h1>
+        <h1 className="dashboard-header__title">Portfolio</h1>
         <div className="dashboard-header__actions">
           <div className="dashboard-header__search">
             <Search className="dashboard-header__search-icon" />
