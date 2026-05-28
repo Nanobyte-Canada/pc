@@ -72,7 +72,6 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
       headerName: 'Market Value',
       flex: 1.2,
       minWidth: 120,
-      type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => fmtCurrency(p.value),
       cellClass: 'positions-table__mono',
     },
@@ -81,7 +80,6 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
       headerName: 'Qty',
       flex: 0.8,
       minWidth: 70,
-      type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => fmtNumber(p.value, 0),
       cellClass: 'positions-table__mono',
     },
@@ -90,7 +88,6 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
       headerName: 'Avg Cost',
       flex: 1,
       minWidth: 100,
-      type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => fmtCurrency(p.value),
       cellClass: 'positions-table__mono',
     },
@@ -98,7 +95,6 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
       headerName: 'Price',
       flex: 1,
       minWidth: 100,
-      type: 'numericColumn',
       valueGetter: (params) => {
         const data = params.data
         if (!data || !data.totalQuantity) return null
@@ -112,7 +108,6 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
       headerName: 'P&L',
       flex: 1,
       minWidth: 110,
-      type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => fmtCurrency(p.value),
       cellClass: 'positions-table__mono',
       cellStyle: (p) => ({
@@ -123,7 +118,6 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
       headerName: 'Weight',
       flex: 0.8,
       minWidth: 70,
-      type: 'numericColumn',
       valueGetter: (params) => {
         const data = params.data
         if (!data || !positionsData) return null
@@ -145,14 +139,12 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
       field: 'requestedUnits',
       headerName: 'Qty',
       width: 80,
-      type: 'numericColumn',
       cellClass: 'positions-table__mono',
     },
     {
       field: 'limitPrice',
       headerName: 'Limit',
       width: 100,
-      type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => fmtCurrency(p.value),
       cellClass: 'positions-table__mono',
     },
