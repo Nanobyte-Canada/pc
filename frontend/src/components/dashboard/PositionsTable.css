@@ -131,7 +131,7 @@
 .positions-table__mono {
   font-family: var(--font-mono);
   font-size: 12px;
-  text-align: right;
+  text-align: left;
 }
 
 /* -- P&L colors -- */

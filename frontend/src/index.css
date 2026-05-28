@@ -265,15 +265,15 @@ code {
   letter-spacing: 0.5px;
 }
 
-/* Ensure numeric columns align header and cell consistently */
+/* Force all columns left-aligned — override AG Grid numericColumn right-alignment */
 .ag-theme-quartz .ag-right-aligned-cell,
 .ag-theme-quartz-dark .ag-right-aligned-cell {
-  text-align: right !important;
+  text-align: left !important;
 }
 
 .ag-theme-quartz .ag-right-aligned-header .ag-header-cell-label,
 .ag-theme-quartz-dark .ag-right-aligned-header .ag-header-cell-label {
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 /* Remove column separators globally */
