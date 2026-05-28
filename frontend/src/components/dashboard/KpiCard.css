@@ -137,3 +137,62 @@
   height: 120px;
   border-radius: 10px;
 }
+
+/* ====== Combined Variant (Total Value / Investment / Cash) ====== */
+
+.kpi-card--combined {
+  /* No extra background — uses same card style */
+}
+
+.kpi-card__combined-primary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.kpi-card__combined-cad {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.kpi-card__combined-usd {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.kpi-card__combined-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.kpi-card__combined-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.kpi-card__combined-col-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.kpi-card__combined-col-cad {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.kpi-card__combined-col-usd {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}

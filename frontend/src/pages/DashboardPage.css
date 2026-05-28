@@ -402,16 +402,23 @@
   margin-bottom: 16px;
 }
 
-/* -- KPI row (5 equal columns) -- */
+/* -- KPI row (4 columns) -- */
 .dashboard-kpi-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 
 /* -- Mobile hero (hidden on desktop) -- */
 .dashboard-mobile-hero {
   display: none;
+}
+
+/* ====== Tablet layout ====== */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .dashboard-kpi-row {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* ====== Mobile layout ====== */
@@ -571,12 +578,17 @@
     margin-bottom: 12px;
   }
 
-  /* KPI grid: 2x2 */
+  /* KPI grid: 2 columns on mobile */
   .dashboard-kpi-row {
     grid-template-columns: 1fr 1fr;
   }
 
-  /* Sectors card spans full width on mobile */
+  /* Card 1 (combined Total Value) spans full width */
+  .dashboard-kpi-row .kpi-card:first-child {
+    grid-column: 1 / -1;
+  }
+
+  /* Card 4 (sectors) spans full width */
   .dashboard-kpi-row .kpi-card:last-child {
     grid-column: 1 / -1;
   }

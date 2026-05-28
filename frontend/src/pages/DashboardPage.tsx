@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Search, Bell, Settings, ChevronDown, X } from 'lucide-react'
-import { TrendingUp, Wallet, DollarSign, ShoppingCart, PieChart } from 'lucide-react'
+import { TrendingUp, DollarSign, ShoppingCart, PieChart } from 'lucide-react'
 import { KpiCard } from '../components/dashboard/KpiCard'
 import { PositionsTable } from '../components/dashboard/PositionsTable'
 import { AccountActivitiesGrid } from '../components/broker/AccountActivitiesGrid'
@@ -122,23 +122,36 @@ export function DashboardPage() {
   const totalGainPct = pv?.totalChangePercent ?? (investmentValue > 0 ? (totalGain / investmentValue) * 100 : 0)
   const isPositive = totalGain >= 0
 
-  /* Cash breakdown by currency */
-  const cashBreakdown = (cashData?.availableCash ?? []).map(c => ({
+  /* Cash amounts by currency */
+  const cashEntries = cashData?.availableCash ?? []
+  const cashCAD = cashEntries.find(c => c.currency === 'CAD')?.amount ?? 0
+  const cashUSD = cashEntries.find(c => c.currency === 'USD')?.amount ?? 0
+
+  /* Buying power by currency */
+  const bpEntries = cashData?.buyingPower ?? []
+  const bpUSD = bpEntries.find(c => c.currency === 'USD')?.amount ?? 0
+
+  /* Buying power breakdown for KPI card */
+  const bpBreakdown = bpEntries.map(c => ({
     label: c.currency === 'CAD' ? 'C$' : c.currency === 'USD' ? 'US$' : c.currency,
     value: fmtBreakdownAmount(c.amount),
   }))
 
-  /* Buying power breakdown */
-  const bpBreakdown = (cashData?.buyingPower ?? []).map(c => ({
-    label: c.currency === 'CAD' ? 'C$' : c.currency === 'USD' ? 'US$' : c.currency,
-    value: fmtBreakdownAmount(c.amount),
-  }))
-
-  /* Investment breakdown from accounts */
-  const cadInvestment = accounts.reduce((sum, a) => sum + (a.investmentValue ?? 0), 0)
-  const investmentBreakdown = [
-    { label: 'C$', value: fmtBreakdownAmount(cadInvestment) },
-  ]
+  /* Combined card data: Total Value / Investment / Cash */
+  const combinedCardData = {
+    totalValue: {
+      cad: fmtCad(totalValue),
+      usd: cashUSD || bpUSD ? `US$ ${fmtBreakdownAmount(cashUSD + (investmentValue > 0 ? 0 : 0))}` : undefined,
+    },
+    investment: {
+      cad: fmtCad(investmentValue),
+      usd: undefined as string | undefined,
+    },
+    cash: {
+      cad: `C$ ${fmtBreakdownAmount(cashCAD)}`,
+      usd: cashUSD ? `US$ ${fmtBreakdownAmount(cashUSD)}` : undefined,
+    },
+  }
 
   /* Returns breakdown */
   const roi = irrData?.portfolioTotalReturnPct
@@ -297,20 +310,15 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* KPI row */}
+      {/* KPI row — 4 standardized cards */}
       <div className="dashboard-section">
         <div className="dashboard-kpi-row">
           <KpiCard
-            label="Investment"
+            label="Total Value"
             icon={<TrendingUp size={14} />}
-            value={fmtCad(investmentValue)}
-            breakdown={investmentBreakdown}
-          />
-          <KpiCard
-            label="Cash"
-            icon={<Wallet size={14} />}
-            value={fmtCad(cashData?.totalCashCAD)}
-            breakdown={cashBreakdown}
+            value=""
+            variant="combined"
+            combined={combinedCardData}
           />
           <KpiCard
             label="Buying Power"
