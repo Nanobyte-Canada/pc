@@ -182,6 +182,24 @@
   appearance: auto;
 }
 
+/* ── Content layout (grid + order panel side by side) ── */
+.wheel-page__content {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.wheel-page__grid-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.wheel-page__panel-area {
+  width: 340px;
+  flex-shrink: 0;
+}
+
 /* ── Loading / Error ── */
 .wheel-loading,
 .wheel-error {
@@ -221,5 +239,9 @@
 
   .wheel-account-dropdown-wrap {
     display: block;
+  }
+
+  .wheel-page__panel-area {
+    display: none; /* Mobile uses bottom sheet overlay instead */
   }
 }

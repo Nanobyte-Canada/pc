@@ -9,7 +9,7 @@ import { computeTickerTotals } from '@/hooks/useWheelPositions'
 import { getQuote } from '@/services/marketDataService'
 import { CapitalSummary } from '@/components/wheel/CapitalSummary'
 import { WheelGrid } from '@/components/wheel/WheelGrid'
-import { ClosePositionDialog } from '@/components/wheel/ClosePositionDialog'
+import { OrderPanel } from '@/components/wheel/OrderPanel'
 import { WheelChainPanel } from '@/components/wheel/WheelChainPanel'
 import type { WheelPosition, CapitalMetrics } from '@/types/wheel'
 import { Plus } from 'lucide-react'
@@ -32,7 +32,7 @@ function getBrokerBrand(brokerName: string) {
   return { icon: brokerName.charAt(0).toUpperCase(), color: 'var(--text-muted)' }
 }
 
-interface CloseDialogState {
+interface SelectedPositionState {
   position: WheelPosition
   ticker: string
   expiryDate: string
@@ -40,7 +40,7 @@ interface CloseDialogState {
 
 export function WheelPage() {
   const [selectedConnectionId, setSelectedConnectionId] = useState<number | undefined>(undefined)
-  const [closeDialog, setCloseDialog] = useState<CloseDialogState | null>(null)
+  const [selectedPosition, setSelectedPosition] = useState<SelectedPositionState | null>(null)
   const [chainPanel, setChainPanel] = useState<{ ticker: string; expiryDate: string } | null>(null)
 
   const { data: connectionsData } = useBrokerConnections()
@@ -165,15 +165,11 @@ export function WheelPage() {
   const showAccount = selectedConnectionId === undefined
 
   const handlePositionClick = useCallback((position: WheelPosition, ticker: string, expiryDate: string) => {
-    setCloseDialog({ position, ticker, expiryDate })
+    setSelectedPosition({ position, ticker, expiryDate })
   }, [])
 
   const handleEmptySlotClick = useCallback((ticker: string, expiryDate: string) => {
     setChainPanel({ ticker, expiryDate })
-  }, [])
-
-  const handleCloseConfirm = useCallback(() => {
-    setCloseDialog(null)
   }, [])
 
   const handleMobileAdd = useCallback(() => {
@@ -275,32 +271,43 @@ export function WheelPage() {
 
       <CapitalSummary metrics={capitalMetrics} />
 
-      {isLoading && (
-        <div className="wheel-loading">Loading positions...</div>
-      )}
+      <div className="wheel-page__content">
+        <div className="wheel-page__grid-area">
+          {isLoading && (
+            <div className="wheel-loading">Loading positions...</div>
+          )}
 
-      {error && (
-        <div className="wheel-error">Failed to load positions. Please try again.</div>
-      )}
+          {error && (
+            <div className="wheel-error">Failed to load positions. Please try again.</div>
+          )}
 
-      {gridData && !isLoading && (
-        <WheelGrid
-          data={gridData}
-          showAccount={showAccount}
-          onPositionClick={handlePositionClick}
-          onEmptySlotClick={handleEmptySlotClick}
-        />
-      )}
+          {gridData && !isLoading && (
+            <WheelGrid
+              data={gridData}
+              showAccount={showAccount}
+              onPositionClick={handlePositionClick}
+              onEmptySlotClick={handleEmptySlotClick}
+            />
+          )}
+        </div>
 
-      {closeDialog && (
-        <ClosePositionDialog
-          position={closeDialog.position}
-          ticker={closeDialog.ticker}
-          expiryDate={closeDialog.expiryDate}
-          onConfirm={handleCloseConfirm}
-          onCancel={() => setCloseDialog(null)}
-        />
-      )}
+        {selectedPosition && (
+          <div className="wheel-page__panel-area">
+            <OrderPanel
+              position={selectedPosition.position}
+              ticker={selectedPosition.ticker}
+              currentPrice={underlyingPrices[selectedPosition.ticker]}
+              onClose={() => setSelectedPosition(null)}
+              accounts={activeConnections.map(c => ({
+                connectionId: c.id,
+                accountType: c.accountType ?? '',
+                accountNumber: c.accountNumber ?? '',
+                brokerName: c.broker?.name ?? '',
+              }))}
+            />
+          </div>
+        )}
+      </div>
 
       {chainPanel && (
         <WheelChainPanel
