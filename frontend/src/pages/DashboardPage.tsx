@@ -96,34 +96,32 @@ export function DashboardPage() {
   const totalGainPct = pv?.totalChangePercent ?? (investmentValue > 0 ? (totalGain / investmentValue) * 100 : 0)
   const isPositive = totalGain >= 0
 
+  /* Investment amounts by currency */
+  const investmentEntries = pv?.investmentByCurrency ?? []
+  const investCAD = investmentEntries.find(c => c.currency === 'CAD')?.amount
+  const investUSD = investmentEntries.find(c => c.currency === 'USD')?.amount
+
   /* Cash amounts by currency */
   const cashEntries = cashData?.availableCash ?? []
-  const cashCAD = cashEntries.find(c => c.currency === 'CAD')?.amount ?? 0
-  const cashUSD = cashEntries.find(c => c.currency === 'USD')?.amount ?? 0
+  const cashCAD = cashEntries.find(c => c.currency === 'CAD')?.amount
+  const cashUSD = cashEntries.find(c => c.currency === 'USD')?.amount
 
-  /* Buying power by currency */
-  const bpEntries = cashData?.buyingPower ?? []
-  const bpUSD = bpEntries.find(c => c.currency === 'USD')?.amount ?? 0
-
-  /* Buying power breakdown for KPI card */
-  const bpBreakdown = bpEntries.map(c => ({
-    label: c.currency === 'CAD' ? 'C$' : c.currency === 'USD' ? 'US$' : c.currency,
-    value: fmtBreakdownAmount(c.amount),
-  }))
+  /* Buying power */
+  const bpCAD = cashData?.totalBuyingPowerCAD
+  const bpUSD = cashData?.totalBuyingPowerUSD
 
   /* Combined card data: Total Value / Investment / Cash */
   const combinedCardData = {
     totalValue: {
       cad: fmtCad(totalValue),
-      usd: cashUSD || bpUSD ? `US$ ${fmtBreakdownAmount(cashUSD + (investmentValue > 0 ? 0 : 0))}` : undefined,
     },
     investment: {
-      cad: fmtCad(investmentValue),
-      usd: undefined as string | undefined,
+      cad: `C$ ${fmtBreakdownAmount(investCAD)}`,
+      usd: investUSD != null ? `US$ ${fmtBreakdownAmount(investUSD)}` : undefined,
     },
     cash: {
       cad: `C$ ${fmtBreakdownAmount(cashCAD)}`,
-      usd: cashUSD ? `US$ ${fmtBreakdownAmount(cashUSD)}` : undefined,
+      usd: cashUSD != null ? `US$ ${fmtBreakdownAmount(cashUSD)}` : undefined,
     },
   }
 
@@ -210,8 +208,11 @@ export function DashboardPage() {
           <KpiCard
             label="Buying Power"
             icon={<ShoppingCart size={14} />}
-            value={fmtCad(cashData?.totalBuyingPowerCAD)}
-            breakdown={bpBreakdown}
+            value={fmtCad(bpCAD)}
+            breakdown={[
+              { label: 'C$', value: fmtBreakdownAmount(bpCAD) },
+              ...(bpUSD != null ? [{ label: 'US$', value: fmtBreakdownAmount(bpUSD) }] : []),
+            ]}
           />
           <KpiCard
             label="Returns"
