@@ -57,6 +57,11 @@ class OrderExecutionService(
                 requestedPrice = tradeInput.price,
                 requestedAmount = tradeInput.amount,
                 limitPrice = tradeInput.limitPrice,
+                optionType = tradeInput.optionType,
+                strikePrice = tradeInput.strikePrice,
+                expirationDate = tradeInput.expirationDate?.let { java.time.LocalDate.parse(it) },
+                symbolId = tradeInput.symbolId,
+                stopPrice = tradeInput.stopPrice,
                 currency = tradeInput.currency,
                 accountIdExternal = connection.accountIdExternal
             )
@@ -76,8 +81,10 @@ class OrderExecutionService(
                     "quantity" to savedOrder.requestedUnits,
                     "orderType" to savedOrder.orderType.name,
                     "limitPrice" to savedOrder.limitPrice,
+                    "stopPrice" to savedOrder.stopPrice,
                     "timeInForce" to savedOrder.timeInForce.name,
-                    "currency" to savedOrder.currency
+                    "currency" to savedOrder.currency,
+                    "symbolId" to savedOrder.symbolId,
                 )
                 val result = gatewayClient.placeOrder(gwConnId, accountId, orderBody)
                 val brokerOrderId = result.get("brokerOrderId")?.asText()

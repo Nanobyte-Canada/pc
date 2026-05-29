@@ -71,6 +71,21 @@ class TradeOrder(
     @Column(name = "limit_price", precision = 18, scale = 6)
     var limitPrice: BigDecimal? = null,
 
+    @Column(name = "option_type")
+    var optionType: String? = null,
+
+    @Column(name = "strike_price")
+    var strikePrice: BigDecimal? = null,
+
+    @Column(name = "expiration_date")
+    var expirationDate: java.time.LocalDate? = null,
+
+    @Column(name = "symbol_id")
+    var symbolId: Long? = null,
+
+    @Column(name = "stop_price")
+    var stopPrice: BigDecimal? = null,
+
     @Column(name = "filled_units", precision = 18, scale = 6)
     var filledUnits: BigDecimal? = null,
 
