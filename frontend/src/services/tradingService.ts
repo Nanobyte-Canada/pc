@@ -55,3 +55,17 @@ export async function cancelOrder(orderId: number): Promise<TradeOrder> {
   }
   return response.json()
 }
+
+export async function submitOptionsOrder(trade: TradeExecutionInput): Promise<ExecuteTradesResponse> {
+  const request: ExecuteTradesRequest = {
+    groupId: 0,
+    trades: [trade],
+    orderType: trade.limitPrice != null ? 'LIMIT' : 'MARKET',
+    timeInForce: 'DAY',
+  }
+  const response = await apiFetch(`${API_BASE}/execute`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  })
+  return response.json()
+}
