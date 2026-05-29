@@ -90,3 +90,34 @@ export interface WheelChainStrike {
   isATM: boolean
   isITM: boolean
 }
+
+export interface CCInfo {
+  sharesOwned: number
+  contractsAvailable: number
+}
+
+export interface TickerRowData {
+  symbol: string
+  currentPrice: number | null
+  currency: string
+  totalExposure: number
+  ccInfo: CCInfo | null
+  cells: Record<string, WheelCell>
+}
+
+export interface CalendarWindow {
+  startDate: string
+  endDate: string
+  expiries: Array<{
+    date: string
+    dte: number
+    dayOfWeek: string
+    isMonthly: boolean
+  }>
+}
+
+export interface CalendarGridData {
+  tickerRows: TickerRowData[]
+  calendarWindow: CalendarWindow
+  manualTickers: string[]
+}
