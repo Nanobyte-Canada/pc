@@ -11,7 +11,6 @@ import { AccountNavBar } from '@/components/layout/AccountNavBar'
 import { CapitalSummary } from '@/components/wheel/CapitalSummary'
 import { WheelGrid } from '@/components/wheel/WheelGrid'
 import { OrderPanel } from '@/components/wheel/OrderPanel'
-import { WheelChainPanel } from '@/components/wheel/WheelChainPanel'
 import type { WheelPosition, CapitalMetrics } from '@/types/wheel'
 import { Plus } from 'lucide-react'
 import './WheelPage.css'
@@ -19,7 +18,7 @@ import './WheelPage.css'
 const WHEEL_TICKERS = ['SOXL', 'TECL', 'TQQQ', 'UPRO']
 
 interface SelectedPositionState {
-  position: WheelPosition
+  position?: WheelPosition | null
   ticker: string
   expiryDate: string
 }
@@ -27,7 +26,6 @@ interface SelectedPositionState {
 export function WheelPage() {
   const [selectedConnectionId, setSelectedConnectionId] = useState<number | undefined>(undefined)
   const [selectedPosition, setSelectedPosition] = useState<SelectedPositionState | null>(null)
-  const [chainPanel, setChainPanel] = useState<{ ticker: string; expiryDate: string } | null>(null)
 
   const { data: connectionsData } = useBrokerConnections()
   const connections = connectionsData?.connections ?? []
@@ -158,15 +156,14 @@ export function WheelPage() {
   }, [])
 
   const handleEmptySlotClick = useCallback((ticker: string, expiryDate: string) => {
-    setChainPanel({ ticker, expiryDate })
+    setSelectedPosition({ ticker, expiryDate })
   }, [])
 
   const handleMobileAdd = useCallback(() => {
-    // Open chain panel for first ticker with a reasonable expiry
     if (WHEEL_TICKERS.length > 0) {
       const expiry = gridData?.expiryRows[0]?.expiryDate
       if (expiry) {
-        setChainPanel({ ticker: WHEEL_TICKERS[0], expiryDate: expiry })
+        setSelectedPosition({ ticker: WHEEL_TICKERS[0], expiryDate: expiry })
       }
     }
   }, [gridData])
@@ -263,14 +260,6 @@ export function WheelPage() {
         )}
       </div>
 
-      {chainPanel && (
-        <WheelChainPanel
-          ticker={chainPanel.ticker}
-          expiryDate={chainPanel.expiryDate}
-          spotPrice={underlyingPrices[chainPanel.ticker] ?? 0}
-          onClose={() => setChainPanel(null)}
-        />
-      )}
     </div>
   )
 }
