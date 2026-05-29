@@ -8,6 +8,7 @@ import com.portfolio.auth.service.AuditService
 import com.portfolio.broker.client.BrokerGatewayClient
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
+import com.portfolio.broker.service.NotificationService
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -29,7 +30,8 @@ class PositionFetchService(
     private val auditService: AuditService,
     private val objectMapper: ObjectMapper,
     private val jdbcTemplate: NamedParameterJdbcTemplate,
-    private val accountAnalyticsComputeService: AccountAnalyticsComputeService
+    private val accountAnalyticsComputeService: AccountAnalyticsComputeService,
+    private val notificationService: NotificationService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -134,7 +136,7 @@ class PositionFetchService(
             saveBalanceSnapshot(connection, balanceResponse, portfolioValue)
 
             // Sync broker orders into trade_orders table
-            syncOrders(connection, user, gwConnId, accountId)
+            syncOrdersForConnection(connection, user, gwConnId, accountId)
 
             // Update connection
             connection.lastPositionsFetchedAt = OffsetDateTime.now()
@@ -236,7 +238,7 @@ class PositionFetchService(
         connection.lastBalanceFetchedAt = OffsetDateTime.now()
     }
 
-    private fun syncOrders(
+    fun syncOrdersForConnection(
         connection: BrokerConnection,
         user: com.portfolio.auth.entity.User,
         gwConnId: String,
@@ -269,6 +271,7 @@ class PositionFetchService(
 
                 val existing = tradeOrderRepository.findByBrokerOrderId(brokerOrderId)
                 if (existing != null) {
+                    val oldStatus = existing.status
                     existing.status = status
                     existing.filledUnits = filledQty
                     existing.filledPrice = execPrice
@@ -281,6 +284,37 @@ class PositionFetchService(
                         existing.cancelledAt = node.path("filledAt").asText(null)?.let { parseOffsetDateTime(it) }
                     }
                     tradeOrderRepository.save(existing)
+
+                    // Notify on terminal status changes
+                    if (oldStatus != status) {
+                        when (status) {
+                            OrderStatus.FILLED -> try {
+                                notificationService.createNotification(
+                                    user = user,
+                                    type = NotificationType.ORDER_FILLED,
+                                    title = "Order Filled",
+                                    message = "${existing.action} ${existing.filledUnits ?: existing.requestedUnits} ${existing.symbol} filled at ${existing.filledPrice ?: "market"}"
+                                )
+                            } catch (e: Exception) { log.warn("Failed to create fill notification: {}", e.message) }
+                            OrderStatus.REJECTED -> try {
+                                notificationService.createNotification(
+                                    user = user,
+                                    type = NotificationType.ORDER_REJECTED,
+                                    title = "Order Rejected",
+                                    message = "${existing.action} ${existing.requestedUnits} ${existing.symbol} was rejected"
+                                )
+                            } catch (e: Exception) { log.warn("Failed to create reject notification: {}", e.message) }
+                            OrderStatus.FAILED -> try {
+                                notificationService.createNotification(
+                                    user = user,
+                                    type = NotificationType.ORDER_FAILED,
+                                    title = "Order Failed",
+                                    message = "${existing.action} ${existing.requestedUnits} ${existing.symbol} failed"
+                                )
+                            } catch (e: Exception) { log.warn("Failed to create fail notification: {}", e.message) }
+                            else -> {}
+                        }
+                    }
                 } else {
                     val newOrder = TradeOrder(
                         user = user,
