@@ -121,3 +121,9 @@ export interface CalendarGridData {
   calendarWindow: CalendarWindow
   manualTickers: string[]
 }
+
+export interface ChainPanelContext {
+  ticker: string
+  expiryDate: string
+  optionSide: 'put' | 'call'
+}
