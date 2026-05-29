@@ -1,21 +1,24 @@
 import { useState, useCallback, useMemo } from 'react'
-import { useQueries } from '@tanstack/react-query'
+import { useQuery, useQueries } from '@tanstack/react-query'
 import { useBrokerConnections } from '@/hooks/useBrokerConnections'
-import { useWheelPositions } from '@/hooks/useWheelPositions'
 import { useDashboardCash, useDashboardAccounts } from '@/hooks/useDashboardWidgets'
 import { useExchangeRate } from '@/hooks/useExchangeRate'
 import { useWheelActivities } from '@/hooks/useWheelActivities'
-import { computeTickerTotals } from '@/hooks/useWheelPositions'
+import {
+  discoverTickers, detectCCEligible, generateWeeklyExpiries,
+  buildWheelGrid,
+} from '@/hooks/useWheelPositions'
+import { getConnectionPositions, getAggregatedPositions } from '@/services/brokerService'
 import { getQuote } from '@/services/marketDataService'
 import { AccountNavBar } from '@/components/layout/AccountNavBar'
-import { CapitalSummary } from '@/components/wheel/CapitalSummary'
-import { WheelGrid } from '@/components/wheel/WheelGrid'
+import { WheelKpiCards } from '@/components/wheel/WheelKpiCards'
+import { WheelCalendarGrid } from '@/components/wheel/WheelCalendarGrid'
 import { OrderPanel } from '@/components/wheel/OrderPanel'
-import type { WheelPosition, CapitalMetrics } from '@/types/wheel'
-import { Plus } from 'lucide-react'
+import type { WheelPosition, CapitalMetrics, TickerRowData } from '@/types/wheel'
+import type { BrokerPosition, ConnectionPositionsResponse, AggregatedPositionsResponse } from '@/types/broker'
 import './WheelPage.css'
 
-const WHEEL_TICKERS = ['SOXL', 'TECL', 'TQQQ', 'UPRO']
+const DESKTOP_COLUMNS = 4
 
 interface SelectedPositionState {
   position?: WheelPosition | null
@@ -26,6 +29,7 @@ interface SelectedPositionState {
 export function WheelPage() {
   const [selectedConnectionId, setSelectedConnectionId] = useState<number | undefined>(undefined)
   const [selectedPosition, setSelectedPosition] = useState<SelectedPositionState | null>(null)
+  const [calendarOffset, setCalendarOffset] = useState(0)
 
   const { data: connectionsData } = useBrokerConnections()
   const connections = connectionsData?.connections ?? []
@@ -40,11 +44,41 @@ export function WheelPage() {
 
   const { premiumMap, isLoading: activitiesLoading } = useWheelActivities(connectionIds)
 
-  const { gridData: rawGridData, isLoading: positionsLoading, error } = useWheelPositions(WHEEL_TICKERS, selectedConnectionId)
   const { data: cashData } = useDashboardCash(selectedConnectionId)
 
+  // 1. Fetch raw positions
+  const positionsQuery = useQuery<ConnectionPositionsResponse | AggregatedPositionsResponse>({
+    queryKey: ['wheel-positions', selectedConnectionId ?? 'all'],
+    queryFn: () =>
+      selectedConnectionId
+        ? getConnectionPositions(selectedConnectionId)
+        : getAggregatedPositions(),
+    staleTime: 60_000,
+  })
+
+  // 2. Extract raw positions array
+  const { rawPositions, accountName, accountNumber, connId } = useMemo(() => {
+    if (!positionsQuery.data) return { rawPositions: [] as BrokerPosition[], accountName: null, accountNumber: null, connId: 0 }
+    const data = positionsQuery.data
+    if ('connectionId' in data && 'broker' in data) {
+      const resp = data as ConnectionPositionsResponse
+      return { rawPositions: resp.positions, accountName: resp.broker, accountNumber: resp.accountNumber, connId: resp.connectionId }
+    }
+    const resp = data as AggregatedPositionsResponse
+    return { rawPositions: resp.positions as unknown as BrokerPosition[], accountName: null, accountNumber: null, connId: 0 }
+  }, [positionsQuery.data])
+
+  // 3. Discover tickers from option positions and detect CC-eligible stock holdings
+  const optionTickers = useMemo(() => discoverTickers(rawPositions), [rawPositions])
+  const ccEligible = useMemo(() => detectCCEligible(rawPositions), [rawPositions])
+  const allTickers = useMemo(() => {
+    const set = new Set([...optionTickers, ...ccEligible.keys()])
+    return Array.from(set).sort()
+  }, [optionTickers, ccEligible])
+
+  // 4. Fetch quotes for discovered tickers
   const quotesQuery = useQueries({
-    queries: WHEEL_TICKERS.map(ticker => ({
+    queries: allTickers.map(ticker => ({
       queryKey: ['wheel-quote', ticker],
       queryFn: async () => {
         const response = await getQuote(ticker)
@@ -62,57 +96,69 @@ export function WheelPage() {
     return prices
   }, [quotesQuery])
 
-  // Re-build grid with premium map, underlying prices, and FX rate
-  const gridData = useMemo(() => {
-    if (!rawGridData) return null
+  // 5. Generate calendar window based on calendarOffset
+  const expiries = useMemo(() => {
+    const start = new Date()
+    start.setDate(start.getDate() + calendarOffset * 7)
+    return generateWeeklyExpiries(start, DESKTOP_COLUMNS)
+  }, [calendarOffset])
 
-    const enrichedGrid = { ...rawGridData }
+  const dateRange = useMemo(() => {
+    if (expiries.length === 0) return ''
+    const fmt = (iso: string) => {
+      const d = new Date(iso + 'T00:00:00')
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    }
+    return `${fmt(expiries[0].date)} — ${fmt(expiries[expiries.length - 1].date)}, ${new Date(expiries[0].date + 'T00:00:00').getFullYear()}`
+  }, [expiries])
 
-    // Update ticker prices from quotes
-    enrichedGrid.tickers = enrichedGrid.tickers.map(t => ({
-      ...t,
-      currentPrice: underlyingPrices[t.symbol] ?? t.currentPrice,
-    }))
+  // 6. Build grid data using buildWheelGrid, then transpose to ticker rows
+  const tickerRows: TickerRowData[] = useMemo(() => {
+    if (allTickers.length === 0) return []
 
-    // Update positions with premium from activities and OTM from quotes
-    enrichedGrid.expiryRows = enrichedGrid.expiryRows.map(row => ({
-      ...row,
-      cells: Object.fromEntries(
-        Object.entries(row.cells).map(([ticker, cell]) => [
-          ticker,
-          {
-            positions: cell.positions.map(pos => {
-              let premium = pos.premium
-              if (premium == null) {
-                for (const [sym, info] of premiumMap.entries()) {
-                  if (sym.includes(ticker) && sym.includes(String(pos.strike))) {
-                    premium = info.premium
-                    break
-                  }
-                }
-              }
+    const expiryDates = expiries.map(e => e.date)
+    const today = new Date()
 
-              const underlyingPrice = underlyingPrices[ticker]
-              let otmPercent = pos.otmPercent
-              if (underlyingPrice && underlyingPrice > 0) {
-                otmPercent = Math.abs(pos.strike - underlyingPrice) / underlyingPrice * 100
-              }
+    const grid = buildWheelGrid(
+      rawPositions, allTickers, expiryDates, today,
+      accountName, accountNumber, connId,
+      underlyingPrices, premiumMap, fxRate,
+    )
 
-              return { ...pos, premium, otmPercent }
-            }),
-          },
-        ])
-      ),
-    }))
+    // Transpose: from expiry-rows to ticker-rows
+    return allTickers.map(symbol => {
+      const price = underlyingPrices[symbol] ?? null
+      const isCanadian = symbol.endsWith('.TO') || symbol.endsWith('.TSX') || symbol.endsWith('.V') || symbol.endsWith('.CN')
+      const currency = isCanadian ? 'CAD' : 'USD'
 
-    // Recompute totals with FX rate
-    enrichedGrid.totals = computeTickerTotals(enrichedGrid, fxRate)
+      const cells: Record<string, { positions: WheelPosition[] }> = {}
+      let totalExposure = 0
 
-    return enrichedGrid
-  }, [rawGridData, underlyingPrices, premiumMap, fxRate])
+      grid.expiryRows.forEach(row => {
+        const cell = row.cells[symbol]
+        const positions = cell?.positions ?? []
+        cells[row.expiryDate] = { positions }
+        positions.forEach(pos => {
+          if (pos.type === 'CSP') {
+            totalExposure += pos.strike * 100 * pos.quantity
+          }
+        })
+      })
 
+      return {
+        symbol,
+        currentPrice: price,
+        currency,
+        totalExposure,
+        ccInfo: ccEligible.get(symbol) ?? null,
+        cells,
+      }
+    })
+  }, [allTickers, rawPositions, expiries, underlyingPrices, premiumMap, fxRate, ccEligible, accountName, accountNumber, connId])
+
+  // 7. Compute capital metrics
   const capitalMetrics: CapitalMetrics | null = useMemo(() => {
-    if (!gridData) return null
+    if (allTickers.length === 0 && !positionsQuery.data) return null
 
     const cashItems = cashData?.availableCash ?? []
     const cashUsd = cashItems.find(c => c.currency === 'USD')?.amount ?? 0
@@ -120,20 +166,20 @@ export function WheelPage() {
     const cashTotalCad = cashData?.totalCashCAD ?? (cashCad + cashUsd * fxRate)
     const cashTotalUsd = cashCad / fxRate + cashUsd
 
-    const allPositions = gridData.expiryRows.flatMap(row =>
-      Object.values(row.cells).flatMap(cell => cell.positions)
-    )
-
     let deployedCspUsd = 0
     let ccsWrittenUsd = 0
     let totalPremiumUsd = 0
     let unrealizedPnlUsd = 0
 
-    allPositions.forEach(p => {
-      if (p.type === 'CSP') deployedCspUsd += p.strike * 100 * p.quantity
-      else ccsWrittenUsd += p.strike * 100 * p.quantity
-      totalPremiumUsd += p.premium ?? 0
-      unrealizedPnlUsd += p.pnl ?? 0
+    tickerRows.forEach(row => {
+      Object.values(row.cells).forEach(cell => {
+        cell.positions.forEach(p => {
+          if (p.type === 'CSP') deployedCspUsd += p.strike * 100 * p.quantity
+          else ccsWrittenUsd += p.strike * 100 * p.quantity
+          totalPremiumUsd += p.premium ?? 0
+          unrealizedPnlUsd += p.pnl ?? 0
+        })
+      })
     })
 
     return {
@@ -146,9 +192,30 @@ export function WheelPage() {
       totalPremium: { usd: totalPremiumUsd, cad: totalPremiumUsd * fxRate },
       unrealizedPnl: { usd: unrealizedPnlUsd, cad: unrealizedPnlUsd * fxRate },
     }
-  }, [gridData, cashData, fxRate])
+  }, [allTickers, positionsQuery.data, cashData, fxRate, tickerRows])
 
-  const isLoading = positionsLoading || activitiesLoading
+  // 8. Compute position counts for KPI
+  const positionCounts = useMemo(() => {
+    let csp = 0
+    let cc = 0
+    let expiring = 0
+    const now = new Date()
+    tickerRows.forEach(row => {
+      Object.entries(row.cells).forEach(([expiryDate, cell]) => {
+        cell.positions.forEach(pos => {
+          if (pos.type === 'CSP') csp++
+          else cc++
+          const expDate = new Date(expiryDate + 'T00:00:00')
+          const msPerDay = 86400000
+          const dte = Math.round((expDate.getTime() - now.getTime()) / msPerDay)
+          if (dte <= 5) expiring++
+        })
+      })
+    })
+    return { csp, cc, expiring, total: csp + cc }
+  }, [tickerRows])
+
+  const isLoading = positionsQuery.isLoading || activitiesLoading
 
   const handlePositionClick = useCallback((position: WheelPosition, ticker: string, expiryDate: string) => {
     setSelectedPosition({ position, ticker, expiryDate })
@@ -158,89 +225,57 @@ export function WheelPage() {
     setSelectedPosition({ ticker, expiryDate })
   }, [])
 
-  const handleMobileAdd = useCallback(() => {
-    if (WHEEL_TICKERS.length > 0) {
-      const expiry = gridData?.expiryRows[0]?.expiryDate
-      if (expiry) {
-        setSelectedPosition({ ticker: WHEEL_TICKERS[0], expiryDate: expiry })
-      }
-    }
-  }, [gridData])
+  const handleCCSlotClick = useCallback((ticker: string, expiryDate: string) => {
+    setSelectedPosition({ ticker, expiryDate })
+  }, [])
 
   return (
     <div className="wheel-page">
-      {/* Account switcher — above header */}
       <AccountNavBar
         accounts={accounts}
         selectedId={selectedConnectionId ?? null}
         onSelect={(id) => setSelectedConnectionId(id ?? undefined)}
       />
 
-      <div className="wheel-page-header">
-        <div className="wheel-header-left">
-          <h1 className="wheel-page-title">Wheel Strategy</h1>
-          {/* Mobile: abbreviated legend below title */}
-          <div className="wheel-legend-mobile">
-            <span className="wheel-legend-mobile-item">
-              <span className="wheel-legend-dot wheel-legend-dot-csp" />
-              CSP
-            </span>
-            <span className="wheel-legend-mobile-item">
-              <span className="wheel-legend-dot wheel-legend-dot-cc" />
-              CC
-            </span>
-            <span className="wheel-legend-mobile-item">
-              <span className="wheel-legend-dot wheel-legend-dot-open" />
-              Open
-            </span>
-          </div>
-        </div>
-        <div className="wheel-header-right">
-          {/* Desktop: full legend */}
-          <div className="wheel-legend-desktop">
-            <span className="wheel-legend-item">
-              <span className="wheel-legend-swatch wheel-legend-swatch-csp" />
-              Cash-Secured Put
-            </span>
-            <span className="wheel-legend-item">
-              <span className="wheel-legend-swatch wheel-legend-swatch-cc" />
-              Covered Call
-            </span>
-            <span className="wheel-legend-item">
-              <span className="wheel-legend-swatch wheel-legend-swatch-open" />
-              Open Slot
-            </span>
-          </div>
-          {/* Mobile: "+" button */}
-          <button className="wheel-mobile-add" onClick={handleMobileAdd} aria-label="Add position">
-            <Plus size={20} />
-          </button>
-        </div>
+      <div className="wheel-page__header">
+        <h1 className="wheel-page__title">Wheel Strategy</h1>
       </div>
 
-      <CapitalSummary metrics={capitalMetrics} />
-
       <div className="wheel-page__content">
-        <div className="wheel-page__grid-area">
+        <div className="wheel-page__main">
+          <WheelKpiCards
+            metrics={capitalMetrics}
+            buyingPower={cashData?.buyingPower ?? []}
+            ccEligible={ccEligible}
+            positionCounts={positionCounts}
+          />
+
           {isLoading && (
             <div className="wheel-loading">Loading positions...</div>
           )}
 
-          {error && (
+          {positionsQuery.error && (
             <div className="wheel-error">Failed to load positions. Please try again.</div>
           )}
 
-          {gridData && !isLoading && (
-            <WheelGrid
-              data={gridData}
+          {!isLoading && !positionsQuery.error && (
+            <WheelCalendarGrid
+              tickerRows={tickerRows}
+              expiries={expiries}
+              dateRange={dateRange}
+              onPrev={() => setCalendarOffset(o => o - DESKTOP_COLUMNS)}
+              onNext={() => setCalendarOffset(o => o + DESKTOP_COLUMNS)}
+              onToday={() => setCalendarOffset(0)}
               onPositionClick={handlePositionClick}
               onEmptySlotClick={handleEmptySlotClick}
+              onCCSlotClick={handleCCSlotClick}
+              onAddTicker={() => { /* TODO: future - open ticker search */ }}
             />
           )}
         </div>
 
         {selectedPosition && (
-          <div className="wheel-page__panel-area">
+          <div className="wheel-page__panel">
             <OrderPanel
               position={selectedPosition.position}
               ticker={selectedPosition.ticker}
@@ -257,7 +292,6 @@ export function WheelPage() {
           </div>
         )}
       </div>
-
     </div>
   )
 }
