@@ -3,6 +3,9 @@ import type { WheelPosition } from '@/types/wheel'
 import type { CurrencyAmount } from '@/types/dashboard'
 import { formatCurrency } from '@/services/brokerService'
 import { X, Minus, Plus, ChevronDown } from 'lucide-react'
+import { useMarketDataWebSocket } from '@/hooks/useMarketDataWebSocket'
+import { useQuoteStore } from '@/stores/quoteStore'
+import { getOptionsChain } from '@/services/marketDataService'
 import './OrderPanel.css'
 
 interface OrderPanelAccount {
@@ -97,6 +100,37 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
     }
   }, [position, accounts])
 
+  const setChain = useQuoteStore(s => s.setChain)
+
+  useEffect(() => {
+    let cancelled = false
+    getOptionsChain(ticker).then(chainData => {
+      if (!cancelled) setChain(ticker, chainData)
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [ticker, setChain])
+
+  const { subscribeOption, unsubscribeOption } = useMarketDataWebSocket()
+
+  useEffect(() => {
+    if (!expiration || !strike) return
+
+    const ot = optionType === 'Call' ? 'CALL' : 'PUT'
+    subscribeOption(ticker, expiration, strike, ot)
+
+    return () => {
+      unsubscribeOption(ticker, expiration, strike, ot)
+    }
+  }, [ticker, expiration, strike, optionType, subscribeOption, unsubscribeOption])
+
+  const chainData = useQuoteStore(s => s.chains[ticker])
+  const optionQuote = useMemo(() => {
+    if (!chainData?.expirations || !expiration || !strike) return null
+    const strikeKey = strike.includes('.') ? strike : strike + '.0'
+    const side = optionType === 'Call' ? 'call' : 'put'
+    return chainData.expirations[expiration]?.[strikeKey]?.[side] ?? null
+  }, [chainData, expiration, strike, optionType])
+
   const currencyLabel = getCurrencyLabel(ticker)
   const optionCurrency = getOptionCurrency(ticker)
   const buyingPowerAmount = buyingPower.find(bp => bp.currency === optionCurrency)?.amount ?? null
@@ -178,17 +212,25 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
         <div className="order-panel__quote-cards">
           <div className="order-panel__quote-card">
             <span className="order-panel__quote-card-label">Bid</span>
-            <span className="order-panel__quote-card-value">--</span>
+            <span className="order-panel__quote-card-value">
+              {optionQuote?.bid != null ? optionQuote.bid.toFixed(2) : '--'}
+            </span>
           </div>
           <div className="order-panel__quote-card">
             <span className="order-panel__quote-card-label">Mid</span>
             <span className="order-panel__quote-card-value">
-              {position?.currentPrice != null ? position.currentPrice.toFixed(2) : '--'}
+              {optionQuote?.mid != null
+                ? optionQuote.mid.toFixed(2)
+                : position?.currentPrice != null
+                  ? position.currentPrice.toFixed(2)
+                  : '--'}
             </span>
           </div>
           <div className="order-panel__quote-card">
             <span className="order-panel__quote-card-label">Ask</span>
-            <span className="order-panel__quote-card-value">--</span>
+            <span className="order-panel__quote-card-value">
+              {optionQuote?.ask != null ? optionQuote.ask.toFixed(2) : '--'}
+            </span>
           </div>
         </div>
       </div>
@@ -196,11 +238,13 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
       {/* 3. Contract Section */}
       <div className="order-panel__section">
         <div className="order-panel__contract-title">{contractTitle}</div>
-        {position?.premium != null && (
-          <div className="order-panel__contract-last">
-            Last: {formatCurrency(position.premium, 'USD')}
-          </div>
-        )}
+        <div className="order-panel__contract-last">
+          Last: {optionQuote?.last != null
+            ? formatCurrency(optionQuote.last, 'USD')
+            : position?.premium != null
+              ? formatCurrency(position.premium, 'USD')
+              : '--'}
+        </div>
         <div className="order-panel__contract-grid">
           <div className="order-panel__field">
             <label className="order-panel__label">Option Type</label>
