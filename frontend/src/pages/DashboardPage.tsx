@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Search, Bell, Settings, ChevronDown, X } from 'lucide-react'
+import { Search, Bell, Settings } from 'lucide-react'
 import { TrendingUp, DollarSign, ShoppingCart, PieChart } from 'lucide-react'
+import { AccountNavBar } from '../components/layout/AccountNavBar'
 import { KpiCard } from '../components/dashboard/KpiCard'
 import { PositionsTable } from '../components/dashboard/PositionsTable'
 import { AccountActivitiesGrid } from '../components/broker/AccountActivitiesGrid'
@@ -14,7 +15,6 @@ import {
 } from '../hooks/useDashboardWidgets'
 import { useBrokerConnections } from '../hooks/useBrokerConnections'
 import { useAuthStore } from '../stores/authStore'
-import type { DashboardAccount } from '../types/dashboard'
 import './DashboardPage.css'
 
 const SECTOR_COLORS = ['#10b981', '#059669', '#6ee7b7', '#34d399', '#047857', '#065f46', '#a7f3d0', '#d1fae5']
@@ -59,26 +59,11 @@ function getInitials(name: string | null | undefined): string {
     .toUpperCase()
 }
 
-function maskAccountNumber(num: string | null | undefined): string {
-  if (!num) return ''
-  const last4 = num.slice(-4)
-  return `••${last4}`
-}
-
-function getBrokerBadge(brokerName: string): { letter: string; className: string } {
-  const lower = brokerName.toLowerCase()
-  if (lower.includes('questrade')) return { letter: 'Q', className: 'acct-switcher__broker-icon--questrade' }
-  if (lower.includes('wealthsimple')) return { letter: 'W', className: 'acct-switcher__broker-icon--wealthsimple' }
-  if (lower.includes('ibkr') || lower.includes('interactive')) return { letter: 'IB', className: 'acct-switcher__broker-icon--ibkr' }
-  return { letter: brokerName.charAt(0).toUpperCase(), className: 'acct-switcher__broker-icon--questrade' }
-}
-
 type ContentTab = 'positions' | 'activities' | 'dividends'
 
 export function DashboardPage() {
   const user = useAuthStore(s => s.user)
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
-  const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
   const [contentTab, setContentTab] = useState<ContentTab>('positions')
 
   // Data hooks — pass selectedAccountId for per-account filtering
@@ -96,24 +81,13 @@ export function DashboardPage() {
   const handleAccountSelect = (connectionId: number | null) => {
     setSelectedAccountId(connectionId)
     setContentTab('positions')
-    setMobileSheetOpen(false)
   }
-
-  // Get selected account data for mobile hero
-  const selectedAccount = selectedAccountId
-    ? accounts.find(a => a.connectionId === selectedAccountId)
-    : null
 
   // Connection status for activities grid
   const connection = selectedAccountId
     ? connectionsData?.connections?.find(c => c.id === selectedAccountId)
     : null
   const connectionActive = connection?.status === 'ACTIVE'
-
-  // Mobile label for switcher
-  const mobileLabel = selectedAccount
-    ? `${getBrokerBadge(selectedAccount.brokerName).letter} ${selectedAccount.accountType ?? 'Account'} ${maskAccountNumber(selectedAccount.accountNumber)}`
-    : 'ALL ACCOUNTS'
 
   const pv = summaryData?.portfolioValue
   const totalValue = pv?.totalValue ?? 0
@@ -174,40 +148,17 @@ export function DashboardPage() {
 
   return (
     <div className="dashboard-page">
-      {/* Desktop header with account switcher pills */}
+      {/* Account switcher — above header */}
+      <AccountNavBar
+        accounts={accounts}
+        selectedId={selectedAccountId}
+        onSelect={handleAccountSelect}
+      />
+
+      {/* Desktop header */}
       <div className="dashboard-header">
         <div className="dashboard-header__left">
           <h1 className="dashboard-header__title">Portfolio</h1>
-          <div className="acct-switcher">
-            <div className="acct-switcher__pills">
-              <button
-                className={`acct-switcher__pill ${selectedAccountId === null ? 'acct-switcher__pill--active' : ''}`}
-                onClick={() => handleAccountSelect(null)}
-              >
-                All Accounts
-              </button>
-              {accounts.map((account: DashboardAccount) => {
-                const badge = getBrokerBadge(account.brokerName)
-                return (
-                  <button
-                    key={account.connectionId}
-                    className={`acct-switcher__pill ${selectedAccountId === account.connectionId ? 'acct-switcher__pill--active' : ''}`}
-                    onClick={() => handleAccountSelect(account.connectionId)}
-                  >
-                    <span className={`acct-switcher__broker-icon ${badge.className}`}>
-                      {badge.letter}
-                    </span>
-                    <span className="acct-switcher__pill-type">
-                      {account.accountType ?? 'Account'}
-                    </span>
-                    <span className="acct-switcher__pill-number">
-                      {maskAccountNumber(account.accountNumber)}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
         </div>
         <div className="dashboard-header__actions">
           <div className="dashboard-header__search">
@@ -245,70 +196,6 @@ export function DashboardPage() {
           {getInitials(user?.name)}
         </div>
       </div>
-
-      {/* Mobile account switcher dropdown + dots */}
-      <div className="mobile-acct-switcher">
-        <button
-          className="mobile-acct-switcher__trigger"
-          onClick={() => setMobileSheetOpen(true)}
-        >
-          <span className="mobile-acct-switcher__label">{mobileLabel}</span>
-          <ChevronDown size={14} className="mobile-acct-switcher__chevron" />
-        </button>
-        <div className="mobile-acct-switcher__dots">
-          <span
-            className={`mobile-acct-switcher__dot ${selectedAccountId === null ? 'mobile-acct-switcher__dot--active' : ''}`}
-            onClick={() => handleAccountSelect(null)}
-          />
-          {accounts.map(account => (
-            <span
-              key={account.connectionId}
-              className={`mobile-acct-switcher__dot ${selectedAccountId === account.connectionId ? 'mobile-acct-switcher__dot--active' : ''}`}
-              onClick={() => handleAccountSelect(account.connectionId)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Mobile account switcher bottom sheet */}
-      {mobileSheetOpen && (
-        <div className="acct-sheet-overlay" onClick={() => setMobileSheetOpen(false)}>
-          <div className="acct-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="acct-sheet__handle" />
-            <div className="acct-sheet__header">
-              <span className="acct-sheet__title">Select Account</span>
-              <button className="acct-sheet__close" onClick={() => setMobileSheetOpen(false)} aria-label="Close">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="acct-sheet__items">
-              <button
-                className={`acct-sheet__item ${selectedAccountId === null ? 'acct-sheet__item--active' : ''}`}
-                onClick={() => handleAccountSelect(null)}
-              >
-                <span className="acct-sheet__item-label">All Accounts</span>
-              </button>
-              {accounts.map(account => {
-                const badge = getBrokerBadge(account.brokerName)
-                return (
-                  <button
-                    key={account.connectionId}
-                    className={`acct-sheet__item ${selectedAccountId === account.connectionId ? 'acct-sheet__item--active' : ''}`}
-                    onClick={() => handleAccountSelect(account.connectionId)}
-                  >
-                    <span className={`acct-switcher__broker-icon ${badge.className}`}>
-                      {badge.letter}
-                    </span>
-                    <span className="acct-sheet__item-label">
-                      {account.accountType ?? 'Account'} {maskAccountNumber(account.accountNumber)}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* KPI row — 4 standardized cards */}
       <div className="dashboard-section">
