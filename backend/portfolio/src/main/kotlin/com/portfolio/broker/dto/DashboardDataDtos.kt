@@ -26,6 +26,7 @@ data class UpdateDashboardPreferencesRequest(
 data class PortfolioValueDto(
     val totalValue: BigDecimal,
     val investmentValue: BigDecimal,
+    val investmentByCurrency: List<CurrencyAmountDto> = emptyList(),
     val cashValue: BigDecimal,
     val totalChange: BigDecimal?,
     val totalChangePercent: BigDecimal?,

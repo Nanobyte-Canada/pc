@@ -266,6 +266,16 @@ class DashboardDataService(
         // Investment = Portfolio Value - Cash
         val investmentValue = portfolioValue - cashValue
 
+        // Investment breakdown by currency (from position data)
+        val investmentByCurrency = positions
+            .filter { it.instrumentType != InstrumentType.CASH }
+            .groupBy { it.currency }
+            .map { (currency, posns) ->
+                CurrencyAmountDto(currency, posns.sumOf { it.currentValue ?: BigDecimal.ZERO }
+                    .setScale(2, RoundingMode.HALF_UP))
+            }
+            .sortedByDescending { it.amount }
+
         // Day P&L from positions
         val anyDayPnlAvailable = positions.any { it.dayPnl != null }
         val totalDayPnl = if (anyDayPnlAvailable) {
@@ -301,6 +311,7 @@ class DashboardDataService(
             portfolioValue = PortfolioValueDto(
                 totalValue = portfolioValue.setScale(2, RoundingMode.HALF_UP),
                 investmentValue = investmentValue.setScale(2, RoundingMode.HALF_UP),
+                investmentByCurrency = investmentByCurrency,
                 cashValue = cashValue.setScale(2, RoundingMode.HALF_UP),
                 totalChange = totalDayPnl?.setScale(2, RoundingMode.HALF_UP),
                 totalChangePercent = totalDayPnlPercent,
