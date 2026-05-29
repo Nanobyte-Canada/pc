@@ -67,5 +67,9 @@ export async function submitOptionsOrder(trade: TradeExecutionInput): Promise<Ex
     method: 'POST',
     body: JSON.stringify(request),
   })
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}))
+    throw new Error(error.detail || error.message || 'Failed to submit order')
+  }
   return response.json()
 }

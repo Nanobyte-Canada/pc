@@ -23,7 +23,7 @@ class OrderExecutionService(
 
     @Transactional
     fun executeTradesForGroup(user: User, request: ExecuteTradesRequest): ExecuteTradesResponse {
-        val group = portfolioGroupService.getGroupEntity(request.groupId, user.id)
+        val group = if (request.groupId > 0) portfolioGroupService.getGroupEntity(request.groupId, user.id) else null
         val batchId = UUID.randomUUID()
         val orderType = try { OrderType.valueOf(request.orderType) } catch (e: Exception) { OrderType.MARKET }
         val timeInForce = try { TimeInForce.valueOf(request.timeInForce) } catch (e: Exception) { TimeInForce.DAY }
