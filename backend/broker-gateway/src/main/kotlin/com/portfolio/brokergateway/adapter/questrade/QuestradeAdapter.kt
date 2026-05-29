@@ -19,6 +19,7 @@ class QuestradeAdapter(
     private val log = LoggerFactory.getLogger(javaClass)
     private val restClient = QuestradeRestClient()
     private val tokenManager = QuestradeTokenManager(config)
+    private val symbolIdCache = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
     override val brokerType = BrokerType.QUESTRADE
 
@@ -151,12 +152,115 @@ class QuestradeAdapter(
         }
     }
 
+    private fun resolveOptionSymbolId(
+        creds: BrokerCredentials.QuestradeCredentials,
+        symbol: String,
+        strike: BigDecimal,
+        expiry: String,
+        optionType: String
+    ): Long? {
+        val cacheKey = "$symbol:$strike:$expiry:$optionType"
+        symbolIdCache[cacheKey]?.let { return it }
+
+        try {
+            val response = restClient.get(creds.apiServerUrl, creds.accessToken,
+                "/v1/symbols/search?prefix=$symbol")
+            val symbols = response.path("symbols")
+
+            for (sym in symbols) {
+                val symType = sym.path("securityType").asText("")
+                if (symType != "Option") continue
+
+                val symUnderlying = sym.path("underlyingSymbol").asText("")
+                if (symUnderlying != symbol && !symUnderlying.startsWith(symbol)) continue
+
+                val symStrike = try {
+                    sym.path("strikePrice").decimalValue()
+                } catch (_: Exception) {
+                    BigDecimal(sym.path("strikePrice").asText("0"))
+                }
+                val symExpiry = sym.path("expiryDate").asText("").take(10)
+                val symRight = sym.path("optionRight").asText("")
+
+                val rightMatch = when (optionType.uppercase()) {
+                    "CALL" -> symRight == "Call"
+                    "PUT" -> symRight == "Put"
+                    else -> false
+                }
+
+                if (symStrike.compareTo(strike) == 0 && symExpiry == expiry && rightMatch) {
+                    val resolvedId = sym.path("symbolId").asLong()
+                    if (resolvedId > 0) {
+                        symbolIdCache[cacheKey] = resolvedId
+                        log.info("Resolved Questrade symbolId for {} {} {} {}: {}", symbol, strike, expiry, optionType, resolvedId)
+                        return resolvedId
+                    }
+                }
+            }
+
+            log.warn("Could not resolve Questrade symbolId for {} {} {} {}", symbol, strike, expiry, optionType)
+            return null
+        } catch (e: Exception) {
+            log.error("Questrade symbol search failed for {}: {}", symbol, e.message)
+            return null
+        }
+    }
+
     override fun placeOrder(
         credentials: BrokerCredentials, accountId: String, request: OrderRequest
     ): OrderResult {
         val creds = credentials as BrokerCredentials.QuestradeCredentials
+
+        // Resolve symbolId for options if not provided
+        val resolvedSymbolId: Any = if (request.optionType != null && request.symbolId == null
+            && request.strike != null && request.expiry != null) {
+            resolveOptionSymbolId(creds, request.symbol, request.strike, request.expiry, request.optionType)
+                ?: throw IllegalArgumentException(
+                    "Could not resolve Questrade symbolId for ${request.symbol} ${request.optionType} ${request.strike} ${request.expiry}")
+        } else {
+            request.symbolId ?: request.symbol
+        }
+
+        val body = mutableMapOf<String, Any?>(
+            "symbolId" to resolvedSymbolId,
+            "quantity" to request.quantity,
+            "orderType" to when (request.orderType) {
+                OrderType.MARKET -> "Market"; OrderType.LIMIT -> "Limit"
+                OrderType.STOP -> "Stop"; OrderType.STOP_LIMIT -> "StopLimit"
+            },
+            "timeInForce" to when (request.timeInForce) {
+                TimeInForce.DAY -> "Day"; TimeInForce.GTC -> "GoodTillCanceled"
+                TimeInForce.IOC -> "ImmediateOrCancel"; TimeInForce.FOK -> "FillOrKill"
+            },
+            "action" to if (request.action == OrderAction.BUY) "Buy" else "Sell",
+            "limitPrice" to request.limitPrice,
+            "stopPrice" to request.stopPrice
+        )
+        request.primaryRoute?.let { body["primaryRoute"] = it }
+        request.secondaryRoute?.let { body["secondaryRoute"] = it }
+        val filteredBody = body.filterValues { it != null }
+
+        val response = restClient.post(creds.apiServerUrl, creds.accessToken,
+            "/v1/accounts/$accountId/orders", filteredBody)
+        val orderId = response.get("orderId")?.asText() ?: response.get("id")?.asText()
+        return OrderResult(brokerOrderId = orderId, status = OrderStatus.SUBMITTED)
+    }
+
+    override fun cancelOrder(
+        credentials: BrokerCredentials, accountId: String, brokerOrderId: String
+    ): CancelResult {
+        val creds = credentials as BrokerCredentials.QuestradeCredentials
+        restClient.delete(creds.apiServerUrl, creds.accessToken,
+            "/v1/accounts/$accountId/orders/$brokerOrderId")
+        return CancelResult(success = true, message = "Cancel request sent")
+    }
+
+    override fun getOrderImpact(
+        credentials: BrokerCredentials, accountId: String, request: OrderRequest
+    ): OrderImpactResult {
+        val creds = credentials as BrokerCredentials.QuestradeCredentials
         val body = mapOf(
-            "symbolId" to request.symbol,
+            "symbolId" to (request.symbolId ?: request.symbol),
             "quantity" to request.quantity,
             "orderType" to when (request.orderType) {
                 OrderType.MARKET -> "Market"; OrderType.LIMIT -> "Limit"
@@ -171,19 +275,26 @@ class QuestradeAdapter(
             "stopPrice" to request.stopPrice
         ).filterValues { it != null }
 
-        val response = restClient.post(creds.apiServerUrl, creds.accessToken,
-            "/v1/accounts/$accountId/orders", body)
-        val orderId = response.get("orderId")?.asText() ?: response.get("id")?.asText()
-        return OrderResult(brokerOrderId = orderId, status = OrderStatus.SUBMITTED)
-    }
-
-    override fun cancelOrder(
-        credentials: BrokerCredentials, accountId: String, brokerOrderId: String
-    ): CancelResult {
-        val creds = credentials as BrokerCredentials.QuestradeCredentials
-        restClient.delete(creds.apiServerUrl, creds.accessToken,
-            "/v1/accounts/$accountId/orders/$brokerOrderId")
-        return CancelResult(success = true, message = "Cancel request sent")
+        return try {
+            val response = restClient.post(creds.apiServerUrl, creds.accessToken,
+                "/v1/accounts/$accountId/orders/impact", body)
+            OrderImpactResult(
+                estimatedCommission = response.get("estimatedCommissions")?.decimalValue(),
+                buyingPowerEffect = response.get("buyingPowerEffect")?.decimalValue(),
+                maintenanceExcess = response.get("maintenanceExcess")?.decimalValue(),
+                isOrderAccepted = response.get("side")?.asText() != null,
+                warnings = emptyList()
+            )
+        } catch (e: Exception) {
+            log.warn("Order impact failed for account {}: {}", accountId, e.message)
+            OrderImpactResult(
+                estimatedCommission = null,
+                buyingPowerEffect = null,
+                maintenanceExcess = null,
+                isOrderAccepted = false,
+                warnings = listOf(e.message ?: "Failed to get order impact")
+            )
+        }
     }
 
     override fun capabilities(): BrokerCapabilities {
