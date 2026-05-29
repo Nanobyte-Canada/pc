@@ -14,7 +14,8 @@ import { AccountNavBar } from '@/components/layout/AccountNavBar'
 import { WheelKpiCards } from '@/components/wheel/WheelKpiCards'
 import { WheelCalendarGrid } from '@/components/wheel/WheelCalendarGrid'
 import { OrderPanel } from '@/components/wheel/OrderPanel'
-import type { WheelPosition, CapitalMetrics, TickerRowData } from '@/types/wheel'
+import { WheelChainPanel } from '@/components/wheel/WheelChainPanel'
+import type { WheelPosition, CapitalMetrics, TickerRowData, ChainPanelContext } from '@/types/wheel'
 import type { BrokerPosition, ConnectionPositionsResponse, AggregatedPositionsResponse } from '@/types/broker'
 import './WheelPage.css'
 
@@ -29,6 +30,7 @@ interface SelectedPositionState {
 export function WheelPage() {
   const [selectedConnectionId, setSelectedConnectionId] = useState<number | undefined>(undefined)
   const [selectedPosition, setSelectedPosition] = useState<SelectedPositionState | null>(null)
+  const [chainPanel, setChainPanel] = useState<ChainPanelContext | null>(null)
   const [calendarOffset, setCalendarOffset] = useState(0)
 
   const { data: connectionsData } = useBrokerConnections()
@@ -219,15 +221,40 @@ export function WheelPage() {
 
   const handlePositionClick = useCallback((position: WheelPosition, ticker: string, expiryDate: string) => {
     setSelectedPosition({ position, ticker, expiryDate })
+    setChainPanel(null)
   }, [])
 
   const handleEmptySlotClick = useCallback((ticker: string, expiryDate: string) => {
-    setSelectedPosition({ ticker, expiryDate })
+    setChainPanel({ ticker, expiryDate, optionSide: 'put' })
+    setSelectedPosition(null)
   }, [])
 
   const handleCCSlotClick = useCallback((ticker: string, expiryDate: string) => {
-    setSelectedPosition({ ticker, expiryDate })
+    setChainPanel({ ticker, expiryDate, optionSide: 'call' })
+    setSelectedPosition(null)
   }, [])
+
+  const handleStrikeSelect = useCallback((ticker: string, expiry: string, strike: number, optionSide: 'put' | 'call') => {
+    setChainPanel(null)
+    setSelectedPosition({
+      ticker,
+      expiryDate: expiry,
+      position: {
+        id: 0,
+        type: optionSide === 'put' ? 'CSP' : 'CC',
+        strike,
+        premium: null,
+        currentPrice: null,
+        pnl: null,
+        otmPercent: null,
+        quantity: 1,
+        currency: 'USD',
+        accountName: null,
+        accountNumber: null,
+        connectionId: activeConnections[0]?.id ?? 0,
+      },
+    })
+  }, [activeConnections])
 
   return (
     <div className="wheel-page">
@@ -274,21 +301,31 @@ export function WheelPage() {
           )}
         </div>
 
-        {selectedPosition && (
+        {(selectedPosition || chainPanel) && (
           <div className="wheel-page__panel">
-            <OrderPanel
-              position={selectedPosition.position}
-              ticker={selectedPosition.ticker}
-              currentPrice={underlyingPrices[selectedPosition.ticker]}
-              onClose={() => setSelectedPosition(null)}
-              accounts={activeConnections.map(c => ({
-                connectionId: c.id,
-                accountType: c.accountType ?? '',
-                accountNumber: c.accountNumber ?? '',
-                brokerName: c.broker?.name ?? '',
-              }))}
-              buyingPower={cashData?.buyingPower ?? []}
-            />
+            {chainPanel && !selectedPosition && (
+              <WheelChainPanel
+                context={chainPanel}
+                spotPrice={underlyingPrices[chainPanel.ticker] ?? 0}
+                onClose={() => setChainPanel(null)}
+                onStrikeSelect={handleStrikeSelect}
+              />
+            )}
+            {selectedPosition && (
+              <OrderPanel
+                position={selectedPosition.position}
+                ticker={selectedPosition.ticker}
+                currentPrice={underlyingPrices[selectedPosition.ticker]}
+                onClose={() => setSelectedPosition(null)}
+                accounts={activeConnections.map(c => ({
+                  connectionId: c.id,
+                  accountType: c.accountType ?? '',
+                  accountNumber: c.accountNumber ?? '',
+                  brokerName: c.broker?.name ?? '',
+                }))}
+                buyingPower={cashData?.buyingPower ?? []}
+              />
+            )}
           </div>
         )}
       </div>
