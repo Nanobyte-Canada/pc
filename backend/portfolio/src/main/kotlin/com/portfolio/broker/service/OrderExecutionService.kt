@@ -85,6 +85,9 @@ class OrderExecutionService(
                     "timeInForce" to savedOrder.timeInForce.name,
                     "currency" to savedOrder.currency,
                     "symbolId" to savedOrder.symbolId,
+                    "optionType" to savedOrder.optionType,
+                    "strike" to savedOrder.strikePrice,
+                    "expiry" to savedOrder.expirationDate?.toString(),
                 )
                 val result = gatewayClient.placeOrder(gwConnId, accountId, orderBody)
                 val brokerOrderId = result.get("brokerOrderId")?.asText()

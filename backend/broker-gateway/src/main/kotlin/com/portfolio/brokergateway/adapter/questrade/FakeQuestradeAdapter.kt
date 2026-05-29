@@ -3,6 +3,7 @@ package com.portfolio.brokergateway.adapter.questrade
 import com.portfolio.brokergateway.adapter.*
 import com.portfolio.brokergateway.adapter.dto.*
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -13,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @Component
 @Profile("dev", "local", "test")
+@ConditionalOnProperty(prefix = "broker-gateway.questrade", name = ["enabled"], havingValue = "false", matchIfMissing = true)
 class FakeQuestradeAdapter : BrokerAdapter {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -131,9 +133,14 @@ class FakeQuestradeAdapter : BrokerAdapter {
         credentials: BrokerCredentials, accountId: String, request: OrderRequest
     ): OrderResult {
         val orderId = orderIdCounter.incrementAndGet()
-        log.info("FakeQuestradeAdapter: placed {} {} order for {} {} @ {}",
-            request.orderType, request.action, request.quantity, request.symbol, request.limitPrice ?: "MKT")
-        return OrderResult(brokerOrderId = orderId.toString(), status = OrderStatus.SUBMITTED, message = "Fake order submitted")
+        val optionDesc = if (request.optionType != null) {
+            " ${request.optionType} ${request.strike} exp:${request.expiry}"
+        } else ""
+        log.info("FakeQuestradeAdapter: placed {} {} order for {} {}{} @ {}",
+            request.orderType, request.action, request.quantity, request.symbol, optionDesc,
+            request.limitPrice ?: "MKT")
+        return OrderResult(brokerOrderId = orderId.toString(), status = OrderStatus.SUBMITTED,
+            message = "Fake order submitted$optionDesc")
     }
 
     override fun cancelOrder(

@@ -2,6 +2,8 @@ package com.portfolio.brokergateway.adapter.ibkr
 
 import com.portfolio.brokergateway.adapter.*
 import com.portfolio.brokergateway.adapter.dto.*
+import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -12,7 +14,10 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @Component
 @Profile("dev", "local", "test")
+@ConditionalOnProperty(prefix = "broker-gateway.ibkr", name = ["enabled"], havingValue = "false", matchIfMissing = true)
 class FakeIbkrAdapter : BrokerAdapter {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     override val brokerType = BrokerType.IBKR
 
@@ -207,10 +212,16 @@ class FakeIbkrAdapter : BrokerAdapter {
         request: OrderRequest
     ): OrderResult {
         val orderId = orderIdSequence.getAndIncrement()
+        val optionDesc = if (request.optionType != null) {
+            " ${request.optionType} ${request.strike} exp:${request.expiry}"
+        } else ""
+        log.info("FakeIbkrAdapter: placed {} {} order for {} {}{} @ {}",
+            request.orderType, request.action, request.quantity, request.symbol, optionDesc,
+            request.limitPrice ?: "MKT")
         return OrderResult(
             brokerOrderId = orderId.toString(),
             status = OrderStatus.SUBMITTED,
-            message = "Order submitted for ${request.action} ${request.quantity} ${request.symbol}"
+            message = "Order submitted for ${request.action} ${request.quantity} ${request.symbol}$optionDesc"
         )
     }
 

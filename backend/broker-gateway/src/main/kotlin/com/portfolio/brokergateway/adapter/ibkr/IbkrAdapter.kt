@@ -124,12 +124,26 @@ class IbkrAdapter(
         request: OrderRequest
     ): OrderResult {
         requireConnected()
-        val contract = IbkrContract(
-            symbol = request.symbol,
-            secType = "STK",
-            exchange = "SMART",
-            currency = request.currency ?: "USD"
-        )
+        val isOption = request.optionType != null
+        val contract = if (isOption) {
+            IbkrContract(
+                symbol = request.symbol,
+                secType = "OPT",
+                exchange = "SMART",
+                currency = request.currency ?: "USD",
+                strike = request.strike?.toDouble(),
+                lastTradeDateOrContractMonth = request.expiry?.replace("-", ""),
+                right = if (request.optionType == "CALL") "C" else "P",
+                conId = request.symbolId?.toInt()
+            )
+        } else {
+            IbkrContract(
+                symbol = request.symbol,
+                secType = "STK",
+                exchange = "SMART",
+                currency = request.currency ?: "USD"
+            )
+        }
         val orderSpec = IbkrOrderSpec(
             action = request.action.name,
             orderType = mapOrderTypeToIbkr(request.orderType),

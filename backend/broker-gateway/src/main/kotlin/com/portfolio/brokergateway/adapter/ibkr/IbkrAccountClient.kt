@@ -69,7 +69,11 @@ data class IbkrContract(
     val symbol: String,
     val secType: String = "STK",
     val exchange: String = "SMART",
-    val currency: String = "USD"
+    val currency: String = "USD",
+    val strike: Double? = null,
+    val lastTradeDateOrContractMonth: String? = null,
+    val right: String? = null,
+    val conId: Int? = null
 )
 
 data class IbkrOrderSpec(

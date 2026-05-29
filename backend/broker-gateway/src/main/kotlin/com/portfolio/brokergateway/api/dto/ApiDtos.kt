@@ -36,7 +36,13 @@ data class PlaceOrderRequest(
     val limitPrice: BigDecimal? = null,
     val stopPrice: BigDecimal? = null,
     val timeInForce: TimeInForce = TimeInForce.DAY,
-    val currency: String? = null
+    val currency: String? = null,
+    val symbolId: Long? = null,
+    val primaryRoute: String? = null,
+    val secondaryRoute: String? = null,
+    val optionType: String? = null,
+    val strike: java.math.BigDecimal? = null,
+    val expiry: String? = null
 )
 
 data class BrokerHealthResponse(
