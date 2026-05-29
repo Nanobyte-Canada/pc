@@ -8,7 +8,6 @@ import { useBrokerConnections } from '../hooks/useBrokerConnections'
 import {
   useDashboardSummary,
   useDashboardCash,
-  useDashboardIrr,
   useDividendCalendar,
 } from '../hooks/useDashboardWidgets'
 import './AccountDetailPage.css'
@@ -24,12 +23,6 @@ function fmtCadSigned(value: number | null | undefined): string {
   if (value == null) return '+C$ 0'
   const prefix = value >= 0 ? '+' : '-'
   return `${prefix}C$ ${Math.abs(value).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-}
-
-function fmtPct(value: number | null | undefined): string {
-  if (value == null) return '0.0%'
-  const prefix = value >= 0 ? '+' : ''
-  return `${prefix}${value.toFixed(1)}%`
 }
 
 function fmtBreakdownAmount(value: number | null | undefined): string {
@@ -82,7 +75,6 @@ export function AccountDetailPage() {
   const { data: connectionsData, isLoading: connectionsLoading } = useBrokerConnections()
   const { data: summaryData } = useDashboardSummary(connId)
   const { data: cashData } = useDashboardCash(connId)
-  const { data: irrData } = useDashboardIrr(connId)
   const { data: dividendData } = useDividendCalendar(undefined, connId)
 
   if (connectionsLoading) {
@@ -109,26 +101,26 @@ export function AccountDetailPage() {
   const investmentValue = pv?.investmentValue ?? 0
   const totalGain = pv?.totalChange ?? (totalValue - investmentValue)
 
+  /* Investment by currency */
+  const investmentEntries = pv?.investmentByCurrency ?? []
+  const investmentBreakdown = investmentEntries.map(c => ({
+    label: c.currency === 'CAD' ? 'C$' : c.currency === 'USD' ? 'US$' : c.currency,
+    value: fmtBreakdownAmount(c.amount),
+  }))
+  if (investmentBreakdown.length === 0) {
+    investmentBreakdown.push({ label: 'C$', value: fmtBreakdownAmount(investmentValue) })
+  }
+
   /* Cash breakdown by currency */
   const cashBreakdown = (cashData?.availableCash ?? []).map(c => ({
     label: c.currency === 'CAD' ? 'C$' : c.currency === 'USD' ? 'US$' : c.currency,
     value: fmtBreakdownAmount(c.amount),
   }))
 
-  /* Investment breakdown */
-  const investmentBreakdown = [
-    { label: 'C$', value: fmtBreakdownAmount(investmentValue) },
-  ]
+  /* Buying power */
+  const bpCAD = cashData?.totalBuyingPowerCAD
+  const bpUSD = cashData?.totalBuyingPowerUSD
 
-  /* Returns breakdown */
-  const roi = irrData?.portfolioTotalReturnPct
-  const irr = irrData?.portfolioIrr
-  const divYield = irrData?.portfolioDividendYield
-  const returnsBreakdown: Array<{ label: string; value: string; variant: 'positive' | 'negative' | 'neutral' }> = [
-    { label: 'ROI', value: fmtPct(roi), variant: (roi ?? 0) >= 0 ? 'positive' : 'negative' },
-    { label: 'IRR', value: fmtPct(irr), variant: (irr ?? 0) >= 0 ? 'positive' : 'negative' },
-    { label: 'Div Yield', value: fmtPct(divYield), variant: (divYield ?? 0) >= 0 ? 'positive' : 'negative' },
-  ]
 
   return (
     <div className="account-detail-page">
@@ -183,11 +175,13 @@ export function AccountDetailPage() {
             breakdown={cashBreakdown}
           />
           <KpiCard
-            label="Returns"
+            label="Buying Power"
             icon={<DollarSign size={14} />}
-            value={fmtCadSigned(irrData?.portfolioTotalReturn)}
-            variant="returns"
-            breakdown={returnsBreakdown}
+            value={fmtCad(bpCAD)}
+            breakdown={[
+              { label: 'C$', value: fmtBreakdownAmount(bpCAD) },
+              ...(bpUSD != null ? [{ label: 'US$', value: fmtBreakdownAmount(bpUSD) }] : []),
+            ]}
           />
         </div>
       </div>
