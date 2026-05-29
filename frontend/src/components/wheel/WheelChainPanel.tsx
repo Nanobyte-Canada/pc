@@ -2,286 +2,212 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQuoteStore } from '@/stores/quoteStore'
 import { useMarketDataWebSocket } from '@/hooks/useMarketDataWebSocket'
 import { getOptionsChainWithGreeks } from '@/services/marketDataService'
-import { submitOptionsOrder } from '@/services/optionsStrategyService'
 import { formatCurrency } from '@/services/brokerService'
 import { WheelChainRow } from './WheelChainRow'
-import type { WheelChainStrike } from '@/types/wheel'
-import type { OptionsOrderRequest } from '@/types/options'
+import type { ChainPanelContext, WheelChainStrike } from '@/types/wheel'
+import { X, ChevronDown } from 'lucide-react'
 import './WheelChainPanel.css'
 
 interface WheelChainPanelProps {
-  ticker: string
-  expiryDate: string
+  context: ChainPanelContext
   spotPrice: number
   onClose: () => void
+  onStrikeSelect: (ticker: string, expiry: string, strike: number, optionSide: 'put' | 'call') => void
 }
 
-export function WheelChainPanel({ ticker, expiryDate, spotPrice: initialSpotPrice, onClose }: WheelChainPanelProps) {
+export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose, onStrikeSelect }: WheelChainPanelProps) {
   const [loading, setLoading] = useState(true)
-  const [orderStrike, setOrderStrike] = useState<WheelChainStrike | null>(null)
-  const [ordering, setOrdering] = useState(false)
-  const [expiryOverride, setExpiryOverride] = useState<string | null>(null)
+  const [selectedExpiry, setSelectedExpiry] = useState(context.expiryDate)
 
-  const chain = useQuoteStore(s => s.chains[ticker])
-  const quote = useQuoteStore(s => s.quotes[ticker])
+  const chain = useQuoteStore(s => s.chains[context.ticker])
+  const quote = useQuoteStore(s => s.quotes[context.ticker])
   const setChain = useQuoteStore(s => s.setChain)
   const { subscribe, subscribeChain, unsubscribe, unsubscribeChain } = useMarketDataWebSocket()
 
   const spotPrice = quote?.last ?? quote?.mid ?? initialSpotPrice
+  const isCsp = context.optionSide === 'put'
+  const typeLabelShort = isCsp ? 'CSP' : 'CC'
 
-  // Find best matching expiry in chain data (handles ±2 day offsets between broker and chain)
-  const [selectedExpiry, availableExpiries] = useMemo(() => {
-    if (!chain?.expirations) return [expiryDate, []]
-    const keys = Object.keys(chain.expirations).sort()
-    if (keys.length === 0) return [expiryDate, []]
+  const availableExpiries = useMemo(() => {
+    if (!chain?.expirations) return []
+    return Object.keys(chain.expirations).sort()
+  }, [chain])
 
-    // Try exact match first
-    if (chain.expirations[expiryDate]) return [expiryDate, keys]
-
-    // Find closest within ±3 days
-    const target = new Date(expiryDate + 'T00:00:00').getTime()
-    let bestKey = keys[0]
+  useEffect(() => {
+    if (availableExpiries.length === 0) return
+    if (availableExpiries.includes(selectedExpiry)) return
+    const target = new Date(context.expiryDate + 'T00:00:00').getTime()
+    let bestKey = availableExpiries[0]
     let bestDiff = Infinity
-    for (const k of keys) {
+    for (const k of availableExpiries) {
       const diff = Math.abs(new Date(k + 'T00:00:00').getTime() - target)
       if (diff < bestDiff) { bestDiff = diff; bestKey = k }
     }
-    // Only use closest if within 3 days
-    if (bestDiff <= 3 * 86400000) return [bestKey, keys]
-    // No close match — show first available
-    return [keys[0], keys]
-  }, [chain, expiryDate])
+    if (bestDiff <= 3 * 86400000) setSelectedExpiry(bestKey)
+    else setSelectedExpiry(availableExpiries[0])
+  }, [availableExpiries, context.expiryDate, selectedExpiry])
 
-  const activeExpiry = expiryOverride ?? selectedExpiry
-
-  // Compute DTE from active expiry
   const dte = useMemo(() => {
     const now = new Date()
-    const exp = new Date(activeExpiry + 'T00:00:00')
+    const exp = new Date(selectedExpiry + 'T00:00:00')
     return Math.max(1, Math.round((exp.getTime() - now.getTime()) / 86400000))
-  }, [activeExpiry])
+  }, [selectedExpiry])
 
-  // Load chain on mount, subscribe to streaming
   useEffect(() => {
     let cancelled = false
-
     async function loadChain() {
       try {
-        const chainData = await getOptionsChainWithGreeks(ticker)
+        const chainData = await getOptionsChainWithGreeks(context.ticker)
         if (!cancelled) {
-          setChain(ticker, chainData)
+          setChain(context.ticker, chainData)
           setLoading(false)
         }
       } catch {
         if (!cancelled) setLoading(false)
       }
     }
-
     loadChain()
-    subscribe(ticker)
-    subscribeChain(ticker)
-
+    subscribe(context.ticker)
+    subscribeChain(context.ticker)
     return () => {
       cancelled = true
-      unsubscribe(ticker)
-      unsubscribeChain(ticker)
+      unsubscribe(context.ticker)
+      unsubscribeChain(context.ticker)
     }
-  }, [ticker, subscribe, subscribeChain, unsubscribe, unsubscribeChain, setChain])
+  }, [context.ticker, subscribe, subscribeChain, unsubscribe, unsubscribeChain, setChain])
 
-  // Build strike rows from chain data filtered to selected expiry
   const strikes: WheelChainStrike[] = useMemo(() => {
     if (!chain?.expirations) return []
-
-    const expiryData = chain.expirations[activeExpiry]
+    const expiryData = chain.expirations[selectedExpiry]
     if (!expiryData) return []
 
     const rows: WheelChainStrike[] = []
-
     for (const [strikeKey, data] of Object.entries(expiryData)) {
       const strikeNum = parseFloat(strikeKey)
-      // For CSP, show puts
-      const option = data.put
+      const option = isCsp ? data.put : data.call
       if (!option) continue
 
       const bid: number | null = option.bid ?? null
       const ask: number | null = option.ask ?? null
       const delta: number | null = option.greeks?.delta ?? null
 
-      // Discount: (spot - strike + premium) / spot
       const bidDiscount = bid != null && spotPrice > 0
-        ? (spotPrice - strikeNum + bid) / spotPrice
-        : null
+        ? (spotPrice - strikeNum + bid) / spotPrice : null
       const askDiscount = ask != null && spotPrice > 0
-        ? (spotPrice - strikeNum + ask) / spotPrice
-        : null
-
-      // Annualized yield: (premium / strike) * (365 / dte)
+        ? (spotPrice - strikeNum + ask) / spotPrice : null
       const bidYield = bid != null && strikeNum > 0 && bid > 0
-        ? (bid / strikeNum) * (365 / dte)
-        : null
+        ? (bid / strikeNum) * (365 / dte) : null
       const askYield = ask != null && strikeNum > 0 && ask > 0
-        ? (ask / strikeNum) * (365 / dte)
-        : null
+        ? (ask / strikeNum) * (365 / dte) : null
 
       const isATM = spotPrice > 0 && Math.abs(strikeNum - spotPrice) / spotPrice < 0.01
-      const isITM = strikeNum > spotPrice // For puts, ITM when strike > spot
+      const isITM = isCsp ? strikeNum > spotPrice : strikeNum < spotPrice
 
-      rows.push({
-        strike: strikeNum,
-        bid,
-        ask,
-        delta,
-        bidDiscount,
-        askDiscount,
-        bidYield,
-        askYield,
-        isATM,
-        isITM,
-      })
+      rows.push({ strike: strikeNum, bid, ask, delta, bidDiscount, askDiscount, bidYield, askYield, isATM, isITM })
     }
-
-    return rows.sort((a, b) => b.strike - a.strike) // Descending: ITM at top, OTM at bottom
-  }, [chain, activeExpiry, spotPrice, dte])
+    return rows.sort((a, b) => b.strike - a.strike)
+  }, [chain, selectedExpiry, spotPrice, dte, isCsp])
 
   const handleStrikeClick = useCallback((strike: WheelChainStrike) => {
-    setOrderStrike(strike)
-  }, [])
+    onStrikeSelect(context.ticker, selectedExpiry, strike.strike, context.optionSide)
+  }, [context.ticker, selectedExpiry, context.optionSide, onStrikeSelect])
 
-  const handlePlaceOrder = useCallback(async () => {
-    if (!orderStrike || !orderStrike.bid) return
-    setOrdering(true)
-    try {
-      const order: OptionsOrderRequest = {
-        strategyType: 'PROTECTIVE_PUT',
-        underlying: ticker,
-        legs: [{
-          action: 'SELL',
-          optionType: 'PUT',
-          strike: orderStrike.strike,
-          expiry: activeExpiry,
-          quantity: 1,
-          price: orderStrike.bid,
-        }],
-        quantity: 1,
-        orderType: 'LIMIT',
-        netPrice: orderStrike.bid,
-      }
-      await submitOptionsOrder(order)
-      setOrderStrike(null)
-      onClose()
-    } catch {
-      // Order failed — stay on dialog
-    } finally {
-      setOrdering(false)
-    }
-  }, [orderStrike, ticker, activeExpiry, onClose])
+  const priceChangePct = spotPrice > 0 && quote ? ((quote.last / spotPrice - 1) * 100) : 0
 
-  return (
-    <div className="wcp-overlay" onClick={onClose}>
-      <div className="wcp-panel" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="wcp-header">
-          <div>
-            <h3 className="wcp-title">{ticker} CSP — {formatExpiryDate(activeExpiry)} ({dte} DTE)</h3>
-            <div className="wcp-spot">Spot: {formatCurrency(spotPrice, 'USD')}</div>
-          </div>
-          <button className="wcp-close" onClick={onClose} aria-label="Close">&times;</button>
+  const panelContent = (
+    <>
+      <div className="wcp2-header">
+        <span className="wcp2-ticker">{context.ticker}</span>
+        <span className={`wcp2-type ${isCsp ? 'wcp2-type--csp' : 'wcp2-type--cc'}`}>{typeLabelShort}</span>
+        <button className="wcp2-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
+      </div>
+
+      <div className="wcp2-quote">
+        <span className="wcp2-quote__price">{formatCurrency(spotPrice, 'USD')}</span>
+        {quote && (
+          <span className={`wcp2-quote__change ${priceChangePct >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
+            {priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%
+          </span>
+        )}
+        <span className="wcp2-quote__live"><span className="wcp2-quote__dot" /> Live</span>
+      </div>
+
+      <div className="wcp2-expiry">
+        <span className="wcp2-expiry__label">Expiry</span>
+        <div className="wcp2-expiry__desktop">
+          <select
+            className="wcp2-expiry__select"
+            value={selectedExpiry}
+            onChange={e => setSelectedExpiry(e.target.value)}
+          >
+            {availableExpiries.map(exp => {
+              const d = new Date(exp + 'T00:00:00')
+              const expiryDte = Math.max(0, Math.round((d.getTime() - Date.now()) / 86400000))
+              const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              return <option key={exp} value={exp}>{label} — {expiryDte} DTE</option>
+            })}
+          </select>
+          <ChevronDown size={12} className="wcp2-expiry__chevron" />
         </div>
-
-        {/* Expiry tabs when multiple available */}
-        {availableExpiries.length > 1 && (
-          <div className="wcp-expiry-tabs">
+        <div className="wcp2-expiry__mobile">
+          <button className="wcp2-expiry__trigger" onClick={() => {
+            const idx = availableExpiries.indexOf(selectedExpiry)
+            const next = (idx + 1) % availableExpiries.length
+            if (availableExpiries.length > 0) setSelectedExpiry(availableExpiries[next])
+          }}>
+            <span className="wcp2-expiry__trigger-label">
+              {new Date(selectedExpiry + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+            <span className="wcp2-expiry__trigger-dte">{dte} DTE</span>
+            <ChevronDown size={10} className="wcp2-expiry__trigger-chevron" />
+          </button>
+          <div className="wcp2-expiry__dots">
             {availableExpiries.map(exp => (
-              <button
+              <span
                 key={exp}
-                className={`wcp-expiry-tab ${(expiryOverride ?? selectedExpiry) === exp ? 'wcp-expiry-tab-active' : ''}`}
-                onClick={() => setExpiryOverride(exp)}
-              >
-                {formatExpiryDate(exp)}
-              </button>
+                className={`wcp2-expiry__dot ${exp === selectedExpiry ? 'wcp2-expiry__dot--active' : ''}`}
+                onClick={() => setSelectedExpiry(exp)}
+              />
             ))}
           </div>
-        )}
-
-        {/* Column labels */}
-        <div className="wcp-col-labels">
-          <div className="wcp-col-label wcp-col-strike">
-            <span>Strike</span>
-            <span className="wcp-col-sublabel">Delta</span>
-          </div>
-          <div className="wcp-col-label wcp-col-bid">
-            <span>Bid</span>
-            <span className="wcp-col-sublabel">Discount &middot; Yield</span>
-          </div>
-          <div className="wcp-col-label wcp-col-ask">
-            <span>Ask</span>
-            <span className="wcp-col-sublabel">Discount &middot; Yield</span>
-          </div>
         </div>
+      </div>
 
-        {/* Chain table */}
-        <div className="wcp-body">
-          {loading ? (
-            <div className="wcp-loading">Loading chain...</div>
-          ) : strikes.length === 0 ? (
-            <div className="wcp-loading">No data for this expiry</div>
-          ) : (
-            <table className="wcp-table">
-              <tbody>
-                {strikes.map(s => (
-                  <WheelChainRow key={s.strike} strike={s} onClick={handleStrikeClick} />
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+      <div className="wcp2-cols">
+        <div className="wcp2-col wcp2-col--strike">Strike<div className="wcp2-col-sub">Delta</div></div>
+        <div className="wcp2-col wcp2-col--bid">Bid<div className="wcp2-col-sub">Disc · Yield</div></div>
+        <div className="wcp2-col wcp2-col--ask">Ask<div className="wcp2-col-sub">Disc · Yield</div></div>
+      </div>
 
-        {/* Footer */}
-        <div className="wcp-footer">Tap a row to place a sell order</div>
-
-        {/* Order confirmation dialog */}
-        {orderStrike && (
-          <div className="wcp-order-overlay" onClick={() => setOrderStrike(null)}>
-            <div className="wcp-order-dialog" onClick={e => e.stopPropagation()}>
-              <h3 className="wcp-order-title">Sell to Open</h3>
-              <div className="wcp-order-details">
-                <div className="wcp-order-row">
-                  <span>Ticker</span><span>{ticker}</span>
-                </div>
-                <div className="wcp-order-row">
-                  <span>Type</span><span>Cash-Secured Put</span>
-                </div>
-                <div className="wcp-order-row">
-                  <span>Strike</span><span>{formatCurrency(orderStrike.strike, 'USD')}</span>
-                </div>
-                <div className="wcp-order-row">
-                  <span>Expiry</span><span>{expiryDate}</span>
-                </div>
-                <div className="wcp-order-row">
-                  <span>Bid</span><span>{formatCurrency(orderStrike.bid, 'USD')}</span>
-                </div>
-                <div className="wcp-order-row">
-                  <span>Yield</span><span>{orderStrike.bidYield != null ? `${(orderStrike.bidYield * 100).toFixed(1)}% annualized` : '—'}</span>
-                </div>
-                <div className="wcp-order-row">
-                  <span>Capital Required</span><span>{formatCurrency(orderStrike.strike * 100, 'USD')}</span>
-                </div>
-              </div>
-              <div className="wcp-order-actions">
-                <button className="wcp-order-btn wcp-order-cancel" onClick={() => setOrderStrike(null)} disabled={ordering}>Cancel</button>
-                <button className="wcp-order-btn wcp-order-confirm" onClick={handlePlaceOrder} disabled={ordering}>
-                  {ordering ? 'Placing...' : 'Place Order'}
-                </button>
-              </div>
-            </div>
-          </div>
+      <div className="wcp2-scroll">
+        {loading ? (
+          <div className="wcp2-loading">Loading chain...</div>
+        ) : strikes.length === 0 ? (
+          <div className="wcp2-loading">No data for this expiry</div>
+        ) : (
+          <table className="wcp2-table">
+            <tbody>
+              {strikes.map(s => (
+                <WheelChainRow key={s.strike} strike={s} onClick={handleStrikeClick} />
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
-    </div>
-  )
-}
 
-function formatExpiryDate(iso: string): string {
-  const d = new Date(iso + 'T00:00:00')
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      <div className="wcp2-footer">Tap a strike to place order</div>
+    </>
+  )
+
+  return (
+    <>
+      <div className="wcp2 wcp2--desktop">{panelContent}</div>
+      <div className="wcp2-sheet-overlay" onClick={onClose}>
+        <div className="wcp2-sheet" onClick={e => e.stopPropagation()}>
+          <div className="wcp2-sheet__handle" />
+          {panelContent}
+        </div>
+      </div>
+    </>
+  )
 }
