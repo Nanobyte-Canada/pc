@@ -149,7 +149,6 @@ export function WheelPage() {
   }, [gridData, cashData, fxRate])
 
   const isLoading = positionsLoading || activitiesLoading
-  const showAccount = selectedConnectionId === undefined
 
   const handlePositionClick = useCallback((position: WheelPosition, ticker: string, expiryDate: string) => {
     setSelectedPosition({ position, ticker, expiryDate })
@@ -234,7 +233,6 @@ export function WheelPage() {
           {gridData && !isLoading && (
             <WheelGrid
               data={gridData}
-              showAccount={showAccount}
               onPositionClick={handlePositionClick}
               onEmptySlotClick={handleEmptySlotClick}
             />

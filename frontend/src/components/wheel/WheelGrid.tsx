@@ -13,14 +13,13 @@ interface WheelGridProps {
   onEmptySlotClick: (ticker: string, expiryDate: string) => void
 }
 
-export function WheelGrid({ data, showAccount, onPositionClick, onEmptySlotClick }: WheelGridProps) {
+export function WheelGrid({ data, onPositionClick, onEmptySlotClick }: Omit<WheelGridProps, 'showAccount'>) {
   return (
     <>
       {/* Desktop: table grid */}
       <div className="wheel-grid-desktop">
         <DesktopGrid
           data={data}
-          showAccount={showAccount}
           onPositionClick={onPositionClick}
           onEmptySlotClick={onEmptySlotClick}
         />
@@ -30,7 +29,6 @@ export function WheelGrid({ data, showAccount, onPositionClick, onEmptySlotClick
       <div className="wheel-grid-mobile">
         <MobileExpiryGroups
           data={data}
-          showAccount={showAccount}
           onPositionClick={onPositionClick}
           onEmptySlotClick={onEmptySlotClick}
         />
@@ -40,7 +38,7 @@ export function WheelGrid({ data, showAccount, onPositionClick, onEmptySlotClick
 }
 
 /* ── Desktop grid (table) ── */
-function DesktopGrid({ data, showAccount, onPositionClick, onEmptySlotClick }: WheelGridProps) {
+function DesktopGrid({ data, onPositionClick, onEmptySlotClick }: Omit<WheelGridProps, 'showAccount'>) {
   return (
     <div className="wheel-grid-container">
       <table className="wheel-grid-table">
@@ -83,7 +81,6 @@ function DesktopGrid({ data, showAccount, onPositionClick, onEmptySlotClick }: W
                           <PositionCard
                             key={pos.id}
                             position={pos}
-                            showAccount={showAccount}
                             onClick={p => onPositionClick(p, t.symbol, row.expiryDate)}
                           />
                         ))}
@@ -164,7 +161,7 @@ function DesktopGrid({ data, showAccount, onPositionClick, onEmptySlotClick }: W
 }
 
 /* ── Mobile: collapsible expiry sections with position cards ── */
-function MobileExpiryGroups({ data, showAccount, onPositionClick, onEmptySlotClick }: WheelGridProps) {
+function MobileExpiryGroups({ data, onPositionClick, onEmptySlotClick }: Omit<WheelGridProps, 'showAccount'>) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
 
   const toggle = (expiryDate: string) => {
@@ -222,7 +219,6 @@ function MobileExpiryGroups({ data, showAccount, onPositionClick, onEmptySlotCli
                     <span className="wheel-mobile-card-ticker">{ticker}</span>
                     <PositionCard
                       position={pos}
-                      showAccount={showAccount}
                       onClick={p => onPositionClick(p, ticker, row.expiryDate)}
                     />
                   </div>

@@ -1,144 +1,54 @@
-/* ── Position Card ── */
-.wheel-position-card {
-  position: relative;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm, 6px);
-  font-size: 11px;
+.wpc {
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
   cursor: pointer;
-  transition: transform var(--transition-fast, 0.15s),
-              box-shadow var(--transition-fast, 0.15s);
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
 }
 
-.wheel-position-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
+.wpc:hover { transform: translateY(-1px); }
 
-.wheel-position-card + .wheel-position-card {
-  margin-top: 6px;
-}
-
-/* CSP: indigo */
-.wheel-card-csp {
+.wpc--csp {
   background: var(--csp-bg);
-  border: 1.5px solid var(--csp-border);
+  border: 1px solid var(--csp-border);
 }
+.wpc--csp:hover { border-color: rgba(99, 102, 241, 0.5); }
 
-/* CC: orange */
-.wheel-card-cc {
+.wpc--cc {
   background: var(--cc-bg);
-  border: 1.5px solid var(--cc-border);
+  border: 1px solid var(--cc-border);
 }
+.wpc--cc:hover { border-color: rgba(249, 115, 22, 0.5); }
 
-/* ── Emerald "+" circle (top-right) ── */
-.wheel-card-add-btn {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 20px;
-  height: 20px;
-  border-radius: var(--radius-full, 9999px);
-  background: var(--accent);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity var(--transition-fast, 0.15s);
-  pointer-events: none;
-}
-
-.wheel-position-card:hover .wheel-card-add-btn {
-  opacity: 1;
-}
-
-/* ── Card layout rows ── */
-.wheel-card-row {
+.wpc__row {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 2px;
+  align-items: center;
 }
+.wpc__row + .wpc__row { margin-top: 3px; }
 
-.wheel-card-row:last-child {
-  margin-bottom: 0;
-}
-
-/* Row 1: Strike + OTM */
-.wheel-card-strike {
-  font-family: var(--font-mono);
+.wpc__strike {
   font-weight: 600;
-  font-size: 13px;
-  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.wpc__strike--csp { color: var(--indigo-text, #818cf8); }
+.wpc__strike--cc { color: var(--orange-text, #fb923c); }
+
+.wpc__otm {
+  color: var(--text-muted);
+  font-size: 9px;
 }
 
-.wheel-card-otm {
+.wpc__pnl {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 400;
 }
+.wpc__pnl--pos { color: var(--success-text); }
+.wpc__pnl--neg { color: var(--danger-text); }
 
-/* Row 2: Premium + P&L */
-.wheel-card-premium {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--text-secondary);
-}
-
-.wheel-card-pnl {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-}
-
-/* P&L colors (shared) */
-.wheel-pnl-positive {
-  color: var(--success);
-}
-
-.wheel-pnl-negative {
-  color: var(--error);
-}
-
-/* ── Account badge ── */
-.wheel-account-badge {
-  display: inline-block;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.wheel-account-0 {
-  background: rgba(90, 140, 200, 0.12);
-  color: var(--info);
-  border: 1px solid rgba(90, 140, 200, 0.2);
-}
-
-.wheel-account-1 {
-  background: rgba(80, 180, 130, 0.12);
-  color: var(--success);
-  border: 1px solid rgba(80, 180, 130, 0.2);
-}
-
-.wheel-account-2 {
-  background: rgba(200, 170, 70, 0.12);
-  color: var(--warning);
-  border: 1px solid rgba(200, 170, 70, 0.2);
-}
-
-/* ── Mobile card variant ── */
 @media (max-width: 768px) {
-  .wheel-position-card {
-    padding: 10px 12px;
-  }
-
-  .wheel-card-add-btn {
-    opacity: 0.7;
-  }
+  .wpc { padding: 5px 7px; }
+  .wpc__strike { font-size: 10px; }
+  .wpc__otm { font-size: 8px; }
+  .wpc__pnl { font-size: 9px; }
 }

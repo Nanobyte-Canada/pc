@@ -1,57 +1,36 @@
 import type { WheelPosition } from '@/types/wheel'
 import { formatCurrency } from '@/services/brokerService'
-import { Plus } from 'lucide-react'
 import './PositionCard.css'
 
 interface PositionCardProps {
   position: WheelPosition
-  showAccount: boolean
   onClick: (position: WheelPosition) => void
 }
 
-export function PositionCard({ position, showAccount, onClick }: PositionCardProps) {
-  const typeClass = position.type === 'CSP' ? 'wheel-card-csp' : 'wheel-card-cc'
+export function PositionCard({ position, onClick }: PositionCardProps) {
+  const typeClass = position.type === 'CSP' ? 'wpc--csp' : 'wpc--cc'
+  const strikeClass = position.type === 'CSP' ? 'wpc__strike--csp' : 'wpc__strike--cc'
+  const typeLabel = position.type === 'CSP' ? 'Put' : 'CC'
+  const pnlClass = (position.pnl ?? 0) >= 0 ? 'wpc__pnl--pos' : 'wpc__pnl--neg'
 
   return (
     <div
-      className={`wheel-position-card ${typeClass}`}
+      className={`wpc ${typeClass}`}
       onClick={() => onClick(position)}
       role="button"
       tabIndex={0}
       onKeyDown={e => { if (e.key === 'Enter') onClick(position) }}
     >
-      {/* Emerald "+" button in top-right */}
-      <span className="wheel-card-add-btn" aria-hidden="true">
-        <Plus size={12} strokeWidth={2.5} />
-      </span>
-
-      {showAccount && position.accountName && (
-        <span className={`wheel-account-badge wheel-account-${position.connectionId % 3}`}>
-          {position.accountName}
-          {position.accountNumber ? ` ${position.accountNumber}` : ''}
+      <div className="wpc__row">
+        <span className={`wpc__strike ${strikeClass}`}>
+          ${position.strike} {typeLabel}
         </span>
-      )}
-
-      {/* Row 1: Strike + OTM% */}
-      <div className="wheel-card-row">
-        <span className="wheel-card-strike">
-          {formatCurrency(position.strike, 'USD')}
-        </span>
-        <span className="wheel-card-otm">
-          {position.otmPercent != null ? `${position.otmPercent.toFixed(1)}% OTM` : '--'}
+        <span className="wpc__otm">
+          {position.otmPercent != null ? `${position.otmPercent.toFixed(1)}%` : ''}
         </span>
       </div>
-
-      {/* Row 2: Premium + P&L */}
-      <div className="wheel-card-row">
-        <span className="wheel-card-premium">
-          {position.premium != null ? `+${formatCurrency(position.premium, 'USD')}` : '--'}
-        </span>
-        <span
-          className={`wheel-card-pnl ${
-            (position.pnl ?? 0) >= 0 ? 'wheel-pnl-positive' : 'wheel-pnl-negative'
-          }`}
-        >
+      <div className="wpc__row">
+        <span className={`wpc__pnl ${pnlClass}`}>
           {position.pnl != null
             ? `${position.pnl >= 0 ? '+' : ''}${formatCurrency(position.pnl, 'USD')}`
             : '--'}

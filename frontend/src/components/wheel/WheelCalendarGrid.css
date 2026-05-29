@@ -1,0 +1,255 @@
+.wcg-timeline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.wcg-timeline__btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  transition: border-color var(--transition-fast);
+}
+.wcg-timeline__btn:hover { border-color: var(--border-hover); }
+
+.wcg-timeline__range {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.wcg-timeline__today {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--success-text);
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.wcg-wrapper {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wcg-scroll { overflow: auto; flex: 1; }
+
+.wcg-table { width: 100%; border-collapse: collapse; }
+
+.wcg-th-ticker {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  background: var(--bg-secondary);
+  width: 120px;
+}
+
+.wcg-th-expiry {
+  padding: 8px 10px;
+  text-align: center;
+  min-width: 150px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-secondary);
+}
+.wcg-th-expiry--today { background: rgba(248, 113, 113, 0.03); }
+
+.wcg-expiry-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.wcg-monthly-badge {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--indigo-text, #818cf8);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 500;
+}
+
+.wcg-expiry-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.wcg-dte {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+}
+.wcg-dte--critical { background: rgba(248, 113, 113, 0.2); color: var(--danger-text); }
+.wcg-dte--warning { background: rgba(251, 191, 36, 0.15); color: var(--warning-text); }
+.wcg-dte--safe { background: rgba(16, 185, 129, 0.15); color: var(--success-text); }
+
+.wcg-expiry-day { font-size: 9px; color: var(--text-muted); }
+
+.wcg-td-ticker {
+  padding: 8px 12px;
+  position: sticky;
+  left: 0;
+  background: var(--bg-secondary);
+  z-index: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.025);
+}
+
+.wcg-ticker-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.wcg-ticker-price { font-size: 10px; color: var(--text-secondary); font-family: var(--font-mono); margin-top: 1px; }
+.wcg-ticker-exposure { font-size: 10px; font-family: var(--font-mono); color: var(--text-secondary); margin-top: 2px; }
+.wcg-ticker-shares { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+
+.wcg-ticker-cc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--cc-bg);
+  border: 1px solid var(--cc-border);
+  color: var(--orange-text, #fb923c);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 500;
+  margin-top: 3px;
+}
+
+.wcg-td-cell {
+  padding: 4px 6px;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.025);
+}
+.wcg-td-cell--today { background: rgba(248, 113, 113, 0.03); }
+
+.wcg-cell-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wcg-empty-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 16px;
+  background: none;
+  font-family: inherit;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.wcg-empty-slot:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  color: var(--indigo-text, #818cf8);
+}
+.wcg-empty-slot--compact { padding: 6px; font-size: 12px; }
+
+.wcg-cc-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(249, 115, 22, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  cursor: pointer;
+  color: rgba(249, 115, 22, 0.4);
+  font-size: 10px;
+  background: none;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+}
+.wcg-cc-slot:hover {
+  border-color: rgba(249, 115, 22, 0.4);
+  color: var(--orange-text, #fb923c);
+  background: rgba(249, 115, 22, 0.04);
+}
+
+.wcg-add-ticker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid var(--border);
+  padding: 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  font-family: inherit;
+  width: 100%;
+  transition: color var(--transition-fast);
+}
+.wcg-add-ticker:hover { color: var(--indigo-text, #818cf8); }
+
+.wcg-legend {
+  display: flex;
+  gap: 14px;
+  padding: 6px 0;
+  font-size: 9px;
+  color: var(--text-muted);
+}
+.wcg-legend__item { display: flex; align-items: center; gap: 4px; }
+.wcg-legend__dot { width: 7px; height: 7px; border-radius: 2px; }
+.wcg-legend__dot--csp { background: rgba(99, 102, 241, 0.5); }
+.wcg-legend__dot--cc { background: rgba(249, 115, 22, 0.5); }
+
+@media (max-width: 768px) {
+  .wcg-timeline { padding: 0 16px; }
+  .wcg-wrapper { margin: 0 16px; }
+  .wcg-th-ticker { width: 85px; padding: 6px 8px; font-size: 8px; }
+  .wcg-th-expiry { min-width: 120px; padding: 6px 8px; }
+  .wcg-expiry-date { font-size: 11px; }
+  .wcg-dte { font-size: 8px; }
+  .wcg-td-ticker { padding: 6px 8px; }
+  .wcg-ticker-name { font-size: 12px; }
+  .wcg-ticker-price { font-size: 9px; }
+  .wcg-ticker-exposure { font-size: 9px; }
+  .wcg-ticker-shares { font-size: 8px; }
+  .wcg-ticker-cc-badge { font-size: 7px; }
+  .wcg-td-cell { padding: 3px 5px; }
+  .wcg-empty-slot { padding: 9px; font-size: 14px; }
+  .wcg-cc-slot { padding: 9px; font-size: 9px; }
+  .wcg-legend { padding: 4px 16px; font-size: 8px; }
+}
