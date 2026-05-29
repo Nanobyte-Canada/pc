@@ -212,9 +212,9 @@ com.portfolio
 | `getUserConnectionEntities` | `(userId: Long): List<BrokerConnection>` | Lists raw connection entities |
 | `getActiveConnections` | `(userId: Long): List<BrokerConnectionDto>` | Lists only ACTIVE connections |
 | `getConnection` | `(connectionId: Long, userId: Long): BrokerConnection` | Gets single connection with auth check |
-| `createGatewayConnection` | `(userId: Long, brokerType: String, credentials: Map<String, String>): BrokerConnectionDto` | Creates a new connection via the broker-gateway and stores the gateway connection ID locally |
-| `syncConnections` | `(userId: Long)` | Syncs accounts from the broker-gateway for all active connections |
-| `disconnectBroker` | `(authorizationId: String, userId: Long)` | Disconnects via broker-gateway and marks as DISCONNECTED |
+| `createGatewayConnection` | `(userId: Long, brokerType: String, credentials: Map<String, String>): List<BrokerConnection>` | Creates a new connection via the broker-gateway and creates one `BrokerConnection` per discovered account. Returns a list of connections for multi-account brokers. |
+| `syncConnections` | `(userId: Long)` | Syncs accounts from the broker-gateway for all active connections. Validates per unique `gatewayConnectionId` to avoid redundant API calls. |
+| `disconnectBroker` | `(authorizationId: String, userId: Long)` | Disconnects via broker-gateway and marks all accounts sharing the same gateway connection as DISCONNECTED |
 | `getPositionsForConnection` | `(connectionId: Long, userId: Long): ConnectionPositionsResponse` | Returns positions with P&L summary for one connection |
 | `getAggregatedPositions` | `(userId: Long): AggregatedPositionsResponse` | Aggregates positions across all active connections, grouped by symbol |
 | `getBalanceHistory` | `(connectionId: Long, startDate: LocalDate, endDate: LocalDate): BalanceHistoryResponse` | Returns balance snapshots for date range |
@@ -506,6 +506,7 @@ HTTP client for communicating with the broker-gateway microservice (port 8084). 
 | `getOrders` | `(gatewayConnectionId, accountId): List<GatewayOrderDto>` | Fetches account orders |
 | `placeOrder` | `(gatewayConnectionId, accountId, orderRequest): GatewayOrderDto` | Places an order |
 | `cancelOrder` | `(gatewayConnectionId, accountId, orderId)` | Cancels an order |
+| `getOrderImpact` | `(gatewayConnectionId, accountId, orderRequest): OrderImpactResult` | Previews order impact (estimated cost, buying power effect). Supports options trading fields (`symbolId`, `primaryRoute`, `secondaryRoute`). |
 | `deleteConnection` | `(gatewayConnectionId)` | Removes a gateway connection |
 | `getGatewayHealth` | `(): GatewayHealthResponse` | Checks broker-gateway health status |
 
@@ -1116,6 +1117,16 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 
 **Port:** 8084 | **Schema:** `broker_gateway` | **Package:** `com.portfolio.brokergateway`
 
+### CredentialService
+
+**File:** `service/CredentialService.kt`
+
+Manages encrypted broker credentials for gateway connections. Provides automatic token refresh before API calls.
+
+| Method | Signature | Description |
+|---|---|---|
+| `getCredentialsWithRefresh` | `(connection: GatewayConnection): BrokerCredentials` | Returns decrypted credentials, automatically refreshing expired OAuth tokens before returning. Used by `DataController` and `OrderController` to ensure valid tokens for every broker API call. |
+
 ### IBKR Adapter (`adapter/ibkr/`)
 
 | Class | Type | Description |
@@ -1139,7 +1150,7 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 | `QuestradeConfig` | `@ConfigurationProperties(prefix = "broker-gateway.questrade")` | Questrade settings: enabled (default false), authUrl (default `https://login.questrade.com/oauth2/token`), practiceAuthUrl, usePractice (default false), rateLimitPerSecond (default 1) |
 | `QuestradeDtoMappers` | `object` | Static mappers normalizing Questrade-specific values to unified enums: mapAccountType (TFSA/RRSP/FHSA/RESP/LIRA/LIF/RIF variants), mapInstrumentType, mapOrderStatus, mapOrderType, mapTimeInForce, mapOrderAction, mapActivityType |
 | `FakeQuestradeAdapter` | `@Component @Profile("dev","local","test")` | Mock adapter returning realistic Canadian data: positions (XIU.TO, VFV.TO, RY.TO, TD.TO), Canadian-specific accounts. For local development and testing without a Questrade account. |
-| `QuestradeAdapter` | `@Component @ConditionalOnProperty("broker-gateway.questrade.enabled")` | Production adapter implementing BrokerAdapter. Delegates to QuestradeRestClient for HTTP operations and QuestradeTokenManager for authentication. Uses QuestradeDtoMappers for all type normalization. |
+| `QuestradeAdapter` | `@Component @ConditionalOnProperty("broker-gateway.questrade.enabled")` | Production adapter implementing BrokerAdapter. Delegates to QuestradeRestClient for HTTP operations and QuestradeTokenManager for authentication. Uses QuestradeDtoMappers for all type normalization. Implements `getOrderImpact()` for order preview via Questrade `/v1/accounts/:id/orders/impact` endpoint. |
 | `QuestradeRestClient` | Class | WebClient-based HTTP client with get/post/delete methods. Error handling maps 401 responses to authentication errors and 429 responses to rate-limit errors. |
 | `QuestradeTokenManager` | Class | OAuth token rotation manager handling Questrade's single-use refresh token model. Each token refresh returns a new refresh token and a dynamic `api_server` URL that subsequent API calls must use. |
 

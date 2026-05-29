@@ -9,8 +9,8 @@ Complete database schema reference for AI coding agents. All column definitions 
 - **Tables**: 50
 - **Views**: 1 (`v_aggregated_positions`)
 - **Indexes**: 218 (including primary keys)
-- **Foreign Keys**: 53
-- **Migration tool**: Flyway (64 applied migrations, V1 through V72, gaps at V4, V5, V19, V20, V70, V71)
+- **Foreign Keys**: 52
+- **Migration tool**: Flyway (65 applied migrations, V1 through V73, gaps at V4, V5, V19, V20, V70, V71)
 - **Hibernate DDL mode**: `validate` (schema managed exclusively by Flyway)
 - **Migration files**: `backend/portfolio/src/main/resources/db/migration/V{N}__{description}.sql`
 
@@ -538,7 +538,6 @@ Links a user's brokerage account to the system. Central to all brokerage data.
 |--------|------|----------|---------|
 | id | bigint | NO | sequence |
 | user_id | bigint | NO | |
-| broker_id | bigint | YES | |
 | account_id_external | varchar(100) | YES | |
 | account_number | varchar(50) | YES | |
 | account_type | varchar(50) | YES | |
@@ -552,7 +551,6 @@ Links a user's brokerage account to the system. Central to all brokerage data.
 | metadata | jsonb | YES | |
 | created_at | timestamptz | NO | now() |
 | updated_at | timestamptz | NO | now() |
-| snaptrade_authorization_id | varchar(255) | YES | |
 | last_activities_fetched_at | timestamptz | YES | |
 | last_balance_fetched_at | timestamptz | YES | |
 | account_number_actual | varchar(50) | YES | |
@@ -567,9 +565,9 @@ Links a user's brokerage account to the system. Central to all brokerage data.
 
 - **PK**: `id`
 - **Unique**: `(user_id, account_id_external)`
-- **FKs**: `user_id -> users.id`, `broker_id -> brokers.id`, `model_portfolio_id -> model_portfolios.id`
-- **Indexes**: `idx_broker_connections_user`, `idx_broker_connections_broker`, `idx_broker_connections_status`, `idx_broker_connections_snaptrade_auth`, `idx_broker_connections_user_active` (partial: status='ACTIVE'), `idx_broker_connections_model`
-- **Notes**: `status` values: PENDING, ACTIVE, DISABLED, ERROR. `connection_type` added in V62. `model_portfolio_id` links to the assigned model portfolio for drift calculation. `broker_name` and `broker_logo_url` are denormalized from the `brokers` table for display. **V72:** Added `gateway_connection_id` (references `broker_gateway.connections.id`). The `snaptrade_authorization_id` column is legacy and no longer used by active code.
+- **FKs**: `user_id -> users.id`, `model_portfolio_id -> model_portfolios.id`
+- **Indexes**: `idx_broker_connections_user`, `idx_broker_connections_status`, `idx_broker_connections_user_active` (partial: status='ACTIVE'), `idx_broker_connections_model`
+- **Notes**: `status` values: PENDING, ACTIVE, DISABLED, ERROR. `connection_type` added in V62. `model_portfolio_id` links to the assigned model portfolio for drift calculation. `broker_name` and `broker_logo_url` are denormalized from the `brokers` table for display. **V72:** Added `gateway_connection_id` (references `broker_gateway.connections.id`). **V73:** Dropped `snaptrade_authorization_id` and `broker_id` columns (SnapTrade fully removed).
 
 #### broker_positions
 
@@ -1208,7 +1206,7 @@ SELECT
         ELSE 0
     END AS total_pnl_percent,
     count(DISTINCT bc.id) AS account_count,
-    count(DISTINCT bc.broker_id) AS broker_count,
+    count(DISTINCT bc.gateway_connection_id) AS broker_count,
     bc.user_id
 FROM broker_positions bp
 JOIN broker_connections bc ON bp.connection_id = bc.id
@@ -1216,13 +1214,13 @@ WHERE bp.is_current = true AND bc.status = 'ACTIVE'
 GROUP BY bp.symbol, bp.security_name, bp.instrument_type, bp.currency, bc.user_id;
 ```
 
-**Columns returned**: symbol, security_name, instrument_type, currency, total_quantity, total_value, weighted_avg_cost, total_pnl, total_pnl_percent, account_count, broker_count, user_id
+**Columns returned**: symbol, security_name, instrument_type, currency, total_quantity, total_value, weighted_avg_cost, total_pnl, total_pnl_percent, account_count, broker_count (now counts distinct gateway_connection_id), user_id
 
 **Filters**: Only current positions (`is_current=true`) from active connections (`status='ACTIVE'`).
 
 ---
 
-## Foreign Key Relationships (51 total)
+## Foreign Key Relationships (50 total)
 
 Listed as `source_table.column -> target_table.column`:
 
@@ -1252,8 +1250,7 @@ Listed as `source_table.column -> target_table.column`:
 
 **From broker tables:**
 21. `broker_connections.user_id -> users.id`
-22. `broker_connections.broker_id -> brokers.id`
-23. `broker_connections.model_portfolio_id -> model_portfolios.id`
+22. `broker_connections.model_portfolio_id -> model_portfolios.id`
 24. `broker_positions.connection_id -> broker_connections.id`
 25. `broker_positions.instrument_id -> stocks.id`
 26. `broker_activities.connection_id -> broker_connections.id`
@@ -1338,7 +1335,7 @@ All other tables: 24-40 kB each (empty or near-empty).
 
 ## Flyway Migration History
 
-64 applied migrations from V1 through V72 (gaps at V4, V5, V19, V20, V70, V71).
+65 applied migrations from V1 through V73 (gaps at V4, V5, V19, V20, V70, V71).
 
 | Version | Description | Notes |
 |---------|------------|-------|
@@ -1408,8 +1405,9 @@ All other tables: 24-40 kB each (empty or near-empty).
 | V68 | drop legacy screener tables | Dropped all public schema instrument/GICS/ingestion tables (stocks, etfs, etf_holdings, gics_*, data_sources, ingestion_batches, ingestion_runs/steps/errors, etf_sector_allocations_factset). Portfolio app now reads from `ingestion` schema. |
 | V69 | account analytics | `account_analytics` table for pre-computed per-connection analytics snapshots (sector exposure, geography exposure, risk profile, holdings, weighted MER). UNIQUE constraint on `connection_id`, INDEX on `user_id`. |
 | V72 | snaptrade to gateway migration | Added `gateway_connection_id` column to `broker_connections`. Dropped `snaptrade_status_checks` table. Dropped `snaptrade_user_id` and `snaptrade_user_secret_encrypted` columns from `users`. Part of SnapTrade to broker-gateway migration. |
+| V73 | remove snaptrade columns | Dropped `snaptrade_authorization_id` and `broker_id` columns from `broker_connections`. Completes SnapTrade removal. |
 
-**Next migration**: V73 (always check by running `ls backend/portfolio/src/main/resources/db/migration/` to confirm)
+**Next migration**: V74 (always check by running `ls backend/portfolio/src/main/resources/db/migration/` to confirm)
 
 ---
 

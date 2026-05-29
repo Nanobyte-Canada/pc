@@ -198,7 +198,7 @@ Returns count of instruments by type from the ingestion schema.
 |---|---|---|---|---|
 | `POST` | `/api/v1/brokers/connections/sync` | Authenticated | `brokerService.syncConnections()` | `ConnectionSyncResponse` |
 | `GET` | `/api/v1/brokers/connections` | Authenticated | `brokerService.getUserConnections()` | `BrokerConnectionsResponse` |
-| `POST` | `/api/v1/brokers/connect` | Authenticated | `brokerService.createGatewayConnection()` | `ConnectBrokerResponse` |
+| `POST` | `/api/v1/brokers/connect` | Authenticated | `brokerService.createGatewayConnection()` | `BrokerConnectionsResponse` |
 | `GET` | `/api/v1/brokers/gateway/health` | Authenticated | `brokerGatewayClient.getGatewayHealth()` | `GatewayHealthResponse` |
 | `DELETE` | `/api/v1/brokers/connections/{authorizationId}` | Authenticated | `brokerService.disconnectBroker()` | 204 No Content |
 | `POST` | `/api/v1/brokers/connections/{connectionId}/fetch` | Authenticated | `positionFetchService.triggerManualFetch()` | `PositionFetchResponse` (202) |
@@ -218,7 +218,8 @@ Returns count of instruments by type from the ingestion schema.
 | `GET` | `/api/v1/brokers/connections/{connectionId}/pending-orders` | Authenticated | `rebalanceService.calculateTradesForAccount()` | `PendingOrdersResponse` |
 
 ### `POST /api/v1/brokers/connect`
-**Request body:** `ConnectBrokerRequest { brokerType: String, credentials: Map<String, String> }`
+**Request body:** `ConnectBrokerRequest { brokerType: String, credentials: Record<String, unknown> }`
+**Response:** `BrokerConnectionsResponse` -- returns a list of `BrokerConnectionDto` (one per account discovered for the connection). Previously returned a single connection; now supports multi-account brokers.
 
 ### `GET /api/v1/brokers/connections/{connectionId}/activities`
 **Query params:**
@@ -275,6 +276,13 @@ Most dashboard widget endpoints accept: `connectionId: Long?` -- Filter to a spe
 ### `PUT /api/v1/dashboard/preferences`
 **Request body:** `UpdateDashboardPreferencesRequest { widgets: List<WidgetPreferenceInput> }`
 **Query params:** `contextType: String` (default `DASHBOARD`), `contextId: Long?`
+
+### `GET /api/v1/dashboard/summary`
+**Response:** `DashboardSummaryResponse { portfolioValue: PortfolioValueDto, positionsSummary, holdingsCount }`
+- `portfolioValue.investmentByCurrency`: Per-currency investment breakdown (e.g., `[{currency: "CAD", amount: 35000}, {currency: "USD", amount: 8000}]`). Computed from positions grouped by currency.
+
+### `GET /api/v1/dashboard/cash`
+**Response includes:** `totalBuyingPowerUSD: BigDecimal` — Raw USD buying power from broker balance snapshot (not FX-converted). Added alongside existing `totalBuyingPowerCAD`.
 
 ### `GET /api/v1/dashboard/irr`
 Returns Internal Rate of Return (IRR) for individual accounts and portfolio-wide.
@@ -591,6 +599,7 @@ Broker data gateway microservice for connecting to IBKR, Questrade, and Wealthsi
 | Method | Path | Auth | Description | Response |
 |---|---|---|---|---|
 | `POST` | `/api/v1/gateway/connections/{id}/accounts/{accId}/orders` | API Key | Place a new order. | `OrderDto` |
+| `POST` | `/api/v1/gateway/connections/{id}/accounts/{accId}/orders/impact` | API Key | Preview order impact (estimated cost, buying power effect). Supports options via `symbolId`, `primaryRoute`, `secondaryRoute` fields. | `OrderImpactResult` |
 | `DELETE` | `/api/v1/gateway/connections/{id}/accounts/{accId}/orders/{orderId}` | API Key | Cancel an existing order. | 204 No Content |
 
 ### Health

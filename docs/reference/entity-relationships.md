@@ -63,11 +63,9 @@ User -->1:* DashboardPreference
 User -->1:* AccountAnalytics
 
                          +------------------+
-                         |      Broker      |
+                         |      Broker      |  (standalone registry, no FK from BrokerConnection)
                          +------------------+
-                               |1
-                               |
-                               |*
+
                     +--------------------+
                     | BrokerConnection   |1---------*+------------------+
                     +--------------------+           | BrokerPosition   |
@@ -357,8 +355,6 @@ BenchmarkReturn (standalone, no FK relationships)
 |-------|------------|--------|-------------|
 | id | Long | id | @Id @GeneratedValue(IDENTITY) |
 | user | User | user_id | @ManyToOne(LAZY), not null |
-| broker | Broker? | broker_id | @ManyToOne(LAZY), nullable |
-| snaptradeAuthorizationId | String? | snaptrade_authorization_id | nullable, length=255 |
 | accountIdExternal | String? | account_id_external | nullable, length=100 |
 | accountNumber | String? | account_number | nullable, length=50 |
 | accountType | String? | account_type | nullable, length=50 |
@@ -390,7 +386,7 @@ BenchmarkReturn (standalone, no FK relationships)
 
 **Enum -- ConnectionStatus:** `PENDING`, `ACTIVE`, `EXPIRED`, `ERROR`, `DISCONNECTED`
 
-**V72 Notes:** `gatewayConnectionId` references a connection in the broker-gateway service (`broker_gateway.connections.id`). `snaptradeAuthorizationId` is a legacy field no longer used by active code (SnapTrade replaced by broker-gateway).
+**V72/V73 Notes:** `gatewayConnectionId` references a connection in the broker-gateway service (`broker_gateway.connections.id`) and is now the primary broker reference field. **V73:** Removed `broker: Broker?` ManyToOne relationship and `snaptradeAuthorizationId` field (columns dropped in V73 migration). The `brokers` table still exists as a registry but is no longer referenced by `BrokerConnection`.
 
 **Methods:** `isActive()`, `needsReauth()`, `markAsExpired(msg?)`, `markAsError(code, msg)`, `clearError()`
 
@@ -1210,7 +1206,7 @@ Removed as part of the SnapTrade to broker-gateway migration. The entity, reposi
 
 | DTO | Fields |
 |-----|--------|
-| `ConnectBrokerRequest` | brokerType: String, credentials: Map<String, String> |
+| `ConnectBrokerRequest` | brokerType: String, credentials: Record<String, unknown> |
 
 **Response DTOs:**
 

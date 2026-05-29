@@ -241,7 +241,7 @@
 | `BrokerConnectionsPage.tsx` | BrokerConnectionsPage | `/brokers/connections` | Broker connection management (dialog-based connect flow via ConnectBrokerDialog, disconnect, status) |
 | `BrokerPositionsPage.tsx` | BrokerPositionsPage | `/brokers/positions` | Aggregated positions view across all broker accounts |
 | `PositionDetailsPage.tsx` | PositionDetailsPage | `/brokers/positions/:connectionId` | Detailed positions for a single broker connection |
-| `AccountDetailPage.tsx` | AccountDetailPage | `/brokers/accounts/:connectionId` | Individual account detail with breadcrumb nav ("Accounts > [Type]") and DashboardGrid in ACCOUNT context |
+| `AccountDetailPage.tsx` | AccountDetailPage | `/brokers/accounts/:connectionId` | Individual account detail with breadcrumb nav ("Accounts > [Type]") and DashboardGrid in ACCOUNT context. Shows 4 KPI cards: Returns, Total Value, Investment, and Buying Power (instead of Returns for account-specific view) |
 | `ReportingPage.tsx` | ReportingPage | `/brokers/reporting` | Reporting dashboard with KPIs, charts, and activity table |
 | `ProfilePage.tsx` | ProfilePage | `/profile` | User profile management (name, avatar, password, linked identities) |
 | `admin/AdminPage.tsx` + `.css` | AdminPage | `/admin` (ADMIN role required) | Admin panel rewired to ingestion-service (port 8081). Verdant Dark redesign with 6-column summary stats, instrument type breakdown grid, two-column workflows + recent runs layout, status dots and progress bars. Auto-refresh every 10 seconds |
@@ -718,7 +718,8 @@ interface PortfolioStore {
 |------|------------|
 | `WidgetPreference` | key, visible, sortOrder, columnSpan |
 | `DashboardSummaryResponse` | portfolioValue, positionsSummary, holdingsCount |
-| `DashboardCashResponse` | availableCash[], buyingPower[], totalCashCAD |
+| `PortfolioValueData` | totalValue, investmentValue, cashValue, totalChange?, totalChangePercent?, currency, investmentByCurrency? |
+| `DashboardCashResponse` | availableCash[], buyingPower[], totalCashCAD, totalBuyingPowerCAD?, totalBuyingPowerUSD? |
 | `SectorExposureResponse` | sectors[], coveragePercent, unmappedWeight |
 | `GeographyExposureResponse` | regions[], coveragePercent, unmappedWeight |
 | `RiskProfileResponse` | riskScore, riskLevel, factors |
