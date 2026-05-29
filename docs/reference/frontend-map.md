@@ -1015,6 +1015,9 @@ interface PortfolioStore {
 | `WheelGrid.tsx` + `.css` | Desktop: sticky-header table grid (expiry rows x ticker columns) with position cards, dashed empty slots, sticky totals footer. Mobile: collapsible expiry-grouped card list with per-ticker add buttons. DTE badges: red (0-5d), yellow (6-20d), green (21+d) |
 | `PositionCard.tsx` + `.css` | Position card: CSP = indigo bg/border (var(--csp-*)), CC = orange bg/border (var(--cc-*)). Row 1: strike + OTM%. Row 2: premium + P&L. Emerald 20px "+" circle (top-right, visible on hover). No type text badges |
 | `CapitalSummary.tsx` + `.css` | Horizontal capital bar with vertical dividers: Available Cash (C$/US$ breakdown), CSP Deployed, CCs Written, Premium, Unrealized P&L. All values use var(--font-mono). Mobile: 2x2 grid layout |
+| `OrderPanel.tsx` + `.css` | Desktop: 340px side panel. Mobile: bottom sheet overlay. Order entry for options: symbol header, live bid/ask/mid via WebSocket (useMarketDataWebSocket + useQuoteStore), contract 2x2 grid (type/expiry/strike/order type), quantity stepper, limit price, duration, account selector with currency-aware buying power display, estimated total, Buy/Sell buttons. Seeds store with REST chain fetch on mount, subscribes to specific option for real-time updates |
+| `WheelChainPanel.tsx` + `.css` | Full-screen overlay showing options chain for a ticker/expiry. Loads chain with Greeks via REST, subscribes to WebSocket streaming. Strike table with bid/ask/delta/discount/yield per strike. Expiry tabs for multi-expiry navigation. Order confirmation dialog for sell-to-open |
+| `WheelChainRow.tsx` | Single strike row in the chain panel table |
 | `ClosePositionDialog.tsx` + `.css` | Close position dialog with CSP (indigo) / CC (orange) type indicator strip, X close button, detail rows, and confirm/cancel actions |
 
 ### Hooks
