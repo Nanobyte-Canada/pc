@@ -1006,15 +1006,15 @@ interface PortfolioStore {
 
 | File | Route | Description |
 |---|---|---|
-| `pages/WheelPage.tsx` + `.css` | `/wheel` | Wheel positions management: header with inline legend (desktop) or abbreviated legend (mobile), account pill tabs (desktop) / dropdown (mobile), capital summary bar, desktop grid + mobile collapsible expiry groups, close position dialog. Mobile "+" button (40px emerald square) in top-right corner |
+| `pages/WheelPage.tsx` + `.css` | `/wheel` | Wheel positions landing page (Screen 1). Dynamic ticker discovery from positions + CC-eligible stocks. 5 KPI cards (Capital Available, Capital Deployed, CC Available, Premium & P&L, Positions). Calendar grid with ticker rows × weekly expiry columns, ← → timeline navigation. Desktop: 4 columns. Mobile: 2 columns. Position click → OrderPanel. Empty slot click → OrderPanel (future: Screen 2 quotes). |
 
 ### Components (`components/wheel/`)
 
 | File | Description |
 |---|---|
-| `WheelGrid.tsx` + `.css` | Desktop: sticky-header table grid (expiry rows x ticker columns) with position cards, dashed empty slots, sticky totals footer. Mobile: collapsible expiry-grouped card list with per-ticker add buttons. DTE badges: red (0-5d), yellow (6-20d), green (21+d) |
-| `PositionCard.tsx` + `.css` | Position card: CSP = indigo bg/border (var(--csp-*)), CC = orange bg/border (var(--cc-*)). Row 1: strike + OTM%. Row 2: premium + P&L. Emerald 20px "+" circle (top-right, visible on hover). No type text badges |
-| `CapitalSummary.tsx` + `.css` | Horizontal capital bar with vertical dividers: Available Cash (C$/US$ breakdown), CSP Deployed, CCs Written, Premium, Unrealized P&L. All values use var(--font-mono). Mobile: 2x2 grid layout |
+| `WheelCalendarGrid.tsx` + `.css` | Transposed calendar grid: ticker rows (Y-axis) × weekly Friday expiry columns (X-axis). Sticky ticker column with name, price, exposure, CC badge. Expiry headers with date, DTE badge (red/yellow/green), day, Monthly tag. Timeline nav (prev/next/today). Empty CSP slots (dashed +), CC opportunity slots (orange "Sell CC"). "Add Ticker" row. Desktop: 4 columns, Mobile: 2 columns |
+| `WheelKpiCards.tsx` + `.css` | 5 KPI cards matching dashboard KpiCard pattern. Capital Available (C$/US$), Capital Deployed (CSP/CC), CC Available (per-ticker), Premium & P&L, Positions (CSP/CC/Expiring). Desktop: 5-column grid. Mobile: 2×2 + 1 full-width CC row |
+| `PositionCard.tsx` + `.css` | Compact position card: CSP = indigo (var(--csp-*)), CC = orange (var(--cc-*)). Row 1: strike + type label + OTM%. Row 2: P&L. Click navigates to order. No premium or account badge |
 | `OrderPanel.tsx` + `.css` | Desktop: 340px side panel. Mobile: bottom sheet overlay. Order entry for options: symbol header, live bid/ask/mid via WebSocket (useMarketDataWebSocket + useQuoteStore), contract 2x2 grid (type/expiry/strike/order type), quantity stepper, limit price, duration, account selector with currency-aware buying power display, estimated total, Buy/Sell buttons. Seeds store with REST chain fetch on mount, subscribes to specific option for real-time updates |
 | `WheelChainPanel.tsx` + `.css` | Full-screen overlay showing options chain for a ticker/expiry. Loads chain with Greeks via REST, subscribes to WebSocket streaming. Strike table with bid/ask/delta/discount/yield per strike. Expiry tabs for multi-expiry navigation. Order confirmation dialog for sell-to-open |
 | `WheelChainRow.tsx` | Single strike row in the chain panel table |
@@ -1024,13 +1024,13 @@ interface PortfolioStore {
 
 | File | Description |
 |---|---|
-| `hooks/useWheelPositions.ts` | Fetches positions via React Query, filters to options, groups into grid structure by expiry/ticker. Exports: `useWheelPositions`, `buildWheelGrid`, `computeTickerTotals`, `computeCapitalMetrics` |
+| `hooks/useWheelPositions.ts` | Fetches positions via React Query, groups into grid structure. Exports: `useWheelPositions`, `buildWheelGrid`, `computeTickerTotals`, `discoverTickers` (dynamic ticker discovery from options), `detectCCEligible` (stocks with 100+ shares), `generateWeeklyExpiries` (calendar column generation) |
 
 ### Types
 
 | File | Description |
 |---|---|
-| `types/wheel.ts` | WheelTicker, WheelPosition, WheelCell, WheelExpiryRow, WheelGridData, TickerTotals, CapitalMetrics, DteUrgency (3 tiers: critical/warning/safe), getDteUrgency(), isMonthlyExpiry() |
+| `types/wheel.ts` | WheelTicker, WheelPosition, WheelCell, WheelExpiryRow, WheelGridData, TickerTotals, CapitalMetrics, DteUrgency, CCInfo, TickerRowData, CalendarWindow, CalendarGridData, getDteUrgency(), isMonthlyExpiry() |
 
 ### Tests
 
