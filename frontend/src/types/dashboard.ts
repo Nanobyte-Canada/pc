@@ -3,6 +3,7 @@
 export interface PortfolioValueData {
   totalValue: number
   investmentValue: number
+  investmentByCurrency?: CurrencyAmount[]
   cashValue: number
   totalChange: number | null
   totalChangePercent: number | null
@@ -47,6 +48,7 @@ export interface DashboardCashResponse {
   buyingPower: CurrencyAmount[]
   totalCashCAD: number
   totalBuyingPowerCAD?: number
+  totalBuyingPowerUSD?: number
 }
 
 // ========== Sector Exposure ==========
