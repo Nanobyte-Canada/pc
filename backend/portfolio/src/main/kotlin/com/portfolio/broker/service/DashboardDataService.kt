@@ -121,7 +121,7 @@ class DashboardDataService(
 
             AccountIrrDto(
                 connectionId = conn.id,
-                brokerName = conn.broker?.code ?: conn.brokerName,
+                brokerName = conn.brokerName ?: conn.connectionType,
                 accountName = conn.accountName,
                 irr = if (connectionId != null) portfolioIrr else analytics?.xirr,
                 totalReturn = if (connectionId != null) portfolioTotalReturn?.setScale(2, RoundingMode.HALF_UP) else analytics?.totalReturn,
@@ -588,11 +588,11 @@ class DashboardDataService(
 
             DashboardAccountDto(
                 connectionId = conn.id,
-                brokerName = conn.broker?.code ?: conn.brokerName ?: "Unknown",
-                brokerLogoUrl = conn.broker?.logoUrl ?: conn.brokerLogoUrl,
+                brokerName = conn.brokerName ?: conn.connectionType ?: "Unknown",
+                brokerLogoUrl = conn.brokerLogoUrl,
                 accountName = conn.accountName,
                 accountType = conn.accountMetaType ?: conn.accountType,
-                accountNumber = conn.accountNumberActual?.let { maskAccountNumber(it) },
+                accountNumber = (conn.accountNumberActual ?: conn.accountNumber)?.let { maskAccountNumber(it) },
                 status = conn.status.name,
                 totalValue = portfolioValue.setScale(2, RoundingMode.HALF_UP),
                 investmentValue = investmentValue.setScale(2, RoundingMode.HALF_UP),
