@@ -7,6 +7,7 @@ import { useMarketDataWebSocket } from '@/hooks/useMarketDataWebSocket'
 import { useQuoteStore } from '@/stores/quoteStore'
 import { getOptionsChain } from '@/services/marketDataService'
 import { submitOptionsOrder } from '@/services/tradingService'
+import { useToast } from '@/stores/toastStore'
 import './OrderPanel.css'
 
 interface OrderPanelAccount {
@@ -72,6 +73,7 @@ function generateExpiryDates(): string[] {
 
 export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, buyingPower }: OrderPanelProps) {
   const isExistingPosition = !!position
+  const { success, error: showError } = useToast()
 
   // Form state
   const [optionType, setOptionType] = useState<'Call' | 'Put'>(
@@ -203,13 +205,16 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
         strikePrice: !isNaN(strikeNum) ? strikeNum : undefined,
         expirationDate: expiration || undefined,
       })
+      success(`${action} order submitted for ${ticker}`)
       onClose()
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Order submission failed')
+      const msg = err instanceof Error ? err.message : 'Order submission failed'
+      setSubmitError(msg)
+      showError(msg)
     } finally {
       setSubmitting(false)
     }
-  }, [ticker, optionType, expiration, strike, orderType, quantity, limitPrice, stopPrice, selectedAccountId, onClose])
+  }, [ticker, optionType, expiration, strike, orderType, quantity, limitPrice, stopPrice, selectedAccountId, onClose, success, showError])
 
   const panelContent = (
     <div className="order-panel__inner">
