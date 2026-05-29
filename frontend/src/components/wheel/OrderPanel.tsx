@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import type { WheelPosition } from '@/types/wheel'
 import type { CurrencyAmount } from '@/types/dashboard'
 import { formatCurrency } from '@/services/brokerService'
@@ -6,6 +6,7 @@ import { X, Minus, Plus, ChevronDown } from 'lucide-react'
 import { useMarketDataWebSocket } from '@/hooks/useMarketDataWebSocket'
 import { useQuoteStore } from '@/stores/quoteStore'
 import { getOptionsChain } from '@/services/marketDataService'
+import { submitOptionsOrder } from '@/services/tradingService'
 import './OrderPanel.css'
 
 interface OrderPanelAccount {
@@ -78,11 +79,14 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
   )
   const [expiration, setExpiration] = useState(position?.id ? '' : '')
   const [strike, setStrike] = useState(position?.strike?.toString() ?? '')
-  const [orderType, setOrderType] = useState<'Market' | 'Limit'>('Limit')
+  const [orderType, setOrderType] = useState<string>('Limit')
   const [quantity, setQuantity] = useState(position?.quantity ?? 1)
   const [limitPrice, setLimitPrice] = useState(
     position?.currentPrice != null ? position.currentPrice.toFixed(2) : ''
   )
+  const [stopPrice, setStopPrice] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [duration, setDuration] = useState<'Day' | 'GTC'>('Day')
   const [selectedAccountId, setSelectedAccountId] = useState<number>(
     position?.connectionId ?? accounts[0]?.connectionId ?? 0
@@ -161,6 +165,16 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
   const selectedAccount = accounts.find(a => a.connectionId === selectedAccountId)
   const selectedBrokerIcon = selectedAccount ? getBrokerIcon(selectedAccount.brokerName) : null
 
+  // Derive supported order types from broker
+  const supportedOrderTypes = useMemo(() => {
+    const account = accounts.find(a => a.connectionId === selectedAccountId)
+    if (!account) return ['Limit', 'Market']
+    const broker = account.brokerName.toLowerCase()
+    if (broker.includes('questrade') || broker.includes('ibkr') || broker.includes('interactive'))
+      return ['Limit', 'Market', 'Stop', 'Stop Limit']
+    return ['Limit', 'Market']
+  }, [accounts, selectedAccountId])
+
   // Contract title line
   const contractTitle = useMemo(() => {
     const exp = expiration ? formatExpiryForTitle(expiration) : '---'
@@ -168,19 +182,34 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
     return `${ticker} ${exp} ${str} ${optionType}`
   }, [ticker, expiration, strike, optionType])
 
-  const handleBuy = () => {
-    console.log('[OrderPanel] BUY', {
-      ticker, optionType, expiration, strike, orderType,
-      quantity, limitPrice, duration, selectedAccountId,
-    })
-  }
-
-  const handleSell = () => {
-    console.log('[OrderPanel] SELL', {
-      ticker, optionType, expiration, strike, orderType,
-      quantity, limitPrice, duration, selectedAccountId,
-    })
-  }
+  const handleSubmitOrder = useCallback(async (action: 'BUY' | 'SELL') => {
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      const lp = parseFloat(limitPrice)
+      const sp = parseFloat(stopPrice)
+      const strikeNum = parseFloat(strike)
+      await submitOptionsOrder({
+        symbol: ticker,
+        action,
+        units: quantity,
+        price: lp || 0,
+        amount: quantity * (lp || 0) * 100,
+        currency: getCurrencyLabel(ticker) === 'C$' ? 'CAD' : 'USD',
+        connectionId: selectedAccountId,
+        limitPrice: (orderType === 'Limit' || orderType === 'Stop Limit') && !isNaN(lp) ? lp : undefined,
+        stopPrice: (orderType === 'Stop' || orderType === 'Stop Limit') && !isNaN(sp) ? sp : undefined,
+        optionType: optionType === 'Call' ? 'CALL' : 'PUT',
+        strikePrice: !isNaN(strikeNum) ? strikeNum : undefined,
+        expirationDate: expiration || undefined,
+      })
+      onClose()
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Order submission failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }, [ticker, optionType, expiration, strike, orderType, quantity, limitPrice, stopPrice, selectedAccountId, onClose])
 
   const panelContent = (
     <div className="order-panel__inner">
@@ -298,10 +327,11 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
               <select
                 className="order-panel__select"
                 value={orderType}
-                onChange={e => setOrderType(e.target.value as 'Market' | 'Limit')}
+                onChange={e => setOrderType(e.target.value)}
               >
-                <option value="Limit">Limit</option>
-                <option value="Market">Market</option>
+                {supportedOrderTypes.map(ot => (
+                  <option key={ot} value={ot}>{ot}</option>
+                ))}
               </select>
               <ChevronDown size={14} className="order-panel__select-chevron" />
             </div>
@@ -332,7 +362,7 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
       </div>
 
       {/* 5. Limit Price */}
-      {orderType === 'Limit' && (
+      {(orderType === 'Limit' || orderType === 'Stop Limit') && (
         <div className="order-panel__section">
           <label className="order-panel__label">Limit Price</label>
           <div className="order-panel__price-input-wrap">
@@ -345,6 +375,27 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
               onChange={e => {
                 const v = e.target.value
                 if (/^\d*\.?\d{0,2}$/.test(v) || v === '') setLimitPrice(v)
+              }}
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 5b. Stop Price */}
+      {(orderType === 'Stop' || orderType === 'Stop Limit') && (
+        <div className="order-panel__section">
+          <label className="order-panel__label">Stop Price</label>
+          <div className="order-panel__price-input-wrap">
+            <span className="order-panel__price-currency">{currencyLabel}</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              className="order-panel__price-input"
+              value={stopPrice}
+              onChange={e => {
+                const v = e.target.value
+                if (/^\d*\.?\d{0,2}$/.test(v) || v === '') setStopPrice(v)
               }}
               placeholder="0.00"
             />
@@ -419,13 +470,24 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
 
       {/* 9. Buy / Sell Buttons */}
       <div className="order-panel__actions">
-        <button className="order-panel__action-btn order-panel__action-btn--buy" onClick={handleBuy}>
-          Buy
+        <button
+          className="order-panel__action-btn order-panel__action-btn--buy"
+          onClick={() => handleSubmitOrder('BUY')}
+          disabled={submitting}
+        >
+          {submitting ? 'Submitting...' : 'Buy'}
         </button>
-        <button className="order-panel__action-btn order-panel__action-btn--sell" onClick={handleSell}>
-          Sell
+        <button
+          className="order-panel__action-btn order-panel__action-btn--sell"
+          onClick={() => handleSubmitOrder('SELL')}
+          disabled={submitting}
+        >
+          {submitting ? 'Submitting...' : 'Sell'}
         </button>
       </div>
+      {submitError && (
+        <div className="order-panel__error">{submitError}</div>
+      )}
     </div>
   )
 

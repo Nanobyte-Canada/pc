@@ -404,6 +404,20 @@
   border-color: rgba(248, 113, 113, 0.5);
 }
 
+/* ── Error display ── */
+.order-panel__error {
+  font-size: 11px;
+  color: var(--danger-text, #f87171);
+  text-align: center;
+  padding: 6px 0;
+}
+
+/* ── Disabled state ── */
+.order-panel__action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ================================================================
    Mobile bottom sheet — visible only on mobile
    ================================================================ */
