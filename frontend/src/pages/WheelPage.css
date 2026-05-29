@@ -1,5 +1,5 @@
 .wheel-page {
-  padding: 24px;
+  padding: 0 24px 24px;
   max-width: 1600px;
 }
 
@@ -118,70 +118,6 @@
   background: var(--accent-hover);
 }
 
-/* ── Account pill tabs (desktop) ── */
-.wheel-account-tabs {
-  display: flex;
-  gap: 2px;
-  background: var(--card-bg);
-  padding: 3px;
-  border-radius: var(--radius-md, 10px);
-  width: fit-content;
-  margin-bottom: 16px;
-  border: 1px solid var(--border);
-}
-
-.wheel-account-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 16px;
-  border: none;
-  background: none;
-  color: var(--text-muted);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  border-radius: var(--radius-sm, 6px);
-  cursor: pointer;
-  transition: all var(--transition-fast, 0.15s);
-  white-space: nowrap;
-}
-
-.wheel-account-tab:hover {
-  color: var(--text-secondary);
-}
-
-.wheel-account-tab-active {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.wheel-tab-broker-icon {
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: -0.3px;
-}
-
-/* ── Account dropdown (mobile only) ── */
-.wheel-account-dropdown-wrap {
-  display: none;
-  margin-bottom: 16px;
-}
-
-.wheel-account-dropdown {
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: var(--radius-md, 10px);
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  appearance: auto;
-}
-
 /* ── Content layout (grid + order panel side by side) ── */
 .wheel-page__content {
   display: flex;
@@ -218,7 +154,7 @@
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .wheel-page {
-    padding: 16px;
+    padding: 0 16px 16px;
   }
 
   .wheel-legend-desktop {
@@ -231,14 +167,6 @@
 
   .wheel-mobile-add {
     display: flex;
-  }
-
-  .wheel-account-tabs {
-    display: none;
-  }
-
-  .wheel-account-dropdown-wrap {
-    display: block;
   }
 
   .wheel-page__panel-area {

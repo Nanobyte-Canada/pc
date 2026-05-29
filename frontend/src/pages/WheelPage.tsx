@@ -2,11 +2,12 @@ import { useState, useCallback, useMemo } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { useBrokerConnections } from '@/hooks/useBrokerConnections'
 import { useWheelPositions } from '@/hooks/useWheelPositions'
-import { useDashboardCash } from '@/hooks/useDashboardWidgets'
+import { useDashboardCash, useDashboardAccounts } from '@/hooks/useDashboardWidgets'
 import { useExchangeRate } from '@/hooks/useExchangeRate'
 import { useWheelActivities } from '@/hooks/useWheelActivities'
 import { computeTickerTotals } from '@/hooks/useWheelPositions'
 import { getQuote } from '@/services/marketDataService'
+import { AccountNavBar } from '@/components/layout/AccountNavBar'
 import { CapitalSummary } from '@/components/wheel/CapitalSummary'
 import { WheelGrid } from '@/components/wheel/WheelGrid'
 import { OrderPanel } from '@/components/wheel/OrderPanel'
@@ -16,21 +17,6 @@ import { Plus } from 'lucide-react'
 import './WheelPage.css'
 
 const WHEEL_TICKERS = ['SOXL', 'TECL', 'TQQQ', 'UPRO']
-
-const BROKER_BRANDS: Record<string, { icon: string; color: string }> = {
-  questrade: { icon: 'Q', color: '#4ade80' },
-  wealthsimple: { icon: 'W', color: '#a78bfa' },
-  ibkr: { icon: 'IB', color: '#f87171' },
-  'interactive brokers': { icon: 'IB', color: '#f87171' },
-}
-
-function getBrokerBrand(brokerName: string) {
-  const key = brokerName.toLowerCase()
-  for (const [k, v] of Object.entries(BROKER_BRANDS)) {
-    if (key.includes(k)) return v
-  }
-  return { icon: brokerName.charAt(0).toUpperCase(), color: 'var(--text-muted)' }
-}
 
 interface SelectedPositionState {
   position: WheelPosition
@@ -47,6 +33,9 @@ export function WheelPage() {
   const connections = connectionsData?.connections ?? []
   const activeConnections = connections.filter(c => c.status === 'ACTIVE')
   const connectionIds = activeConnections.map(c => c.id)
+
+  const { data: accountsData } = useDashboardAccounts()
+  const accounts = accountsData?.accounts ?? []
 
   const { data: fxData } = useExchangeRate('USD')
   const fxRate = fxData?.rateToCAD ?? 1.38
@@ -184,6 +173,13 @@ export function WheelPage() {
 
   return (
     <div className="wheel-page">
+      {/* Account switcher — above header */}
+      <AccountNavBar
+        accounts={accounts}
+        selectedId={selectedConnectionId ?? null}
+        onSelect={(id) => setSelectedConnectionId(id ?? undefined)}
+      />
+
       <div className="wheel-page-header">
         <div className="wheel-header-left">
           <h1 className="wheel-page-title">Wheel Strategy</h1>
@@ -224,49 +220,6 @@ export function WheelPage() {
             <Plus size={20} />
           </button>
         </div>
-      </div>
-
-      {/* Desktop: account pill tabs */}
-      <div className="wheel-account-tabs">
-        <button
-          className={`wheel-account-tab ${selectedConnectionId === undefined ? 'wheel-account-tab-active' : ''}`}
-          onClick={() => setSelectedConnectionId(undefined)}
-        >
-          All Accounts
-        </button>
-        {activeConnections.map(conn => {
-          const brand = getBrokerBrand(conn.broker?.name ?? '')
-          return (
-            <button
-              key={conn.id}
-              className={`wheel-account-tab ${selectedConnectionId === conn.id ? 'wheel-account-tab-active' : ''}`}
-              onClick={() => setSelectedConnectionId(conn.id)}
-            >
-              <span className="wheel-tab-broker-icon" style={{ color: brand.color }}>
-                {brand.icon}
-              </span>
-              {conn.accountName || conn.broker?.name || 'Account'}
-              {conn.accountNumber ? ` ••${conn.accountNumber.slice(-4)}` : ''}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Mobile: account dropdown */}
-      <div className="wheel-account-dropdown-wrap">
-        <select
-          className="wheel-account-dropdown"
-          value={selectedConnectionId ?? ''}
-          onChange={e => setSelectedConnectionId(e.target.value ? Number(e.target.value) : undefined)}
-        >
-          <option value="">All Accounts</option>
-          {activeConnections.map(conn => (
-            <option key={conn.id} value={conn.id}>
-              {conn.accountName || conn.broker?.name || 'Account'}
-              {conn.accountNumber ? ` ••${conn.accountNumber.slice(-4)}` : ''}
-            </option>
-          ))}
-        </select>
       </div>
 
       <CapitalSummary metrics={capitalMetrics} />
