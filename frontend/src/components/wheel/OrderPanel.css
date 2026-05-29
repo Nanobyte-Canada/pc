@@ -328,6 +328,20 @@
   min-width: 0;
 }
 
+/* ── Buying Power ── */
+.order-panel__buying-power {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.order-panel__buying-power-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
 /* ── Estimated Total ── */
 .order-panel__estimated {
   display: flex;

@@ -257,6 +257,7 @@ export function WheelPage() {
                 accountNumber: c.accountNumber ?? '',
                 brokerName: c.broker?.name ?? '',
               }))}
+              buyingPower={cashData?.buyingPower ?? []}
             />
           </div>
         )}

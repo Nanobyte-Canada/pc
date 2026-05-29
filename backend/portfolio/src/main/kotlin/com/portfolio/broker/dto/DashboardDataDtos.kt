@@ -71,7 +71,8 @@ data class DashboardCashResponse(
     val availableCash: List<CurrencyAmountDto>,
     val buyingPower: List<CurrencyAmountDto>,
     val totalCashCAD: BigDecimal,
-    val totalBuyingPowerCAD: BigDecimal = BigDecimal.ZERO
+    val totalBuyingPowerCAD: BigDecimal = BigDecimal.ZERO,
+    val totalBuyingPowerUSD: BigDecimal = BigDecimal.ZERO
 )
 
 // ========== Sector Exposure ==========

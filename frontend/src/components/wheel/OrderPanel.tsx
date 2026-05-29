@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import type { WheelPosition } from '@/types/wheel'
+import type { CurrencyAmount } from '@/types/dashboard'
 import { formatCurrency } from '@/services/brokerService'
 import { X, Minus, Plus, ChevronDown } from 'lucide-react'
 import './OrderPanel.css'
@@ -17,6 +18,7 @@ interface OrderPanelProps {
   currentPrice?: number
   onClose: () => void
   accounts: OrderPanelAccount[]
+  buyingPower: CurrencyAmount[]
 }
 
 function getBrokerIcon(brokerName: string) {
@@ -33,6 +35,10 @@ function getCurrencyLabel(ticker: string): string {
   const canadianSuffixes = ['.TO', '.TSX', '.V', '.CN']
   if (canadianSuffixes.some(s => ticker.toUpperCase().endsWith(s))) return 'C$'
   return 'US$'
+}
+
+function getOptionCurrency(ticker: string): string {
+  return getCurrencyLabel(ticker) === 'C$' ? 'CAD' : 'USD'
 }
 
 function formatExpiryForTitle(iso: string): string {
@@ -60,7 +66,7 @@ function generateExpiryDates(): string[] {
   return dates
 }
 
-export function OrderPanel({ position, ticker, currentPrice, onClose, accounts }: OrderPanelProps) {
+export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, buyingPower }: OrderPanelProps) {
   const isExistingPosition = !!position
 
   // Form state
@@ -92,6 +98,8 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts }
   }, [position, accounts])
 
   const currencyLabel = getCurrencyLabel(ticker)
+  const optionCurrency = getOptionCurrency(ticker)
+  const buyingPowerAmount = buyingPower.find(bp => bp.currency === optionCurrency)?.amount ?? null
   const price = currentPrice ?? position?.currentPrice ?? 0
 
   // Generate expirations and strikes for dropdowns
@@ -345,6 +353,13 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts }
                 </select>
                 <ChevronDown size={14} className="order-panel__select-chevron" />
               </div>
+            </div>
+            <div className="order-panel__buying-power">
+              <span className="order-panel__buying-power-value">
+                {buyingPowerAmount != null
+                  ? `${currencyLabel} ${buyingPowerAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                  : '--'}
+              </span>
             </div>
           </div>
         </div>
