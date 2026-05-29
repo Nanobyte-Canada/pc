@@ -1,6 +1,6 @@
 // frontend/src/hooks/__tests__/useWheelPositions.test.ts
 import { describe, it, expect } from 'vitest'
-import { buildWheelGrid, computeTickerTotals } from '../useWheelPositions'
+import { buildWheelGrid, computeTickerTotals, discoverTickers, detectCCEligible } from '../useWheelPositions'
 import type { BrokerPosition } from '@/types/broker'
 
 function makePosition(overrides: Partial<BrokerPosition> = {}): BrokerPosition {
@@ -204,5 +204,48 @@ describe('buildWheelGrid with symbol-parsed positions', () => {
     expect(row!.cells['TQQQ'].positions).toHaveLength(1)
     expect(row!.cells['TQQQ'].positions[0].type).toBe('CC')
     expect(row!.cells['TQQQ'].positions[0].strike).toBe(48)
+  })
+})
+
+describe('discoverTickers', () => {
+  it('returns unique underlying symbols from option positions', () => {
+    const positions: BrokerPosition[] = [
+      makePosition({ underlyingSymbol: 'SOXL', optionType: 'PUT' }),
+      makePosition({ id: 2, underlyingSymbol: 'SOXL', optionType: 'PUT' }),
+      makePosition({ id: 3, underlyingSymbol: 'TQQQ', optionType: 'CALL', symbol: 'TQQQ30May26C500', strikePrice: 500 }),
+    ]
+    const tickers = discoverTickers(positions)
+    expect(tickers).toEqual(['SOXL', 'TQQQ'])
+  })
+
+  it('ignores positions without option fields', () => {
+    const positions: BrokerPosition[] = [
+      makePosition({ underlyingSymbol: null, optionType: null, symbol: 'AAPL', instrumentType: 'STOCK', strikePrice: null, expirationDate: null }),
+    ]
+    const tickers = discoverTickers(positions)
+    expect(tickers).toEqual([])
+  })
+})
+
+describe('detectCCEligible', () => {
+  it('detects tickers with 100+ shares', () => {
+    const positions: BrokerPosition[] = [
+      { id: 10, symbol: 'TQQQ', instrumentType: 'STOCK', quantity: 100, currency: 'USD',
+        securityName: null, averageCost: 40, currentPrice: 827, currentValue: 82700,
+        totalPnl: 42700, totalPnlPercent: 107, strikePrice: null, expirationDate: null,
+        optionType: null, underlyingSymbol: null },
+      { id: 11, symbol: 'QQU.TO', instrumentType: 'STOCK', quantity: 300, currency: 'CAD',
+        securityName: null, averageCost: 26, currentPrice: 41.38, currentValue: 12414,
+        totalPnl: 4614, totalPnlPercent: 59, strikePrice: null, expirationDate: null,
+        optionType: null, underlyingSymbol: null },
+      { id: 12, symbol: 'TECL', instrumentType: 'STOCK', quantity: 38, currency: 'USD',
+        securityName: null, averageCost: 86, currentPrice: 256, currentValue: 9728,
+        totalPnl: 6460, totalPnlPercent: 197, strikePrice: null, expirationDate: null,
+        optionType: null, underlyingSymbol: null },
+    ]
+    const ccMap = detectCCEligible(positions)
+    expect(ccMap.get('TQQQ')).toEqual({ sharesOwned: 100, contractsAvailable: 1 })
+    expect(ccMap.get('QQU.TO')).toEqual({ sharesOwned: 300, contractsAvailable: 3 })
+    expect(ccMap.has('TECL')).toBe(false)
   })
 })

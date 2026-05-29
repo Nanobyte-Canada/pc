@@ -206,6 +206,51 @@ export function computeTickerTotals(grid: WheelGridData, fxRate: number = 1.38):
   return totals
 }
 
+export function discoverTickers(positions: BrokerPosition[]): string[] {
+  const tickerSet = new Set<string>()
+  for (const p of positions) {
+    const fields = resolveOptionFields(p)
+    if (fields) tickerSet.add(fields.underlyingSymbol)
+  }
+  return Array.from(tickerSet).sort()
+}
+
+export function detectCCEligible(positions: BrokerPosition[]): Map<string, { sharesOwned: number; contractsAvailable: number }> {
+  const ccMap = new Map<string, { sharesOwned: number; contractsAvailable: number }>()
+  for (const p of positions) {
+    if (p.optionType != null || p.strikePrice != null) continue
+    const qty = Math.abs(p.quantity ?? 0)
+    if (qty >= 100) {
+      ccMap.set(p.symbol, {
+        sharesOwned: qty,
+        contractsAvailable: Math.floor(qty / 100),
+      })
+    }
+  }
+  return ccMap
+}
+
+export function generateWeeklyExpiries(startDate: Date, count: number): Array<{ date: string; dte: number; dayOfWeek: string; isMonthly: boolean }> {
+  const today = new Date()
+  const expiries: Array<{ date: string; dte: number; dayOfWeek: string; isMonthly: boolean }> = []
+  const d = new Date(startDate)
+  const dow = d.getDay()
+  if (dow !== 5) {
+    d.setDate(d.getDate() + ((5 - dow + 7) % 7))
+  }
+  for (let i = 0; i < count; i++) {
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    expiries.push({
+      date: iso,
+      dte: Math.max(0, diffDays(today, d)),
+      dayOfWeek: DAY_NAMES[d.getDay()],
+      isMonthly: isMonthlyExpiry(iso),
+    })
+    d.setDate(d.getDate() + 7)
+  }
+  return expiries
+}
+
 export function useWheelPositions(
   tickers: string[],
   connectionId?: number,
