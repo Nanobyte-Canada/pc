@@ -66,17 +66,7 @@ export function getDteUrgency(dte: number): DteUrgency {
   return 'safe'
 }
 
-export function isMonthlyExpiry(date: Date): boolean {
-  const thirdFriday = getThirdFriday(date.getFullYear(), date.getMonth())
-  return date.getDate() === thirdFriday.getDate()
-}
-
-function getThirdFriday(year: number, month: number): Date {
-  const first = new Date(year, month, 1)
-  const dayOfWeek = first.getDay()
-  const firstFriday = dayOfWeek <= 5 ? (5 - dayOfWeek + 1) : (5 + 7 - dayOfWeek + 1)
-  return new Date(year, month, firstFriday + 14)
-}
+export { isMonthlyExpiry } from '@/hooks/marketHolidays'
 
 export interface WheelChainStrike {
   strike: number

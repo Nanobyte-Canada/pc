@@ -8,6 +8,7 @@ import type {
   WheelTicker, TickerTotals,
 } from '@/types/wheel'
 import type { PremiumInfo } from '@/hooks/useWheelActivities'
+import { getWeeklyExpiryDate, isMonthlyExpiry } from '@/hooks/marketHolidays'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const MAX_DTE = 90
@@ -19,18 +20,6 @@ function diffDays(from: Date, to: Date): number {
   return Math.round((utcTo - utcFrom) / msPerDay)
 }
 
-function getThirdFriday(year: number, month: number): Date {
-  const first = new Date(year, month, 1)
-  const dayOfWeek = first.getDay()
-  const firstFriday = dayOfWeek <= 5 ? (5 - dayOfWeek + 1) : (5 + 7 - dayOfWeek + 1)
-  return new Date(year, month, firstFriday + 14)
-}
-
-function isMonthlyExpiry(dateStr: string): boolean {
-  const d = new Date(dateStr + 'T00:00:00')
-  const thirdFriday = getThirdFriday(d.getFullYear(), d.getMonth())
-  return d.getDate() === thirdFriday.getDate()
-}
 
 interface ParsedOption {
   underlying: string
@@ -239,11 +228,12 @@ export function generateWeeklyExpiries(startDate: Date, count: number): Array<{ 
     d.setDate(d.getDate() + ((5 - dow + 7) % 7))
   }
   for (let i = 0; i < count; i++) {
-    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const actual = getWeeklyExpiryDate(d)
+    const iso = `${actual.getFullYear()}-${String(actual.getMonth() + 1).padStart(2, '0')}-${String(actual.getDate()).padStart(2, '0')}`
     expiries.push({
       date: iso,
-      dte: Math.max(0, diffDays(today, d)),
-      dayOfWeek: DAY_NAMES[d.getDay()],
+      dte: Math.max(0, diffDays(today, actual)),
+      dayOfWeek: DAY_NAMES[actual.getDay()],
       isMonthly: isMonthlyExpiry(iso),
     })
     d.setDate(d.getDate() + 7)

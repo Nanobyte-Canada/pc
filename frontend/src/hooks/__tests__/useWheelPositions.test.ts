@@ -1,6 +1,7 @@
 // frontend/src/hooks/__tests__/useWheelPositions.test.ts
 import { describe, it, expect } from 'vitest'
-import { buildWheelGrid, computeTickerTotals, discoverTickers, detectCCEligible } from '../useWheelPositions'
+import { buildWheelGrid, computeTickerTotals, discoverTickers, detectCCEligible, generateWeeklyExpiries } from '../useWheelPositions'
+import { isMarketHoliday, isMonthlyExpiry, getWeeklyExpiryDate } from '../marketHolidays'
 import type { BrokerPosition } from '@/types/broker'
 
 function makePosition(overrides: Partial<BrokerPosition> = {}): BrokerPosition {
@@ -247,5 +248,66 @@ describe('detectCCEligible', () => {
     expect(ccMap.get('TQQQ')).toEqual({ sharesOwned: 100, contractsAvailable: 1 })
     expect(ccMap.get('QQU.TO')).toEqual({ sharesOwned: 300, contractsAvailable: 3 })
     expect(ccMap.has('TECL')).toBe(false)
+  })
+})
+
+describe('marketHolidays', () => {
+  it('identifies known market holidays', () => {
+    expect(isMarketHoliday('2026-07-03')).toBe(true)   // Independence Day (observed)
+    expect(isMarketHoliday('2026-12-25')).toBe(true)   // Christmas
+    expect(isMarketHoliday('2026-04-03')).toBe(true)   // Good Friday
+  })
+
+  it('returns false for regular trading days', () => {
+    expect(isMarketHoliday('2026-06-05')).toBe(false)  // regular Friday
+    expect(isMarketHoliday('2026-06-12')).toBe(false)  // regular Friday
+  })
+
+  it('shifts Friday expiry to Thursday when Friday is a holiday', () => {
+    // 2026-07-03 is a holiday (Independence Day observed) — should shift to 2026-07-02 (Thursday)
+    const friday = new Date(2026, 6, 3) // July 3
+    const actual = getWeeklyExpiryDate(friday)
+    expect(actual.getDate()).toBe(2)
+    expect(actual.getDay()).toBe(4) // Thursday
+  })
+
+  it('keeps Friday when it is not a holiday', () => {
+    const friday = new Date(2026, 5, 5) // June 5
+    const actual = getWeeklyExpiryDate(friday)
+    expect(actual.getDate()).toBe(5)
+    expect(actual.getDay()).toBe(5) // Friday
+  })
+
+  it('recognizes holiday-adjusted monthly expiry (3rd Friday shifted to Thursday)', () => {
+    // 2027-03-26 is Good Friday AND the 4th Friday — not a monthly
+    // Need a case where 3rd Friday IS a holiday. Check Juneteenth 2027:
+    // 2027-06-18 is Juneteenth (observed, Friday) AND the 3rd Friday of June 2027
+    expect(isMonthlyExpiry('2027-06-17')).toBe(true)  // Thursday before holiday 3rd Friday
+    expect(isMonthlyExpiry('2027-06-18')).toBe(false)  // holiday itself
+  })
+
+  it('recognizes normal 3rd Friday as monthly expiry', () => {
+    // June 2026: 3rd Friday (Jun 19) is Juneteenth holiday, so monthly shifts to Jun 18 (Thu)
+    expect(isMonthlyExpiry('2026-06-18')).toBe(true)
+    expect(isMonthlyExpiry('2026-06-19')).toBe(false)  // holiday — not a valid expiry
+    // May 2026: 3rd Friday (May 15) is not a holiday
+    expect(isMonthlyExpiry('2026-05-15')).toBe(true)
+    expect(isMonthlyExpiry('2026-05-08')).toBe(false)  // 2nd Friday
+  })
+})
+
+describe('generateWeeklyExpiries with holidays', () => {
+  it('generates Thursday expiry when Friday is a holiday', () => {
+    // Start from a date just before July 3, 2026 (holiday Friday)
+    const start = new Date(2026, 5, 29) // June 29 (Monday)
+    const expiries = generateWeeklyExpiries(start, 2)
+
+    // First expiry: July 2 (Thursday, shifted from July 3 holiday)
+    expect(expiries[0].date).toBe('2026-07-02')
+    expect(expiries[0].dayOfWeek).toBe('Thursday')
+
+    // Second expiry: July 10 (regular Friday)
+    expect(expiries[1].date).toBe('2026-07-10')
+    expect(expiries[1].dayOfWeek).toBe('Friday')
   })
 })
