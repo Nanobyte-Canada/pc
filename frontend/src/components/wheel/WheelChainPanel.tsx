@@ -112,7 +112,8 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
     onStrikeSelect(context.ticker, selectedExpiry, strike.strike, context.optionSide)
   }, [context.ticker, selectedExpiry, context.optionSide, onStrikeSelect])
 
-  const priceChangePct = spotPrice > 0 && quote ? ((quote.last / spotPrice - 1) * 100) : 0
+  const priceChange = spotPrice - initialSpotPrice
+  const priceChangePct = initialSpotPrice > 0 ? ((spotPrice / initialSpotPrice - 1) * 100) : 0
 
   const panelContent = (
     <>
@@ -124,11 +125,9 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
 
       <div className="wcp2-quote">
         <span className="wcp2-quote__price">{formatCurrency(spotPrice, 'USD')}</span>
-        {quote && (
-          <span className={`wcp2-quote__change ${priceChangePct >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
-            {priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%
-          </span>
-        )}
+        <span className={`wcp2-quote__change ${priceChange >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
+          {priceChange >= 0 ? '+' : ''}{formatCurrency(Math.abs(priceChange), 'USD')} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%)
+        </span>
         <span className="wcp2-quote__live"><span className="wcp2-quote__dot" /> Live</span>
       </div>
 
