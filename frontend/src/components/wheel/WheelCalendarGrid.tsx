@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { WheelPosition, CCInfo } from '@/types/wheel'
 import { getDteUrgency } from '@/types/wheel'
 import { PositionCard } from './PositionCard'
@@ -41,13 +42,26 @@ export function WheelCalendarGrid({
 }: WheelCalendarGridProps) {
   const today = new Date().toISOString().split('T')[0]
 
+  const visibleDateRange = useMemo(() => {
+    if (expiries.length === 0) return dateRange
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+    const visibleCount = isMobile ? Math.min(2, expiries.length) : expiries.length
+    const fmt = (iso: string) => {
+      const d = new Date(iso + 'T00:00:00')
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    }
+    const last = expiries[visibleCount - 1]
+    const year = new Date(expiries[0].date + 'T00:00:00').getFullYear()
+    return `${fmt(expiries[0].date)} — ${fmt(last.date)}, ${year}`
+  }, [expiries, dateRange])
+
   return (
     <>
       <div className="wcg-timeline">
         <button className="wcg-timeline__btn" onClick={onPrev} aria-label="Previous weeks">
           <ChevronLeft size={14} />
         </button>
-        <span className="wcg-timeline__range">{dateRange}</span>
+        <span className="wcg-timeline__range">{visibleDateRange}</span>
         <button className="wcg-timeline__btn" onClick={onNext} aria-label="Next weeks">
           <ChevronRight size={14} />
         </button>
@@ -113,10 +127,10 @@ export function WheelCalendarGrid({
                           ))}
                           <div className="wcg-slot-row">
                             <button className="wcg-empty-slot" onClick={() => onEmptySlotClick(row.symbol, exp.date)}>
-                              + Sell CSP
+                              + CSP
                             </button>
                             <button className="wcg-cc-slot" onClick={() => onCCSlotClick(row.symbol, exp.date)}>
-                              + Sell CC
+                              + CC
                             </button>
                           </div>
                         </div>
