@@ -24,7 +24,7 @@ class TwsIbkrClient(
     private lateinit var signal: EReaderSignal
     private val connected = AtomicBoolean(false)
     private val nextReqId = AtomicInteger(1)
-    private val connectionReady = CountDownLatch(1)
+    @Volatile private var connectionReady = CountDownLatch(1)
 
     private val sendExecutor: ExecutorService = Executors.newSingleThreadExecutor { r ->
         Thread(r, "tws-send").apply { isDaemon = true }
@@ -62,6 +62,7 @@ class TwsIbkrClient(
             return
         }
 
+        connectionReady = CountDownLatch(1)
         signal = EJavaSignal()
         client = EClientSocket(this, signal)
         client.eConnect(properties.host, properties.port, properties.clientId)
@@ -453,5 +454,10 @@ class TwsIbkrClient(
     override fun connectionClosed() {
         log.warn("TwsIbkrClient: connection closed by TWS")
         connected.set(false)
+        pendingRequests.values.forEach { it.completeExceptionally(IllegalStateException("Connection closed")) }
+        pendingRequests.clear()
+        contractAccumulators.clear()
+        optionParamAccumulators.clear()
+        snapshotAccumulators.clear()
     }
 }
