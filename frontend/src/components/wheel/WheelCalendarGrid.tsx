@@ -97,17 +97,8 @@ export function WheelCalendarGrid({
                 <tr key={row.symbol}>
                   <td className="wcg-td-ticker">
                     <div className="wcg-ticker-name">{row.symbol}</div>
-                    <div className="wcg-ticker-price">
-                      {row.currentPrice != null ? `$${row.currentPrice.toLocaleString()}` : '--'}
-                    </div>
-                    <div className="wcg-ticker-exposure">
-                      {getCurrencyLabel(row.currency)} {row.totalExposure.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                    </div>
                     {row.ccInfo && (
-                      <>
-                        <div className="wcg-ticker-shares">{row.ccInfo.sharesOwned} shares</div>
-                        <div className="wcg-ticker-cc-badge">&#x25B2; {row.ccInfo.contractsAvailable} CC</div>
-                      </>
+                      <div className="wcg-ticker-shares">{row.ccInfo.sharesOwned} shares</div>
                     )}
                   </td>
                   {expiries.map(exp => {
@@ -156,8 +147,4 @@ export function WheelCalendarGrid({
 function formatExpiryShort(iso: string): string {
   const d = new Date(iso + 'T00:00:00')
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-function getCurrencyLabel(currency: string): string {
-  return currency === 'CAD' ? 'C$' : 'US$'
 }
