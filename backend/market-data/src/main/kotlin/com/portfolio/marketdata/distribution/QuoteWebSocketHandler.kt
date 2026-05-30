@@ -212,4 +212,22 @@ class QuoteWebSocketHandler(
             }
         }
     }
+
+    fun broadcastConnectionStatus(connected: Boolean) {
+        val json = try {
+            objectMapper.writeValueAsString(
+                mapOf(
+                    "type" to "connection_status",
+                    "connected" to connected,
+                    "service" to "market-data"
+                )
+            )
+        } catch (e: Exception) { return }
+        val message = TextMessage(json)
+        sessions.values.forEach { session ->
+            synchronized(session) {
+                try { if (session.isOpen) session.sendMessage(message) } catch (_: Exception) {}
+            }
+        }
+    }
 }
