@@ -1,7 +1,7 @@
 package com.portfolio.marketdata.ibkr
 
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Profile
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.DayOfWeek
@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 @Component
-@Profile("dev", "local", "test")
+@ConditionalOnExpression("'\${ibkr.host:}'.length() == 0")
 class FakeIbkrClient : IbkrClient {
 
     private val logger = LoggerFactory.getLogger(FakeIbkrClient::class.java)
