@@ -208,11 +208,13 @@ export function detectCCEligible(positions: BrokerPosition[]): Map<string, { sha
   const ccMap = new Map<string, { sharesOwned: number; contractsAvailable: number }>()
   for (const p of positions) {
     if (p.optionType != null || p.strikePrice != null) continue
-    const qty = Math.abs(p.quantity ?? 0)
+    const qty = Math.abs(p.quantity ?? (p as unknown as Record<string, number>).totalQuantity ?? 0)
     if (qty >= 100) {
+      const existing = ccMap.get(p.symbol)
+      const total = existing ? existing.sharesOwned + qty : qty
       ccMap.set(p.symbol, {
-        sharesOwned: qty,
-        contractsAvailable: Math.floor(qty / 100),
+        sharesOwned: total,
+        contractsAvailable: Math.floor(total / 100),
       })
     }
   }
