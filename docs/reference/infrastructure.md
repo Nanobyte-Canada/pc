@@ -777,6 +777,361 @@ npm run dev
 
 ---
 
+## Home Server Deployment
+
+Production and UAT environments hosted on a dedicated home server with comprehensive monitoring.
+
+### Hardware
+
+- **CPU:** AMD Ryzen 9 9950X (16 cores / 32 threads)
+- **RAM:** 96GB DDR5
+- **Storage:** 4TB NVMe SSD
+- **OS:** Debian 13 (Trixie)
+- **Location:** On-premises data center
+
+### Directory Structure
+
+```
+/opt/portfolio/
+├── prod/                 # Production environment
+│   ├── docker-compose.yml
+│   ├── .env
+│   └── (service volumes)
+├── uat/                  # User acceptance testing environment
+│   ├── docker-compose.yml
+│   ├── .env
+│   └── (service volumes)
+├── monitoring/           # Observability stack
+│   ├── docker-compose.yml
+│   ├── prometheus/
+│   ├── grafana/
+│   ├── loki/
+│   └── alerting/
+├── cloudflared/          # Cloudflare Tunnel daemon
+│   └── config.yml
+├── scripts/              # Management and backup scripts
+│   ├── deploy.sh
+│   ├── backup.sh
+│   └── rollback.sh
+└── backups/              # Database backups
+    ├── daily/
+    └── weekly/
+```
+
+### Docker Compose Stacks
+
+Three independent Docker Compose stacks run simultaneously.
+
+#### Production Stack (ports 10000-10084, 15432, 16379)
+
+| Service | Image | Ports | Notes |
+|---------|-------|-------|-------|
+| `prod-frontend` | `ghcr.io/portfolio/frontend:main-*` | 10000:80 | React SPA via Nginx |
+| `prod-backend` | `ghcr.io/portfolio/backend:main-*` | 10080:8080 | Main API service |
+| `prod-ingestion` | `ghcr.io/portfolio/ingestion:main-*` | 10081:8081 | Data ingestion service |
+| `prod-market-data` | `ghcr.io/portfolio/market-data:main-*` | 10082:8082 | IBKR + WebSocket streaming |
+| `prod-strategy` | `ghcr.io/portfolio/strategy:main-*` | 10083:8083 | Strategy engine |
+| `prod-broker-gateway` | `ghcr.io/portfolio/broker-gateway:main-*` | 10084:8084 | Broker adapter service |
+| `prod-postgres` | `postgres:16-alpine` | 15432:5432 | PostgreSQL database |
+| `prod-redis` | `redis:7-alpine` | 16379:6379 | Cache and session store |
+
+#### UAT Stack (ports 20000-20084, 25432, 26379)
+
+| Service | Image | Ports | Notes |
+|---------|-------|-------|-------|
+| `uat-frontend` | `ghcr.io/portfolio/frontend:main-*` | 20000:80 | React SPA via Nginx |
+| `uat-backend` | `ghcr.io/portfolio/backend:main-*` | 20080:8080 | Main API service |
+| `uat-ingestion` | `ghcr.io/portfolio/ingestion:main-*` | 20081:8081 | Data ingestion service |
+| `uat-market-data` | `ghcr.io/portfolio/market-data:main-*` | 20082:8082 | IBKR + WebSocket streaming |
+| `uat-strategy` | `ghcr.io/portfolio/strategy:main-*` | 20083:8083 | Strategy engine |
+| `uat-broker-gateway` | `ghcr.io/portfolio/broker-gateway:main-*` | 20084:8084 | Broker adapter service |
+| `uat-postgres` | `postgres:16-alpine` | 25432:5432 | PostgreSQL database |
+| `uat-redis` | `redis:7-alpine` | 26379:6379 | Cache and session store |
+
+#### Monitoring Stack (ports 13000-19187)
+
+| Service | Ports | Purpose |
+|---------|-------|---------|
+| `grafana` | 13000:3000 | Visualization and dashboards |
+| `uptime-kuma` | 13001:3001 | Public status page |
+| `prometheus` | 19090:9090 | Metrics collection and storage |
+| `loki` | 13100:3100 | Log aggregation |
+| `promtail` | - | Log shipping to Loki |
+| `cadvisor` | 18080:8080 | Container metrics |
+| `node_exporter` | 19100:9100 | System metrics |
+| `postgres_exporter` | 19187:9187 | PostgreSQL metrics |
+| `redis_exporter` | 19121:9121 | Redis metrics |
+
+### Cloudflare Tunnel Routing
+
+All external traffic routed through Cloudflare Tunnel (no exposed ports). Zero-trust network access.
+
+| Hostname | Target | Notes |
+|----------|--------|-------|
+| `portfolio.nanobyte.ca` | `http://localhost:10000` (frontend), `http://localhost:10080` (backend) | Production environment |
+| `uatportfolio.nanobyte.ca` | `http://localhost:20000` (frontend), `http://localhost:20080` (backend) | UAT environment, Cloudflare Access protected |
+| `status.nanobyte.ca` | `http://localhost:13001` | Uptime Kuma public status page |
+| `grafana.nanobyte.ca` | `http://localhost:13000` | Grafana dashboards, Cloudflare Access protected |
+
+### CI/CD Workflows
+
+#### build.yml -- Build and Publish Images
+
+**Triggers:** Push to `main` branch
+
+**Steps:**
+1. Run full CI test suite (`ci.yml`)
+2. Build 8 Docker images in parallel (frontend, backend, ingestion, market-data, strategy, broker-gateway, postgres-exporter, redis-exporter)
+3. Tag images with `main-<sha>` (e.g., `main-abc1234`)
+4. Push to GitHub Container Registry (`ghcr.io/portfolio/*`)
+
+**Artifacts:** Docker images published to `ghcr.io/portfolio/{service}:main-{sha}`
+
+#### deploy.yml -- Deploy to Home Server
+
+**Triggers:** Manual workflow dispatch via GitHub UI
+
+**Inputs:**
+- `environment` (required): `prod` or `uat`
+- `tag` (required): Docker image tag (e.g., `main-abc1234`)
+
+**Steps:**
+1. Connect to home server via SSH through Cloudflare Tunnel
+2. Pull images from `ghcr.io/portfolio/*:${tag}` for all 8 services
+3. Update `docker-compose.yml` image tags
+4. Run `docker compose down && docker compose up -d`
+5. Wait for health checks (60s timeout)
+6. Send Slack notification with deployment status
+
+**Secrets required:**
+- `DEPLOY_SSH_KEY` -- SSH private key for home server access
+- `SERVER_HOSTNAME` -- Home server hostname (via Cloudflare Tunnel)
+- `SLACK_WEBHOOK_URL` -- Slack channel webhook for notifications
+
+**Rollback procedure:** Re-run workflow with previous tag
+
+### Observability (Production Only)
+
+Comprehensive monitoring and alerting for production environment.
+
+#### Metrics Collection
+
+- **Prometheus** scrapes all 5 backend services via `/actuator/prometheus` endpoints (10s interval)
+- **Exporters:** node_exporter (system), cadvisor (containers), postgres_exporter (DB), redis_exporter (cache)
+- **Retention:** 90 days
+
+#### Grafana Dashboards
+
+| Dashboard | Panels | Key Metrics |
+|-----------|--------|-------------|
+| **JVM Overview** | Heap usage, GC pauses, thread count, CPU time | JVM health across all backend services |
+| **API Performance** | Request rate, error rate, latency (p50/p95/p99), endpoint breakdown | HTTP performance by endpoint and method |
+| **Infrastructure** | CPU, memory, disk I/O, network | System-level resource utilization |
+| **Database** | Connections, query rate, cache hit ratio, slow queries | PostgreSQL performance and health |
+| **Redis** | Hit rate, evictions, memory usage, command rate | Cache effectiveness |
+
+#### Loki Log Aggregation
+
+- **Docker logging driver:** `loki` configured on all production containers
+- **Retention:** 30 days
+- **Queryable fields:** container name, service name, log level, timestamp
+- **Integration:** Grafana Explore for log correlation with metrics
+
+#### Slack Alerts (6 rules)
+
+| Alert | Condition | Severity |
+|-------|-----------|----------|
+| **Service Down** | Any backend service unreachable for 1 minute | Critical |
+| **High Error Rate** | HTTP 5xx errors > 5% for 5 minutes | Critical |
+| **JVM Heap Pressure** | Heap usage > 85% for 10 minutes | Warning |
+| **Disk Space Low** | Disk usage > 80% | Warning |
+| **Database Pool Exhausted** | Active connections > 90% for 5 minutes | Critical |
+| **Container Restart Loop** | Container restarted > 3 times in 10 minutes | Critical |
+
+#### Uptime Kuma
+
+- **Public status page:** `status.nanobyte.ca`
+- **Monitors:** Frontend (HTTPS), Backend (HTTPS), Database (TCP), Redis (TCP)
+- **Check interval:** 60 seconds
+- **History:** 90 days
+- **Notifications:** Slack webhook on status change
+
+### Security
+
+Zero-trust architecture with defense in depth.
+
+#### Network Security
+
+- **No exposed ports:** All inbound traffic via Cloudflare Tunnel only
+- **UFW firewall:**
+  - Default: deny all inbound
+  - Allow SSH (port 22) from LAN only (`192.168.1.0/24`)
+  - Allow outbound (unrestricted)
+- **Cloudflare Access:** Applied to `uatportfolio.nanobyte.ca` and `grafana.nanobyte.ca` (email authentication)
+
+#### Application Security
+
+- **Non-root containers:** All Docker containers run as unprivileged users
+- **Separate secrets:** Production and UAT environments have isolated `.env` files with unique credentials
+- **Secret rotation:** Database passwords and JWT keys rotated quarterly via Ansible playbook
+- **HTTPS only:** All external endpoints use TLS 1.3 (terminated at Cloudflare)
+
+### Backups
+
+Automated PostgreSQL backups with multi-tier retention.
+
+#### Backup Schedule
+
+- **Frequency:** Daily at 3:00 AM (both prod and UAT)
+- **Method:** `pg_dump` with custom format (`-Fc`)
+- **Compression:** gzip level 6
+- **Encryption:** AES-256 (GPG symmetric)
+
+#### Retention Policy
+
+| Tier | Frequency | Retention | Location |
+|------|-----------|-----------|----------|
+| **Daily** | Every day at 3 AM | 7 days | `/opt/portfolio/backups/daily/` |
+| **Weekly** | Sunday 3 AM | 30 days | `/opt/portfolio/backups/weekly/` |
+
+#### Backup Script
+
+Located at `/opt/portfolio/scripts/backup.sh`, runs via cron:
+
+```bash
+0 3 * * * /opt/portfolio/scripts/backup.sh prod >> /var/log/portfolio/backup.log 2>&1
+5 3 * * * /opt/portfolio/scripts/backup.sh uat >> /var/log/portfolio/backup.log 2>&1
+```
+
+**Restore procedure:**
+```bash
+# Decrypt backup
+gpg -d backup.sql.gz.gpg | gunzip > backup.sql
+
+# Restore to database
+docker compose exec -T prod-postgres psql -U portfolio portfolio < backup.sql
+```
+
+### Port Reference Table
+
+Complete port allocation across all three stacks.
+
+| Port Range | Stack | Service | Protocol |
+|------------|-------|---------|----------|
+| 10000 | Production | Frontend (Nginx) | HTTP |
+| 10080 | Production | Backend API | HTTP |
+| 10081 | Production | Ingestion service | HTTP |
+| 10082 | Production | Market data service | HTTP |
+| 10083 | Production | Strategy service | HTTP |
+| 10084 | Production | Broker gateway | HTTP |
+| 15432 | Production | PostgreSQL | TCP |
+| 16379 | Production | Redis | TCP |
+| 20000 | UAT | Frontend (Nginx) | HTTP |
+| 20080 | UAT | Backend API | HTTP |
+| 20081 | UAT | Ingestion service | HTTP |
+| 20082 | UAT | Market data service | HTTP |
+| 20083 | UAT | Strategy service | HTTP |
+| 20084 | UAT | Broker gateway | HTTP |
+| 25432 | UAT | PostgreSQL | TCP |
+| 26379 | UAT | Redis | TCP |
+| 13000 | Monitoring | Grafana | HTTP |
+| 13001 | Monitoring | Uptime Kuma | HTTP |
+| 13100 | Monitoring | Loki | HTTP |
+| 18080 | Monitoring | cAdvisor | HTTP |
+| 19090 | Monitoring | Prometheus | HTTP |
+| 19100 | Monitoring | node_exporter | HTTP |
+| 19121 | Monitoring | redis_exporter | HTTP |
+| 19187 | Monitoring | postgres_exporter | HTTP |
+
+**Note:** All ports are bound to `0.0.0.0` but protected by UFW. Only Cloudflare Tunnel has local access.
+
+### GitHub Secrets Required
+
+| Secret | Purpose | Example |
+|--------|---------|---------|
+| `DEPLOY_SSH_KEY` | SSH private key for server access | RSA 4096 private key |
+| `SERVER_HOSTNAME` | Home server hostname via Cloudflare Tunnel | `ssh.nanobyte.ca` |
+| `SLACK_WEBHOOK_URL` | Deployment notifications | `https://hooks.slack.com/services/...` |
+| `PROD_ENV_FILE` | Production `.env` contents | Base64-encoded env vars |
+| `UAT_ENV_FILE` | UAT `.env` contents | Base64-encoded env vars |
+
+### Server Setup
+
+Initial server provisioning automated via script at `deploy/scripts/setup-server.sh`.
+
+**Setup script actions:**
+1. Install Docker Engine and Docker Compose plugin
+2. Create `/opt/portfolio/` directory structure
+3. Install and configure Cloudflare Tunnel daemon
+4. Install UFW and apply firewall rules
+5. Install Prometheus exporters (node, postgres, redis)
+6. Set up log rotation for application logs
+7. Configure systemd service for Cloudflare Tunnel auto-start
+8. Create backup cron jobs
+
+**Run setup:**
+```bash
+ssh user@nanobyte.ca 'bash -s' < deploy/scripts/setup-server.sh
+```
+
+**Verification:**
+```bash
+# Check services
+systemctl status docker cloudflared
+
+# Check firewall
+sudo ufw status verbose
+
+# Check directory structure
+ls -lah /opt/portfolio/
+```
+
+### Deploy Procedure
+
+Standard deployment workflow using GitHub Actions.
+
+**1. Trigger build (automatic on push to main):**
+```bash
+git push origin main
+# build.yml runs automatically
+```
+
+**2. Trigger deployment (manual):**
+```bash
+# Via GitHub CLI
+gh workflow run deploy.yml -f environment=prod -f tag=main-abc1234
+
+# Via GitHub UI
+# Actions → deploy.yml → Run workflow → Select environment and tag
+```
+
+**3. Monitor deployment:**
+```bash
+# Watch workflow run
+gh run watch
+
+# Check Slack channel for notification
+# Or SSH to server and check logs
+ssh user@nanobyte.ca
+docker compose -f /opt/portfolio/prod/docker-compose.yml logs -f
+```
+
+**4. Verify deployment:**
+- Check `status.nanobyte.ca` for service health
+- Check `grafana.nanobyte.ca` for metrics
+- Smoke test application at `portfolio.nanobyte.ca`
+
+**Rollback:**
+```bash
+# Find previous successful tag
+gh run list --workflow=build.yml --status=success
+
+# Re-deploy previous tag
+gh workflow run deploy.yml -f environment=prod -f tag=main-xyz5678
+```
+
+---
+
 ## Cross-References
 
 - For detailed environment variable documentation and defaults, see [configurations.md](configurations.md)
