@@ -100,7 +100,6 @@ export function WheelCalendarGrid({
                     const cell = row.cells[exp.date]
                     const positions = cell?.positions ?? []
                     const isToday = exp.date === today
-                    const hasCC = row.ccInfo != null
 
                     return (
                       <td key={exp.date} className={`wcg-td-cell ${isToday ? 'wcg-td-cell--today' : ''}`}>
@@ -112,21 +111,14 @@ export function WheelCalendarGrid({
                               onClick={p => onPositionClick(p, row.symbol, exp.date)}
                             />
                           ))}
-                          {hasCC && (
-                            <button className="wcg-cc-slot" onClick={() => onCCSlotClick(row.symbol, exp.date)}>
-                              + Sell CC
-                            </button>
-                          )}
-                          {!hasCC && positions.length === 0 && (
+                          <div className="wcg-slot-row">
                             <button className="wcg-empty-slot" onClick={() => onEmptySlotClick(row.symbol, exp.date)}>
                               + Sell CSP
                             </button>
-                          )}
-                          {!hasCC && positions.length > 0 && (
-                            <button className="wcg-empty-slot wcg-empty-slot--compact" onClick={() => onEmptySlotClick(row.symbol, exp.date)}>
-                              + Sell CSP
+                            <button className="wcg-cc-slot" onClick={() => onCCSlotClick(row.symbol, exp.date)}>
+                              + Sell CC
                             </button>
-                          )}
+                          </div>
                         </div>
                       </td>
                     )

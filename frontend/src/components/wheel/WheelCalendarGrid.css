@@ -184,6 +184,18 @@
 }
 .wcg-empty-slot--compact { padding: 6px; font-size: 9px; }
 
+/* Side-by-side CSP + CC slot row */
+.wcg-slot-row {
+  display: flex;
+  gap: 4px;
+}
+.wcg-slot-row .wcg-empty-slot,
+.wcg-slot-row .wcg-cc-slot {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 9px;
+}
+
 .wcg-cc-slot {
   display: flex;
   align-items: center;
