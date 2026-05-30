@@ -2,7 +2,10 @@
 
 Comprehensive audit of unused, legacy, and redundant code in the Portfolio Construction App. All findings verified by searching the actual codebase.
 
-**Last cleanup:** 2026-04-12 — V67-V68 screener migration completed.
+**Last cleanup:** 2026-05-30 — Removed `FakeIbkrClient` after real IBKR Gateway connection verified.
+- **Market-data service:** Removed `FakeIbkrClient` (synthetic market data generator). `TwsIbkrClient` is now the sole `IbkrClient` implementation — `@ConditionalOnExpression` removed, always active. `IBKR_HOST` must be set for connection.
+
+**Previous cleanup:** 2026-04-12 — V67-V68 screener migration completed.
 - **Backend:** Dropped legacy `stocks`/`etfs`/`etf_holdings`/GICS tables, removed `ScreenerService`/`InstrumentSearchService`/`ReferenceDataService`/`HoldingsService`/`CachedLookupService`, added `InstrumentScreenerService`/`IngestionInstrumentLookupService`/`CountryRegionLookupService`.
 - **Frontend:** Removed old `StockScreenerPage`/`EtfScreenerPage`/`StockDetailPage`/`EtfDetailPage`, old hooks/services/types, replaced with unified `ScreenerPage`/`InstrumentDetailPage`/`useNewScreener`/`screenerService`/`types/screener`.
 

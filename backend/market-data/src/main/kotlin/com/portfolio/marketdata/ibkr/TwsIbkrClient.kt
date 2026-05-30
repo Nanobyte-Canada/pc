@@ -3,7 +3,6 @@ package com.portfolio.marketdata.ibkr
 import com.ib.client.*
 import com.portfolio.marketdata.config.AppProperties
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -13,7 +12,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 @Component
-@ConditionalOnExpression("'\${ibkr.host:}'.length() > 0")
 class TwsIbkrClient(
     private val properties: AppProperties
 ) : DefaultEWrapper(), IbkrClient {
