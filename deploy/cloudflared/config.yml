@@ -1,0 +1,81 @@
+# Cloudflare Tunnel configuration
+# Replace TUNNEL_ID with the actual tunnel ID after running:
+#   cloudflared tunnel create portfolio-tunnel
+#
+# After creating the tunnel, update the credentials-file path
+# and add DNS records:
+#   cloudflared tunnel route dns portfolio-tunnel portfolio.nanobyte.ca
+#   cloudflared tunnel route dns portfolio-tunnel uatportfolio.nanobyte.ca
+#   cloudflared tunnel route dns portfolio-tunnel status.nanobyte.ca
+#   cloudflared tunnel route dns portfolio-tunnel grafana.nanobyte.ca
+
+tunnel: TUNNEL_ID
+credentials-file: /etc/cloudflared/TUNNEL_ID.json
+
+ingress:
+  # Prod backend API
+  - hostname: portfolio.nanobyte.ca
+    path: /api/.*
+    service: http://localhost:10080
+
+  # Prod backend auth endpoints
+  - hostname: portfolio.nanobyte.ca
+    path: /auth/.*
+    service: http://localhost:10080
+
+  # Prod backend health/actuator
+  - hostname: portfolio.nanobyte.ca
+    path: /health
+    service: http://localhost:10080
+
+  - hostname: portfolio.nanobyte.ca
+    path: /actuator/.*
+    service: http://localhost:10080
+
+  # Prod backend WebSocket
+  - hostname: portfolio.nanobyte.ca
+    path: /ws/.*
+    service: http://localhost:10080
+
+  # Prod frontend (catch-all for portfolio.nanobyte.ca)
+  - hostname: portfolio.nanobyte.ca
+    service: http://localhost:10000
+
+  # UAT backend API
+  - hostname: uatportfolio.nanobyte.ca
+    path: /api/.*
+    service: http://localhost:20080
+
+  # UAT backend auth endpoints
+  - hostname: uatportfolio.nanobyte.ca
+    path: /auth/.*
+    service: http://localhost:20080
+
+  # UAT backend health/actuator
+  - hostname: uatportfolio.nanobyte.ca
+    path: /health
+    service: http://localhost:20080
+
+  - hostname: uatportfolio.nanobyte.ca
+    path: /actuator/.*
+    service: http://localhost:20080
+
+  # UAT backend WebSocket
+  - hostname: uatportfolio.nanobyte.ca
+    path: /ws/.*
+    service: http://localhost:20080
+
+  # UAT frontend (catch-all for uatportfolio.nanobyte.ca)
+  - hostname: uatportfolio.nanobyte.ca
+    service: http://localhost:20000
+
+  # Uptime Kuma status page
+  - hostname: status.nanobyte.ca
+    service: http://localhost:13001
+
+  # Grafana dashboards
+  - hostname: grafana.nanobyte.ca
+    service: http://localhost:13000
+
+  # Catch-all (required by cloudflared)
+  - service: http_status:404
