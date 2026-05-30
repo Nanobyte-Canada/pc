@@ -1,0 +1,12 @@
+server:
+  forward-headers-strategy: framework
+
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    com.portfolio: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: WARN
