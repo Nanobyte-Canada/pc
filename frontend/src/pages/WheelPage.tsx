@@ -316,6 +316,7 @@ export function WheelPage() {
                 position={selectedPosition.position}
                 ticker={selectedPosition.ticker}
                 currentPrice={underlyingPrices[selectedPosition.ticker]}
+                expiryDate={selectedPosition.expiryDate}
                 onClose={() => setSelectedPosition(null)}
                 accounts={activeConnections.map(c => ({
                   connectionId: c.id,

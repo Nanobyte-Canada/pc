@@ -21,6 +21,7 @@ interface OrderPanelProps {
   position?: WheelPosition | null
   ticker: string
   currentPrice?: number
+  expiryDate?: string
   onClose: () => void
   accounts: OrderPanelAccount[]
   buyingPower: CurrencyAmount[]
@@ -71,7 +72,7 @@ function generateExpiryDates(): string[] {
   return dates
 }
 
-export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, buyingPower }: OrderPanelProps) {
+export function OrderPanel({ position, ticker, currentPrice, expiryDate, onClose, accounts, buyingPower }: OrderPanelProps) {
   const isExistingPosition = !!position
   const { success, error: showError } = useToast()
 
@@ -79,7 +80,7 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
   const [optionType, setOptionType] = useState<'Call' | 'Put'>(
     position?.type === 'CC' ? 'Call' : 'Put'
   )
-  const [expiration, setExpiration] = useState(position?.id ? '' : '')
+  const [expiration, setExpiration] = useState(expiryDate ?? '')
   const [strike, setStrike] = useState(position?.strike?.toString() ?? '')
   const [orderType, setOrderType] = useState<string>('Limit')
   const [quantity, setQuantity] = useState(position?.quantity ?? 1)
@@ -104,7 +105,10 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
       setLimitPrice(position.currentPrice != null ? position.currentPrice.toFixed(2) : '')
       setSelectedAccountId(position.connectionId ?? accounts[0]?.connectionId ?? 0)
     }
-  }, [position, accounts])
+    if (expiryDate) {
+      setExpiration(expiryDate)
+    }
+  }, [position, accounts, expiryDate])
 
   const setChain = useQuoteStore(s => s.setChain)
 
@@ -143,9 +147,15 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
   const price = currentPrice ?? position?.currentPrice ?? 0
 
   // Generate expirations and strikes for dropdowns
-  const expiryOptions = useMemo(() => generateExpiryDates(), [])
+  const expiryOptions = useMemo(() => {
+    const generated = generateExpiryDates()
+    if (expiryDate && !generated.includes(expiryDate)) {
+      generated.push(expiryDate)
+      generated.sort()
+    }
+    return generated
+  }, [expiryDate])
   const strikeOptions = useMemo(() => {
-    // Generate strikes around the current price
     const center = price > 0 ? Math.round(price) : 100
     const step = center > 200 ? 5 : center > 50 ? 2.5 : 1
     const strikes: number[] = []
@@ -153,8 +163,13 @@ export function OrderPanel({ position, ticker, currentPrice, onClose, accounts, 
       const s = Math.round((center + i * step) * 100) / 100
       if (s > 0) strikes.push(s)
     }
+    const strikeNum = position?.strike ?? (expiryDate ? parseFloat(strike) : NaN)
+    if (!isNaN(strikeNum) && strikeNum > 0 && !strikes.includes(strikeNum)) {
+      strikes.push(strikeNum)
+      strikes.sort((a, b) => a - b)
+    }
     return strikes
-  }, [price])
+  }, [price, position?.strike, expiryDate, strike])
 
   // Estimated total
   const estimatedTotal = useMemo(() => {
