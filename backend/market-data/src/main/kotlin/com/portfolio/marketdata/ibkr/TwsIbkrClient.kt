@@ -90,6 +90,12 @@ class TwsIbkrClient(
         if (!connectionReady.await(10, TimeUnit.SECONDS)) {
             log.warn("TwsIbkrClient: timed out waiting for nextValidId callback")
         }
+
+        // Request delayed data as fallback if real-time API subscription not available
+        if (connected.get()) {
+            client.reqMarketDataType(3)
+            log.info("TwsIbkrClient: requested delayed market data type (fallback)")
+        }
     }
 
     override fun disconnect() {
@@ -433,6 +439,8 @@ class TwsIbkrClient(
             }
             // Market data farm messages (informational)
             2104, 2106, 2158 -> log.info("TwsIbkrClient: [{}] {}", errorCode, errorMsg)
+            // Market data subscription warning — delayed data may follow
+            10089, 10090 -> log.info("TwsIbkrClient: [{}] {} (reqId={})", errorCode, errorMsg, id)
             // No security definition found
             200 -> {
                 log.warn("TwsIbkrClient: [{}] {} (reqId={})", errorCode, errorMsg, id)

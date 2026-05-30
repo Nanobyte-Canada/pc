@@ -4,8 +4,8 @@ import com.portfolio.common.domain.Quote
 import com.portfolio.marketdata.api.dto.QuoteResponse
 import com.portfolio.marketdata.db.repository.UnderlyingPriceRepository
 import com.portfolio.marketdata.distribution.QuoteCacheService
-import com.portfolio.marketdata.ibkr.FakeIbkrClient
 import com.portfolio.marketdata.ibkr.IbkrClient
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -22,6 +22,8 @@ class QuoteController(
     private val ibkrClient: IbkrClient
 ) {
 
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     @GetMapping("/{symbol}")
     fun getQuote(@PathVariable symbol: String): ResponseEntity<QuoteResponse> {
         val cachedQuote = quoteCacheService.getQuote(symbol)
@@ -37,11 +39,23 @@ class QuoteController(
                 symbol = latestPrice.ticker, bid = latestPrice.price, ask = latestPrice.price,
                 last = latestPrice.price, volume = latestPrice.volume ?: 0L, timestamp = latestPrice.observedAt
             )
-        } else {
-            val spot = (ibkrClient as? FakeIbkrClient)?.getSpotPrice(symbol)
+        } else if (ibkrClient.isConnected()) {
+            val contracts = ibkrClient.requestContractDetails(symbol, "STK")
+            val conId = contracts.firstOrNull()?.conId
                 ?: return ResponseEntity.notFound().build()
-            val price = BigDecimal.valueOf(spot)
-            Quote(symbol = symbol, bid = price, ask = price, last = price, volume = 50_000_000L, timestamp = Instant.now())
+            val snapshot = ibkrClient.requestMarketDataSnapshot(conId)
+                ?: return ResponseEntity.notFound().build()
+            val price = snapshot.last ?: snapshot.bid ?: snapshot.ask ?: return ResponseEntity.notFound().build()
+            Quote(
+                symbol = symbol,
+                bid = BigDecimal.valueOf(price),
+                ask = BigDecimal.valueOf(snapshot.ask ?: price),
+                last = BigDecimal.valueOf(price),
+                volume = snapshot.volume ?: 0L,
+                timestamp = Instant.now()
+            )
+        } else {
+            return ResponseEntity.notFound().build()
         }
 
         quoteCacheService.cacheQuote(quote)
