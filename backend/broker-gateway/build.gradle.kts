@@ -19,6 +19,7 @@ java {
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://invesdwin.de/repo/invesdwin-oss/") }
 }
 
 dependencies {
@@ -33,6 +34,9 @@ dependencies {
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+    // IBKR TWS API
+    implementation("com.interactivebrokers:tws-api:10.20.01")
 
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
