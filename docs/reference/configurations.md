@@ -485,7 +485,7 @@ spring.mvc.problemdetails.enabled: true
 | `REDIS_HOST` | Redis hostname | `localhost` | Market data service |
 | `REDIS_PORT` | Redis port | `6379` | Market data service |
 | `IBKR_HOST` | Interactive Brokers TWS/Gateway host | (empty) | Market data service |
-| `IBKR_PORT` | Interactive Brokers TWS/Gateway port | `4002` | Market data service |
+| `IBKR_PORT` | Interactive Brokers TWS/Gateway port | `4001` | Market data service |
 | `IBKR_CLIENT_ID` | IBKR client connection ID | `1` | Market data service |
 
 ---
@@ -530,7 +530,7 @@ spring.mvc.problemdetails.enabled: true
 | `GATEWAY_API_KEY` | Service-to-service authentication key | `dev-gateway-key` | Broker gateway service |
 | `IBKR_GATEWAY_ENABLED` | Enable IBKR adapter | `false` | Broker gateway service |
 | `IBKR_HOST` | TWS/IB Gateway host (shared with market-data) | (empty) | Broker gateway service |
-| `IBKR_PORT` | TWS/IB Gateway port | `4002` | Broker gateway service |
+| `IBKR_PORT` | TWS/IB Gateway port | `4001` | Broker gateway service |
 | `IBKR_GATEWAY_CLIENT_ID` | TWS client ID for gateway (market-data uses `1`) | `2` | Broker gateway service |
 | `IBKR_FLEX_TOKEN` | Flex Web Service token for historical transactions | (empty) | Broker gateway service |
 | `IBKR_FLEX_QUERY_ID` | Pre-configured Flex Query ID | (empty) | Broker gateway service |

@@ -214,6 +214,17 @@ Full-stack local development environment.
 - Vite dev server proxies `/strategy-api` to `http://localhost:8083` (strategy service), rewrites path prefix
 - Vite dev server proxies `/ws/quotes` to `ws://localhost:8082` (WebSocket for real-time quotes)
 - Market-data and strategy services use Gradle composite builds with shared `backend/common/` module
+- `market-data-service` and `broker-gateway-service` include `extra_hosts: ["host.docker.internal:host-gateway"]` for connecting to IB Gateway/TWS running on the Docker host
+
+### IB Gateway / TWS Prerequisites
+
+To use IBKR integration locally:
+1. Install and run IB Gateway (or TWS) on the Docker host
+2. Configure IB Gateway to listen on port **4001** (the default API port for live; paper uses 4002)
+3. Enable **API connections** in IB Gateway settings (Configure > Settings > API > Settings)
+4. Check "Allow connections from localhost" (Docker containers reach the host via `host.docker.internal`)
+5. Set `IBKR_HOST=host.docker.internal` in your `.env` file
+6. Market-data-service uses client ID `1` (`IBKR_CLIENT_ID`), broker-gateway uses client ID `2` (`IBKR_GATEWAY_CLIENT_ID`)
 
 ### docker-compose.vps.yml -- VPS Production-Like
 

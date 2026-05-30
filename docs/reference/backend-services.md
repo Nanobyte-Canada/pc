@@ -1059,7 +1059,7 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 |---|---|---|
 | `IbkrClient` | Interface | Abstraction over IBKR TWS API: connect, disconnect, requestMarketData, cancelMarketData, requestOptionChain, requestContractDetails |
 | `FakeIbkrClient` | `@Component @Profile("dev","local","test")` | Generates fake market data for SPY, QQQ, IWM, AAPL, MSFT, TSLA, GOOG, AMZN, NVDA, META. 500ms tick interval. |
-| `IbkrConnectionManager` | `@Component ApplicationRunner` | Auto-connects on startup, exponential backoff reconnection (5s-60s), health status tracking |
+| `IbkrConnectionManager` | `@Component ApplicationRunner` | Auto-connects on startup, exponential backoff reconnection (5s-60s), health status tracking, periodic health check every 30s, broadcasts connection status to WebSocket clients via `QuoteWebSocketHandler` (injected with `@Lazy`) |
 | `ContractResolver` | `@Component` | Multi-level contract ID resolution: Redis (24h TTL) → PostgreSQL → IBKR API. In-memory fallback. |
 | `SubscriptionManager` | `@Component` | LRU eviction for subscription capacity (default 100). Contract pinning for open positions. |
 
@@ -1077,7 +1077,13 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 | Class | Type | Description |
 |---|---|---|
 | `QuoteCacheService` | `@Service` | Redis caching: 5s TTL for quotes, 30s for chains. Jackson JSON serialization. |
-| `QuoteWebSocketHandler` | `@Component TextWebSocketHandler` | WebSocket at /ws/quotes. Subscribe/unsubscribe stocks and options. Broadcast to subscribed sessions. |
+| `QuoteWebSocketHandler` | `@Component TextWebSocketHandler` | WebSocket at /ws/quotes. Subscribe/unsubscribe stocks and options. Broadcast to subscribed sessions. `broadcastConnectionStatus()` sends IBKR connection state to all connected WebSocket clients. |
+
+### Health (`api/controller/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `IbkrHealthController` | `@RestController` | `GET /api/v1/health/ibkr` -- Returns IBKR connection status (connected boolean, uptime, client ID) from `IbkrConnectionManager` |
 
 ### Streaming (`streaming/`)
 
@@ -1137,11 +1143,18 @@ Manages encrypted broker credentials for gateway connections. Provides automatic
 | `IbkrAdapter` | `@Component @ConditionalOnProperty("broker-gateway.ibkr.enabled")` | Production adapter implementing BrokerAdapter. Delegates to IbkrAccountClient for TWS operations. Uses IbkrDtoMappers for all type normalization. Creates IbkrConnectionManager on construction. Capabilities: orders, options, real-time data, historical activities via Flex Queries, no fractional shares. |
 | `IbkrConnectionManager` | Class (non-Spring) | Socket lifecycle manager with exponential backoff reconnection. Initial delay 5s, doubles each attempt, capped at 60s. Resets delay on successful connection. Daemon thread executor. Health status via AtomicBoolean. Graceful shutdown with 5s termination wait. |
 | `IbkrAccountClient` | Interface | TWS client abstraction: connect, disconnect, isConnected, getManagedAccounts, getAccountSummary, getPositions, getOpenOrders, getCompletedOrders, getExecutions, placeOrder(accountId, contract, orderSpec), cancelOrder(orderId) |
+| `TwsIbkrAccountClient` | `@Component @ConditionalOnProperty("broker-gateway.ibkr.enabled")` | Concrete implementation of `IbkrAccountClient` using TWS API (`com.ib.client`). Connects to IB Gateway/TWS via `EClientSocket`, uses `CountDownLatch`-based request/response pattern for blocking calls. Supports managed accounts, positions, orders, executions, and order placement. |
 | `IbkrPosition` | Data class | accountId, symbol, secType, exchange, currency, conId, quantity, averageCost, marketPrice?, marketValue?, unrealizedPnl?, strike?, expiry?, right? |
 | `IbkrOrder` | Data class | orderId, symbol, secType, action, orderType, totalQuantity, filledQuantity?, limitPrice?, auxPrice?, status, timeInForce?, avgFillPrice?, currency?, submittedAt?, filledAt? |
 | `IbkrExecution` | Data class | execId, symbol, secType, side, quantity, price, commission?, currency, time, accountId |
 | `IbkrContract` | Data class | symbol, secType (default "STK"), exchange (default "SMART"), currency (default "USD") |
 | `IbkrOrderSpec` | Data class | action, orderType, totalQuantity, limitPrice?, auxPrice?, timeInForce (default "DAY") |
+
+### Health (`api/controller/` -- broker-gateway)
+
+| Class | Type | Description |
+|---|---|---|
+| `HealthController` | `@RestController` | `GET /api/v1/gateway/health` -- Overall gateway health. `GET /api/v1/gateway/health/{brokerType}` -- Per-broker health. `GET /api/v1/gateway/health/ibkr` -- IBKR-specific health via `IbkrAdapter.getHealthStatus()`, returns `IbkrHealthResponse` (connected, accounts, uptime) |
 
 ### Questrade Adapter (`adapter/questrade/`)
 

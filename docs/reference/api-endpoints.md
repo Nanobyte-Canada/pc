@@ -540,6 +540,12 @@ Separate Spring Boot application at `backend/ingestion/`. No authentication requ
 |---|---|---|---|---|
 | `GET` | `/api/v1/iv/{ticker}` | None | Get IV rank/percentile from last 365 days of observations. | `IvRankResponse` |
 
+### IBKR Health
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/health/ibkr` | None | IBKR connection status (connected, uptime, client ID). | `IbkrHealthResponse` |
+
 ### WebSocket
 
 | Endpoint | Protocol | Description |
@@ -608,6 +614,7 @@ Broker data gateway microservice for connecting to IBKR, Questrade, and Wealthsi
 |---|---|---|---|---|
 | `GET` | `/api/v1/gateway/health` | None | Overall gateway health with per-broker status. | `GatewayHealthResponse` |
 | `GET` | `/api/v1/gateway/health/{brokerType}` | None | Health status for a specific broker (IBKR, QUESTRADE, WEALTHSIMPLE). | `BrokerHealthResponse` |
+| `GET` | `/api/v1/gateway/health/ibkr` | None | IBKR-specific health with connection status, managed accounts, and uptime. | `IbkrHealthResponse` |
 
 ---
 

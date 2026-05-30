@@ -130,6 +130,13 @@
 | `detail/MutualFundDetailSections.tsx` | MutualFundDetailSections | Stub: type-specific sections for mutual fund instruments (Overview, Performance, Holdings, Sectors, Regions, Valuation) |
 | `detail/BasicDetailSections.tsx` | BasicDetailSections | Stub: basic overview section for sparse instrument types (Preferred Stock, Index, Bond) |
 
+### IbkrConnectionBadge (2 files)
+
+| File | Component | Description |
+|------|-----------|-------------|
+| `IbkrConnectionBadge.tsx` | IbkrConnectionBadge | Small badge in IconRail showing IBKR connection status (green dot when connected, red when disconnected). Reads `ibkrConnected` from `quoteStore`. |
+| `IbkrConnectionBadge.css` | -- | Styles for IbkrConnectionBadge |
+
 ### layout/ (5 files)
 
 **Navigation pattern:** Desktop uses a narrow `IconRail` pinned to the left edge; mobile uses a `BottomTabBar` fixed to the bottom. The old collapsible `AppSidebar` and `MobileHeader` (hamburger menu) were removed as part of the Verdant Dark redesign.
@@ -137,7 +144,7 @@
 | File | Component | Description |
 |------|-----------|-------------|
 | `AppLayout.tsx` | AppLayout | Main authenticated layout: IconRail (desktop sidebar), BottomTabBar (mobile), main content area via Outlet, ToastContainer |
-| `IconRail.tsx` | IconRail | Narrow vertical icon-only navigation rail (desktop, hidden on mobile). Shows logo, nav items (Dashboard, Accounts, Screener, Options), theme toggle, admin link, and user avatar with initials. Active route highlighted with emerald accent |
+| `IconRail.tsx` | IconRail | Narrow vertical icon-only navigation rail (desktop, hidden on mobile). Shows logo, nav items (Dashboard, Accounts, Screener, Options), theme toggle, admin link, IbkrConnectionBadge, and user avatar with initials. Active route highlighted with emerald accent |
 | `BottomTabBar.tsx` | BottomTabBar | Fixed bottom tab bar (mobile only, hidden on desktop). Five tabs: Home, Accounts, Screener, Options, More. "More" tab covers Wheel, Reporting, Admin, and Profile routes |
 | `ThemeToggle.tsx` | ThemeToggle | Dark/light theme toggle button |
 | `NotificationBell.tsx` | NotificationBell | Notification bell icon with unread count badge and dropdown |
@@ -968,7 +975,7 @@ interface PortfolioStore {
 
 | File | Description |
 |---|---|
-| `hooks/useMarketDataWebSocket.ts` | WebSocket connection to `/ws/quotes` with subscribe/unsubscribe, exponential backoff reconnection (1s-30s) |
+| `hooks/useMarketDataWebSocket.ts` | WebSocket connection to `/ws/quotes` with subscribe/unsubscribe, exponential backoff reconnection (1s-30s). Parses `connection_status` messages from the server and updates `ibkrConnected` in `quoteStore`. |
 
 ### Services
 
@@ -981,7 +988,7 @@ interface PortfolioStore {
 
 | File | Description |
 |---|---|
-| `stores/quoteStore.ts` | Zustand: quotes map, chains map, selectedUnderlying |
+| `stores/quoteStore.ts` | Zustand: quotes map, chains map, selectedUnderlying, ibkrConnected (boolean), setIbkrConnected setter |
 | `stores/strategyStore.ts` | Zustand: strategies list, selectedStrategy, legs array, calculationResult, isCalculating |
 
 ### Types
