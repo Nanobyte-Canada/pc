@@ -103,6 +103,11 @@ coverage/
 *.lcov
 .nyc_output/
 
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
+frontend/playwright/.cache/
+
 # Database dumps
 *.backup
 
@@ -123,3 +128,8 @@ gradle-out.txt
 build_output.txt
 gradle_output.txt
 /tmp/*
+
+# Deploy environment files (contain secrets)
+deploy/prod/.env
+deploy/uat/.env
+deploy/monitoring/.env
