@@ -21,6 +21,10 @@ class IbkrAdapter(
     private val logger = LoggerFactory.getLogger(IbkrAdapter::class.java)
     private val connectionManager = IbkrConnectionManager(client, ibkrConfig)
 
+    init {
+        connectionManager.start()
+    }
+
     override val brokerType = BrokerType.IBKR
 
     override fun validateConnection(credentials: BrokerCredentials): ConnectionValidationResult {
