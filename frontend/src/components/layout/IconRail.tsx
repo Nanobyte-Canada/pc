@@ -3,6 +3,7 @@ import {
   LayoutGrid, Target, Link2,
   Sun, Moon, Settings
 } from 'lucide-react'
+import { IbkrConnectionBadge } from '@/components/IbkrConnectionBadge'
 import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
 import './IconRail.css'
@@ -61,6 +62,8 @@ export function IconRail() {
       ))}
 
       <div className="icon-rail__spacer" />
+
+      <IbkrConnectionBadge compact />
 
       <button
         className="icon-rail__item"

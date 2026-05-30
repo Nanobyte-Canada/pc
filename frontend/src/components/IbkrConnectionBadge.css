@@ -1,0 +1,58 @@
+.ibkr-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.ibkr-badge--connected {
+  color: var(--success, #059669);
+  background: color-mix(in srgb, var(--success, #059669) 12%, transparent);
+}
+
+.ibkr-badge--connecting {
+  color: var(--warning, #d97706);
+  background: color-mix(in srgb, var(--warning, #d97706) 12%, transparent);
+}
+
+.ibkr-badge--disconnected {
+  color: var(--destructive, #dc2626);
+  background: color-mix(in srgb, var(--destructive, #dc2626) 12%, transparent);
+}
+
+.ibkr-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ibkr-badge--connected .ibkr-badge__dot {
+  background: var(--success, #059669);
+}
+
+.ibkr-badge--connecting .ibkr-badge__dot {
+  background: var(--warning, #d97706);
+  animation: ibkr-pulse 1.5s ease-in-out infinite;
+}
+
+.ibkr-badge--disconnected .ibkr-badge__dot {
+  background: var(--destructive, #dc2626);
+}
+
+@keyframes ibkr-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.ibkr-badge--compact {
+  padding: 3px 6px;
+  font-size: 9px;
+  border-radius: 4px;
+}
