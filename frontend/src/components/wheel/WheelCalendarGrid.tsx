@@ -119,12 +119,12 @@ export function WheelCalendarGrid({
                           )}
                           {!hasCC && positions.length === 0 && (
                             <button className="wcg-empty-slot" onClick={() => onEmptySlotClick(row.symbol, exp.date)}>
-                              +
+                              + Sell CSP
                             </button>
                           )}
                           {!hasCC && positions.length > 0 && (
                             <button className="wcg-empty-slot wcg-empty-slot--compact" onClick={() => onEmptySlotClick(row.symbol, exp.date)}>
-                              +
+                              + Sell CSP
                             </button>
                           )}
                         </div>

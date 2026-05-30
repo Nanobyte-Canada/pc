@@ -173,7 +173,7 @@
   padding: 12px;
   cursor: pointer;
   color: var(--text-muted);
-  font-size: 16px;
+  font-size: 10px;
   background: none;
   font-family: inherit;
   transition: border-color var(--transition-fast), color var(--transition-fast);
@@ -182,7 +182,7 @@
   border-color: rgba(99, 102, 241, 0.3);
   color: var(--indigo-text, #818cf8);
 }
-.wcg-empty-slot--compact { padding: 6px; font-size: 12px; }
+.wcg-empty-slot--compact { padding: 6px; font-size: 9px; }
 
 .wcg-cc-slot {
   display: flex;
