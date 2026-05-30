@@ -47,6 +47,9 @@ services:
       APP_ENVIRONMENT: local
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY:-}
       BROKER_GATEWAY_URL: http://broker-gateway-service:8084
+      BROKER_SYNC_ENABLED: ${BROKER_SYNC_ENABLED:-true}
+      BROKER_SYNC_CRON: ${BROKER_SYNC_CRON:-0 20 16 * * *}
+      BROKER_SYNC_CRON_MORNING: ${BROKER_SYNC_CRON_MORNING:-0 0 6 * * *}
       JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     ports:
       - "8080:8080"
@@ -109,10 +112,12 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       IBKR_HOST: ${IBKR_HOST:-}
-      IBKR_PORT: ${IBKR_PORT:-4002}
+      IBKR_PORT: ${IBKR_PORT:-4001}
       IBKR_CLIENT_ID: ${IBKR_CLIENT_ID:-1}
     ports:
       - "8082:8082"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
@@ -175,12 +180,14 @@ services:
       GATEWAY_API_KEY: ${GATEWAY_API_KEY:-}
       IBKR_GATEWAY_ENABLED: ${IBKR_GATEWAY_ENABLED:-false}
       IBKR_HOST: ${IBKR_HOST:-}
-      IBKR_PORT: ${IBKR_PORT:-4002}
+      IBKR_PORT: ${IBKR_PORT:-4001}
       IBKR_GATEWAY_CLIENT_ID: ${IBKR_GATEWAY_CLIENT_ID:-2}
       QUESTRADE_ENABLED: ${QUESTRADE_ENABLED:-false}
       WEALTHSIMPLE_ENABLED: ${WEALTHSIMPLE_ENABLED:-false}
     ports:
       - "8084:8084"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
