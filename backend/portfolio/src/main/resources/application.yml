@@ -68,7 +68,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when-authorized
@@ -85,6 +85,7 @@ broker:
   encryption:
     secret-key: ${BROKER_ENCRYPTION_KEY:}  # Base64-encoded 32-byte key for AES-256
   sync:
-    enabled: ${BROKER_SYNC_ENABLED:false}
-    cron: ${BROKER_SYNC_CRON:0 30 22 * * *}
-    max-lookback-years: ${BROKER_SYNC_MAX_LOOKBACK_YEARS:25}
+    enabled: ${BROKER_SYNC_ENABLED:true}
+    cron: ${BROKER_SYNC_CRON:0 20 16 * * *}
+    cron-morning: ${BROKER_SYNC_CRON_MORNING:0 0 6 * * *}
+    max-lookback-years: ${BROKER_SYNC_MAX_LOOKBACK_YEARS:30}
