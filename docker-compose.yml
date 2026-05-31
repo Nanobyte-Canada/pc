@@ -31,6 +31,30 @@ services:
     networks:
       - portfolio-network
 
+  ib-gateway:
+    image: ghcr.io/gnzsnz/ib-gateway:10.30.1t
+    container_name: portfolio-ib-gateway
+    environment:
+      TWS_USERID: ${IBKR_USERNAME:-}
+      TWS_PASSWORD: ${IBKR_PASSWORD:-}
+      TRADING_MODE: paper
+      TWS_ACCEPT_INCOMING: "accept"
+      READ_ONLY_API: "yes"
+      VNC_SERVER_PASSWORD: ${IBKR_VNC_PASSWORD:-}
+      TWS_PORT: "4002"
+    ports:
+      - "4002:4002"
+      - "5900:5900"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "4002"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+    networks:
+      - portfolio-network
+
   backend:
     build:
       context: ./backend/portfolio
@@ -111,8 +135,8 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      IBKR_HOST: ${IBKR_HOST:-}
-      IBKR_PORT: ${IBKR_PORT:-4001}
+      IBKR_HOST: ib-gateway
+      IBKR_PORT: "4002"
       IBKR_CLIENT_ID: ${IBKR_CLIENT_ID:-1}
     ports:
       - "8082:8082"
@@ -122,6 +146,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      ib-gateway:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
@@ -178,9 +204,9 @@ services:
       REDIS_PORT: 6379
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY:-}
       GATEWAY_API_KEY: ${GATEWAY_API_KEY:-}
-      IBKR_GATEWAY_ENABLED: ${IBKR_GATEWAY_ENABLED:-false}
-      IBKR_HOST: ${IBKR_HOST:-}
-      IBKR_PORT: ${IBKR_PORT:-4001}
+      IBKR_GATEWAY_ENABLED: "true"
+      IBKR_HOST: ib-gateway
+      IBKR_PORT: "4002"
       IBKR_GATEWAY_CLIENT_ID: ${IBKR_GATEWAY_CLIENT_ID:-2}
       QUESTRADE_ENABLED: ${QUESTRADE_ENABLED:-false}
       WEALTHSIMPLE_ENABLED: ${WEALTHSIMPLE_ENABLED:-false}
@@ -192,6 +218,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      ib-gateway:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
