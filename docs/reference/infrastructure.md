@@ -863,6 +863,7 @@ Three independent Docker Compose stacks run simultaneously.
 | `node_exporter` | 19100:9100 | System metrics |
 | `postgres_exporter` | 19187:9187 | PostgreSQL metrics |
 | `redis_exporter` | 19121:9121 | Redis metrics |
+| `vault` | 18200:8200 | HashiCorp Vault secret management (`hashicorp/vault:1.17`, 512MB) |
 
 ### Cloudflare Tunnel Routing
 
@@ -874,6 +875,7 @@ All external traffic routed through Cloudflare Tunnel (no exposed ports). Zero-t
 | `uatportfolio.nanobyte.ca` | `http://localhost:20000` (frontend), `http://localhost:20080` (backend) | UAT environment, Cloudflare Access protected |
 | `status.nanobyte.ca` | `http://localhost:13001` | Uptime Kuma public status page |
 | `grafana.nanobyte.ca` | `http://localhost:13000` | Grafana dashboards, Cloudflare Access protected |
+| `vault.nanobyte.ca` | `http://localhost:18200` | HashiCorp Vault UI, Cloudflare Access protected |
 
 ### CI/CD Workflows
 
@@ -1050,6 +1052,32 @@ gpg -d backup.sql.gz.gpg | gunzip > backup.sql
 docker compose exec -T prod-postgres psql -U portfolio portfolio < backup.sql
 ```
 
+### Vault Secret Management
+
+HashiCorp Vault provides centralized secret management for production and UAT environments.
+
+**Container:** `hashicorp/vault:1.17` in the monitoring stack (port 18200, 512MB memory limit)
+
+**Access:** `vault.nanobyte.ca` via Cloudflare Tunnel, protected by Cloudflare Access (email authentication)
+
+**Initialization:**
+- One-time setup via `deploy/scripts/vault-init.sh`
+- Generates unseal keys and root token
+- Enables KV v2 secrets engine at `secret/`
+- Configures AppRole auth method for CI/CD
+
+**Unsealing:**
+- Vault seals itself on server restart
+- Manual unseal required via the Vault web UI at `vault.nanobyte.ca`
+
+**Secret Paths:**
+- `secret/portfolio/prod` -- Production environment secrets
+- `secret/portfolio/uat` -- UAT environment secrets
+
+**Backup:**
+- Daily volume backup with 30-day retention
+- Location: `/opt/portfolio/backups/vault/`
+
 ### Port Reference Table
 
 Complete port allocation across all three stacks.
@@ -1085,6 +1113,7 @@ Complete port allocation across all three stacks.
 | 19090 | Monitoring | Prometheus | HTTP |
 | 19100 | Monitoring | node_exporter | HTTP |
 | 19121 | Monitoring | redis_exporter | HTTP |
+| 18200 | Monitoring | Vault | HTTP |
 | 19187 | Monitoring | postgres_exporter | HTTP |
 
 **Note:** All ports are bound to `0.0.0.0` except VNC ports (127.0.0.1 only). UFW firewall protects all ports. Only Cloudflare Tunnel has local access to application ports.

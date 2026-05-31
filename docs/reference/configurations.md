@@ -547,6 +547,53 @@ spring.mvc.problemdetails.enabled: true
 
 ---
 
+## Secret Management
+
+Production and UAT secrets are stored in HashiCorp Vault at `vault.nanobyte.ca`. The deploy workflow fetches secrets at deploy time using AppRole authentication.
+
+### Vault Secret Paths
+
+| Path | Environment |
+|------|-------------|
+| `secret/portfolio/prod` | Production |
+| `secret/portfolio/uat` | UAT |
+
+### GitHub Actions Secrets (per environment)
+
+| Secret | Purpose |
+|--------|---------|
+| `VAULT_ROLE_ID` | Vault AppRole role ID for authenticating to Vault |
+| `VAULT_SECRET_ID` | Vault AppRole secret ID for authenticating to Vault |
+
+### Keys Stored in Vault
+
+The following keys are stored in Vault for each environment (`secret/portfolio/prod` and `secret/portfolio/uat`):
+
+| Key | Description |
+|-----|-------------|
+| `POSTGRES_DB` | PostgreSQL database name |
+| `POSTGRES_USER` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | PostgreSQL password |
+| `JWT_SIGNING_KEY` | HS512 JWT signing key (min 64 chars) |
+| `GOOGLE_CLIENT_ID` | Google OAuth2 client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret |
+| `BROKER_ENCRYPTION_KEY` | Base64-encoded AES-256 key for broker credential encryption |
+| `GATEWAY_API_KEY` | Service-to-service authentication key for broker gateway |
+| `EODHD_API_KEY` | EODHD market data API key |
+| `IBKR_USERNAME` | Interactive Brokers account username |
+| `IBKR_PASSWORD` | Interactive Brokers account password |
+| `IBKR_VNC_PASSWORD` | VNC password for IBKR Gateway remote access |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed CORS origins |
+| `BROKER_SYNC_CRON` | Cron expression for evening broker sync |
+| `BROKER_SYNC_CRON_MORNING` | Cron expression for morning broker sync |
+| `BROKER_SYNC_ENABLED` | Enable/disable automated broker sync |
+| `QUESTRADE_ENABLED` | Enable/disable Questrade broker adapter |
+| `WEALTHSIMPLE_ENABLED` | Enable/disable Wealthsimple broker adapter |
+| `IBKR_CLIENT_ID` | IBKR client connection ID for market-data service |
+| `IBKR_GATEWAY_CLIENT_ID` | IBKR client connection ID for broker-gateway service |
+
+---
+
 ## Cross-References
 
 - For Docker and deployment infrastructure, see [infrastructure.md](infrastructure.md)
