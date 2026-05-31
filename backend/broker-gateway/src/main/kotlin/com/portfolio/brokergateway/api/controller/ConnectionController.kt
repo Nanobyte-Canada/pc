@@ -9,6 +9,7 @@ import com.portfolio.brokergateway.api.dto.CreateConnectionRequest
 import com.portfolio.brokergateway.config.AdapterRegistry
 import com.portfolio.brokergateway.credential.CredentialService
 import com.portfolio.brokergateway.credential.GatewayConnection
+import com.portfolio.brokergateway.exception.BrokerAuthenticationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -73,9 +74,16 @@ class ConnectionController(
 
     @PostMapping("/{connectionId}/validate")
     fun validateConnection(@PathVariable connectionId: String): ResponseEntity<Map<String, Any?>> {
-        val credentials = credentialService.getCredentials(connectionId)
-        val adapter = adapterRegistry.getAdapter(credentials.brokerType)
-        val result = adapter.validateConnection(credentials)
+        val rawCredentials = credentialService.getCredentials(connectionId)
+        val adapter = adapterRegistry.getAdapter(rawCredentials.brokerType)
+        var credentials = credentialService.getCredentialsWithRefresh(connectionId, adapter)
+        val result = try {
+            adapter.validateConnection(credentials)
+        } catch (e: BrokerAuthenticationException) {
+            log.warn("Validation 401 for connection {}, force-refreshing...", connectionId)
+            credentials = credentialService.forceRefresh(connectionId, adapter)
+            adapter.validateConnection(credentials)
+        }
         return ResponseEntity.ok(mapOf(
             "connected" to result.connected,
             "message" to result.message,

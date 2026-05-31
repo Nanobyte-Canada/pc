@@ -82,11 +82,11 @@ class BrokerController(
     fun connectBroker(
         @RequestBody request: ConnectBrokerGatewayRequest,
         @AuthenticationPrincipal principal: UserPrincipal
-    ): ResponseEntity<BrokerConnectionDto> {
+    ): ResponseEntity<BrokerConnectionsResponse> {
         val user = userRepository.findById(principal.id)
             .orElseThrow { IllegalArgumentException("User not found") }
-        val connection = brokerService.createGatewayConnection(user, request.brokerType, request.credentials)
-        return ResponseEntity.status(201).body(connection.toDto())
+        val connections = brokerService.createGatewayConnection(user, request.brokerType, request.credentials)
+        return ResponseEntity.status(201).body(BrokerConnectionsResponse(connections.map { it.toDto() }))
     }
 
     @DeleteMapping("/connections/{authorizationId}")

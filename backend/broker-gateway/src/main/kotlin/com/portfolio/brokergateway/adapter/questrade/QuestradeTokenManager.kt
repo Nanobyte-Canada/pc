@@ -39,15 +39,25 @@ class QuestradeTokenManager(
             ?: throw BrokerAuthenticationException("No refresh_token in Questrade response", BrokerType.QUESTRADE)
         val apiServer = response.get("api_server")?.asText()
             ?: throw BrokerAuthenticationException("No api_server in Questrade response", BrokerType.QUESTRADE)
-        val expiresIn = response.get("expires_in")?.asLong() ?: 1800L
+        val expiresInNode = response.get("expires_in")
+        val expiresIn = when {
+            expiresInNode == null || expiresInNode.isNull -> 1800L
+            expiresInNode.isNumber -> expiresInNode.asLong()
+            expiresInNode.isTextual -> expiresInNode.asText().toLongOrNull() ?: 1800L
+            else -> 1800L
+        }
+        val safeExpiresIn = if (expiresIn <= 0) 1800L else expiresIn
+        val expiresAtEpoch = System.currentTimeMillis() / 1000 + safeExpiresIn
 
-        log.info("Questrade tokens refreshed, api_server={}", apiServer)
+        log.info("Questrade tokens refreshed, api_server={}, expires_in={}s, expiresAt={}",
+            apiServer, safeExpiresIn, expiresAtEpoch)
 
         return BrokerCredentials.QuestradeCredentials(
-            accessToken = accessToken,
             refreshToken = newRefreshToken,
+            accessToken = accessToken,
             apiServerUrl = apiServer,
-            expiresAtEpochSeconds = System.currentTimeMillis() / 1000 + expiresIn
+            expiresAtEpochSeconds = expiresAtEpoch,
+            usePractice = credentials.usePractice
         )
     }
 

@@ -27,8 +27,10 @@ class ActivityIngestionService(
     private val gatewayClient: BrokerGatewayClient,
     private val objectMapper: ObjectMapper,
     private val exchangeRateService: ExchangeRateService,
-    @Value("\${broker.sync.max-lookback-years:25}")
-    private val maxLookbackYears: Int = 25
+    @Value("\${broker.sync.max-lookback-years:30}")
+    private val maxLookbackYears: Int = 30,
+    @Value("\${broker.sync.chunk-days:29}")
+    private val chunkDays: Int = 29
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -61,8 +63,8 @@ class ActivityIngestionService(
     }
 
     private fun syncFullHistory(connection: BrokerConnection): Int {
-        val startDate = LocalDate.now().minusYears(maxLookbackYears.toLong())
-        val endDate = LocalDate.now()
+        val now = LocalDate.now()
+        val earliest = now.minusYears(maxLookbackYears.toLong())
         val gwConnId = connection.gatewayConnectionId
             ?: run {
                 log.warn("Connection {} has no gateway connection ID, skipping historical sync", connection.id)
@@ -74,22 +76,46 @@ class ActivityIngestionService(
                 return 0
             }
 
-        log.info("Full historical sync for connection {}: fetching {} to {}", connection.id, startDate, endDate)
+        log.info("Full historical sync for connection {}: {} to {} in {}-day chunks",
+            connection.id, earliest, now, chunkDays)
 
-        val activitiesJson = try {
-            gatewayClient.getActivities(gwConnId, accountId, startDate, endDate)
-        } catch (e: Exception) {
-            log.error("Historical sync failed for connection {}: {}", connection.id, e.message)
-            return 0
+        var totalInserted = 0
+        var chunkEnd = now
+        var emptyChunksInRow = 0
+
+        while (chunkEnd.isAfter(earliest)) {
+            val chunkStart = maxOf(chunkEnd.minusDays(chunkDays.toLong()), earliest)
+
+            try {
+                val activitiesJson = gatewayClient.getActivities(gwConnId, accountId, chunkStart, chunkEnd)
+                val activities = activitiesJson.path("activities")
+                val inserted = processAndSaveActivities(activities, connection)
+                totalInserted += inserted
+
+                if (activities.size() == 0) {
+                    emptyChunksInRow++
+                } else {
+                    emptyChunksInRow = 0
+                    log.info("Chunk {} to {}: {} fetched, {} new for connection {}",
+                        chunkStart, chunkEnd, activities.size(), inserted, connection.id)
+                }
+
+                if (emptyChunksInRow >= 12) {
+                    log.info("Stopping historical sync for connection {} — {} consecutive empty chunks (reached account start)",
+                        connection.id, emptyChunksInRow)
+                    break
+                }
+            } catch (e: Exception) {
+                log.warn("Chunk {} to {} failed for connection {}: {}", chunkStart, chunkEnd, connection.id, e.message)
+            }
+
+            chunkEnd = chunkStart.minusDays(1)
         }
 
-        val activities = activitiesJson.path("activities")
-        val inserted = processAndSaveActivities(activities, connection)
+        log.info("Historical sync complete for connection {}: {} new activities",
+            connection.id, totalInserted)
 
-        log.info("Historical sync complete for connection {}: {} activities ({} new)",
-            connection.id, activities.size(), inserted)
-
-        return inserted
+        return totalInserted
     }
 
     private fun syncIncremental(connection: BrokerConnection, startDate: LocalDate): Int {
@@ -124,8 +150,7 @@ class ActivityIngestionService(
                 if (existing != null) continue
             }
 
-            val tradeDateStr = activity.path("tradeDate").asText(null) ?: continue
-            val tradeDate = LocalDate.parse(tradeDateStr)
+            val tradeDate = parseJsonLocalDate(activity.path("tradeDate")) ?: continue
 
             val rawAmount = if (activity.has("amount") && !activity.path("amount").isNull)
                 BigDecimal(activity.path("amount").asText()) else BigDecimal.ZERO
@@ -134,8 +159,7 @@ class ActivityIngestionService(
 
             val (amountCad, exchangeRate) = computeCadAmount(rawAmount, currency, tradeDate, type)
 
-            val settlementDateStr = activity.path("settlementDate").asText(null)
-            val settlementDate = settlementDateStr?.let { LocalDate.parse(it) }
+            val settlementDate = parseJsonLocalDate(activity.path("settlementDate"))
 
             val quantity = if (activity.has("quantity") && !activity.path("quantity").isNull)
                 BigDecimal(activity.path("quantity").asText()) else null
@@ -264,6 +288,19 @@ class ActivityIngestionService(
      * For CAD amounts or zero amounts, no FX lookup is performed.
      * For non-CAD, calls [ExchangeRateService] and falls back to the raw amount if unavailable.
      */
+    private fun parseJsonLocalDate(node: JsonNode): LocalDate? {
+        if (node.isMissingNode || node.isNull) return null
+        if (node.isArray && node.size() >= 3) {
+            return try {
+                LocalDate.of(node[0].asInt(), node[1].asInt(), node[2].asInt())
+            } catch (_: Exception) { null }
+        }
+        val text = node.asText(null) ?: return null
+        return try {
+            LocalDate.parse(text.substring(0, minOf(text.length, 10)))
+        } catch (_: Exception) { null }
+    }
+
     private fun computeCadAmount(
         amount: BigDecimal,
         currency: String,

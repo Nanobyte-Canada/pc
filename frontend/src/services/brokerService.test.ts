@@ -73,42 +73,22 @@ describe('Broker Service', () => {
   describe('connectBroker', () => {
     it('sends POST request to connect endpoint', async () => {
       const mockResponse = {
-        redirectUrl: 'https://snaptrade.com/portal?token=abc'
+        connections: [{ id: 1, broker: { name: 'Questrade' }, status: 'ACTIVE' }]
       }
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse)
       })
 
-      const result = await connectBroker({ broker: 'questrade' })
+      const request = { brokerType: 'QUESTRADE', credentials: { refreshToken: 'test-token' } }
+      const result = await connectBroker(request)
 
       expect(result).toEqual(mockResponse)
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/v1/brokers/connect',
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ broker: 'questrade' })
-        })
-      )
-    })
-
-    it('sends POST request without broker slug', async () => {
-      const mockResponse = {
-        redirectUrl: 'https://snaptrade.com/portal?token=abc'
-      }
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockResponse)
-      })
-
-      const result = await connectBroker()
-
-      expect(result).toEqual(mockResponse)
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/brokers/connect',
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({})
+          body: JSON.stringify(request)
         })
       )
     })

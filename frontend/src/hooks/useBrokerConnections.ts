@@ -7,7 +7,6 @@ import {
   triggerPositionFetch,
   getConnectionPositions,
   getAggregatedPositions,
-  getSnapTradeStatus,
   syncConnections,
   getConnectionActivities,
   syncConnectionActivities,
@@ -57,11 +56,13 @@ export function useAggregatedPositions() {
 // ========== Mutations ==========
 
 export function useConnectBroker() {
+  const queryClient = useQueryClient()
+
   return useMutation({
-    mutationFn: (request?: ConnectBrokerRequest) => connectBroker(request),
-    onSuccess: (data) => {
-      // Redirect to SnapTrade connection portal
-      window.location.href = data.redirectUrl
+    mutationFn: (request: ConnectBrokerRequest) => connectBroker(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: brokerKeys.connections() })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
     }
   })
 }
@@ -92,17 +93,6 @@ export function useTriggerPositionFetch() {
         queryClient.invalidateQueries({ queryKey: brokerKeys.aggregatedPositions() })
       }, 2000)
     }
-  })
-}
-
-// ========== SnapTrade Status ==========
-
-export function useSnapTradeStatus() {
-  return useQuery({
-    queryKey: [...brokerKeys.all, 'snaptrade-status'] as const,
-    queryFn: getSnapTradeStatus,
-    staleTime: 60_000,
-    refetchInterval: 5 * 60_000
   })
 }
 

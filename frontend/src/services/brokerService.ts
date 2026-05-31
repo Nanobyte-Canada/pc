@@ -7,7 +7,6 @@ import type {
   PositionFetchResponse,
   ConnectionPositionsResponse,
   AggregatedPositionsResponse,
-  SnapTradeStatusResponse,
   ConnectionSyncResponse,
   ActivitiesResponse,
   BalanceHistoryResponse,
@@ -36,18 +35,14 @@ export async function getUserConnections(): Promise<BrokerConnectionsResponse> {
   return response.json()
 }
 
-export async function connectBroker(request?: ConnectBrokerRequest): Promise<ConnectBrokerResponse> {
-  const body = {
-    ...request,
-    connectionType: request?.connectionType ?? 'trade-if-available'
-  }
+export async function connectBroker(request: ConnectBrokerRequest): Promise<ConnectBrokerResponse> {
   const response = await apiFetch(`${BROKER_API_BASE}/connect`, {
     method: 'POST',
-    body: JSON.stringify(body)
+    body: JSON.stringify(request)
   })
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
-    throw new Error(error.message || 'Failed to initiate broker connection')
+    throw new Error(error.message || 'Failed to connect to broker')
   }
   return response.json()
 }
@@ -86,16 +81,6 @@ export async function getAggregatedPositions(): Promise<AggregatedPositionsRespo
   const response = await apiFetch(`${BROKER_API_BASE}/positions`)
   if (!response.ok) {
     throw new Error('Failed to fetch aggregated positions')
-  }
-  return response.json()
-}
-
-// ========== SnapTrade Status ==========
-
-export async function getSnapTradeStatus(): Promise<SnapTradeStatusResponse> {
-  const response = await apiFetch(`${BROKER_API_BASE}/snaptrade/status`)
-  if (!response.ok) {
-    throw new Error('Failed to fetch SnapTrade status')
   }
   return response.json()
 }

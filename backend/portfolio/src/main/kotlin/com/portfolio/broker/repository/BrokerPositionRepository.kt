@@ -17,7 +17,6 @@ interface BrokerPositionRepository : JpaRepository<BrokerPosition, Long> {
     @Query("""
         SELECT bp FROM BrokerPosition bp
         JOIN FETCH bp.connection bc
-        JOIN FETCH bc.broker
         WHERE bc.user.id = :userId AND bp.isCurrent = true
         ORDER BY bp.symbol
     """)

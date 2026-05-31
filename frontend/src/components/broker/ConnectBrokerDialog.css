@@ -1,0 +1,176 @@
+.connect-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.connect-dialog {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  width: 480px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.connect-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+
+.connect-dialog-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-text-primary);
+}
+
+.connect-dialog-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.connect-dialog-close:hover {
+  color: var(--color-text-primary);
+}
+
+.connect-dialog-body {
+  padding: 20px 24px;
+}
+
+.connect-dialog-instructions {
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.connect-dialog-instructions p {
+  margin: 0 0 8px;
+}
+
+.connect-dialog-instructions ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.connect-dialog-instructions li {
+  margin-bottom: 4px;
+}
+
+.connect-dialog-instructions a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.connect-dialog-instructions a:hover {
+  text-decoration: underline;
+}
+
+.connect-dialog-field {
+  margin-bottom: 16px;
+}
+
+.connect-dialog-field label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.connect-dialog-field input[type="password"],
+.connect-dialog-field input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.connect-dialog-field input:focus {
+  border-color: var(--color-primary);
+}
+
+.connect-dialog-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.connect-dialog-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.connect-dialog-error {
+  padding: 10px 12px;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  margin-top: 12px;
+}
+
+.connect-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.connect-dialog-btn {
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  transition: all 0.15s;
+}
+
+.connect-dialog-btn.cancel {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+}
+
+.connect-dialog-btn.cancel:hover:not(:disabled) {
+  background: var(--color-bg-tertiary, var(--color-bg-secondary));
+}
+
+.connect-dialog-btn.connect {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.connect-dialog-btn.connect:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.connect-dialog-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

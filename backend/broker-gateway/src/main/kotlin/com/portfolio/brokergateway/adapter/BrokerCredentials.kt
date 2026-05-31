@@ -21,10 +21,11 @@ sealed class BrokerCredentials {
     }
 
     data class QuestradeCredentials(
-        val accessToken: String,
         val refreshToken: String,
-        val apiServerUrl: String,
-        val expiresAtEpochSeconds: Long
+        val accessToken: String = "",
+        val apiServerUrl: String = "",
+        val expiresAtEpochSeconds: Long = 0,
+        val usePractice: Boolean = false
     ) : BrokerCredentials() {
         override val brokerType = BrokerType.QUESTRADE
     }

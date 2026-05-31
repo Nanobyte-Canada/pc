@@ -76,7 +76,7 @@ class BrokerService(
     // ========== Gateway Connection Flow ==========
 
     @Transactional
-    fun createGatewayConnection(user: User, brokerType: String, credentials: Map<String, Any>): BrokerConnection {
+    fun createGatewayConnection(user: User, brokerType: String, credentials: Map<String, Any>): List<BrokerConnection> {
         val response = try {
             gatewayClient.createConnection(user.id!!, brokerType, credentials)
         } catch (e: Exception) {
@@ -94,93 +94,123 @@ class BrokerService(
                 message = "Gateway did not return a connectionId."
             )
 
-        val connection = BrokerConnection(
-            user = user,
-            gatewayConnectionId = gatewayConnectionId,
-            brokerName = brokerType,
-            connectionType = brokerType,
-            status = ConnectionStatus.ACTIVE
-        )
+        val connections = mutableListOf<BrokerConnection>()
 
-        // Fetch accounts from gateway and store the first account's details
         try {
-            val accountsNode = gatewayClient.listAccounts(gatewayConnectionId)
-            val firstAccount = if (accountsNode.isArray && accountsNode.size() > 0) accountsNode.get(0) else null
-            if (firstAccount != null) {
-                connection.accountIdExternal = firstAccount.get("accountId")?.asText()
-                connection.accountNumber = firstAccount.get("accountNumber")?.asText()
-                connection.accountName = firstAccount.get("accountName")?.asText()
-                connection.accountType = firstAccount.get("accountType")?.asText()
+            val accountsResponse = gatewayClient.listAccounts(gatewayConnectionId)
+            val accountsNode = accountsResponse.get("accounts") ?: accountsResponse
+            if (accountsNode.isArray && accountsNode.size() > 0) {
+                for (accountNode in accountsNode) {
+                    val accountId = accountNode.get("accountId")?.asText()
+                    val existing = accountId?.let {
+                        connectionRepository.findByUserIdAndAccountIdExternal(user.id!!, it)
+                    }
+                    if (existing != null) {
+                        existing.gatewayConnectionId = gatewayConnectionId
+                        existing.status = ConnectionStatus.ACTIVE
+                        existing.clearError()
+                        connectionRepository.save(existing)
+                        connections.add(existing)
+                    } else {
+                        val connection = BrokerConnection(
+                            user = user,
+                            gatewayConnectionId = gatewayConnectionId,
+                            brokerName = brokerType,
+                            connectionType = brokerType,
+                            status = ConnectionStatus.ACTIVE,
+                            accountIdExternal = accountId,
+                            accountNumber = accountNode.get("accountNumber")?.asText(),
+                            accountName = accountNode.get("accountName")?.asText(),
+                            accountType = accountNode.get("accountType")?.asText()
+                        )
+                        connectionRepository.save(connection)
+                        connections.add(connection)
+                    }
+                }
+            } else {
+                val connection = BrokerConnection(
+                    user = user,
+                    gatewayConnectionId = gatewayConnectionId,
+                    brokerName = brokerType,
+                    connectionType = brokerType,
+                    status = ConnectionStatus.ACTIVE
+                )
+                connectionRepository.save(connection)
+                connections.add(connection)
             }
         } catch (e: Exception) {
             log.warn("Failed to fetch accounts from gateway for connection {}: {}", gatewayConnectionId, e.message)
+            val connection = BrokerConnection(
+                user = user,
+                gatewayConnectionId = gatewayConnectionId,
+                brokerName = brokerType,
+                connectionType = brokerType,
+                status = ConnectionStatus.ACTIVE
+            )
+            connectionRepository.save(connection)
+            connections.add(connection)
         }
 
-        connectionRepository.save(connection)
-        log.info("Created gateway connection {} for user {}, brokerType={}", gatewayConnectionId, user.id, brokerType)
-        return connection
+        log.info("Created {} account(s) for gateway connection {} user {} brokerType={}",
+            connections.size, gatewayConnectionId, user.id, brokerType)
+        return connections
     }
 
     @Transactional
     fun syncConnections(userId: Long) {
-        val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
+        userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
         log.info("Starting connection sync for user {}: validating gateway connections...", userId)
 
         val connections = connectionRepository.findByUserId(userId)
+        val validatedGatewayIds = mutableMapOf<String, Boolean>()
         var validatedCount = 0
-        var skippedCount = 0
 
         for (connection in connections) {
-            val gwId = connection.gatewayConnectionId
-            if (gwId == null) {
-                // Legacy connection without gateway ID - leave as-is
-                skippedCount++
-                continue
-            }
+            val gwId = connection.gatewayConnectionId ?: continue
 
-            try {
-                val validationResult = gatewayClient.validateConnection(gwId)
-                val status = validationResult.get("status")?.asText()
-
-                if (status == "VALID" || status == "OK" || status == "ACTIVE") {
-                    connection.status = ConnectionStatus.ACTIVE
-                    connection.clearError()
-                } else {
-                    connection.status = ConnectionStatus.ERROR
-                    connection.connectionErrorCode = "VALIDATION_FAILED"
-                    connection.connectionErrorMessage = validationResult.get("message")?.asText() ?: "Connection validation failed"
+            if (gwId !in validatedGatewayIds) {
+                try {
+                    val validationResult = gatewayClient.validateConnection(gwId)
+                    val connected = validationResult.get("connected")?.asBoolean() ?: false
+                    validatedGatewayIds[gwId] = connected
+                } catch (e: Exception) {
+                    log.warn("Failed to validate gateway connection {} for user {}: {}", gwId, userId, e.message)
+                    validatedGatewayIds[gwId] = false
                 }
-                connectionRepository.save(connection)
-                validatedCount++
-            } catch (e: Exception) {
-                log.warn("Failed to validate gateway connection {} for user {}: {}", gwId, userId, e.message)
-                connection.markAsError("VALIDATION_ERROR", e.message ?: "Failed to validate connection")
-                connectionRepository.save(connection)
-                validatedCount++
             }
+
+            if (validatedGatewayIds[gwId] == true) {
+                connection.status = ConnectionStatus.ACTIVE
+                connection.clearError()
+            } else {
+                connection.markAsError("VALIDATION_FAILED", "Connection validation failed")
+            }
+            connectionRepository.save(connection)
+            validatedCount++
         }
 
-        log.info("Sync complete for user {}: {} validated, {} skipped (legacy)", userId, validatedCount, skippedCount)
+        log.info("Sync complete for user {}: {} accounts validated across {} gateway connections",
+            userId, validatedCount, validatedGatewayIds.size)
     }
 
     @Transactional
-    fun disconnectBroker(authorizationId: String, userId: Long) {
+    fun disconnectBroker(gatewayConnId: String, userId: Long) {
         val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
 
-        // Find connections matching this authorizationId (could be gatewayConnectionId or snaptradeAuthorizationId)
-        val connections = connectionRepository.findByUserId(userId)
-            .filter { it.gatewayConnectionId == authorizationId || it.snaptradeAuthorizationId == authorizationId }
+        val connections = connectionRepository.findByGatewayConnectionId(gatewayConnId)
+            .filter { it.user.id == userId }
 
-        // If connection has a gatewayConnectionId, revoke it on the gateway side
+        if (connections.isEmpty()) {
+            throw IllegalArgumentException("No connections found for gateway connection: $gatewayConnId")
+        }
+
+        try {
+            gatewayClient.deleteConnection(gatewayConnId)
+        } catch (e: Exception) {
+            log.warn("Failed to delete gateway connection {}: {}", gatewayConnId, e.message)
+        }
+
         connections.forEach { connection ->
-            val gwId = connection.gatewayConnectionId
-            if (gwId != null) {
-                try {
-                    gatewayClient.deleteConnection(gwId)
-                } catch (e: Exception) {
-                    log.warn("Failed to delete gateway connection {}: {}", gwId, e.message)
-                }
-            }
             connection.status = ConnectionStatus.DISCONNECTED
             connectionRepository.save(connection)
         }
@@ -189,11 +219,11 @@ class BrokerService(
             eventType = AuditEventType.BROKER_DISCONNECT,
             user = user,
             resourceType = "broker_connection",
-            resourceId = authorizationId,
-            details = mapOf("authorizationId" to authorizationId)
+            resourceId = gatewayConnId,
+            details = mapOf("gatewayConnectionId" to gatewayConnId, "accountsDisconnected" to connections.size)
         )
 
-        log.info("Disconnected broker authorization {} for user {}", authorizationId, userId)
+        log.info("Disconnected {} accounts for gateway connection {} user {}", connections.size, gatewayConnId, userId)
     }
 
     // ========== Positions ==========
@@ -213,7 +243,7 @@ class BrokerService(
 
         return ConnectionPositionsResponse(
             connectionId = connectionId,
-            broker = connection.broker?.code ?: connection.accountName,
+            broker = connection.brokerName ?: connection.accountName,
             accountNumber = connection.accountNumber,
             asOfDate = LocalDate.now().toString(),
             positions = positions.map { it.toDto() },
@@ -239,7 +269,7 @@ class BrokerService(
 
             val breakdown = positionList.map { pos ->
                 BrokerBreakdownDto(
-                    broker = pos.connection.broker?.code ?: pos.connection.brokerName ?: pos.connection.accountName,
+                    broker = pos.connection.brokerName ?: pos.connection.accountName,
                     accountNumber = pos.connection.accountNumber,
                     accountType = pos.connection.accountMetaType ?: pos.connection.accountType,
                     quantity = pos.quantity,
@@ -266,7 +296,7 @@ class BrokerService(
         val totalValue = aggregatedPositions.sumOf { it.totalValue }
         val totalPnl = aggregatedPositions.sumOf { it.totalPnl ?: BigDecimal.ZERO }
         val totalCost = totalValue - totalPnl
-        val brokerCount = positions.map { it.connection.gatewayConnectionId ?: it.connection.snaptradeAuthorizationId ?: it.connection.id }.distinct().size
+        val brokerCount = positions.map { it.connection.gatewayConnectionId ?: it.connection.id.toString() }.distinct().size
         val accountCount = positions.map { it.connection.id }.distinct().size
 
         return AggregatedPositionsResponse(

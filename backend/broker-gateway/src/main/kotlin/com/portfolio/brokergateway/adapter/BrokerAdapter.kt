@@ -32,6 +32,19 @@ interface BrokerAdapter {
         accountId: String,
         brokerOrderId: String
     ): CancelResult
+    fun getOrderImpact(
+        credentials: BrokerCredentials,
+        accountId: String,
+        request: OrderRequest
+    ): OrderImpactResult {
+        return OrderImpactResult(
+            estimatedCommission = null,
+            buyingPowerEffect = null,
+            maintenanceExcess = null,
+            isOrderAccepted = true,
+            warnings = listOf("Order impact preview not supported for this broker")
+        )
+    }
     fun capabilities(): BrokerCapabilities
 }
 

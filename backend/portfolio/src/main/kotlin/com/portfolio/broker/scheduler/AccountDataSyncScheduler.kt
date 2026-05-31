@@ -25,13 +25,23 @@ class AccountDataSyncScheduler(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Scheduled(cron = "\${broker.sync.cron:0 30 22 * * *}")
-    fun runNightlySync() {
-        log.info("Starting nightly account data sync (activities + balances + positions)")
+    @Scheduled(cron = "\${broker.sync.cron:0 20 16 * * *}")
+    fun runPostMarketSync() {
+        log.info("Starting post-market data sync (4:20 PM)")
+        runSync()
+    }
+
+    @Scheduled(cron = "\${broker.sync.cron-morning:0 0 6 * * *}")
+    fun runMorningSync() {
+        log.info("Starting morning data sync (6:00 AM)")
+        runSync()
+    }
+
+    private fun runSync() {
         try {
             activityIngestionService.syncAllConnections()
         } catch (e: Exception) {
-            log.error("Nightly activity/balance sync failed: {}", e.message, e)
+            log.error("Activity/balance sync failed: {}", e.message, e)
         }
 
         try {
@@ -40,20 +50,20 @@ class AccountDataSyncScheduler(
             for (conn in activeConnections) {
                 try {
                     positionFetchService.triggerManualFetch(conn.id, conn.user.id)
-                    log.info("Nightly position fetch completed for connection {}", conn.id)
                 } catch (e: Exception) {
-                    log.warn("Nightly position fetch failed for connection {}: {}", conn.id, e.message)
+                    log.warn("Position fetch failed for connection {}: {}", conn.id, e.message)
                 }
             }
         } catch (e: Exception) {
-            log.error("Nightly position sync failed: {}", e.message, e)
+            log.error("Position sync failed: {}", e.message, e)
         }
 
-        // Take daily snapshots for all portfolio groups (for performance tracking)
         try {
             snapshotService.takeSnapshotsForAllGroups()
         } catch (e: Exception) {
-            log.error("Nightly snapshot creation failed: {}", e.message, e)
+            log.error("Snapshot creation failed: {}", e.message, e)
         }
+
+        log.info("Data sync complete")
     }
 }

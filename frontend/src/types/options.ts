@@ -168,6 +168,6 @@ export interface OptionsOrderResponse {
   strategyType: StrategyType
   underlying: string
   status: string
-  snaptradeOrderId: string | null
+  brokerOrderId: string | null
   createdAt: string
 }

@@ -6,4 +6,5 @@ interface GatewayConnectionRepository : JpaRepository<GatewayConnection, String>
     fun findByUserId(userId: Long): List<GatewayConnection>
     fun findByUserIdAndBrokerType(userId: Long, brokerType: String): List<GatewayConnection>
     fun findByStatus(status: String): List<GatewayConnection>
+    fun findByStatusIn(statuses: List<String>): List<GatewayConnection>
 }

@@ -1,6 +1,8 @@
 package com.portfolio.brokergateway.credential
 
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.OffsetDateTime
 
 @Entity
@@ -23,6 +25,7 @@ class GatewayConnection(
     var credentialsEncrypted: String,
 
     @Column(name = "accounts_json", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     var accountsJson: String? = null,
 
     @Column(name = "last_validated_at")
@@ -33,6 +36,9 @@ class GatewayConnection(
 
     @Column(name = "error_message", columnDefinition = "TEXT")
     var errorMessage: String? = null,
+
+    @Column(name = "refresh_failure_count", nullable = false)
+    var refreshFailureCount: Int = 0,
 
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: OffsetDateTime = OffsetDateTime.now(),

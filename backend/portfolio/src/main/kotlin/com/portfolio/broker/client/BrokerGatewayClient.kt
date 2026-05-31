@@ -80,6 +80,10 @@ class BrokerGatewayClient(
         delete("/api/v1/gateway/connections/$connectionId/accounts/$accountId/orders/$brokerOrderId")
     }
 
+    fun getOrderImpact(connectionId: String, accountId: String, order: Map<String, Any?>): JsonNode {
+        return post("/api/v1/gateway/connections/$connectionId/accounts/$accountId/orders/impact", order)
+    }
+
     fun getHealth(): JsonNode {
         return get("/api/v1/gateway/health")
     }

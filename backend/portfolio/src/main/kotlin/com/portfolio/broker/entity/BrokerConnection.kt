@@ -22,13 +22,6 @@ class BrokerConnection(
     @JoinColumn(name = "user_id", nullable = false)
     val user: User,
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "broker_id")
-    val broker: Broker? = null,
-
-    @Column(name = "snaptrade_authorization_id", length = 255)
-    var snaptradeAuthorizationId: String? = null,
-
     @Column(name = "gateway_connection_id", length = 36)
     var gatewayConnectionId: String? = null,
 
