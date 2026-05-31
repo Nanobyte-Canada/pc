@@ -898,14 +898,25 @@ All external traffic routed through Cloudflare Tunnel (no exposed ports). Zero-t
 - `tag` (required): Docker image tag (e.g., `main-abc1234`)
 
 **Steps:**
-1. Connect to home server via SSH through Cloudflare Tunnel
-2. Pull images from `ghcr.io/portfolio/*:${tag}` for all 8 services
-3. Update `docker-compose.yml` image tags
-4. Run `docker compose down && docker compose up -d`
-5. Wait for health checks (60s timeout)
-6. Send Slack notification with deployment status
+1. Validate tag format (`main-<short-sha>`)
+2. Fetch secrets from Vault (`https://vault.nanobyte.ca`) via AppRole authentication
+3. Generate `.env` file from Vault response, append `IMAGE_TAG`, validate key count
+4. Install cloudflared and configure SSH via Cloudflare Tunnel
+5. SCP generated `.env` to server at `${DEPLOY_PATH}/${ENV}/.env`
+6. SSH to server: `docker compose pull && docker compose up -d`, wait for health checks
+7. Cleanup: remove `/tmp/deploy.env` (always runs)
+8. Post-deploy summary (includes "Secrets: Fetched from Vault")
+9. Send Slack notification with deployment status
+
+**Vault integration:**
+- Vault address: `https://vault.nanobyte.ca`
+- Auth method: AppRole (`VAULT_ROLE_ID` + `VAULT_SECRET_ID`)
+- Secret path: `secret/data/portfolio/{environment}` (KV v2)
+- Error handling: fails on null token, empty secrets, or low key count
 
 **Secrets required:**
+- `VAULT_ROLE_ID` -- Vault AppRole role ID
+- `VAULT_SECRET_ID` -- Vault AppRole secret ID
 - `DEPLOY_SSH_KEY` -- SSH private key for home server access
 - `SERVER_HOSTNAME` -- Home server hostname (via Cloudflare Tunnel)
 - `SLACK_WEBHOOK_URL` -- Slack channel webhook for notifications
@@ -1082,11 +1093,11 @@ Complete port allocation across all three stacks.
 
 | Secret | Purpose | Example |
 |--------|---------|---------|
+| `VAULT_ROLE_ID` | Vault AppRole role ID for secret fetching | UUID |
+| `VAULT_SECRET_ID` | Vault AppRole secret ID for secret fetching | UUID |
 | `DEPLOY_SSH_KEY` | SSH private key for server access | RSA 4096 private key |
 | `SERVER_HOSTNAME` | Home server hostname via Cloudflare Tunnel | `ssh.nanobyte.ca` |
 | `SLACK_WEBHOOK_URL` | Deployment notifications | `https://hooks.slack.com/services/...` |
-| `PROD_ENV_FILE` | Production `.env` contents | Base64-encoded env vars |
-| `UAT_ENV_FILE` | UAT `.env` contents | Base64-encoded env vars |
 
 ### Server Setup
 

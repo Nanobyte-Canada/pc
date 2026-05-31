@@ -17,6 +17,7 @@ on:
 
 env:
   DEPLOY_PATH: /opt/portfolio
+  VAULT_ADDR: https://vault.nanobyte.ca
 
 jobs:
   deploy:
@@ -30,6 +31,50 @@ jobs:
             echo "::error::Invalid tag format. Expected: main-<short-sha> (e.g., main-a1b2c3d)"
             exit 1
           fi
+
+      - name: Fetch secrets from Vault
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          TAG="${{ github.event.inputs.tag }}"
+
+          echo "Authenticating to Vault..."
+          VAULT_TOKEN=$(curl -sf \
+            --request POST \
+            --data "{\"role_id\": \"${{ secrets.VAULT_ROLE_ID }}\", \"secret_id\": \"${{ secrets.VAULT_SECRET_ID }}\"}" \
+            "${VAULT_ADDR}/v1/auth/approle/login" | jq -r '.auth.client_token')
+
+          if [ -z "$VAULT_TOKEN" ] || [ "$VAULT_TOKEN" = "null" ]; then
+            echo "::error::Failed to authenticate to Vault — received null token"
+            exit 1
+          fi
+          echo "Vault authentication successful"
+
+          echo "Fetching secrets for environment: ${ENV}..."
+          SECRETS_JSON=$(curl -sf \
+            --header "X-Vault-Token: ${VAULT_TOKEN}" \
+            "${VAULT_ADDR}/v1/secret/data/portfolio/${ENV}" | jq -r '.data.data')
+
+          if [ -z "$SECRETS_JSON" ] || [ "$SECRETS_JSON" = "null" ]; then
+            echo "::error::Failed to fetch secrets from Vault — empty response"
+            exit 1
+          fi
+
+          # Generate .env file from Vault secrets
+          echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' > /tmp/deploy.env
+
+          # Append IMAGE_TAG
+          echo "IMAGE_TAG=${TAG}" >> /tmp/deploy.env
+
+          # Validate secrets
+          KEY_COUNT=$(wc -l < /tmp/deploy.env)
+          echo "Generated .env with ${KEY_COUNT} keys"
+
+          if [ "$KEY_COUNT" -lt 2 ]; then
+            echo "::error::Secrets validation failed — expected multiple keys, got ${KEY_COUNT}"
+            exit 1
+          fi
+
+          echo "Secrets fetched and validated successfully"
 
       - name: Install cloudflared
         run: |
@@ -56,14 +101,15 @@ jobs:
           ENV="${{ github.event.inputs.environment }}"
           TAG="${{ github.event.inputs.tag }}"
 
+          # Copy generated .env to server
+          echo "Uploading .env to server..."
+          scp /tmp/deploy.env portfolio-server:${DEPLOY_PATH}/${ENV}/.env
+
           ssh portfolio-server << REMOTE_SCRIPT
             set -euo pipefail
             cd ${DEPLOY_PATH}/${ENV}
 
             echo "=== Deploying ${TAG} to ${ENV} ==="
-
-            # Update IMAGE_TAG in .env
-            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${TAG}/" .env
 
             # Pull new images
             echo "Pulling images..."
@@ -92,6 +138,10 @@ jobs:
             echo "=== Deploy complete ==="
           REMOTE_SCRIPT
 
+      - name: Cleanup
+        if: always()
+        run: rm -f /tmp/deploy.env
+
       - name: Post deploy summary
         if: success()
         run: |
@@ -99,6 +149,7 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Environment:** ${{ github.event.inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Tag:** \`${{ github.event.inputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Secrets:** Fetched from Vault" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Triggered by:** ${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Notify Slack
