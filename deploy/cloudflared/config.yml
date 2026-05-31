@@ -8,6 +8,7 @@
 #   cloudflared tunnel route dns portfolio-tunnel uatportfolio.nanobyte.ca
 #   cloudflared tunnel route dns portfolio-tunnel status.nanobyte.ca
 #   cloudflared tunnel route dns portfolio-tunnel grafana.nanobyte.ca
+#   cloudflared tunnel route dns portfolio-tunnel vault.nanobyte.ca
 
 tunnel: TUNNEL_ID
 credentials-file: /etc/cloudflared/TUNNEL_ID.json
@@ -76,6 +77,10 @@ ingress:
   # Grafana dashboards
   - hostname: grafana.nanobyte.ca
     service: http://localhost:13000
+
+  # Vault secrets manager (Cloudflare Access protected)
+  - hostname: vault.nanobyte.ca
+    service: http://localhost:18200
 
   # Catch-all (required by cloudflared)
   - service: http_status:404
