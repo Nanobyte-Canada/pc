@@ -79,4 +79,27 @@ else
     log "WARNING: /opt/portfolio/uat/.env not found, skipping UAT backup"
 fi
 
+# --- Vault data volume backup ---
+VAULT_BACKUP_DIR="${BACKUP_DIR}/vault"
+mkdir -p "${VAULT_BACKUP_DIR}"
+
+if docker inspect portfolio-vault &>/dev/null; then
+    log "Backing up Vault data volume..."
+
+    VAULT_VOLUME=$(docker inspect --format '{{ range .Mounts }}{{ if eq .Destination "/vault/data" }}{{ .Name }}{{ end }}{{ end }}' portfolio-vault)
+
+    docker run --rm \
+        -v "${VAULT_VOLUME}:/vault-data:ro" \
+        -v "${VAULT_BACKUP_DIR}:/backup" \
+        alpine tar czf "/backup/vault-${DATE}.tar.gz" -C /vault-data .
+
+    VAULT_SIZE=$(du -h "${VAULT_BACKUP_DIR}/vault-${DATE}.tar.gz" | cut -f1)
+    log "  Created: ${VAULT_BACKUP_DIR}/vault-${DATE}.tar.gz (${VAULT_SIZE})"
+
+    find "${VAULT_BACKUP_DIR}" -name "vault-*.tar.gz" -mtime +30 -delete
+    log "  Cleaned Vault backups older than 30 days"
+else
+    log "WARNING: portfolio-vault container not found, skipping Vault backup"
+fi
+
 log "=== Backups complete ==="
