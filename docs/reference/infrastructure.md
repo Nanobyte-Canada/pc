@@ -822,7 +822,7 @@ Production and UAT environments hosted on a dedicated home server with comprehen
 
 Three independent Docker Compose stacks run simultaneously.
 
-#### Production Stack (ports 10000-10084, 15432, 16379)
+#### Production Stack (ports 10000-10084, 14001, 15432, 15900, 16379)
 
 | Service | Image | Ports | Notes |
 |---------|-------|-------|-------|
@@ -834,8 +834,9 @@ Three independent Docker Compose stacks run simultaneously.
 | `prod-broker-gateway` | `ghcr.io/portfolio/broker-gateway:main-*` | 10084:8084 | Broker adapter service |
 | `prod-postgres` | `postgres:16-alpine` | 15432:5432 | PostgreSQL database |
 | `prod-redis` | `redis:7-alpine` | 16379:6379 | Cache and session store |
+| `ib-gateway` | `ghcr.io/gnzsnz/ib-gateway:10.30.1t` | 14001:4001, 127.0.0.1:15900:5900 | IBKR Gateway + IBC + VNC (live mode) |
 
-#### UAT Stack (ports 20000-20084, 25432, 26379)
+#### UAT Stack (ports 20000-20084, 24002, 25432, 25900, 26379)
 
 | Service | Image | Ports | Notes |
 |---------|-------|-------|-------|
@@ -847,6 +848,7 @@ Three independent Docker Compose stacks run simultaneously.
 | `uat-broker-gateway` | `ghcr.io/portfolio/broker-gateway:main-*` | 20084:8084 | Broker adapter service |
 | `uat-postgres` | `postgres:16-alpine` | 25432:5432 | PostgreSQL database |
 | `uat-redis` | `redis:7-alpine` | 26379:6379 | Cache and session store |
+| `ib-gateway` | `ghcr.io/gnzsnz/ib-gateway:10.30.1t` | 24002:4002, 127.0.0.1:25900:5900 | IBKR Gateway + IBC + VNC (paper mode) |
 
 #### Monitoring Stack (ports 13000-19187)
 
@@ -976,6 +978,31 @@ Zero-trust architecture with defense in depth.
 - **Secret rotation:** Database passwords and JWT keys rotated quarterly via Ansible playbook
 - **HTTPS only:** All external endpoints use TLS 1.3 (terminated at Cloudflare)
 
+### IBKR Gateway Integration
+
+Both production and UAT stacks include an IBKR Gateway container for live Interactive Brokers connectivity.
+
+**Container:** `ghcr.io/gnzsnz/ib-gateway:10.30.1t`
+- IBKR Gateway + IBC (automated login) + VNC server for remote access
+- Handles IBKR's daily forced reconnect and automated re-login via IBC
+- VNC port bound to `127.0.0.1` only (not exposed via Cloudflare Tunnel)
+- VNC accessible locally for debugging the gateway UI
+
+**Trading Modes:**
+- **Production:** Live trading mode (port 4001 mapped to 14001)
+- **UAT:** Paper trading mode (port 4002 mapped to 24002)
+- **Local development:** Paper trading mode (port 4002 mapped to 4002)
+
+**VNC Ports:**
+- Production: `127.0.0.1:15900:5900` (localhost only)
+- UAT: `127.0.0.1:25900:5900` (localhost only)
+- Local: `127.0.0.1:5900:5900` (localhost only)
+
+**Configuration:**
+- Environment variables: `IBKR_USERNAME`, `IBKR_PASSWORD`, `TRADING_MODE` (live/paper)
+- `market-data-service` and `broker-gateway-service` connect to gateway via `ib-gateway:4001` (prod) or `ib-gateway:4002` (UAT/local)
+- IBC configuration handles timeout extensions and daily reconnect at 11:45 PM ET
+
 ### Backups
 
 Automated PostgreSQL backups with multi-tier retention.
@@ -1024,7 +1051,9 @@ Complete port allocation across all three stacks.
 | 10082 | Production | Market data service | HTTP |
 | 10083 | Production | Strategy service | HTTP |
 | 10084 | Production | Broker gateway | HTTP |
+| 14001 | Production | IBKR Gateway API (live) | TCP |
 | 15432 | Production | PostgreSQL | TCP |
+| 15900 | Production | IBKR Gateway VNC | TCP (127.0.0.1 only) |
 | 16379 | Production | Redis | TCP |
 | 20000 | UAT | Frontend (Nginx) | HTTP |
 | 20080 | UAT | Backend API | HTTP |
@@ -1032,8 +1061,12 @@ Complete port allocation across all three stacks.
 | 20082 | UAT | Market data service | HTTP |
 | 20083 | UAT | Strategy service | HTTP |
 | 20084 | UAT | Broker gateway | HTTP |
+| 24002 | UAT | IBKR Gateway API (paper) | TCP |
 | 25432 | UAT | PostgreSQL | TCP |
+| 25900 | UAT | IBKR Gateway VNC | TCP (127.0.0.1 only) |
 | 26379 | UAT | Redis | TCP |
+| 4002 | Local | IBKR Gateway API (paper) | TCP |
+| 5900 | Local | IBKR Gateway VNC | TCP (127.0.0.1 only) |
 | 13000 | Monitoring | Grafana | HTTP |
 | 13001 | Monitoring | Uptime Kuma | HTTP |
 | 13100 | Monitoring | Loki | HTTP |
@@ -1043,7 +1076,7 @@ Complete port allocation across all three stacks.
 | 19121 | Monitoring | redis_exporter | HTTP |
 | 19187 | Monitoring | postgres_exporter | HTTP |
 
-**Note:** All ports are bound to `0.0.0.0` but protected by UFW. Only Cloudflare Tunnel has local access.
+**Note:** All ports are bound to `0.0.0.0` except VNC ports (127.0.0.1 only). UFW firewall protects all ports. Only Cloudflare Tunnel has local access to application ports.
 
 ### GitHub Secrets Required
 
