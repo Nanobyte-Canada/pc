@@ -14,59 +14,11 @@ tunnel: TUNNEL_ID
 credentials-file: /etc/cloudflared/TUNNEL_ID.json
 
 ingress:
-  # Prod backend API
-  - hostname: portfolio.nanobyte.ca
-    path: /api/.*
-    service: http://localhost:10080
-
-  # Prod backend auth endpoints
-  - hostname: portfolio.nanobyte.ca
-    path: /auth/.*
-    service: http://localhost:10080
-
-  # Prod backend health/actuator
-  - hostname: portfolio.nanobyte.ca
-    path: /health
-    service: http://localhost:10080
-
-  - hostname: portfolio.nanobyte.ca
-    path: /actuator/.*
-    service: http://localhost:10080
-
-  # Prod backend WebSocket
-  - hostname: portfolio.nanobyte.ca
-    path: /ws/.*
-    service: http://localhost:10080
-
-  # Prod frontend (catch-all for portfolio.nanobyte.ca)
+  # Production — all traffic through frontend Nginx (reverse proxies to backend services)
   - hostname: portfolio.nanobyte.ca
     service: http://localhost:10000
 
-  # UAT backend API
-  - hostname: uatportfolio.nanobyte.ca
-    path: /api/.*
-    service: http://localhost:20080
-
-  # UAT backend auth endpoints
-  - hostname: uatportfolio.nanobyte.ca
-    path: /auth/.*
-    service: http://localhost:20080
-
-  # UAT backend health/actuator
-  - hostname: uatportfolio.nanobyte.ca
-    path: /health
-    service: http://localhost:20080
-
-  - hostname: uatportfolio.nanobyte.ca
-    path: /actuator/.*
-    service: http://localhost:20080
-
-  # UAT backend WebSocket
-  - hostname: uatportfolio.nanobyte.ca
-    path: /ws/.*
-    service: http://localhost:20080
-
-  # UAT frontend (catch-all for uatportfolio.nanobyte.ca)
+  # UAT — all traffic through frontend Nginx (reverse proxies to backend services)
   - hostname: uatportfolio.nanobyte.ca
     service: http://localhost:20000
 
@@ -74,7 +26,7 @@ ingress:
   - hostname: status.nanobyte.ca
     service: http://localhost:13001
 
-  # Grafana dashboards
+  # Grafana dashboards (Cloudflare Access protected)
   - hostname: grafana.nanobyte.ca
     service: http://localhost:13000
 
