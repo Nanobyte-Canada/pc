@@ -191,6 +191,39 @@ services:
         max-size: "50m"
         max-file: "5"
 
+  vault:
+    image: hashicorp/vault:1.17
+    container_name: portfolio-vault
+    cap_add:
+      - IPC_LOCK
+    environment:
+      - VAULT_ADDR=http://127.0.0.1:8200
+      - VAULT_API_ADDR=http://127.0.0.1:8200
+    volumes:
+      - vault_data:/vault/data
+      - ./vault/config.hcl:/vault/config/config.hcl:ro
+    ports:
+      - "18200:8200"
+    command: vault server -config=/vault/config/config.hcl
+    restart: unless-stopped
+    networks:
+      - monitoring-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "sh", "-c", "vault status -format=json 2>/dev/null || exit 0"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
 networks:
   monitoring-network:
     driver: bridge
@@ -200,3 +233,4 @@ volumes:
   grafana_data:
   loki_data:
   uptime_kuma_data:
+  vault_data:
