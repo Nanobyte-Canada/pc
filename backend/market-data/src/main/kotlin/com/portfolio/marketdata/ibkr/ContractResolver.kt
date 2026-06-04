@@ -55,7 +55,7 @@ class ContractResolver(
             "OPT" -> {
                 try {
                     ibkrClient.requestOptionChain(symbol).also { contracts ->
-                        contracts.forEach { contract ->
+                        contracts.filter { it.conId > 0 }.forEach { contract ->
                             val key = buildCacheKey(contract.symbol, contract.secType, contract.expiry, contract.strike, contract.right)
                             cacheInDatabase(contract)
                             cacheInRedis(key, contract)
@@ -83,7 +83,8 @@ class ContractResolver(
     private fun getFromDatabase(symbol: String, secType: String, expiry: LocalDate?, strike: BigDecimal?, right: String?): OptionContractDetails? {
         return try {
             contractCacheRepository.findBySymbolAndSecTypeAndExpiryAndStrikeAndOptionRight(symbol, secType, expiry, strike, right)?.let { entity ->
-                OptionContractDetails(entity.conId, entity.symbol, entity.secType, entity.exchange ?: "SMART", entity.expiry, entity.strike, entity.optionRight)
+                OptionContractDetails(entity.conId, entity.symbol, entity.secType, entity.exchange ?: "SMART", entity.expiry, entity.strike, entity.optionRight,
+                    tradingClass = entity.tradingClass, multiplier = entity.multiplier)
             }
         } catch (e: Exception) {
             logger.error("Database lookup failed", e)
@@ -111,6 +112,7 @@ class ContractResolver(
     }
 
     private fun cacheInDatabase(contract: OptionContractDetails) {
+        if (contract.conId <= 0) return
         try {
             val existing = contractCacheRepository.findBySymbolAndSecTypeAndExpiryAndStrikeAndOptionRight(
                 contract.symbol, contract.secType, contract.expiry, contract.strike, contract.right
@@ -119,7 +121,8 @@ class ContractResolver(
                 contractCacheRepository.save(ContractCacheEntity(
                     symbol = contract.symbol, conId = contract.conId, secType = contract.secType,
                     exchange = contract.exchange, expiry = contract.expiry, strike = contract.strike,
-                    optionRight = contract.right, cachedAt = Instant.now()
+                    optionRight = contract.right, tradingClass = contract.tradingClass,
+                    multiplier = contract.multiplier, cachedAt = Instant.now()
                 ))
             }
         } catch (e: Exception) {
@@ -132,7 +135,7 @@ class ContractResolver(
     }
 
     private fun serializeContract(contract: OptionContractDetails): String {
-        return "${contract.conId}|${contract.symbol}|${contract.secType}|${contract.exchange}|${contract.expiry ?: ""}|${contract.strike ?: ""}|${contract.right ?: ""}"
+        return "${contract.conId}|${contract.symbol}|${contract.secType}|${contract.exchange}|${contract.expiry ?: ""}|${contract.strike ?: ""}|${contract.right ?: ""}|${contract.tradingClass ?: ""}|${contract.multiplier ?: ""}"
     }
 
     private fun parseContractJson(json: String): OptionContractDetails? {
@@ -142,7 +145,9 @@ class ContractResolver(
             OptionContractDetails(parts[0].toInt(), parts[1], parts[2], parts[3],
                 if (parts[4].isNotEmpty()) LocalDate.parse(parts[4]) else null,
                 if (parts[5].isNotEmpty()) BigDecimal(parts[5]) else null,
-                if (parts[6].isNotEmpty()) parts[6] else null)
+                if (parts[6].isNotEmpty()) parts[6] else null,
+                tradingClass = parts.getOrNull(7)?.takeIf { it.isNotEmpty() },
+                multiplier = parts.getOrNull(8)?.takeIf { it.isNotEmpty() })
         } catch (e: Exception) {
             logger.error("Failed to parse contract: {}", json, e)
             null

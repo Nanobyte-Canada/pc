@@ -74,40 +74,81 @@ class OptionStreamingService(
         }
     }
 
+    companion object {
+        private const val MAX_DELTA = 0.45
+        private const val ESTIMATED_IV = 0.30
+        private const val MAX_CHAIN_SUBSCRIPTIONS = 80
+    }
+
     fun startStreamingChain(underlying: String) {
+        startStreamingChainForExpiry(underlying, null)
+    }
+
+    fun startStreamingChainForExpiryPublic(underlying: String, expiry: LocalDate) {
+        startStreamingChainForExpiry(underlying, expiry)
+    }
+
+    fun switchChainExpiry(underlying: String, expiry: LocalDate) {
+        stopStreamingChain(underlying)
+        startStreamingChainForExpiry(underlying, expiry)
+    }
+
+    private fun startStreamingChainForExpiry(underlying: String, targetExpiry: LocalDate?) {
         if (activeChainUnderlying.containsKey(underlying)) {
-            log.debug("Chain already streaming for {}", underlying)
-            return
+            if (targetExpiry == null) {
+                log.debug("Chain already streaming for {}", underlying)
+                return
+            }
+            stopStreamingChain(underlying)
         }
 
-        val contracts = try { ibkrClient.requestOptionChain(underlying) } catch (e: Exception) {
-            log.error("Failed to load option chain for streaming: {}", underlying, e)
-            return
+        val spotPrice = quoteCacheService.getQuote(underlying)?.last ?: run {
+            val stk = ibkrClient.requestContractDetails(underlying, "STK").firstOrNull() ?: return
+            val snapshot = ibkrClient.requestMarketDataSnapshot(stk.conId) ?: return
+            snapshot.last?.let { java.math.BigDecimal.valueOf(it) } ?: return
+        }
+        val contracts = if (targetExpiry != null) {
+            try {
+                ibkrClient.requestContractDetails(underlying, "OPT", targetExpiry).filter { c ->
+                    c.tradingClass == null || c.tradingClass == underlying
+                }.ifEmpty { ibkrClient.requestContractDetails(underlying, "OPT", targetExpiry) }
+            } catch (e: Exception) {
+                log.error("Failed to load contracts for {} expiry {}", underlying, targetExpiry, e)
+                return
+            }
+        } else {
+            try { ibkrClient.requestOptionChain(underlying) } catch (e: Exception) {
+                log.error("Failed to load option chain for streaming: {}", underlying, e)
+                return
+            }
         }
 
         val chainKeys = ConcurrentHashMap.newKeySet<String>()
         activeChainUnderlying[underlying] = chainKeys
-        var subscribed = 0
 
-        for (contract in contracts) {
-            if (contract.expiry == null || contract.strike == null || contract.right == null) continue
-            if (contract.conId <= 0) {
-                val resolved = contractResolver.resolve(
-                    contract.symbol, "OPT", contract.expiry, contract.strike, contract.right
-                ) ?: continue
-                startStreamingSingleForChain(underlying, resolved.conId, contract, chainKeys)
-            } else {
-                startStreamingSingleForChain(underlying, contract.conId, contract, chainKeys)
-            }
-            subscribed++
+        val expiry = targetExpiry ?: contracts.filter { it.expiry != null }.minByOrNull { it.expiry!! }?.expiry ?: return
+
+        val toSubscribe = contracts.filter { c ->
+            c.conId > 0 && c.expiry == expiry && c.strike != null && c.right != null
+        }.filter { c ->
+            val optionType = if (isCall(c.right)) OptionType.CALL else OptionType.PUT
+            val greeks = greeksCalculator.calculate(spotPrice, c.strike!!, c.expiry!!, optionType, ESTIMATED_IV, null)
+            greeks.delta.abs().toDouble() <= MAX_DELTA
+        }.take(MAX_CHAIN_SUBSCRIPTIONS)
+
+        for (contract in toSubscribe) {
+            startStreamingSingleForChain(underlying, contract.conId, contract, chainKeys)
         }
-        log.info("Started chain streaming for {} — {} contracts subscribed", underlying, subscribed)
+        log.info("Started chain streaming for {} — {} contracts subscribed (delta≤{}, expiry {})",
+            underlying, toSubscribe.size, MAX_DELTA, expiry)
     }
+
+    private fun isCall(right: String?) = right == "C" || right.equals("Call", ignoreCase = true)
 
     private fun startStreamingSingleForChain(
         underlying: String, conId: Int, contract: OptionContractDetails, chainKeys: MutableSet<String>
     ) {
-        val optionType = if (contract.right == "C") OptionType.CALL else OptionType.PUT
+        val optionType = if (isCall(contract.right)) OptionType.CALL else OptionType.PUT
         val contractKey = "$underlying:${contract.expiry}:${contract.strike}:$optionType"
 
         if (activeStreams.containsKey(contractKey)) {

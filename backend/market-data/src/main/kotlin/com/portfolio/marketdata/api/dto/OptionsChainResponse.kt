@@ -48,6 +48,12 @@ data class StrikeDataDto(
     }
 }
 
+data class OptionExpirationsResponse(
+    val underlying: String,
+    val spotPrice: BigDecimal,
+    val expirations: List<LocalDate>
+)
+
 data class OptionsChainResponse(
     val underlying: String,
     val spotPrice: BigDecimal,

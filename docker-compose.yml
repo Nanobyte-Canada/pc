@@ -41,12 +41,12 @@ services:
       TWS_ACCEPT_INCOMING: "accept"
       READ_ONLY_API: "yes"
       VNC_SERVER_PASSWORD: ${IBKR_VNC_PASSWORD:-}
-      TWS_PORT: "4002"
+      TWS_PORT: "4004"
     ports:
-      - "4002:4002"
+      - "4002:4004"
       - "5900:5900"
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "4002"]
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/4004"]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -136,7 +136,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       IBKR_HOST: ib-gateway
-      IBKR_PORT: "4002"
+      IBKR_PORT: "4004"
       IBKR_CLIENT_ID: ${IBKR_CLIENT_ID:-1}
     ports:
       - "8082:8082"
@@ -206,7 +206,7 @@ services:
       GATEWAY_API_KEY: ${GATEWAY_API_KEY:-}
       IBKR_GATEWAY_ENABLED: "true"
       IBKR_HOST: ib-gateway
-      IBKR_PORT: "4002"
+      IBKR_PORT: "4004"
       IBKR_GATEWAY_CLIENT_ID: ${IBKR_GATEWAY_CLIENT_ID:-2}
       QUESTRADE_ENABLED: ${QUESTRADE_ENABLED:-false}
       WEALTHSIMPLE_ENABLED: ${WEALTHSIMPLE_ENABLED:-false}

@@ -34,11 +34,16 @@ class TwsIbkrClient(
 
     private val pendingRequests = ConcurrentHashMap<Int, CompletableFuture<Any>>()
     private val contractAccumulators = ConcurrentHashMap<Int, MutableList<OptionContractDetails>>()
-    private val optionParamAccumulators = ConcurrentHashMap<Int, MutableList<OptionContractDetails>>()
+    private val optionChainParamAccumulators = ConcurrentHashMap<Int, MutableList<OptionChainParams>>()
     private val snapshotAccumulators = ConcurrentHashMap<Int, MarketDataSnapshot>()
     private val greeksStore = ConcurrentHashMap<Int, GreeksData>()
 
+    private val chainResolutionExecutor: ExecutorService = Executors.newFixedThreadPool(4) { r ->
+        Thread(r, "chain-resolve").apply { isDaemon = true }
+    }
+
     private val requestTimeout = properties.reconnectDelayMs.coerceAtLeast(10000)
+    private val chainRequestTimeout = 30000L
 
     data class GreeksData(
         val impliedVol: Double = Double.MAX_VALUE,
@@ -105,7 +110,7 @@ class TwsIbkrClient(
         pendingRequests.values.forEach { it.completeExceptionally(IllegalStateException("Disconnected")) }
         pendingRequests.clear()
         contractAccumulators.clear()
-        optionParamAccumulators.clear()
+        optionChainParamAccumulators.clear()
         if (::client.isInitialized && client.isConnected) {
             client.eDisconnect()
         }
@@ -193,11 +198,71 @@ class TwsIbkrClient(
         }
         val underlyingConId = stocks.first().conId
 
+        val params = requestOptionChainParams(underlyingConId, underlying)
+        if (params.isEmpty()) {
+            log.warn("TwsIbkrClient: no option chain params returned for {}", underlying)
+            return emptyList()
+        }
+
+        val standardParams = params.filter { p ->
+            p.tradingClass == underlying && (p.multiplier == "100" || p.multiplier == null)
+        }.ifEmpty { params }
+
+        val allExpirations = standardParams.flatMap { it.expirations }.distinct().sorted()
+        val selectedExpirations = allExpirations.take(properties.maxChainExpirations)
+
+        log.info("TwsIbkrClient: resolving {} expirations for {} option chain", selectedExpirations.size, underlying)
+
+        val futures = selectedExpirations.map { expiry ->
+            CompletableFuture.supplyAsync({
+                try {
+                    requestContractDetails(underlying, "OPT", expiry)
+                } catch (e: Exception) {
+                    log.warn("TwsIbkrClient: failed to resolve contracts for {} expiry {}", underlying, expiry, e)
+                    emptyList()
+                }
+            }, chainResolutionExecutor)
+        }
+
+        val allContracts = futures.flatMap { f ->
+            try {
+                f.get(requestTimeout * 2, TimeUnit.MILLISECONDS)
+            } catch (e: Exception) {
+                log.warn("TwsIbkrClient: timed out resolving expiry contracts for {}", underlying)
+                emptyList()
+            }
+        }
+
+        val filtered = allContracts.filter { c ->
+            c.tradingClass == null || c.tradingClass == underlying
+        }.ifEmpty { allContracts }
+
+        log.info("TwsIbkrClient: resolved {} real contracts for {} ({} expirations)",
+            filtered.size, underlying, selectedExpirations.size)
+        return filtered
+    }
+
+    override fun requestOptionExpirations(underlying: String): List<LocalDate> {
+        val stocks = requestContractDetails(underlying, "STK")
+        if (stocks.isEmpty()) return emptyList()
+        val underlyingConId = stocks.first().conId
+
+        val params = requestOptionChainParams(underlyingConId, underlying)
+        if (params.isEmpty()) return emptyList()
+
+        val standardParams = params.filter { p ->
+            p.tradingClass == underlying && (p.multiplier == "100" || p.multiplier == null)
+        }.ifEmpty { params }
+
+        return standardParams.flatMap { it.expirations }.distinct().sorted()
+    }
+
+    private fun requestOptionChainParams(underlyingConId: Int, underlying: String): List<OptionChainParams> {
         val reqId = nextReqId.getAndIncrement()
         @Suppress("UNCHECKED_CAST")
         val future = CompletableFuture<Any>() as CompletableFuture<Any>
-        val results = CopyOnWriteArrayList<OptionContractDetails>()
-        optionParamAccumulators[reqId] = results
+        val results = CopyOnWriteArrayList<OptionChainParams>()
+        optionChainParamAccumulators[reqId] = results
         pendingRequests[reqId] = future
 
         sendExecutor.submit {
@@ -210,16 +275,16 @@ class TwsIbkrClient(
 
         return try {
             @Suppress("UNCHECKED_CAST")
-            future.get(requestTimeout, TimeUnit.MILLISECONDS) as List<OptionContractDetails>
+            future.get(requestTimeout, TimeUnit.MILLISECONDS) as List<OptionChainParams>
         } catch (e: TimeoutException) {
-            log.warn("TwsIbkrClient: option chain request timed out for {}", underlying)
+            log.warn("TwsIbkrClient: option chain params timed out for {}", underlying)
             results.toList()
         } catch (e: Exception) {
-            log.error("TwsIbkrClient: option chain request failed for {}", underlying, e)
+            log.error("TwsIbkrClient: option chain params failed for {}", underlying, e)
             emptyList()
         } finally {
             pendingRequests.remove(reqId)
-            optionParamAccumulators.remove(reqId)
+            optionChainParamAccumulators.remove(reqId)
         }
     }
 
@@ -252,11 +317,13 @@ class TwsIbkrClient(
             }
         }
 
+        val timeout = if (secType == "OPT" && strike == null && right == null) chainRequestTimeout else requestTimeout
+
         return try {
             @Suppress("UNCHECKED_CAST")
-            future.get(requestTimeout, TimeUnit.MILLISECONDS) as List<OptionContractDetails>
+            future.get(timeout, TimeUnit.MILLISECONDS) as List<OptionContractDetails>
         } catch (e: TimeoutException) {
-            log.warn("TwsIbkrClient: contract details request timed out for {} {}", symbol, secType)
+            log.warn("TwsIbkrClient: contract details request timed out for {} {} ({}ms)", symbol, secType, timeout)
             results.toList()
         } catch (e: Exception) {
             log.error("TwsIbkrClient: contract details failed for {} {}", symbol, secType, e)
@@ -365,7 +432,9 @@ class TwsIbkrClient(
                 LocalDate.parse(it, DateTimeFormatter.BASIC_ISO_DATE)
             },
             strike = if (c.strike() > 0) BigDecimal.valueOf(c.strike()) else null,
-            right = rightStr
+            right = rightStr,
+            tradingClass = c.tradingClass(),
+            multiplier = c.multiplier()
         )
         contractAccumulators[reqId]?.add(detail)
     }
@@ -383,38 +452,27 @@ class TwsIbkrClient(
         expirations: MutableSet<String>?, strikes: MutableSet<Double>?
     ) {
         if (exchange != "SMART") return
-
-        val results = mutableListOf<OptionContractDetails>()
         val exps = expirations ?: return
-        val stks = strikes ?: return
 
-        for (exp in exps) {
-            val expDate = try {
-                LocalDate.parse(exp, DateTimeFormatter.BASIC_ISO_DATE)
-            } catch (_: Exception) { continue }
+        val parsedExpirations = exps.mapNotNull { exp ->
+            try { LocalDate.parse(exp, DateTimeFormatter.BASIC_ISO_DATE) } catch (_: Exception) { null }
+        }.toSet()
 
-            for (strike in stks) {
-                for (right in listOf("C", "P")) {
-                    results.add(
-                        OptionContractDetails(
-                            conId = 0,
-                            symbol = tradingClass ?: "",
-                            secType = "OPT",
-                            exchange = exchange,
-                            expiry = expDate,
-                            strike = BigDecimal.valueOf(strike),
-                            right = right
-                        )
-                    )
-                }
-            }
-        }
+        if (parsedExpirations.isEmpty()) return
 
-        optionParamAccumulators[reqId]?.addAll(results)
+        optionChainParamAccumulators[reqId]?.add(
+            OptionChainParams(
+                exchange = exchange ?: "SMART",
+                underlyingConId = underlyingConId,
+                tradingClass = tradingClass,
+                multiplier = multiplier,
+                expirations = parsedExpirations
+            )
+        )
     }
 
     override fun securityDefinitionOptionalParameterEnd(reqId: Int) {
-        val results = optionParamAccumulators[reqId] ?: return
+        val results = optionChainParamAccumulators[reqId] ?: return
         @Suppress("UNCHECKED_CAST")
         val future = pendingRequests[reqId] as? CompletableFuture<Any>
         future?.complete(results.toList())
@@ -463,7 +521,7 @@ class TwsIbkrClient(
         pendingRequests.values.forEach { it.completeExceptionally(IllegalStateException("Connection closed")) }
         pendingRequests.clear()
         contractAccumulators.clear()
-        optionParamAccumulators.clear()
+        optionChainParamAccumulators.clear()
         snapshotAccumulators.clear()
     }
 }

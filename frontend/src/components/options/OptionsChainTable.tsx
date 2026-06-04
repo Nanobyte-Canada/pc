@@ -5,11 +5,12 @@ import './OptionsChainTable.css'
 
 interface OptionsChainTableProps {
   chain: OptionsChain
+  onExpiryChange?: (expiry: string) => void
 }
 
 type ChainSide = 'calls' | 'puts'
 
-export function OptionsChainTable({ chain }: OptionsChainTableProps) {
+export function OptionsChainTable({ chain, onExpiryChange }: OptionsChainTableProps) {
   const expirations = Object.keys(chain.expirations).sort()
   const [selectedExpiry, setSelectedExpiry] = useState(expirations[0] ?? '')
   const [mobileSide, setMobileSide] = useState<ChainSide>('calls')
@@ -54,7 +55,7 @@ export function OptionsChainTable({ chain }: OptionsChainTableProps) {
           <button
             key={exp}
             className={`chain-table__expiry-tab ${selectedExpiry === exp ? 'chain-table__expiry-tab--active' : ''}`}
-            onClick={() => setSelectedExpiry(exp)}
+            onClick={() => { setSelectedExpiry(exp); onExpiryChange?.(exp) }}
           >
             {exp}
           </button>
@@ -66,7 +67,7 @@ export function OptionsChainTable({ chain }: OptionsChainTableProps) {
         <select
           className="chain-table__expiry-dropdown"
           value={selectedExpiry}
-          onChange={(e) => setSelectedExpiry(e.target.value)}
+          onChange={(e) => { setSelectedExpiry(e.target.value); onExpiryChange?.(e.target.value) }}
         >
           {expirations.map((exp) => (
             <option key={exp} value={exp}>{exp}</option>

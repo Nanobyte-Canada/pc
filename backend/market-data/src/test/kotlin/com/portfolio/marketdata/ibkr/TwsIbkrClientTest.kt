@@ -7,7 +7,7 @@ import kotlin.test.assertFalse
 
 class TwsIbkrClientTest {
 
-    private val properties = AppProperties(host = "", port = 4002, clientId = 1)
+    private val properties = AppProperties(host = "", port = 4002, clientId = 1, maxChainExpirations = 12)
 
     @Test
     fun `isConnected returns false before connect`() {

@@ -111,6 +111,19 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
     }
   }, [])
 
+  const subscribeChainExpiry = useCallback((underlying: string, expiry: string) => {
+    subscribedChainsRef.current.add(underlying)
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'subscribe_chain_expiry', underlying, expiry }))
+    }
+  }, [])
+
+  const switchChainExpiry = useCallback((underlying: string, expiry: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'switch_chain_expiry', underlying, expiry }))
+    }
+  }, [])
+
   const subscribeOption = useCallback(
     (symbol: string, expiry: string, strike: string, optionType: string) => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -146,6 +159,8 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
     unsubscribe,
     subscribeChain,
     unsubscribeChain,
+    subscribeChainExpiry,
+    switchChainExpiry,
     subscribeOption,
     unsubscribeOption,
   }

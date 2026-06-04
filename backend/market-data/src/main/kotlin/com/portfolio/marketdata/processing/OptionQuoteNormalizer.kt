@@ -45,7 +45,6 @@ class OptionQuoteNormalizer {
         fun tryEmit(underlying: String, optionType: OptionType, strike: BigDecimal, expiry: LocalDate): OptionQuote? {
             val b = bid ?: return null
             val a = ask ?: return null
-            val v = volume ?: return null
 
             val normalizedBid = if (b == 0.0) a else b
             val normalizedLast = last?.let { if (it == 0.0) (normalizedBid + a) / 2.0 else it } ?: (normalizedBid + a) / 2.0
@@ -55,7 +54,7 @@ class OptionQuoteNormalizer {
                 bid = BigDecimal.valueOf(normalizedBid).setScale(4, RoundingMode.HALF_UP),
                 ask = BigDecimal.valueOf(a).setScale(4, RoundingMode.HALF_UP),
                 last = BigDecimal.valueOf(normalizedLast).setScale(4, RoundingMode.HALF_UP),
-                volume = v, openInterest = 0L, greeks = null, timestamp = Instant.now()
+                volume = volume ?: 0L, openInterest = 0L, greeks = null, timestamp = Instant.now()
             )
         }
     }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQuoteStore } from '@/stores/quoteStore'
 import { useMarketDataWebSocket } from '@/hooks/useMarketDataWebSocket'
-import { getOptionsChainWithGreeks } from '@/services/marketDataService'
+import { getOptionExpirations, getOptionsChainForExpiry } from '@/services/marketDataService'
 import { formatCurrency } from '@/services/brokerService'
 import { WheelChainRow } from './WheelChainRow'
 import type { ChainPanelContext, WheelChainStrike } from '@/types/wheel'
@@ -17,35 +17,20 @@ interface WheelChainPanelProps {
 
 export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose, onStrikeSelect }: WheelChainPanelProps) {
   const [loading, setLoading] = useState(true)
+  const [expirations, setExpirations] = useState<string[]>([])
   const [selectedExpiry, setSelectedExpiry] = useState(context.expiryDate)
+  const [loadingExpiry, setLoadingExpiry] = useState(false)
 
   const chain = useQuoteStore(s => s.chains[context.ticker])
   const quote = useQuoteStore(s => s.quotes[context.ticker])
   const setChain = useQuoteStore(s => s.setChain)
-  const { subscribe, subscribeChain, unsubscribe, unsubscribeChain } = useMarketDataWebSocket()
+  const { subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, switchChainExpiry } = useMarketDataWebSocket()
 
   const spotPrice = quote?.last ?? quote?.mid ?? initialSpotPrice
   const isCsp = context.optionSide === 'put'
   const typeLabelShort = isCsp ? 'CSP' : 'CC'
 
-  const availableExpiries = useMemo(() => {
-    if (!chain?.expirations) return []
-    return Object.keys(chain.expirations).sort()
-  }, [chain])
-
-  useEffect(() => {
-    if (availableExpiries.length === 0) return
-    if (availableExpiries.includes(selectedExpiry)) return
-    const target = new Date(context.expiryDate + 'T00:00:00').getTime()
-    let bestKey = availableExpiries[0]
-    let bestDiff = Infinity
-    for (const k of availableExpiries) {
-      const diff = Math.abs(new Date(k + 'T00:00:00').getTime() - target)
-      if (diff < bestDiff) { bestDiff = diff; bestKey = k }
-    }
-    if (bestDiff <= 3 * 86400000) setSelectedExpiry(bestKey)
-    else setSelectedExpiry(availableExpiries[0])
-  }, [availableExpiries, context.expiryDate, selectedExpiry])
+  const availableExpiries = expirations
 
   const dte = useMemo(() => {
     const now = new Date()
@@ -55,26 +40,61 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
 
   useEffect(() => {
     let cancelled = false
-    async function loadChain() {
+    async function init() {
       try {
-        const chainData = await getOptionsChainWithGreeks(context.ticker)
-        if (!cancelled) {
-          setChain(context.ticker, chainData)
-          setLoading(false)
+        const expData = await getOptionExpirations(context.ticker)
+        if (cancelled) return
+
+        const expList = expData.expirations
+        setExpirations(expList)
+
+        const target = new Date(context.expiryDate + 'T00:00:00').getTime()
+        let bestExpiry = expList[0]
+        let bestDiff = Infinity
+        for (const k of expList) {
+          const diff = Math.abs(new Date(k + 'T00:00:00').getTime() - target)
+          if (diff < bestDiff) { bestDiff = diff; bestExpiry = k }
         }
+        const chosenExpiry = bestDiff <= 3 * 86400000 ? bestExpiry : expList[0]
+        setSelectedExpiry(chosenExpiry)
+
+        const chainData = await getOptionsChainForExpiry(context.ticker, chosenExpiry)
+        if (cancelled) return
+        setChain(context.ticker, chainData)
+        setLoading(false)
+
+        subscribeChainExpiry(context.ticker, chosenExpiry)
       } catch {
         if (!cancelled) setLoading(false)
       }
     }
-    loadChain()
+    init()
     subscribe(context.ticker)
-    subscribeChain(context.ticker)
     return () => {
       cancelled = true
       unsubscribe(context.ticker)
       unsubscribeChain(context.ticker)
     }
-  }, [context.ticker, subscribe, subscribeChain, unsubscribe, unsubscribeChain, setChain])
+  }, [context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain])
+
+  const handleExpiryChange = useCallback(async (newExpiry: string) => {
+    setSelectedExpiry(newExpiry)
+    setLoadingExpiry(true)
+    try {
+      const chainData = await getOptionsChainForExpiry(context.ticker, newExpiry)
+      const existing = chain
+      if (existing && chainData.expirations) {
+        setChain(context.ticker, { ...existing, expirations: { ...existing.expirations, ...chainData.expirations } })
+      } else {
+        setChain(context.ticker, chainData)
+      }
+      switchChainExpiry(context.ticker, newExpiry)
+    } catch (err) {
+      console.error('Failed to load expiry:', err)
+    } finally {
+      setLoadingExpiry(false)
+    }
+  }, [context.ticker, chain, setChain, switchChainExpiry])
 
   const strikes: WheelChainStrike[] = useMemo(() => {
     if (!chain?.expirations) return []
@@ -91,10 +111,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       const ask: number | null = option.ask ?? null
       const delta: number | null = option.greeks?.delta ?? null
 
-      const bidDiscount = bid != null && spotPrice > 0
-        ? (spotPrice - strikeNum + bid) / spotPrice : null
-      const askDiscount = ask != null && spotPrice > 0
-        ? (spotPrice - strikeNum + ask) / spotPrice : null
+      const discount = spotPrice > 0 ? (spotPrice - strikeNum) / spotPrice : null
       const bidYield = bid != null && strikeNum > 0 && bid > 0
         ? (bid / strikeNum) * (365 / dte) : null
       const askYield = ask != null && strikeNum > 0 && ask > 0
@@ -103,17 +120,20 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       const isATM = spotPrice > 0 && Math.abs(strikeNum - spotPrice) / spotPrice < 0.01
       const isITM = isCsp ? strikeNum > spotPrice : strikeNum < spotPrice
 
-      rows.push({ strike: strikeNum, bid, ask, delta, bidDiscount, askDiscount, bidYield, askYield, isATM, isITM })
+      rows.push({ strike: strikeNum, bid, ask, delta, discount, bidYield, askYield, isATM, isITM })
     }
-    return rows.sort((a, b) => b.strike - a.strike)
+    return isCsp
+      ? rows.sort((a, b) => a.strike - b.strike)
+      : rows.sort((a, b) => b.strike - a.strike)
   }, [chain, selectedExpiry, spotPrice, dte, isCsp])
 
   const handleStrikeClick = useCallback((strike: WheelChainStrike) => {
     onStrikeSelect(context.ticker, selectedExpiry, strike.strike, context.optionSide)
   }, [context.ticker, selectedExpiry, context.optionSide, onStrikeSelect])
 
-  const priceChange = spotPrice - initialSpotPrice
-  const priceChangePct = initialSpotPrice > 0 ? ((spotPrice / initialSpotPrice - 1) * 100) : 0
+  const priceChange = quote ? (quote.last - (quote.bid || quote.last)) : 0
+  const priceChangePct = quote && quote.bid > 0 ? ((quote.last / quote.bid - 1) * 100) : 0
+  const hasChange = quote != null && Math.abs(priceChange) > 0.001
 
   const panelContent = (
     <>
@@ -125,9 +145,11 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
 
       <div className="wcp2-quote">
         <span className="wcp2-quote__price">{formatCurrency(spotPrice, 'USD')}</span>
-        <span className={`wcp2-quote__change ${priceChange >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
-          {priceChange >= 0 ? '+' : ''}{formatCurrency(Math.abs(priceChange), 'USD')} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%)
-        </span>
+        {hasChange && (
+          <span className={`wcp2-quote__change ${priceChange >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
+            {priceChange >= 0 ? '+' : ''}{formatCurrency(Math.abs(priceChange), 'USD')} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%)
+          </span>
+        )}
         <span className="wcp2-quote__live"><span className="wcp2-quote__dot" /> Live</span>
       </div>
 
@@ -137,7 +159,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
           <select
             className="wcp2-expiry__select"
             value={selectedExpiry}
-            onChange={e => setSelectedExpiry(e.target.value)}
+            onChange={e => handleExpiryChange(e.target.value)}
           >
             {availableExpiries.map(exp => {
               const d = new Date(exp + 'T00:00:00')
@@ -152,7 +174,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
           <button className="wcp2-expiry__trigger" onClick={() => {
             const idx = availableExpiries.indexOf(selectedExpiry)
             const next = (idx + 1) % availableExpiries.length
-            if (availableExpiries.length > 0) setSelectedExpiry(availableExpiries[next])
+            if (availableExpiries.length > 0) handleExpiryChange(availableExpiries[next])
           }}>
             <span className="wcp2-expiry__trigger-label">
               {new Date(selectedExpiry + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -165,7 +187,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
               <span
                 key={exp}
                 className={`wcp2-expiry__dot ${exp === selectedExpiry ? 'wcp2-expiry__dot--active' : ''}`}
-                onClick={() => setSelectedExpiry(exp)}
+                onClick={() => handleExpiryChange(exp)}
               />
             ))}
           </div>
@@ -179,7 +201,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       </div>
 
       <div className="wcp2-scroll">
-        {loading ? (
+        {loading || loadingExpiry ? (
           <div className="wcp2-loading">Loading chain...</div>
         ) : strikes.length === 0 ? (
           <div className="wcp2-loading">No data for this expiry</div>
