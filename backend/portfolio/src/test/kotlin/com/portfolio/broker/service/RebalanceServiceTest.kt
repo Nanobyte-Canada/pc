@@ -21,20 +21,31 @@ class RebalanceServiceTest {
     private lateinit var groupAccountRepository: PortfolioGroupAccountRepository
     private lateinit var settingsRepository: PortfolioGroupSettingsRepository
     private lateinit var positionRepository: BrokerPositionRepository
+    private lateinit var balanceRepository: BrokerBalanceRepository
+    private lateinit var connectionRepository: BrokerConnectionRepository
+    private lateinit var exchangeRateService: ExchangeRateService
     private lateinit var driftCalculationService: DriftCalculationService
+    private val objectMapper = ObjectMapper()
 
     @BeforeEach
     fun setup() {
         groupAccountRepository = mockk()
         settingsRepository = mockk()
         positionRepository = mockk()
+        balanceRepository = mockk()
+        connectionRepository = mockk()
+        exchangeRateService = mockk()
         driftCalculationService = mockk()
 
         service = RebalanceService(
             groupAccountRepository = groupAccountRepository,
             settingsRepository = settingsRepository,
             positionRepository = positionRepository,
-            driftCalculationService = driftCalculationService
+            balanceRepository = balanceRepository,
+            connectionRepository = connectionRepository,
+            exchangeRateService = exchangeRateService,
+            driftCalculationService = driftCalculationService,
+            objectMapper = objectMapper
         )
     }
 
