@@ -74,7 +74,8 @@ class ActivityIngestionServiceTest {
     @Test
     fun `syncActivitiesForConnection maps fields correctly`() {
         every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
-        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns null
+        // Use a recent date so the service takes the incremental (non-chunked) path
+        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns LocalDate.now().minusDays(5)
 
         val activitiesJson = buildActivitiesJson(
             mapOf(
@@ -160,7 +161,8 @@ class ActivityIngestionServiceTest {
     @Test
     fun `syncActivitiesForConnection handles null optional fields`() {
         every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
-        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns null
+        // Use a recent date so the service takes the incremental (non-chunked) path
+        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns LocalDate.now().minusDays(5)
 
         val activitiesJson = buildActivitiesJson(
             mapOf(
