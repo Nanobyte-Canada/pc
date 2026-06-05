@@ -92,6 +92,8 @@ kotlin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // Prevent CI from hanging if a test holds a thread
+    systemProperty("junit.jupiter.execution.timeout.default", "60s")
 }
 
 if (project.hasProperty("excludeIntegration")) {

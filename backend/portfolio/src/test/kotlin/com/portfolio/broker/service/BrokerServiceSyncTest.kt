@@ -63,7 +63,7 @@ class BrokerServiceSyncTest {
         every { connectionRepository.findByUserId(1L) } returns listOf(connection)
 
         val validationResult = objectMapper.createObjectNode().apply {
-            put("status", "VALID")
+            put("connected", true)
         }
         every { gatewayClient.validateConnection("gw-conn-1") } returns validationResult
         every { connectionRepository.save(any()) } answers { firstArg() }
@@ -95,8 +95,7 @@ class BrokerServiceSyncTest {
         every { connectionRepository.findByUserId(1L) } returns listOf(connection)
 
         val validationResult = objectMapper.createObjectNode().apply {
-            put("status", "INVALID")
-            put("message", "Token expired")
+            put("connected", false)
         }
         every { gatewayClient.validateConnection("gw-conn-1") } returns validationResult
         every { connectionRepository.save(any()) } answers { firstArg() }

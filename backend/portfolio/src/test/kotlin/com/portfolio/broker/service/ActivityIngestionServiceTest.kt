@@ -45,7 +45,9 @@ class ActivityIngestionServiceTest {
 
         service = ActivityIngestionService(
             connectionRepository, activityRepository, balanceRepository,
-            gatewayClient, objectMapper, exchangeRateService
+            gatewayClient, objectMapper, exchangeRateService,
+            maxLookbackYears = 30,
+            chunkDays = 29
         )
 
         // JpaRepository.save() has generic signature <S extends T> S save(S).
