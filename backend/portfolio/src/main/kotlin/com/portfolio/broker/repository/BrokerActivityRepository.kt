@@ -26,6 +26,9 @@ interface BrokerActivityRepository : JpaRepository<BrokerActivity, Long> {
     @Query("SELECT MAX(a.tradeDate) FROM BrokerActivity a WHERE a.connection.id = :connectionId")
     fun findLatestTradeDateByConnectionId(connectionId: Long): LocalDate?
 
+    @Query("SELECT MIN(a.tradeDate) FROM BrokerActivity a WHERE a.connection.id = :connectionId")
+    fun findEarliestTradeDateByConnectionId(connectionId: Long): LocalDate?
+
     @Query(
         value = """
             SELECT * FROM broker_activities a

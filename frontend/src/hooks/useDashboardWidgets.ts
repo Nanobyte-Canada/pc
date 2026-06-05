@@ -1,21 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as api from '../services/dashboardWidgetService'
+import { brokerKeys, dashboardKeys } from './queryKeys'
 
-export const dashboardKeys = {
-  all: ['dashboard'] as const,
-  summary: (connectionId?: number) => [...dashboardKeys.all, 'summary', connectionId] as const,
-  cash: (connectionId?: number) => [...dashboardKeys.all, 'cash', connectionId] as const,
-  sectorExposure: (connectionId?: number) => [...dashboardKeys.all, 'sectorExposure', connectionId] as const,
-  geographyExposure: (connectionId?: number) => [...dashboardKeys.all, 'geographyExposure', connectionId] as const,
-  riskProfile: (connectionId?: number) => [...dashboardKeys.all, 'riskProfile', connectionId] as const,
-  openOrders: () => [...dashboardKeys.all, 'openOrders'] as const,
-  fees: (connectionId?: number) => [...dashboardKeys.all, 'fees', connectionId] as const,
-  dividendCalendar: (month?: string, connectionId?: number) =>
-    [...dashboardKeys.all, 'dividendCalendar', month, connectionId] as const,
-  positions: (connectionId?: number) => [...dashboardKeys.all, 'positions', connectionId] as const,
-  holdings: (connectionId?: number) => [...dashboardKeys.all, 'holdings', connectionId] as const,
-  accounts: () => [...dashboardKeys.all, 'accounts'] as const,
-}
+export { dashboardKeys }
 
 export function useDashboardSummary(connectionId?: number) {
   return useQuery({
@@ -100,6 +87,14 @@ export function useDashboardHoldings(connectionId?: number) {
   })
 }
 
+export function useDashboardIrr(connectionId?: number) {
+  return useQuery({
+    queryKey: dashboardKeys.irr(connectionId),
+    queryFn: () => api.getDashboardIrr(connectionId),
+    staleTime: 5 * 60_000,
+  })
+}
+
 export function useDashboardAccounts() {
   return useQuery({
     queryKey: dashboardKeys.accounts(),
@@ -115,6 +110,7 @@ export function useRefreshAll() {
     mutationFn: () => api.refreshAll(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
+      queryClient.invalidateQueries({ queryKey: brokerKeys.all })
     },
   })
 }

@@ -65,9 +65,6 @@ dependencies {
     // Guava for rate limiting (RateLimiter)
     implementation("com.google.guava:guava:33.0.0-jre")
 
-    // SnapTrade SDK for brokerage connectivity
-    implementation("com.snaptrade:snaptrade-java-sdk:5.0.168")
-
     // Structured logging (JSON output for dev/prod)
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")
 

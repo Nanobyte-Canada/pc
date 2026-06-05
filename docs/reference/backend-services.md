@@ -32,12 +32,11 @@ com.portfolio
 │       ├── PasswordService.kt
 │       └── RefreshTokenService.kt
 ├── broker/
-│   ├── adapter/
-│   │   ├── SnapTradeAdapter.kt         # Interface - abstraction over SDK
-│   │   ├── SnapTradeAdapterImpl.kt     # Implementation - sole SDK import point
-│   │   └── SnapTradeDtos.kt            # SnapTrade-specific DTOs
+│   ├── client/
+│   │   ├── BrokerGatewayClient.kt      # HTTP client for broker-gateway service
+│   │   └── BrokerGatewayConfig.kt      # Gateway connection configuration
 │   ├── config/
-│   │   └── BrokerConfig.kt             # SnapTradeConfig, BrokerEncryptionConfig, etc.
+│   │   └── BrokerConfig.kt             # BrokerEncryptionConfig, BrokerSyncConfig, etc.
 │   ├── controller/
 │   │   ├── BrokerController.kt
 │   │   ├── DashboardController.kt
@@ -51,11 +50,11 @@ com.portfolio
 │   ├── repository/
 │   ├── scheduler/
 │   │   ├── AccountDataSyncScheduler.kt
-│   │   ├── RebalanceScheduler.kt
-│   │   └── SnapTradeHealthScheduler.kt
+│   │   └── RebalanceScheduler.kt
 │   ├── security/
 │   │   └── TokenEncryptionService.kt   # AES-256-GCM for broker tokens
 │   └── service/
+│       ├── AccountAnalyticsComputeService.kt
 │       ├── ActivityIngestionService.kt
 │       ├── BenchmarkService.kt
 │       ├── BrokerService.kt
@@ -74,9 +73,7 @@ com.portfolio
 │       ├── PortfolioSnapshotService.kt
 │       ├── PositionFetchService.kt
 │       ├── RebalanceService.kt
-│       ├── ReportingService.kt
-│       ├── SnapTradeService.kt
-│       └── SnapTradeStatusService.kt
+│       └── ReportingService.kt
 ├── config/
 │   ├── CacheConfig.kt                 # Redis cache manager with per-cache TTLs
 │   ├── GlobalExceptionHandler.kt      # @RestControllerAdvice
@@ -207,81 +204,55 @@ com.portfolio
 ### BrokerService
 
 **File:** `broker/service/BrokerService.kt`
-**Dependencies:** `BrokerConnectionRepository`, `BrokerPositionRepository`, `BrokerBalanceRepository`, `UserRepository`, `SnapTradeService`, `AuditService`, `ObjectMapper`
+**Dependencies:** `BrokerConnectionRepository`, `BrokerPositionRepository`, `BrokerBalanceRepository`, `UserRepository`, `BrokerGatewayClient`, `AuditService`, `ObjectMapper`
 
 | Method | Signature | Description |
 |---|---|---|
-| `getAvailableBrokers` | `(): List<BrokerDto>` | Lists enabled brokerages from SnapTrade with auth types |
-| `getBrokerageAuthorizationTypes` | `(brokerageSlug: String?): List<BrokerAuthTypeDto>` | Lists auth types, optionally filtered by brokerage |
 | `getUserConnections` | `(userId: Long): List<BrokerConnectionDto>` | Lists non-disconnected connections for user |
 | `getUserConnectionEntities` | `(userId: Long): List<BrokerConnection>` | Lists raw connection entities |
 | `getActiveConnections` | `(userId: Long): List<BrokerConnectionDto>` | Lists only ACTIVE connections |
 | `getConnection` | `(connectionId: Long, userId: Long): BrokerConnection` | Gets single connection with auth check |
-| `getConnectionPortalUrl` | `(userId: Long, broker?, reconnectAuthId?, connectionType?): String` | Generates SnapTrade OAuth portal URL |
-| `syncConnections` | `(userId: Long)` | Syncs SnapTrade authorizations and accounts to local DB |
-| `disconnectBroker` | `(authorizationId: String, userId: Long)` | Disconnects via SnapTrade and marks as DISCONNECTED |
+| `createGatewayConnection` | `(userId: Long, brokerType: String, credentials: Map<String, String>): List<BrokerConnection>` | Creates a new connection via the broker-gateway and creates one `BrokerConnection` per discovered account. Returns a list of connections for multi-account brokers. |
+| `syncConnections` | `(userId: Long)` | Syncs accounts from the broker-gateway for all active connections. Validates per unique `gatewayConnectionId` to avoid redundant API calls. |
+| `disconnectBroker` | `(authorizationId: String, userId: Long)` | Disconnects via broker-gateway and marks all accounts sharing the same gateway connection as DISCONNECTED |
 | `getPositionsForConnection` | `(connectionId: Long, userId: Long): ConnectionPositionsResponse` | Returns positions with P&L summary for one connection |
 | `getAggregatedPositions` | `(userId: Long): AggregatedPositionsResponse` | Aggregates positions across all active connections, grouped by symbol |
 | `getBalanceHistory` | `(connectionId: Long, startDate: LocalDate, endDate: LocalDate): BalanceHistoryResponse` | Returns balance snapshots for date range |
 
-### SnapTradeService
-
-**File:** `broker/service/SnapTradeService.kt`
-**Dependencies:** `SnapTradeConfig`, `UserRepository`, `TokenEncryptionService`, `SnapTradeAdapter`
-
-Wraps the SnapTradeAdapter with user registration/authentication logic. Generates deterministic SnapTrade user IDs from email SHA-256 hashes. Encrypts/decrypts user secrets via TokenEncryptionService.
-
-| Method | Signature | Description |
-|---|---|---|
-| `ensureUserRegistered` | `(user: User): SnapTradeUserInfo` | Registers with SnapTrade if needed, stores encrypted secret |
-| `getConnectionPortalUrl` | `(user, broker?, reconnectAuthId?, connectionType?): String` | Gets OAuth redirect URL from SnapTrade |
-| `listAccounts` | `(user: User): List<SnapTradeAccountDto>` | Lists all accounts |
-| `listConnections` | `(user: User): List<SnapTradeConnectionDto>` | Lists all brokerage authorizations |
-| `fetchPositions` | `(user: User, accountId: String): List<SnapTradePositionDto>` | Fetches positions for account |
-| `getHoldings` | `(user: User, accountId: String): SnapTradeHoldingsDto` | Fetches complete holdings (positions + balances + total_value) |
-| `fetchOptionPositions` | `(user: User, accountId: String): List<SnapTradeOptionPositionDto>` | Fetches option-specific data |
-| `disconnectBrokerage` | `(user: User, authorizationId: String)` | Disconnects a brokerage |
-| `listAvailableBrokerages` | `(): List<SnapTradeBrokerageDto>` | Lists all brokerages |
-| `listBrokerageAuthorizationTypes` | `(brokerageSlug: String?): List<SnapTradeBrokerageAuthTypeDto>` | Lists auth types |
-| `getActivities` | `(user, startDate?, endDate?, accounts?, type?): List<SnapTradeActivityDto>` | Fetches transaction activities |
-| `getAccountBalance` | `(user: User, accountId: String): List<SnapTradeBalanceDto>` | Fetches account balances |
-| `placeOrder` | `(user, accountId, action, symbol, units, orderType, limitPrice?, timeInForce): SnapTradeOrderDto` | Places an order |
-| `cancelOrder` | `(user: User, accountId: String, brokerOrderId: String)` | Cancels an order |
-| `listOrders` | `(user: User, accountId: String): List<SnapTradeAccountOrderDto>` | Lists account orders |
-
 ### PositionFetchService
 
 **File:** `broker/service/PositionFetchService.kt`
-**Dependencies:** `BrokerConnectionRepository`, `BrokerPositionRepository`, `PositionFetchLogRepository`, `BrokerBalanceRepository`, `TradeOrderRepository`, `UserRepository`, `SnapTradeService`, `AuditService`, `ObjectMapper`, `StockRepository`, `EtfRepository`
+**Dependencies:** `BrokerConnectionRepository`, `BrokerPositionRepository`, `PositionFetchLogRepository`, `BrokerBalanceRepository`, `TradeOrderRepository`, `UserRepository`, `BrokerGatewayClient`, `AccountAnalyticsComputeService`, `AuditService`, `ObjectMapper`
 
 | Method | Signature | Description |
 |---|---|---|
 | `triggerManualFetch` | `(connectionId: Long, userId: Long): PositionFetchLog` | Creates fetch log, triggers async fetch, returns immediately |
 | `executeAsyncFetch` | `@Async (connectionId, fetchLogId, userId)` | Asynchronous position fetch wrapper |
-| `executePositionFetch` | `(connectionId, fetchLogId, userId): PositionFetchLog` | Full fetch: positions, option enrichment, balance snapshot, order sync |
+| `executePositionFetch` | `(connectionId, fetchLogId, userId): PositionFetchLog` | Full fetch: positions, balance snapshot, order sync, analytics computation |
 
 Internal responsibilities:
+- Fetches positions, balances, and orders from the broker-gateway via `BrokerGatewayClient`
 - Marks old positions as non-current before saving new ones
-- Resolves instrument types (ETF/STOCK/OPTION) by checking local DB
-- Enriches option positions with strike price, expiration, underlying symbol
+- Resolves instrument types (ETF/STOCK/OPTION) from gateway-provided data
 - Saves balance snapshots (cash + buying power by currency in JSONB)
 - Syncs broker orders into `trade_orders` table
-- Maps SnapTrade order statuses (EXECUTED->FILLED, CANCELED->CANCELLED, etc.)
+- Triggers `AccountAnalyticsComputeService.computeForConnection()` after successful position sync to pre-compute analytics snapshots
 
 ### DashboardDataService
 
 **File:** `broker/service/DashboardDataService.kt`
-**Dependencies:** `BrokerPositionRepository`, `BrokerConnectionRepository`, `BrokerActivityRepository`, `TradeOrderRepository`, `PortfolioGroupAccountRepository`, `StockRepository`, `EtfRepository`, `CountryRepository`, `LookThroughService`, `DriftCalculationService`, `PositionFetchService`, `DashboardCashService`, `DashboardExposureService`, `DashboardRiskService`
+**Dependencies:** `BrokerPositionRepository`, `BrokerConnectionRepository`, `BrokerActivityRepository`, `BrokerBalanceRepository`, `TradeOrderRepository`, `PortfolioGroupAccountRepository`, `AccountAnalyticsRepository`, `StockRepository`, `EtfRepository`, `CountryRepository`, `LookThroughService`, `DriftCalculationService`, `PositionFetchService`, `DashboardCashService`, `DashboardExposureService`, `DashboardRiskService`
 
-Orchestrates all dashboard widget data endpoints. Delegates to sub-services for cash, exposure, and risk.
+Orchestrates all dashboard widget data endpoints. Delegates to sub-services for cash, exposure, and risk. For sector exposure, geography exposure, and risk profile, reads from pre-computed `account_analytics` snapshots when available (with fallback to live computation). Aggregates analytics across multiple connections for multi-account dashboard views.
 
 | Method | Signature | Description |
 |---|---|---|
+| `getIrrData` | `(userId: Long, connectionId: Long?): DashboardIrrResponse` | IRR per account and portfolio-wide, calculated via Newton-Raphson from balance snapshots and cash flow activities |
 | `getSummary` | `(userId: Long, connectionId: Long?): DashboardSummaryResponse` | Portfolio value, day P&L, positions summary, look-through holdings count |
 | `getCash` | `(userId, connectionId?): DashboardCashResponse` | Delegates to DashboardCashService |
-| `getSectorExposure` | `(userId, connectionId?): SectorExposureResponse` | Delegates to DashboardExposureService |
-| `getGeographyExposure` | `(userId, connectionId?): GeographyExposureResponse` | Delegates to DashboardExposureService |
-| `getRiskProfile` | `(userId, connectionId?): RiskProfileResponse` | Delegates to DashboardRiskService |
+| `getSectorExposure` | `(userId, connectionId?): SectorExposureResponse` | Reads from account_analytics snapshots (falls back to DashboardExposureService for live computation) |
+| `getGeographyExposure` | `(userId, connectionId?): GeographyExposureResponse` | Reads from account_analytics snapshots (falls back to DashboardExposureService for live computation) |
+| `getRiskProfile` | `(userId, connectionId?): RiskProfileResponse` | Reads from account_analytics snapshots (falls back to DashboardRiskService for live computation) |
 | `getOpenOrders` | `(userId: Long): OpenOrdersResponse` | Fetches PENDING/SUBMITTED/PARTIALLY_FILLED orders |
 | `getFees` | `(userId, connectionId?): FeesResponse` | Last 12 months fees, commissions, weighted MER |
 | `getDividendCalendar` | `(userId, month?, connectionId?): DividendCalendarResponse` | Dividend/distribution entries for a month |
@@ -440,28 +411,47 @@ Constants: `RISK_FREE_RATE = 4%` annual, used for Sharpe/Sortino.
 ### OrderExecutionService
 
 **File:** `broker/service/OrderExecutionService.kt`
-**Dependencies:** `TradeOrderRepository`, `BrokerConnectionRepository`, `PortfolioGroupService`, `SnapTradeService`
+**Dependencies:** `TradeOrderRepository`, `BrokerConnectionRepository`, `PortfolioGroupService`, `BrokerGatewayClient`
 
 | Method | Signature | Description |
 |---|---|---|
-| `executeTradesForGroup` | `(user, request): ExecuteTradesResponse` | Executes batch trades: creates TradeOrder records, submits to SnapTrade, tracks success/failure |
+| `executeTradesForGroup` | `(user, request): ExecuteTradesResponse` | Executes batch trades: creates TradeOrder records, submits via BrokerGatewayClient, tracks success/failure |
 | `executeSingleTrade` | `(user, groupId, tradeInput): TradeOrderDto` | Executes a single trade (wraps executeTradesForGroup) |
 | `getOrdersForGroup` | `(userId, groupId): OrderStatusResponse` | Lists orders for a portfolio group |
 | `getOrdersForBatch` | `(userId, batchId: UUID): OrderStatusResponse` | Lists orders by batch ID |
-| `cancelOrder` | `(user, orderId): TradeOrderDto` | Cancels order locally and via SnapTrade |
+| `cancelOrder` | `(user, orderId): TradeOrderDto` | Cancels order locally and via BrokerGatewayClient |
+
+### AccountAnalyticsComputeService
+
+**File:** `broker/service/AccountAnalyticsComputeService.kt`
+**Dependencies:** `AccountAnalyticsRepository`, `BrokerConnectionRepository`, `BrokerPositionRepository`, `LookThroughService`, `ExchangeRateService`, `ObjectMapper`
+
+Pre-computes analytics for a brokerage connection on each position sync. Normalizes multi-currency positions to CAD, computes sector/geography exposure (totaling 100% with "Unknown" bucket), risk profile (composite 0-100 score), weighted MER, and look-through holdings list. Upserts results into the `account_analytics` table (one snapshot per connection).
+
+| Method | Signature | Description |
+|---|---|---|
+| `computeForConnection` | `(connectionId: Long)` | Computes and upserts analytics snapshot for a single connection. Called by PositionFetchService after successful position sync. |
+
+Internal responsibilities:
+- Fetches current positions for the connection and normalizes all values to CAD using ExchangeRateService
+- Computes sector exposure via LookThroughService, ensuring all weights total 100% (unresolved weight goes to "Unknown" bucket)
+- Computes geography exposure via LookThroughService with region-level aggregation
+- Computes composite risk score (0-100) from concentration metrics
+- Calculates weighted MER across all ETF/fund positions
+- Persists snapshot as JSONB in account_analytics (upsert by connection_id)
 
 ### ActivityIngestionService
 
 **File:** `broker/service/ActivityIngestionService.kt`
-**Dependencies:** `BrokerConnectionRepository`, `BrokerActivityRepository`, `BrokerBalanceRepository`, `SnapTradeService`, `UserRepository`, `ObjectMapper`, `ExchangeRateService`
+**Dependencies:** `BrokerConnectionRepository`, `BrokerActivityRepository`, `BrokerBalanceRepository`, `BrokerGatewayClient`, `UserRepository`, `ObjectMapper`, `ExchangeRateService`
 
 | Method | Signature | Description |
 |---|---|---|
-| `syncActivitiesForConnection` | `(connectionId: Long): Int` | Incremental activity sync from SnapTrade (overlaps by 1 day). Normalizes types (TRANSFERS->TRANSFER_IN), computes CAD amounts. |
-| `syncBalanceForConnection` | `(connectionId: Long)` | Fetches balance from SnapTrade and saves snapshot |
+| `syncActivitiesForConnection` | `(connectionId: Long): Int` | If no activities exist, fetches full history (configurable, default 25 years). Otherwise incremental sync from latest date (overlaps by 1 day). Activity type normalization is done by the broker-gateway; computes CAD amounts locally. |
+| `syncBalanceForConnection` | `(connectionId: Long)` | Fetches balance from broker-gateway and saves snapshot |
 | `syncAllConnections` | `()` | Syncs activities + balances for all non-disconnected connections |
 
-Activity type normalization: BUY, SELL, DIVIDEND, TRANSFER_IN (from CONTRIBUTION/DEPOSIT/TRANSFERS), TRANSFER_OUT (from WITHDRAWAL/WITHDRAWALS), FEE, COMMISSION, INTEREST, OPTIONEXPIRATION, OPTIONASSIGNMENT, OPTIONEXERCISE.
+Activity type normalization (done by gateway): BUY, SELL, DIVIDEND, TRANSFER_IN, TRANSFER_OUT, FEE, COMMISSION, INTEREST, OPTIONEXPIRATION, OPTIONASSIGNMENT, OPTIONEXERCISE.
 
 ### ReportingService
 
@@ -499,52 +489,37 @@ Activity type normalization: BUY, SELL, DIVIDEND, TRANSFER_IN (from CONTRIBUTION
 
 Supports 28 currencies via BoC series mapping (USD, EUR, GBP, JPY, AUD, CHF, CNY, HKD, MXN, NOK, NZD, SEK, SGD, BRL, INR, KRW, ZAR, TRY, TWD, DKK, SAR, MYR, PLN, RUB, THB, PEN, IDR, COP).
 
-### SnapTradeStatusService
+### BrokerGatewayClient
 
-**File:** `broker/service/SnapTradeStatusService.kt`
-**Dependencies:** `SnapTradeStatusRepository`, `SnapTradeAdapter`
+**File:** `broker/client/BrokerGatewayClient.kt`
+**Dependencies:** `BrokerGatewayConfig`, `ObjectMapper`
+
+HTTP client for communicating with the broker-gateway microservice (port 8084). Authenticates via API key header. All broker data operations (positions, activities, balances, orders) are routed through this client instead of directly calling broker SDKs.
 
 | Method | Signature | Description |
 |---|---|---|
-| `checkAndStoreStatus` | `(): SnapTradeStatusCheck` | Pings SnapTrade API, measures response time, stores result |
-| `getLatestStatus` | `(): SnapTradeStatusDto?` | Returns latest health check with 24h uptime percentage |
-| `getUptimePercentage` | `(hours: Int): Double` | Calculates uptime from stored checks |
+| `createConnection` | `(userId, brokerType, credentials): GatewayConnectionDto` | Registers a new broker connection in the gateway |
+| `getAccounts` | `(gatewayConnectionId): List<GatewayAccountDto>` | Lists accounts for a gateway connection |
+| `getPositions` | `(gatewayConnectionId, accountId): List<GatewayPositionDto>` | Fetches positions for an account |
+| `getBalances` | `(gatewayConnectionId, accountId): List<GatewayBalanceDto>` | Fetches account balances |
+| `getActivities` | `(gatewayConnectionId, accountId, startDate?, endDate?): List<GatewayActivityDto>` | Fetches account activities |
+| `getOrders` | `(gatewayConnectionId, accountId): List<GatewayOrderDto>` | Fetches account orders |
+| `placeOrder` | `(gatewayConnectionId, accountId, orderRequest): GatewayOrderDto` | Places an order |
+| `cancelOrder` | `(gatewayConnectionId, accountId, orderId)` | Cancels an order |
+| `getOrderImpact` | `(gatewayConnectionId, accountId, orderRequest): OrderImpactResult` | Previews order impact (estimated cost, buying power effect). Supports options trading fields (`symbolId`, `primaryRoute`, `secondaryRoute`). |
+| `deleteConnection` | `(gatewayConnectionId)` | Removes a gateway connection |
+| `getGatewayHealth` | `(): GatewayHealthResponse` | Checks broker-gateway health status |
 
----
+### BrokerGatewayConfig
 
-## SnapTrade Adapter
+**File:** `broker/client/BrokerGatewayConfig.kt`
+**Prefix:** `broker-gateway`
 
-### SnapTradeAdapter (Interface)
-
-**File:** `broker/adapter/SnapTradeAdapter.kt`
-
-Abstraction over the SnapTrade Java SDK. All SDK types are mapped to internal DTOs.
-
-| Method | Signature |
-|---|---|
-| `registerUser` | `(snapUserId: String): String` |
-| `getLoginRedirectUrl` | `(userId, userSecret, redirectUri, broker?, reconnectAuthId?, connectionType?): String` |
-| `listAccounts` | `(userId, userSecret): List<SnapTradeAccountDto>` |
-| `listConnections` | `(userId, userSecret): List<SnapTradeConnectionDto>` |
-| `getPositions` | `(userId, userSecret, accountId): List<SnapTradePositionDto>` |
-| `getOptionPositions` | `(userId, userSecret, accountId): List<SnapTradeOptionPositionDto>` |
-| `getBalances` | `(userId, userSecret, accountId): List<SnapTradeBalanceDto>` |
-| `getHoldings` | `(userId, userSecret, accountId): SnapTradeHoldingsDto` |
-| `getActivities` | `(userId, userSecret, startDate?, endDate?, accounts?, type?): List<SnapTradeActivityDto>` |
-| `disconnectBrokerage` | `(userId, userSecret, authorizationId)` |
-| `listBrokerages` | `(): List<SnapTradeBrokerageDto>` |
-| `listBrokerageAuthorizationTypes` | `(brokerageSlug?): List<SnapTradeBrokerageAuthTypeDto>` |
-| `placeOrder` | `(userId, userSecret, accountId, action, symbol, units, orderType, limitPrice?, timeInForce): SnapTradeOrderDto` |
-| `cancelOrder` | `(userId, userSecret, accountId, brokerOrderId)` |
-| `listAccountOrders` | `(userId, userSecret, accountId): List<SnapTradeAccountOrderDto>` |
-| `checkApiStatus` | `(): SnapTradeApiStatusDto` |
-
-### SnapTradeAdapterImpl
-
-**File:** `broker/adapter/SnapTradeAdapterImpl.kt`
-**Dependencies:** `SnapTradeConfig`, `ObjectMapper`
-
-The ONLY class that imports and calls the SnapTrade Java SDK (`com.snaptrade.client.*`). All SDK types are mapped to internal DTOs before leaving this class. Uses lazy initialization of the `Snaptrade` client. Maps API exceptions to `SnapTradeApiException` with error code extraction.
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `broker-gateway.url` | String | `http://broker-gateway-service:8084` | Base URL for the broker-gateway service |
+| `broker-gateway.api-key` | String | `dev-gateway-key` | API key for service-to-service auth |
+| `broker-gateway.timeout` | Duration | `30s` | HTTP request timeout |
 
 ---
 
@@ -735,15 +710,6 @@ The portfolio app now reads instrument data via cross-schema SQL queries to `ing
 |---|---|---|---|
 | Nightly sync | `${broker.sync.cron:0 30 22 * * *}` (default: 10:30 PM) | `runNightlySync()` | Syncs activities + balances for all connections, refreshes positions for active connections, takes daily portfolio snapshots |
 
-### SnapTradeHealthScheduler
-
-**File:** `broker/scheduler/SnapTradeHealthScheduler.kt`
-**Condition:** `snaptrade.health-check.enabled=true`
-
-| Schedule | Cron | Method | Description |
-|---|---|---|---|
-| Health check | `${snaptrade.health-check.cron:0 */15 * * * *}` (default: every 15 min) | `runHealthCheck()` | Pings SnapTrade API and stores status |
-
 ### RebalanceScheduler
 
 **File:** `broker/scheduler/RebalanceScheduler.kt`
@@ -804,17 +770,6 @@ Spring Security filter chain configuration:
 - Authenticated: /auth/me, /auth/change-password, /auth/profile, /api/**
 - JWT filter added before UsernamePasswordAuthenticationFilter
 
-### SnapTradeConfig
-
-**File:** `broker/config/BrokerConfig.kt`
-**Prefix:** `snaptrade`
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `snaptrade.clientId` | String | "" | SnapTrade client ID |
-| `snaptrade.consumerKey` | String | "" | SnapTrade consumer key |
-| `snaptrade.redirectUri` | String | "http://localhost:3000/brokers/connections" | OAuth redirect URI |
-
 ### BrokerEncryptionConfig
 
 **File:** `broker/config/BrokerConfig.kt`
@@ -823,16 +778,6 @@ Spring Security filter chain configuration:
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `broker.encryption.secretKey` | String | "" | AES-256 key (Base64-encoded 32 bytes) |
-
-### SnapTradeHealthConfig
-
-**File:** `broker/config/BrokerConfig.kt`
-**Prefix:** `snaptrade.health-check`
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `snaptrade.health-check.enabled` | Boolean | false | Enable health check scheduler |
-| `snaptrade.health-check.cron` | String | "0 */15 * * * *" | Health check cron expression |
 
 ### BrokerSyncConfig
 
@@ -843,6 +788,7 @@ Spring Security filter chain configuration:
 |---|---|---|---|
 | `broker.sync.enabled` | Boolean | false | Enable data sync schedulers |
 | `broker.sync.cron` | String | "0 30 22 * * *" | Nightly sync cron expression |
+| `broker.sync.max-lookback-years` | Int | 25 | Max years of historical activity data to fetch on first sync |
 
 ### IngestionConfig
 
@@ -890,7 +836,7 @@ Redis cache manager with per-cache TTLs:
 | `look-through` | 30m | Look-through computations |
 | `etf-sector-allocations` | 12h | ETF sector allocations |
 
-Default TTL: 1h. Serialization: GenericJackson2JsonRedisSerializer. Null values not cached.
+Default TTL: 1h. Serialization: GenericJackson2JsonRedisSerializer with Kotlin module (required for Kotlin data class deserialization). Null values not cached.
 
 ### HttpClientConfig
 
@@ -950,12 +896,6 @@ Creates `StringRedisTemplate` bean for ingestion hash cache.
 ---
 
 ## Health Indicators
-
-### SnapTradeHealthIndicator
-
-**File:** `health/SnapTradeHealthIndicator.kt`
-
-Custom Spring Boot `HealthIndicator` that checks SnapTrade API connectivity. Reports UP/DOWN with response time.
 
 ### IngestionServiceHealthIndicator
 
@@ -1106,3 +1046,151 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 | `StepName` | EXCHANGE_SYNC, UNIVERSE_SYNC, RAW_DATA_FETCH |
 | `StepStatus` | RUNNING, COMPLETED, FAILED, SKIPPED |
 | `ErrorType` | API_ERROR, PARSE_ERROR, DB_ERROR, RATE_LIMIT, VALIDATION_ERROR, DUPLICATE_ISIN, NOT_FOUND |
+
+---
+
+## Market Data Service (`backend/market-data/`)
+
+**Port:** 8082 | **Schema:** `market_data` | **Package:** `com.portfolio.marketdata`
+
+### IBKR Integration (`ibkr/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `IbkrClient` | Interface | Abstraction over IBKR TWS API: connect, disconnect, requestMarketData, cancelMarketData, requestOptionChain, requestContractDetails |
+| `TwsIbkrClient` | `@Component` | Real TWS API client using EClientSocket + EReader. Connects to IB Gateway, handles ticks, contract resolution, snapshots, Greeks. Requests delayed data type as fallback. |
+| `IbkrConnectionManager` | `@Component ApplicationRunner` | Auto-connects on startup, exponential backoff reconnection (5s-60s), health status tracking, periodic health check every 30s, broadcasts connection status to WebSocket clients via `QuoteWebSocketHandler` (injected with `@Lazy`) |
+| `ContractResolver` | `@Component` | Multi-level contract ID resolution: Redis (24h TTL) → PostgreSQL → IBKR API. In-memory fallback. |
+| `SubscriptionManager` | `@Component` | LRU eviction for subscription capacity (default 100). Contract pinning for open positions. |
+
+### Processing (`processing/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `QuoteNormalizer` | `@Component` | Accumulates bid/ask/last/volume ticks, emits complete Quote objects |
+| `OptionQuoteNormalizer` | `@Component` | Same pattern for option contracts |
+| `GreeksCalculator` | `@Service` | Computes Greeks via Black-Scholes. Prefers IBKR Greeks when available. Configurable risk-free rate. |
+| `OptionsChainBuilder` | `@Component` | Groups OptionQuotes by expiry and strike, pairs calls and puts |
+
+### Distribution (`distribution/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `QuoteCacheService` | `@Service` | Redis caching: 5s TTL for quotes, 30s for chains. Jackson JSON serialization. |
+| `QuoteWebSocketHandler` | `@Component TextWebSocketHandler` | WebSocket at /ws/quotes. Subscribe/unsubscribe stocks and options. Broadcast to subscribed sessions. `broadcastConnectionStatus()` sends IBKR connection state to all connected WebSocket clients. |
+
+### Health (`api/controller/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `IbkrHealthController` | `@RestController` | `GET /api/v1/health/ibkr` -- Returns IBKR connection status (connected boolean, uptime, client ID) from `IbkrConnectionManager` |
+
+### Streaming (`streaming/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `QuoteStreamingService` | `@Service` | Ref-counted stock quote streaming. Resolves contracts, subscribes to IBKR, normalizes ticks, caches and broadcasts. |
+| `OptionStreamingService` | `@Service` | Ref-counted option streaming with Greeks enrichment from spot price cache. |
+
+---
+
+## Strategy Service (`backend/strategy/`)
+
+**Port:** 8083 | **Schema:** `strategy` | **Package:** `com.portfolio.strategy`
+
+### Strategy Engine (`engine/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `StrategyRegistry` | `@Component` | Registry of 7 strategy definitions with education content. Strategies: BULL_CALL_SPREAD, BEAR_PUT_SPREAD, BULL_PUT_SPREAD, BEAR_CALL_SPREAD, IRON_CONDOR, COVERED_CALL, PROTECTIVE_PUT |
+| `StrategyCalculator` | `@Component` | P&L calculation engine: net debit/credit, P&L curve (100 points ±20%), break-even interpolation, risk/reward ratio, net Greeks |
+| `LegValidator` | `@Component` | Validates leg combinations: no duplicates, same expiry for all option legs |
+| `EducationEngine` | `@Component` | Static education content per strategy + dynamic warnings (short DTE, wide spreads, deep ITM, delta-neutral, long DTE) |
+
+### Models (`model/`)
+
+| Class | Description |
+|---|---|
+| `StrategyType` | Enum: 7 strategy types |
+| `StrategyDefinition` | Display name, description, outlook, risk profile, leg templates |
+| `Leg` | Action (BUY/SELL), option type, strike, expiry, quantity, bid/ask/mid/delta |
+| `CalculationResult` | Net debit/credit, max profit/loss, break-evens, P&L curve, net Greeks |
+| `EducationContent` | When to use, risk explanation, key characteristics, warnings |
+
+---
+
+## Broker Gateway Service (`backend/broker-gateway/`)
+
+**Port:** 8084 | **Schema:** `broker_gateway` | **Package:** `com.portfolio.brokergateway`
+
+### CredentialService
+
+**File:** `service/CredentialService.kt`
+
+Manages encrypted broker credentials for gateway connections. Provides automatic token refresh before API calls.
+
+| Method | Signature | Description |
+|---|---|---|
+| `getCredentialsWithRefresh` | `(connection: GatewayConnection): BrokerCredentials` | Returns decrypted credentials, automatically refreshing expired OAuth tokens before returning. Used by `DataController` and `OrderController` to ensure valid tokens for every broker API call. |
+
+### IBKR Adapter (`adapter/ibkr/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `IbkrConfig` | `@ConfigurationProperties(prefix = "broker-gateway.ibkr")` | IBKR settings: enabled, host, port, clientId (default 2), connectTimeoutMs, requestTimeoutMs, reconnectDelayMs (5s), maxReconnectDelayMs (60s), flexToken, flexQueryId |
+| `IbkrDtoMappers` | `object` | Static mappers normalizing IBKR-specific values to unified enums: mapAccountType (Individual/Cash/Margin/TFSA/RRSP/FHSA/RESP/LIRA/LIF/RIF), mapInstrumentType (STK/OPT/BOND/FUND/CASH/CRYPTO), mapOrderStatus (PendingSubmit/Submitted/Filled/Cancelled/Inactive/Error), mapActivityType (BUY/BOT/SELL/SLD/DIV/DEP/WITH/COMM/INT/EXP/ASSIGN/EXER/SPLIT/CA), mapOptionRight (C/P) |
+| `IbkrAdapter` | `@Component @ConditionalOnProperty("broker-gateway.ibkr.enabled")` | Production adapter implementing BrokerAdapter. Delegates to IbkrAccountClient for TWS operations. Uses IbkrDtoMappers for all type normalization. Creates IbkrConnectionManager on construction. Capabilities: orders, options, real-time data, historical activities via Flex Queries, no fractional shares. |
+| `IbkrConnectionManager` | Class (non-Spring) | Socket lifecycle manager with exponential backoff reconnection. Initial delay 5s, doubles each attempt, capped at 60s. Resets delay on successful connection. Daemon thread executor. Health status via AtomicBoolean. Graceful shutdown with 5s termination wait. |
+| `IbkrAccountClient` | Interface | TWS client abstraction: connect, disconnect, isConnected, getManagedAccounts, getAccountSummary, getPositions, getOpenOrders, getCompletedOrders, getExecutions, placeOrder(accountId, contract, orderSpec), cancelOrder(orderId) |
+| `TwsIbkrAccountClient` | `@Component @ConditionalOnProperty("broker-gateway.ibkr.enabled")` | Concrete implementation of `IbkrAccountClient` using TWS API (`com.ib.client`). Connects to IB Gateway/TWS via `EClientSocket`, uses `CountDownLatch`-based request/response pattern for blocking calls. Supports managed accounts, positions, orders, executions, and order placement. |
+| `IbkrPosition` | Data class | accountId, symbol, secType, exchange, currency, conId, quantity, averageCost, marketPrice?, marketValue?, unrealizedPnl?, strike?, expiry?, right? |
+| `IbkrOrder` | Data class | orderId, symbol, secType, action, orderType, totalQuantity, filledQuantity?, limitPrice?, auxPrice?, status, timeInForce?, avgFillPrice?, currency?, submittedAt?, filledAt? |
+| `IbkrExecution` | Data class | execId, symbol, secType, side, quantity, price, commission?, currency, time, accountId |
+| `IbkrContract` | Data class | symbol, secType (default "STK"), exchange (default "SMART"), currency (default "USD") |
+| `IbkrOrderSpec` | Data class | action, orderType, totalQuantity, limitPrice?, auxPrice?, timeInForce (default "DAY") |
+
+### Health (`api/controller/` -- broker-gateway)
+
+| Class | Type | Description |
+|---|---|---|
+| `HealthController` | `@RestController` | `GET /api/v1/gateway/health` -- Overall gateway health. `GET /api/v1/gateway/health/{brokerType}` -- Per-broker health. `GET /api/v1/gateway/health/ibkr` -- IBKR-specific health via `IbkrAdapter.getHealthStatus()`, returns `IbkrHealthResponse` (connected, accounts, uptime) |
+
+### Questrade Adapter (`adapter/questrade/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `QuestradeConfig` | `@ConfigurationProperties(prefix = "broker-gateway.questrade")` | Questrade settings: enabled (default false), authUrl (default `https://login.questrade.com/oauth2/token`), practiceAuthUrl, usePractice (default false), rateLimitPerSecond (default 1) |
+| `QuestradeDtoMappers` | `object` | Static mappers normalizing Questrade-specific values to unified enums: mapAccountType (TFSA/RRSP/FHSA/RESP/LIRA/LIF/RIF variants), mapInstrumentType, mapOrderStatus, mapOrderType, mapTimeInForce, mapOrderAction, mapActivityType |
+| `QuestradeAdapter` | `@Component @ConditionalOnProperty("broker-gateway.questrade.enabled")` | Production adapter implementing BrokerAdapter. Delegates to QuestradeRestClient for HTTP operations and QuestradeTokenManager for authentication. Uses QuestradeDtoMappers for all type normalization. Implements `getOrderImpact()` for order preview via Questrade `/v1/accounts/:id/orders/impact` endpoint. |
+| `QuestradeRestClient` | Class | WebClient-based HTTP client with get/post/delete methods. Error handling maps 401 responses to authentication errors and 429 responses to rate-limit errors. |
+| `QuestradeTokenManager` | Class | OAuth token rotation manager handling Questrade's single-use refresh token model. Each token refresh returns a new refresh token and a dynamic `api_server` URL that subsequent API calls must use. |
+
+### Wealthsimple Adapter (`adapter/wealthsimple/`)
+
+| Class | Type | Description |
+|---|---|---|
+| `WealthsimpleConfig` | `@ConfigurationProperties(prefix = "broker-gateway.wealthsimple")` | Wealthsimple settings: enabled (default false), authUrl, graphqlUrl, clientId, orderRateLimitPerHour (default 7) |
+| `WealthsimpleDtoMappers` | `object` | Static mappers normalizing Wealthsimple-specific values to unified enums: mapAccountType (ca_tfsa/ca_rrsp/ca_fhsa/ca_lira/ca_crypto), mapInstrumentType (equity/etf), mapOrderStatus, mapActivityType |
+| `WealthsimpleAdapter` | `@Component @ConditionalOnProperty("broker-gateway.wealthsimple.enabled")` | Production adapter implementing BrokerAdapter. Uses WealthsimpleGraphQlClient for API operations (FetchAllAccounts, FetchAccountFinancials, FetchIdentityPositions, FetchActivityFeedItems, SoOrdersOrderCreate, SoOrdersOrderCancel), WealthsimpleTokenManager for authentication, and WealthsimpleRateLimiter for order throttling. Uses WealthsimpleDtoMappers for all type normalization. |
+| `WealthsimpleGraphQlClient` | Class | Custom HTTP client for Wealthsimple's GraphQL API. Sends raw HTTP POST requests with WS-specific headers (x-ws-api-version, x-platform-os, x-ws-locale, x-ws-profile). Detects 2FA challenges via x-wealthsimple-otp-required response header. |
+| `WealthsimpleTokenManager` | Class | Password-grant OAuth token manager. Handles token refresh and expiry detection for Wealthsimple's OAuth flow. |
+| `WealthsimpleRateLimiter` | Class | Sliding-window rate limiter enforcing 7 trades per hour using ConcurrentLinkedDeque. Prevents exceeding Wealthsimple's order submission limits. |
+
+---
+
+## Common Module (`backend/common/`)
+
+**Package:** `com.portfolio.common`
+
+Shared Kotlin library (no Spring Boot). Used by market-data and strategy services via Gradle composite builds.
+
+| Class | Package | Description |
+|---|---|---|
+| `BlackScholes` | `math` | Option pricing, all 5 Greeks (delta, gamma, theta, vega, rho), implied volatility (Newton-Raphson) |
+| `TradingCalendar` | `util` | DTE calculation, market hours (9:30-16:00 ET), next/previous trading day, time-to-expiry for Black-Scholes |
+| `Money` | `util` | BigDecimal extensions: toCents, roundTo, safeDivide, percentageChange, bpsToDecimal |
+| `OptionType` | `domain` | Enum: CALL, PUT |
+| `Greeks` | `domain` | Delta, gamma, theta, vega, rho + source (IBKR or BLACK_SCHOLES) |
+| `Quote` | `domain` | Symbol, bid, ask, last, volume, timestamp + computed mid/spread |
+| `OptionQuote` | `domain` | Underlying, option type, strike, expiry, bid/ask/last, volume, open interest, Greeks |
+| `OptionsChain` | `domain` | Underlying, spot price, expirations map (expiry → strike → StrikeData) |

@@ -1,3 +1,366 @@
+/* ====== DashboardPage — Verdant Dark ====== */
+
 .dashboard-page {
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* The positions table wrapper should grow to fill remaining space */
+.dashboard-page > .dashboard-section:last-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-page > .dashboard-section:last-child > .positions-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-page > .dashboard-section:last-child > .activities-grid-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -- Header row -- */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0 16px;
+  gap: 16px;
+}
+
+.dashboard-header__left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dashboard-header__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.dashboard-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.dashboard-header__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-header__search-icon {
+  position: absolute;
+  left: 10px;
+  width: 14px;
+  height: 14px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.dashboard-header__search-input {
+  padding: 7px 10px 7px 32px;
+  font-size: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  outline: none;
+  width: 200px;
+  transition: border-color 0.15s ease;
+}
+
+.dashboard-header__search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.dashboard-header__search-input:focus {
+  border-color: var(--accent);
+}
+
+.dashboard-header__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dashboard-header__icon-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* ====== Content Tabs (Positions / Activities / Dividends) ====== */
+
+.dashboard-content-tabs {
+  display: flex;
+  gap: 4px;
   padding: 0;
+  margin-bottom: 16px;
+}
+
+.dashboard-content-tab {
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dashboard-content-tab--active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+
+.dashboard-content-tab--inactive {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.dashboard-content-tab--inactive:hover {
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+}
+
+/* ====== Dividends list ====== */
+
+.dashboard-dividends__empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.dashboard-dividends__mobile {
+  display: none;
+}
+
+.dashboard-dividend-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-dividend-card:last-child {
+  border-bottom: none;
+}
+
+.dashboard-dividend-card__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-dividend-card__date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dashboard-dividend-card__symbol {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dashboard-dividend-card__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-dividend-card__amount {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: #6ee7b7;
+}
+
+.dashboard-dividend-card__currency {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* -- Section spacing -- */
+.dashboard-section {
+  padding: 0;
+  margin-bottom: 16px;
+}
+
+/* -- KPI row (4 columns) -- */
+.dashboard-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* -- Mobile hero (hidden on desktop) -- */
+.dashboard-mobile-hero {
+  display: none;
+}
+
+/* ====== Tablet layout ====== */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .dashboard-kpi-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ====== Mobile layout ====== */
+@media (max-width: 767px) {
+  .dashboard-page {
+    height: auto;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Hide desktop header */
+  .dashboard-header {
+    display: none;
+  }
+
+  .dashboard-section {
+    padding: 0 16px;
+    margin-bottom: 12px;
+  }
+
+  /* Show mobile hero */
+  .dashboard-mobile-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 16px 12px;
+  }
+
+  .dashboard-mobile-hero__left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .dashboard-mobile-hero__greeting {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .dashboard-mobile-hero__value {
+    font-size: 26px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .dashboard-mobile-hero__gain-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .dashboard-mobile-hero__gain {
+    font-size: 12px;
+  }
+
+  .dashboard-mobile-hero__gain--positive {
+    color: #6ee7b7;
+  }
+
+  .dashboard-mobile-hero__gain--negative {
+    color: #f87171;
+  }
+
+  .dashboard-mobile-hero__gain-pill {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+
+  .dashboard-mobile-hero__gain-pill--positive {
+    background: rgba(110, 231, 183, 0.12);
+    color: #6ee7b7;
+  }
+
+  .dashboard-mobile-hero__gain-pill--negative {
+    background: rgba(248, 113, 113, 0.12);
+    color: #f87171;
+  }
+
+  .dashboard-mobile-hero__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Content tabs mobile */
+  .dashboard-content-tabs {
+    padding: 0 16px;
+    margin-bottom: 12px;
+  }
+
+  /* KPI grid: 2 columns on mobile */
+  .dashboard-kpi-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Card 1 (combined Total Value) spans full width */
+  .dashboard-kpi-row .kpi-card:first-child {
+    grid-column: 1 / -1;
+  }
+
+  /* Card 4 (sectors) spans full width */
+  .dashboard-kpi-row .kpi-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  /* Dividends mobile */
+  .dashboard-dividends__desktop {
+    display: none;
+  }
+
+  .dashboard-dividends__mobile {
+    display: block;
+  }
 }

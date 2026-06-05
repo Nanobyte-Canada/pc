@@ -9,6 +9,8 @@ spring:
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
+      connection-timeout: 30000
+      initialization-fail-timeout: -1
   jpa:
     hibernate:
       ddl-auto: validate
@@ -38,7 +40,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when-authorized

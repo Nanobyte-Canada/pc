@@ -5,13 +5,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
-// Request DTOs
-data class ConnectBrokerRequest(
-    val broker: String? = null,          // SnapTrade brokerage slug to pre-select
-    val reconnectAuthId: String? = null, // SnapTrade authorization UUID for reconnecting
-    val connectionType: String? = null   // "read", "trade", or "trade-if-available"
-)
-
 // Response DTOs
 data class BrokerDto(
     val id: Long? = null,
@@ -46,7 +39,7 @@ data class BrokersResponse(
 data class BrokerConnectionDto(
     val id: Long,
     val broker: BrokerDto,
-    val snaptradeAuthorizationId: String? = null,
+    val gatewayConnectionId: String? = null,
     val accountNumber: String?,
     val accountType: String?,
     val accountName: String?,
@@ -59,15 +52,12 @@ data class BrokerConnectionDto(
     val errorMessage: String?,
     val createdAt: OffsetDateTime,
     val modelPortfolioId: Long? = null,
-    val modelPortfolioName: String? = null
+    val modelPortfolioName: String? = null,
+    val supportedOrderTypes: List<String> = listOf("MARKET", "LIMIT")
 )
 
 data class BrokerConnectionsResponse(
     val connections: List<BrokerConnectionDto>
-)
-
-data class ConnectBrokerResponse(
-    val redirectUrl: String
 )
 
 data class PositionFetchResponse(
@@ -157,28 +147,46 @@ fun Broker.toDto() = BrokerDto(
     description = description
 )
 
-fun BrokerConnection.toDto() = BrokerConnectionDto(
-    id = id,
-    broker = broker?.toDto() ?: BrokerDto(
-        name = brokerName ?: accountName ?: "Unknown Broker",
-        logoUrl = brokerLogoUrl,
-        description = null
-    ),
-    snaptradeAuthorizationId = snaptradeAuthorizationId,
-    accountNumber = accountNumber,
-    accountType = accountType,
-    accountName = accountName,
-    accountNumberActual = accountNumberActual,
-    accountMetaType = accountMetaType,
-    status = status.name,
-    lastPositionsFetchedAt = lastPositionsFetchedAt,
-    positionsCount = positionsCount,
-    totalValue = totalValue,
-    errorMessage = connectionErrorMessage,
-    createdAt = createdAt,
-    modelPortfolioId = modelPortfolio?.id,
-    modelPortfolioName = modelPortfolio?.name
-)
+fun BrokerConnection.toDto(): BrokerConnectionDto {
+    val brokerSlug = connectionType?.lowercase() ?: ""
+    val brokerNameLower = (brokerName ?: "").lowercase()
+
+    val orderTypes = when {
+        brokerSlug == "questrade" || brokerNameLower.contains("questrade") ->
+            listOf("MARKET", "LIMIT", "STOP", "STOP_LIMIT")
+        brokerSlug == "ibkr" || brokerSlug == "interactive_brokers" ||
+            brokerNameLower.contains("interactive") || brokerNameLower.contains("ibkr") ->
+            listOf("MARKET", "LIMIT", "STOP", "STOP_LIMIT")
+        brokerSlug == "wealthsimple" || brokerNameLower.contains("wealthsimple") ->
+            listOf("MARKET", "LIMIT")
+        else -> listOf("MARKET", "LIMIT")
+    }
+
+    return BrokerConnectionDto(
+        id = id,
+        broker = BrokerDto(
+            name = brokerName ?: connectionType ?: "Unknown Broker",
+            slug = connectionType?.lowercase(),
+            logoUrl = brokerLogoUrl,
+            description = null
+        ),
+        gatewayConnectionId = gatewayConnectionId,
+        accountNumber = accountNumber,
+        accountType = accountType,
+        accountName = accountName,
+        accountNumberActual = accountNumberActual,
+        accountMetaType = accountMetaType,
+        status = status.name,
+        lastPositionsFetchedAt = lastPositionsFetchedAt,
+        positionsCount = positionsCount,
+        totalValue = totalValue,
+        errorMessage = connectionErrorMessage,
+        createdAt = createdAt,
+        modelPortfolioId = modelPortfolio?.id,
+        modelPortfolioName = modelPortfolio?.name,
+        supportedOrderTypes = orderTypes
+    )
+}
 
 fun BrokerPosition.toDto() = BrokerPositionDto(
     id = id,
@@ -197,18 +205,6 @@ fun BrokerPosition.toDto() = BrokerPositionDto(
     optionType = optionType,
     underlyingSymbol = underlyingSymbol
 )
-
-// ========== SnapTrade Status DTOs ==========
-
-data class SnapTradeStatusDto(
-    val status: String,
-    val responseTimeMs: Int?,
-    val version: String?,
-    val uptimePercent24h: Double,
-    val lastChecked: OffsetDateTime
-)
-
-data class SnapTradeStatusResponse(val status: SnapTradeStatusDto)
 
 data class ConnectionSyncResponse(
     val syncedCount: Int,

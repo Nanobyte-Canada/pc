@@ -54,12 +54,6 @@ class User(
     @Column(name = "updated_at", nullable = false)
     var updatedAt: OffsetDateTime = OffsetDateTime.now(),
 
-    @Column(name = "snaptrade_user_id", length = 255)
-    var snaptradeUserId: String? = null,
-
-    @Column(name = "snaptrade_user_secret_encrypted", columnDefinition = "TEXT")
-    var snaptradeUserSecretEncrypted: String? = null,
-
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val identities: MutableList<UserIdentity> = mutableListOf(),
 

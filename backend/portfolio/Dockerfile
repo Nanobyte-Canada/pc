@@ -21,7 +21,7 @@ WORKDIR /app
 
 # Install CA certificates for HTTPS connections
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates && \
+    apt-get install -y --no-install-recommends ca-certificates curl wget && \
     rm -rf /var/lib/apt/lists/*
 
 # Import custom CA certificates (e.g. corporate proxy CA) into JVM truststore

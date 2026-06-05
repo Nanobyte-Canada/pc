@@ -10,6 +10,9 @@ A full-stack application for constructing and analyzing investment portfolios us
 - **Drift & Rebalancing** — Monitor portfolio drift from targets and generate trade orders to rebalance
 - **Instrument Screener** — Browse and filter 190k+ instruments across stocks, ETFs, mutual funds, preferred stocks, indices, and bonds
 - **Dashboard** — Customizable widget-based dashboard with portfolio value, performance, risk metrics, and activity feeds
+- **Market Data** — Real-time market data streaming via IBKR with WebSocket delivery
+- **Options Trading** — Multi-leg options strategies (spreads, iron condors, covered calls) with P&L and Greeks calculations
+- **Wheel Strategy** — Automated cash-secured put and covered call wheel writing with candidate scoring
 
 ## Tech Stack
 
@@ -20,14 +23,18 @@ A full-stack application for constructing and analyzing investment portfolios us
 | Database | PostgreSQL 16 + Flyway migrations |
 | Cache | Redis 7 |
 | Broker SDK | SnapTrade |
+| Market Data | IBKR TWS API (real-time) |
 | Data Sources | EODHD, Alpha Vantage |
 | Containerization | Docker + Docker Compose |
 
 ## Project Structure
 
 ```
+backend/common/        — Shared math/domain library (BlackScholes, Greeks, TradingCalendar)
 backend/portfolio/     — Main Spring Boot API (port 8080)
 backend/ingestion/     — Data ingestion microservice (port 8081)
+backend/market-data/   — Market data + IBKR + WebSocket streaming (port 8082)
+backend/strategy/      — Strategy engine + wheel writer (port 8083)
 frontend/              — React SPA (port 3000)
 config/                — Environment template (.env.example)
 docs/reference/        — Technical reference documentation
@@ -58,6 +65,8 @@ docker compose up --build
 ```bash
 # Backend tests (inside container)
 docker compose exec backend ./gradlew test
+docker compose exec market-data-service ./gradlew test
+docker compose exec strategy-service ./gradlew test
 
 # Frontend dev server (local npm)
 cd frontend && npm run dev
@@ -74,6 +83,7 @@ Copy `config/.env.example` to `.env` at the project root. Key variables:
 |----------|-------------|
 | `SNAPTRADE_CLIENT_ID` / `SNAPTRADE_CONSUMER_KEY` | SnapTrade broker integration |
 | `EODHD_API_KEY` | Market data provider |
+| `IBKR_HOST` / `IBKR_PORT` | Interactive Brokers TWS/Gateway connection |
 | `BROKER_ENCRYPTION_KEY` | AES-256 key for token encryption |
 | `JWT_SIGNING_KEY` | HS512 signing key (min 64 chars) |
 

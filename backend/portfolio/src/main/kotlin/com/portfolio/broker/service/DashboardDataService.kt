@@ -1,6 +1,7 @@
 package com.portfolio.broker.service
 
 import com.portfolio.broker.dto.*
+import com.portfolio.broker.entity.AccountAnalytics
 import com.portfolio.broker.entity.ConnectionStatus
 import com.portfolio.broker.entity.InstrumentType
 import com.portfolio.broker.entity.OrderStatus
@@ -12,15 +13,18 @@ import com.portfolio.service.LookThroughService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.math.MathContext
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 
 @Service
 class DashboardDataService(
     private val positionRepository: BrokerPositionRepository,
     private val connectionRepository: BrokerConnectionRepository,
     private val activityRepository: BrokerActivityRepository,
+    private val balanceRepository: BrokerBalanceRepository,
     private val tradeOrderRepository: TradeOrderRepository,
     private val portfolioGroupAccountRepository: PortfolioGroupAccountRepository,
     private val instrumentLookup: IngestionInstrumentLookupService,
@@ -30,7 +34,8 @@ class DashboardDataService(
     private val positionFetchService: PositionFetchService,
     private val cashService: DashboardCashService,
     private val exposureService: DashboardExposureService,
-    private val riskService: DashboardRiskService
+    private val riskService: DashboardRiskService,
+    private val analyticsRepository: AccountAnalyticsRepository
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -38,11 +43,204 @@ class DashboardDataService(
 
     fun getCash(userId: Long, connectionId: Long? = null) = cashService.getCash(userId, connectionId)
 
-    fun getSectorExposure(userId: Long, connectionId: Long? = null) = exposureService.getSectorExposure(userId, connectionId)
+    fun getSectorExposure(userId: Long, connectionId: Long? = null): SectorExposureResponse {
+        val snapshots = getSnapshots(userId, connectionId)
+        if (snapshots.isNotEmpty()) {
+            return aggregateSectorExposure(snapshots)
+        }
+        return exposureService.getSectorExposure(userId, connectionId)
+    }
 
-    fun getGeographyExposure(userId: Long, connectionId: Long? = null) = exposureService.getGeographyExposure(userId, connectionId)
+    fun getGeographyExposure(userId: Long, connectionId: Long? = null): GeographyExposureResponse {
+        val snapshots = getSnapshots(userId, connectionId)
+        if (snapshots.isNotEmpty()) {
+            return aggregateGeographyExposure(snapshots)
+        }
+        return exposureService.getGeographyExposure(userId, connectionId)
+    }
 
-    fun getRiskProfile(userId: Long, connectionId: Long? = null) = riskService.getRiskProfile(userId, connectionId)
+    fun getRiskProfile(userId: Long, connectionId: Long? = null): RiskProfileResponse {
+        val snapshots = getSnapshots(userId, connectionId)
+        if (snapshots.isNotEmpty()) {
+            return aggregateRiskProfile(snapshots)
+        }
+        return riskService.getRiskProfile(userId, connectionId)
+    }
+
+    // ========== IRR (Internal Rate of Return) ==========
+
+    fun getIrrData(userId: Long, connectionId: Long? = null): DashboardIrrResponse {
+        val connections = connectionRepository.findByUserIdAndStatusWithBroker(userId, ConnectionStatus.ACTIVE)
+            .let { conns -> if (connectionId != null) conns.filter { it.id == connectionId } else conns }
+
+        val today = LocalDate.now()
+        val mc = MathContext.DECIMAL64
+
+        val portfolioIrr = calculatePortfolioIrr(connections, today, mc)
+
+        val totalPortfolioValue = connections.sumOf { it.totalValue ?: BigDecimal.ZERO }
+        val allConnectionIds = connections.map { it.id }
+
+        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "TRANSFER", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
+        val depositTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
+        val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL")
+
+        val allCashFlows = activityRepository.findByConnectionIdInAndTradeDateBetween(
+            allConnectionIds, LocalDate.of(2000, 1, 1), today
+        ).filter { it.type.uppercase() in cashFlowTypes && it.amount.abs() > BigDecimal.ZERO }
+
+        val netDeposits = allCashFlows.sumOf { act ->
+            val amt = act.amountCad ?: act.amount
+            when {
+                act.type.uppercase() in depositTypes -> amt.abs()
+                act.type.uppercase() in withdrawalTypes -> amt.abs().negate()
+                act.type.uppercase() == "TRANSFER" -> amt
+                else -> amt
+            }
+        }
+
+        val portfolioTotalReturn = if (allCashFlows.isNotEmpty()) totalPortfolioValue - netDeposits else null
+        val portfolioTotalReturnPct = if (netDeposits > BigDecimal.ZERO && portfolioTotalReturn != null)
+            portfolioTotalReturn.divide(netDeposits, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
+        else null
+
+        val dividendTypes = setOf("DIVIDEND", "DISTRIBUTION", "REI")
+        val last12mDividends = activityRepository.findByConnectionIdInAndTradeDateBetween(
+            allConnectionIds, today.minusYears(1), today
+        ).filter { it.type.uppercase() in dividendTypes }
+            .sumOf { (it.amountCad ?: it.amount).abs() }
+
+        val portfolioDividendYield = if (totalPortfolioValue > BigDecimal.ZERO)
+            last12mDividends.divide(totalPortfolioValue, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
+        else null
+
+        val accountResults = connections.map { conn ->
+            val analytics = analyticsRepository.findByConnectionId(conn.id)
+
+            AccountIrrDto(
+                connectionId = conn.id,
+                brokerName = conn.brokerName ?: conn.connectionType,
+                accountName = conn.accountName,
+                irr = if (connectionId != null) portfolioIrr else analytics?.xirr,
+                totalReturn = if (connectionId != null) portfolioTotalReturn?.setScale(2, RoundingMode.HALF_UP) else analytics?.totalReturn,
+                totalReturnPct = if (connectionId != null) portfolioTotalReturnPct else analytics?.totalReturnPct,
+                dividendYield = if (connectionId != null) portfolioDividendYield else analytics?.dividendYield,
+                startDate = null,
+                endDate = today.toString()
+            )
+        }
+
+        return DashboardIrrResponse(
+            portfolioIrr = portfolioIrr,
+            portfolioTotalReturn = portfolioTotalReturn?.setScale(2, RoundingMode.HALF_UP),
+            portfolioTotalReturnPct = portfolioTotalReturnPct,
+            portfolioDividendYield = portfolioDividendYield,
+            accounts = accountResults
+        )
+    }
+
+    private fun calculatePortfolioIrr(
+        connections: List<com.portfolio.broker.entity.BrokerConnection>,
+        today: LocalDate,
+        mc: MathContext
+    ): BigDecimal? {
+        if (connections.isEmpty()) return null
+
+        val endingValue = connections.sumOf { it.totalValue ?: BigDecimal.ZERO }
+        if (endingValue <= BigDecimal.ZERO) return null
+
+        val cashFlowTypes = setOf("TRANSFER_IN", "TRANSFER_OUT", "TRANSFER", "CONTRIBUTION", "WITHDRAWAL", "DEPOSIT")
+        val connectionIds = connections.map { it.id }
+        val allActivities = activityRepository.findByConnectionIdInAndTradeDateBetween(
+            connectionIds, LocalDate.of(2000, 1, 1), today
+        ).filter { it.type.uppercase() in cashFlowTypes && it.amount.abs() > BigDecimal.ZERO }
+
+        if (allActivities.isEmpty()) return null
+
+        val startDate = allActivities.minOf { it.tradeDate }
+
+        return calculateIrr(BigDecimal.ZERO, endingValue, startDate, today, allActivities, mc)
+    }
+
+    private fun calculateIrr(
+        startingValue: BigDecimal,
+        endingValue: BigDecimal,
+        startDate: LocalDate,
+        endDate: LocalDate,
+        activities: List<com.portfolio.broker.entity.BrokerActivity>,
+        mc: MathContext
+    ): BigDecimal? {
+        val totalDays = ChronoUnit.DAYS.between(startDate, endDate)
+        if (totalDays <= 0) return null
+
+        val depositTypes = setOf("TRANSFER_IN", "CONTRIBUTION", "DEPOSIT")
+        val withdrawalTypes = setOf("TRANSFER_OUT", "WITHDRAWAL")
+
+        data class CashFlow(val date: LocalDate, val amount: BigDecimal)
+
+        val cashFlows = activities.map { act ->
+            val amt = act.amountCad ?: act.amount
+            val signedAmount = when {
+                act.type.uppercase() in depositTypes -> amt.abs()
+                act.type.uppercase() in withdrawalTypes -> amt.abs().negate()
+                act.type.uppercase() == "TRANSFER" -> amt
+                else -> amt
+            }
+            CashFlow(act.tradeDate, signedAmount)
+        }
+
+        val minRate = BigDecimal("-0.99")
+        val maxRate = BigDecimal("10.0")
+        var rate = BigDecimal("0.10")
+        var converged = false
+
+        for (iteration in 0 until 50) {
+            val onePlusRCheck = BigDecimal.ONE + rate
+            if (onePlusRCheck <= BigDecimal.ZERO) {
+                rate = BigDecimal("-0.50")
+                continue
+            }
+
+            var npv = startingValue.negate()
+            var dnpv = BigDecimal.ZERO
+
+            for (cf in cashFlows) {
+                val days = ChronoUnit.DAYS.between(startDate, cf.date)
+                val t = BigDecimal(days).divide(BigDecimal(365), 8, RoundingMode.HALF_UP)
+                val onePlusR = BigDecimal.ONE + rate
+                if (onePlusR <= BigDecimal.ZERO) break
+
+                val discount = BigDecimal(Math.pow(onePlusR.toDouble(), t.negate().toDouble()))
+                npv += cf.amount.multiply(discount, mc)
+                dnpv -= cf.amount.multiply(t).multiply(discount, mc).divide(onePlusR, 8, RoundingMode.HALF_UP)
+            }
+
+            val totalT = BigDecimal(totalDays).divide(BigDecimal(365), 8, RoundingMode.HALF_UP)
+            val onePlusR = BigDecimal.ONE + rate
+            if (onePlusR > BigDecimal.ZERO) {
+                val termDiscount = BigDecimal(Math.pow(onePlusR.toDouble(), totalT.negate().toDouble()))
+                npv += endingValue.multiply(termDiscount, mc)
+                dnpv -= endingValue.multiply(totalT).multiply(termDiscount, mc)
+                    .divide(onePlusR, 8, RoundingMode.HALF_UP)
+            }
+
+            if (dnpv.abs() < BigDecimal("0.0001")) break
+
+            val newRate = (rate - npv.divide(dnpv, 8, RoundingMode.HALF_UP)).coerceIn(minRate, maxRate)
+            if ((newRate - rate).abs() < BigDecimal("0.0001")) {
+                rate = newRate
+                converged = true
+                break
+            }
+            rate = newRate
+        }
+
+        if (!converged && rate.abs() > BigDecimal("5.0")) return null
+
+        return rate.multiply(BigDecimal(100)).setScale(4, RoundingMode.HALF_UP)
+    }
 
     // ========== Summary (Portfolio Value + Positions + Holdings) ==========
 
@@ -53,7 +251,7 @@ class DashboardDataService(
             positionRepository.findCurrentPositionsByUserIdFromActiveConnections(userId)
         }
 
-        // Portfolio Value from connection.totalValue (SnapTrade's FX-converted total, includes cash)
+        // Portfolio Value from connection.totalValue (FX-converted total, includes cash)
         val connections = if (connectionId != null) {
             connectionRepository.findById(connectionId).map { listOf(it) }.orElse(emptyList())
         } else {
@@ -67,6 +265,16 @@ class DashboardDataService(
 
         // Investment = Portfolio Value - Cash
         val investmentValue = portfolioValue - cashValue
+
+        // Investment breakdown by currency (from position data)
+        val investmentByCurrency = positions
+            .filter { it.instrumentType != InstrumentType.CASH }
+            .groupBy { it.currency }
+            .map { (currency, posns) ->
+                CurrencyAmountDto(currency, posns.sumOf { it.currentValue ?: BigDecimal.ZERO }
+                    .setScale(2, RoundingMode.HALF_UP))
+            }
+            .sortedByDescending { it.amount }
 
         // Day P&L from positions
         val anyDayPnlAvailable = positions.any { it.dayPnl != null }
@@ -103,6 +311,7 @@ class DashboardDataService(
             portfolioValue = PortfolioValueDto(
                 totalValue = portfolioValue.setScale(2, RoundingMode.HALF_UP),
                 investmentValue = investmentValue.setScale(2, RoundingMode.HALF_UP),
+                investmentByCurrency = investmentByCurrency,
                 cashValue = cashValue.setScale(2, RoundingMode.HALF_UP),
                 totalChange = totalDayPnl?.setScale(2, RoundingMode.HALF_UP),
                 totalChangePercent = totalDayPnlPercent,
@@ -279,14 +488,14 @@ class DashboardDataService(
         val targetMonth = if (month != null) YearMonth.parse(month) else YearMonth.now()
 
         if (connectionIds.isEmpty()) {
-            return DividendCalendarResponse(targetMonth.toString(), BigDecimal.ZERO, emptyList())
+            return DividendCalendarResponse(targetMonth.toString(), BigDecimal.ZERO, BigDecimal.ZERO, emptyList())
         }
 
         val startDate = targetMonth.atDay(1)
         val endDate = targetMonth.atEndOfMonth()
         val activities = activityRepository.findByConnectionIdInAndTradeDateBetween(connectionIds, startDate, endDate)
 
-        val dividendTypes = setOf("DIVIDEND", "DISTRIBUTION")
+        val dividendTypes = setOf("DIVIDEND", "DISTRIBUTION", "REI")
         val dividendActivities = activities.filter { it.type.uppercase() in dividendTypes }
 
         val entries = dividendActivities.map { act ->
@@ -295,15 +504,18 @@ class DashboardDataService(
                 symbol = act.symbol,
                 amount = act.amount.abs(),
                 currency = act.currency,
-                accountName = act.connection.accountName
+                accountName = act.connection.accountName,
+                type = act.type.uppercase()
             )
         }.sortedBy { it.date }
 
-        val totalDividends = entries.sumOf { it.amount }
+        val totalDividends = entries.filter { it.type != "REI" }.sumOf { it.amount }
+        val totalReinvestments = entries.filter { it.type == "REI" }.sumOf { it.amount }
 
         return DividendCalendarResponse(
             month = targetMonth.toString(),
             totalDividends = totalDividends.setScale(2, RoundingMode.HALF_UP),
+            totalReinvestments = totalReinvestments.setScale(2, RoundingMode.HALF_UP),
             entries = entries
         )
     }
@@ -387,11 +599,11 @@ class DashboardDataService(
 
             DashboardAccountDto(
                 connectionId = conn.id,
-                brokerName = conn.broker?.code ?: conn.brokerName ?: "Unknown",
-                brokerLogoUrl = conn.broker?.logoUrl ?: conn.brokerLogoUrl,
+                brokerName = conn.brokerName ?: conn.connectionType ?: "Unknown",
+                brokerLogoUrl = conn.brokerLogoUrl,
                 accountName = conn.accountName,
                 accountType = conn.accountMetaType ?: conn.accountType,
-                accountNumber = conn.accountNumberActual?.let { maskAccountNumber(it) },
+                accountNumber = (conn.accountNumberActual ?: conn.accountNumber)?.let { maskAccountNumber(it) },
                 status = conn.status.name,
                 totalValue = portfolioValue.setScale(2, RoundingMode.HALF_UP),
                 investmentValue = investmentValue.setScale(2, RoundingMode.HALF_UP),
@@ -419,12 +631,12 @@ class DashboardDataService(
                 positionFetchService.triggerManualFetch(conn.id, userId)
                 count++
             } catch (e: Exception) {
-                log.warn("Failed to trigger fetch for connection {}: {}", conn.id, e.message)
+                log.warn("Failed to refresh connection {}: {}", conn.id, e.message)
             }
         }
         return RefreshAllResponse(
             connectionsRefreshed = count,
-            message = "Refreshing data for $count accounts..."
+            message = "Refreshed data for $count accounts"
         )
     }
 
@@ -506,5 +718,151 @@ class DashboardDataService(
     private fun maskAccountNumber(accountNumber: String): String {
         if (accountNumber.length <= 4) return "****"
         return "****" + accountNumber.takeLast(4)
+    }
+
+    // ========== Snapshot-based analytics (pre-computed) ==========
+
+    private fun getSnapshots(userId: Long, connectionId: Long?): List<AccountAnalytics> {
+        return if (connectionId != null) {
+            listOfNotNull(analyticsRepository.findByConnectionId(connectionId))
+        } else {
+            analyticsRepository.findAllByUserId(userId)
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun aggregateSectorExposure(snapshots: List<AccountAnalytics>): SectorExposureResponse {
+        if (snapshots.size == 1) {
+            return mapSnapshotToSectorResponse(snapshots.first().sectorExposure)
+        }
+        // Value-weighted merge across accounts
+        val totalValue = snapshots.sumOf { it.totalValue }
+        if (totalValue <= BigDecimal.ZERO) return SectorExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO)
+
+        val merged = mutableMapOf<String, Pair<String, BigDecimal>>() // code -> (name, weight)
+        var weightedCoverage = BigDecimal.ZERO
+
+        for (snap in snapshots) {
+            val accountProportion = snap.totalValue.divide(totalValue, 8, RoundingMode.HALF_UP)
+            val sectors = snap.sectorExposure["sectors"] as? List<Map<String, Any?>> ?: continue
+            val coverage = (snap.sectorExposure["coveragePercent"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
+            weightedCoverage += coverage.multiply(accountProportion)
+
+            for (sector in sectors) {
+                val code = sector["code"]?.toString() ?: continue
+                val name = sector["name"]?.toString() ?: "Unknown"
+                val weight = (sector["weight"] as? Number)?.let { BigDecimal(it.toString()) } ?: continue
+                val scaledWeight = weight.multiply(accountProportion)
+                val existing = merged[code]
+                merged[code] = Pair(name, (existing?.second ?: BigDecimal.ZERO) + scaledWeight)
+            }
+        }
+
+        val sectors = merged.entries.sortedByDescending { it.value.second }.map { (code, pair) ->
+            SectorExposureDto(code, pair.first, pair.second.setScale(4, RoundingMode.HALF_UP), emptyList())
+        }
+
+        return SectorExposureResponse(sectors, weightedCoverage.setScale(2, RoundingMode.HALF_UP), BigDecimal.ZERO)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun mapSnapshotToSectorResponse(data: Map<String, Any?>): SectorExposureResponse {
+        val sectors = (data["sectors"] as? List<Map<String, Any?>>)?.map { s ->
+            val igs = (s["industryGroups"] as? List<Map<String, Any?>>)?.map { ig ->
+                IndustryGroupExposureDto(
+                    code = ig["code"]?.toString() ?: "",
+                    name = ig["name"]?.toString() ?: "",
+                    weight = (ig["weight"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
+                )
+            } ?: emptyList()
+            SectorExposureDto(
+                sectorCode = s["code"]?.toString() ?: "",
+                sectorName = s["name"]?.toString() ?: "",
+                weight = (s["weight"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO,
+                industryGroups = igs
+            )
+        } ?: emptyList()
+        val coverage = (data["coveragePercent"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
+        return SectorExposureResponse(sectors, coverage, BigDecimal.ZERO)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun aggregateGeographyExposure(snapshots: List<AccountAnalytics>): GeographyExposureResponse {
+        if (snapshots.size == 1) {
+            return mapSnapshotToGeographyResponse(snapshots.first().geographyExposure)
+        }
+        val totalValue = snapshots.sumOf { it.totalValue }
+        if (totalValue <= BigDecimal.ZERO) return GeographyExposureResponse(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO)
+
+        val merged = mutableMapOf<String, BigDecimal>()
+        var weightedCoverage = BigDecimal.ZERO
+
+        for (snap in snapshots) {
+            val accountProportion = snap.totalValue.divide(totalValue, 8, RoundingMode.HALF_UP)
+            val regions = snap.geographyExposure["regions"] as? List<Map<String, Any?>> ?: continue
+            val coverage = (snap.geographyExposure["coveragePercent"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
+            weightedCoverage += coverage.multiply(accountProportion)
+
+            for (region in regions) {
+                val name = region["name"]?.toString() ?: continue
+                val weight = (region["weight"] as? Number)?.let { BigDecimal(it.toString()) } ?: continue
+                merged[name] = (merged[name] ?: BigDecimal.ZERO) + weight.multiply(accountProportion)
+            }
+        }
+
+        val regions = merged.entries.sortedByDescending { it.value }.map { (name, weight) ->
+            RegionExposureDto(name, weight.setScale(4, RoundingMode.HALF_UP), emptyList())
+        }
+
+        return GeographyExposureResponse(regions, weightedCoverage.setScale(2, RoundingMode.HALF_UP), BigDecimal.ZERO)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun mapSnapshotToGeographyResponse(data: Map<String, Any?>): GeographyExposureResponse {
+        val regions = (data["regions"] as? List<Map<String, Any?>>)?.map { r ->
+            val countries = (r["countries"] as? List<Map<String, Any?>>)?.map { c ->
+                CountryExposureDto(
+                    code = c["code"]?.toString() ?: "",
+                    name = c["name"]?.toString() ?: "",
+                    weight = (c["weight"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
+                )
+            } ?: emptyList()
+            RegionExposureDto(
+                name = r["name"]?.toString() ?: "",
+                weight = (r["weight"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO,
+                countries = countries
+            )
+        } ?: emptyList()
+        val coverage = (data["coveragePercent"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
+        return GeographyExposureResponse(regions, coverage, BigDecimal.ZERO)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun aggregateRiskProfile(snapshots: List<AccountAnalytics>): RiskProfileResponse {
+        if (snapshots.size == 1) {
+            return mapSnapshotToRiskResponse(snapshots.first().riskProfile)
+        }
+        // For multi-account, use the largest account's risk as approximation
+        // (true aggregation would require recomputing from merged holdings)
+        val largest = snapshots.maxByOrNull { it.totalValue } ?: return RiskProfileResponse(0, "LOW", RiskFactorsDto(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, emptyMap()))
+        return mapSnapshotToRiskResponse(largest.riskProfile)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun mapSnapshotToRiskResponse(data: Map<String, Any?>): RiskProfileResponse {
+        val score = (data["score"] as? Number)?.toInt() ?: 0
+        val level = data["level"]?.toString() ?: "LOW"
+        val factors = data["factors"] as? Map<String, Any?> ?: emptyMap()
+        return RiskProfileResponse(
+            riskScore = score,
+            riskLevel = level,
+            factors = RiskFactorsDto(
+                concentrationHHI = (factors["concentrationHHI"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO,
+                top10Concentration = (factors["top10Concentration"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO,
+                sectorConcentrationHHI = (factors["sectorConcentrationHHI"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO,
+                geographicConcentration = (factors["geographicConcentration"] as? Number)?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO,
+                assetTypeDistribution = emptyMap()
+            )
+        )
     }
 }

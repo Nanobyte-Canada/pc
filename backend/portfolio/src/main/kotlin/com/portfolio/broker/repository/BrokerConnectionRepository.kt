@@ -18,7 +18,6 @@ interface BrokerConnectionRepository : JpaRepository<BrokerConnection, Long> {
 
     @Query("""
         SELECT bc FROM BrokerConnection bc
-        LEFT JOIN FETCH bc.broker
         LEFT JOIN FETCH bc.modelPortfolio
         WHERE bc.user.id = :userId
         ORDER BY bc.accountName
@@ -27,7 +26,6 @@ interface BrokerConnectionRepository : JpaRepository<BrokerConnection, Long> {
 
     @Query("""
         SELECT bc FROM BrokerConnection bc
-        LEFT JOIN FETCH bc.broker
         LEFT JOIN FETCH bc.modelPortfolio
         WHERE bc.user.id = :userId AND bc.status = :status
         ORDER BY bc.accountName
@@ -38,23 +36,17 @@ interface BrokerConnectionRepository : JpaRepository<BrokerConnection, Long> {
 
     @Query("""
         SELECT bc FROM BrokerConnection bc
-        LEFT JOIN FETCH bc.broker
         LEFT JOIN FETCH bc.modelPortfolio
         WHERE bc.id = :id AND bc.user.id = :userId
     """)
     fun findByIdAndUserIdWithBroker(id: Long, userId: Long): BrokerConnection?
 
-    fun findBySnaptradeAuthorizationId(snaptradeAuthorizationId: String): BrokerConnection?
-
-    fun findByUserIdAndSnaptradeAuthorizationId(userId: Long, snaptradeAuthorizationId: String): BrokerConnection?
-
     fun findByUserIdAndAccountIdExternal(userId: Long, accountIdExternal: String): BrokerConnection?
 
-    fun existsByUserIdAndSnaptradeAuthorizationId(userId: Long, snaptradeAuthorizationId: String): Boolean
+    fun findByGatewayConnectionId(gatewayConnectionId: String): List<BrokerConnection>
 
     @Query("""
         SELECT bc FROM BrokerConnection bc
-        LEFT JOIN FETCH bc.broker
         LEFT JOIN FETCH bc.modelPortfolio
         WHERE bc.user.id IN :userIds AND bc.status = 'ACTIVE'
     """)

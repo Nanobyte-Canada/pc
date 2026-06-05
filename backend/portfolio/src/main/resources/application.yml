@@ -16,7 +16,8 @@ spring:
       maximum-pool-size: 10
       minimum-idle: 2
       idle-timeout: 300000
-      connection-timeout: 20000
+      connection-timeout: 30000
+      initialization-fail-timeout: -1
   jpa:
     hibernate:
       ddl-auto: validate
@@ -67,25 +68,24 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when-authorized
       show-components: when-authorized
+
+# Broker gateway configuration
+broker-gateway:
+  url: ${BROKER_GATEWAY_URL:http://localhost:8084}
+  api-key: ${GATEWAY_API_KEY:dev-gateway-key}
+  timeout-ms: ${BROKER_GATEWAY_TIMEOUT:30000}
 
 # Broker configuration
 broker:
   encryption:
     secret-key: ${BROKER_ENCRYPTION_KEY:}  # Base64-encoded 32-byte key for AES-256
   sync:
-    enabled: ${BROKER_SYNC_ENABLED:false}
-    cron: ${BROKER_SYNC_CRON:0 30 22 * * *}
-
-# SnapTrade integration configuration
-snaptrade:
-  client-id: ${SNAPTRADE_CLIENT_ID:}
-  consumer-key: ${SNAPTRADE_CONSUMER_KEY:}
-  redirect-uri: ${SNAPTRADE_REDIRECT_URI:http://localhost:3000/brokers/connections}
-  health-check:
-    enabled: ${SNAPTRADE_HEALTH_CHECK_ENABLED:false}
-    cron: ${SNAPTRADE_HEALTH_CHECK_CRON:0 */15 * * * *}
+    enabled: ${BROKER_SYNC_ENABLED:true}
+    cron: ${BROKER_SYNC_CRON:0 20 16 * * *}
+    cron-morning: ${BROKER_SYNC_CRON_MORNING:0 0 6 * * *}
+    max-lookback-years: ${BROKER_SYNC_MAX_LOOKBACK_YEARS:30}

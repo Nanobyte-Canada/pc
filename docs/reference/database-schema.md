@@ -6,11 +6,11 @@ Complete database schema reference for AI coding agents. All column definitions 
 
 - **Database**: PostgreSQL 16 (Alpine image)
 - **Schema**: `public`
-- **Tables**: 49
+- **Tables**: 50
 - **Views**: 1 (`v_aggregated_positions`)
-- **Indexes**: 216 (including primary keys)
-- **Foreign Keys**: 51
-- **Migration tool**: Flyway (62 applied migrations, V1 through V66, gaps at V4, V5, V19, V20)
+- **Indexes**: 218 (including primary keys)
+- **Foreign Keys**: 52
+- **Migration tool**: Flyway (65 applied migrations, V1 through V73, gaps at V4, V5, V19, V20, V70, V71)
 - **Hibernate DDL mode**: `validate` (schema managed exclusively by Flyway)
 - **Migration files**: `backend/portfolio/src/main/resources/db/migration/V{N}__{description}.sql`
 
@@ -40,13 +40,11 @@ User accounts. Central identity table referenced by most other domains.
 | last_login_ip | varchar(45) | YES | |
 | created_at | timestamptz | NO | now() |
 | updated_at | timestamptz | NO | now() |
-| snaptrade_user_id | varchar(255) | YES | |
-| snaptrade_user_secret_encrypted | text | YES | |
 
 - **PK**: `id`
-- **Unique**: `email`, `snaptrade_user_id`
-- **Indexes**: `idx_users_email`, `idx_users_email_verified` (partial: email_verified=false), `idx_users_snaptrade_user_id` (unique), `idx_users_status`
-- **Notes**: `password_hash` is nullable because OAuth-only users have no password. `snaptrade_user_secret_encrypted` is AES-256 encrypted. Account lockout after 5 failed attempts (30min via `locked_until`).
+- **Unique**: `email`
+- **Indexes**: `idx_users_email`, `idx_users_email_verified` (partial: email_verified=false), `idx_users_status`
+- **Notes**: `password_hash` is nullable because OAuth-only users have no password. Account lockout after 5 failed attempts (30min via `locked_until`). **V72:** Dropped `snaptrade_user_id` and `snaptrade_user_secret_encrypted` columns (SnapTrade replaced by broker-gateway).
 
 #### roles
 
@@ -509,7 +507,7 @@ Maps alternative sub-industry codes (from data providers) to canonical GICS sub-
 
 ---
 
-### 3. Broker Integration Domain (8 tables)
+### 3. Broker Integration Domain (9 tables)
 
 #### brokers
 
@@ -540,7 +538,6 @@ Links a user's brokerage account to the system. Central to all brokerage data.
 |--------|------|----------|---------|
 | id | bigint | NO | sequence |
 | user_id | bigint | NO | |
-| broker_id | bigint | YES | |
 | account_id_external | varchar(100) | YES | |
 | account_number | varchar(50) | YES | |
 | account_type | varchar(50) | YES | |
@@ -554,7 +551,6 @@ Links a user's brokerage account to the system. Central to all brokerage data.
 | metadata | jsonb | YES | |
 | created_at | timestamptz | NO | now() |
 | updated_at | timestamptz | NO | now() |
-| snaptrade_authorization_id | varchar(255) | YES | |
 | last_activities_fetched_at | timestamptz | YES | |
 | last_balance_fetched_at | timestamptz | YES | |
 | account_number_actual | varchar(50) | YES | |
@@ -565,12 +561,13 @@ Links a user's brokerage account to the system. Central to all brokerage data.
 | model_accuracy | numeric | YES | |
 | last_rebalanced_at | timestamp | YES | |
 | connection_type | varchar(20) | YES | |
+| gateway_connection_id | varchar(36) | YES | |
 
 - **PK**: `id`
 - **Unique**: `(user_id, account_id_external)`
-- **FKs**: `user_id -> users.id`, `broker_id -> brokers.id`, `model_portfolio_id -> model_portfolios.id`
-- **Indexes**: `idx_broker_connections_user`, `idx_broker_connections_broker`, `idx_broker_connections_status`, `idx_broker_connections_snaptrade_auth`, `idx_broker_connections_user_active` (partial: status='ACTIVE'), `idx_broker_connections_model`
-- **Notes**: `status` values: PENDING, ACTIVE, DISABLED, ERROR. `connection_type` added in V62. `model_portfolio_id` links to the assigned model portfolio for drift calculation. `broker_name` and `broker_logo_url` are denormalized from the `brokers` table for display.
+- **FKs**: `user_id -> users.id`, `model_portfolio_id -> model_portfolios.id`
+- **Indexes**: `idx_broker_connections_user`, `idx_broker_connections_status`, `idx_broker_connections_user_active` (partial: status='ACTIVE'), `idx_broker_connections_model`
+- **Notes**: `status` values: PENDING, ACTIVE, DISABLED, ERROR. `connection_type` added in V62. `model_portfolio_id` links to the assigned model portfolio for drift calculation. `broker_name` and `broker_logo_url` are denormalized from the `brokers` table for display. **V72:** Added `gateway_connection_id` (references `broker_gateway.connections.id`). **V73:** Dropped `snaptrade_authorization_id` and `broker_id` columns (SnapTrade fully removed).
 
 #### broker_positions
 
@@ -687,7 +684,9 @@ Audit log for position sync operations. Tracks success/failure and timing.
 - **FKs**: `connection_id -> broker_connections.id`, `user_id -> users.id`
 - **Indexes**: `idx_position_fetch_log_conn`, `idx_position_fetch_log_user`, `idx_position_fetch_log_started`, `idx_position_fetch_log_status`, `idx_position_fetch_log_type_status` (composite)
 
-#### snaptrade_status_checks
+#### snaptrade_status_checks (DROPPED IN V72)
+
+**Status:** This table was dropped in V72 as part of the SnapTrade to broker-gateway migration.
 
 Health check records for the SnapTrade API.
 
@@ -703,6 +702,33 @@ Health check records for the SnapTrade API.
 
 - **PK**: `id`
 - **Indexes**: `idx_snaptrade_status_checked_at` (DESC)
+
+#### account_analytics
+
+Pre-computed analytics snapshots per brokerage connection. One snapshot per connection, upserted on each position sync.
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | bigint | NO | sequence |
+| connection_id | bigint | NO | |
+| user_id | bigint | NO | |
+| sector_exposure | jsonb | YES | |
+| geography_exposure | jsonb | YES | |
+| risk_profile | jsonb | YES | |
+| holdings | jsonb | YES | |
+| mer_weighted | numeric | YES | |
+| total_value | numeric | YES | |
+| coverage_percent | numeric | YES | |
+| positions_count | integer | YES | |
+| computed_at | timestamptz | NO | now() |
+| created_at | timestamptz | NO | now() |
+| updated_at | timestamptz | NO | now() |
+
+- **PK**: `id`
+- **Unique**: `connection_id`
+- **FKs**: `connection_id -> broker_connections.id`, `user_id -> users.id`
+- **Indexes**: `idx_account_analytics_connection` (unique), `idx_account_analytics_user`
+- **Notes**: JSONB columns store pre-computed analytics: `sector_exposure` is an array of {sector, weight} objects totaling 100% (with "Unknown" bucket), `geography_exposure` is an array of {region, weight} objects, `risk_profile` is a composite risk score object (0-100), `holdings` is a list of look-through holdings. All values are normalized to CAD. Computed by `AccountAnalyticsComputeService` after each position sync -- see [backend-services.md](backend-services.md).
 
 ---
 
@@ -1180,7 +1206,7 @@ SELECT
         ELSE 0
     END AS total_pnl_percent,
     count(DISTINCT bc.id) AS account_count,
-    count(DISTINCT bc.broker_id) AS broker_count,
+    count(DISTINCT bc.gateway_connection_id) AS broker_count,
     bc.user_id
 FROM broker_positions bp
 JOIN broker_connections bc ON bp.connection_id = bc.id
@@ -1188,13 +1214,13 @@ WHERE bp.is_current = true AND bc.status = 'ACTIVE'
 GROUP BY bp.symbol, bp.security_name, bp.instrument_type, bp.currency, bc.user_id;
 ```
 
-**Columns returned**: symbol, security_name, instrument_type, currency, total_quantity, total_value, weighted_avg_cost, total_pnl, total_pnl_percent, account_count, broker_count, user_id
+**Columns returned**: symbol, security_name, instrument_type, currency, total_quantity, total_value, weighted_avg_cost, total_pnl, total_pnl_percent, account_count, broker_count (now counts distinct gateway_connection_id), user_id
 
 **Filters**: Only current positions (`is_current=true`) from active connections (`status='ACTIVE'`).
 
 ---
 
-## Foreign Key Relationships (51 total)
+## Foreign Key Relationships (50 total)
 
 Listed as `source_table.column -> target_table.column`:
 
@@ -1224,14 +1250,15 @@ Listed as `source_table.column -> target_table.column`:
 
 **From broker tables:**
 21. `broker_connections.user_id -> users.id`
-22. `broker_connections.broker_id -> brokers.id`
-23. `broker_connections.model_portfolio_id -> model_portfolios.id`
+22. `broker_connections.model_portfolio_id -> model_portfolios.id`
 24. `broker_positions.connection_id -> broker_connections.id`
 25. `broker_positions.instrument_id -> stocks.id`
 26. `broker_activities.connection_id -> broker_connections.id`
 27. `broker_balance_snapshots.connection_id -> broker_connections.id`
 28. `position_fetch_log.connection_id -> broker_connections.id`
 29. `position_fetch_log.user_id -> users.id`
+30. `account_analytics.connection_id -> broker_connections.id`
+31. `account_analytics.user_id -> users.id`
 
 **From portfolio management tables:**
 32. `portfolio_groups.user_id -> users.id`
@@ -1308,7 +1335,7 @@ All other tables: 24-40 kB each (empty or near-empty).
 
 ## Flyway Migration History
 
-62 applied migrations from V1 through V66 (gaps at V4, V5, V19, V20).
+65 applied migrations from V1 through V73 (gaps at V4, V5, V19, V20, V70, V71).
 
 | Version | Description | Notes |
 |---------|------------|-------|
@@ -1376,8 +1403,11 @@ All other tables: 24-40 kB each (empty or near-empty).
 | V66 | drop unused tables | Dropped external_connections, external_connection_tokens, app_metadata, fund_sector_allocations |
 | V67 | drop broker positions instrument id fk | Dropped `instrument_id` FK column from `broker_positions` (V67 screener migration prep) |
 | V68 | drop legacy screener tables | Dropped all public schema instrument/GICS/ingestion tables (stocks, etfs, etf_holdings, gics_*, data_sources, ingestion_batches, ingestion_runs/steps/errors, etf_sector_allocations_factset). Portfolio app now reads from `ingestion` schema. |
+| V69 | account analytics | `account_analytics` table for pre-computed per-connection analytics snapshots (sector exposure, geography exposure, risk profile, holdings, weighted MER). UNIQUE constraint on `connection_id`, INDEX on `user_id`. |
+| V72 | snaptrade to gateway migration | Added `gateway_connection_id` column to `broker_connections`. Dropped `snaptrade_status_checks` table. Dropped `snaptrade_user_id` and `snaptrade_user_secret_encrypted` columns from `users`. Part of SnapTrade to broker-gateway migration. |
+| V73 | remove snaptrade columns | Dropped `snaptrade_authorization_id` and `broker_id` columns from `broker_connections`. Completes SnapTrade removal. |
 
-**Next migration**: V69 (always check by running `ls backend/portfolio/src/main/resources/db/migration/` to confirm)
+**Next migration**: V74 (always check by running `ls backend/portfolio/src/main/resources/db/migration/` to confirm)
 
 ---
 
@@ -1548,3 +1578,119 @@ Individual error records within ingestion steps.
 4. **JPA entity validation**: Hibernate will fail startup if entities do not match the schema. Every column in an entity must exist in the database and vice versa for mapped columns.
 5. **Indexes**: Consider adding indexes for columns used in WHERE clauses, JOIN conditions, or ORDER BY. Use partial indexes for boolean filters.
 6. **JSONB columns**: Used for flexible/nested data (cash amounts, raw API payloads, notification metadata). Query with PostgreSQL `->` and `->>` operators.
+
+---
+
+## Market Data Schema (`market_data`)
+
+**Service:** market-data-service (port 8082)
+**Migration:** `backend/market-data/src/main/resources/db/migration/V1__market_data_schema.sql`
+
+### market_data.underlying_prices
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| id | BIGINT (IDENTITY) | NO | Primary key |
+| ticker | VARCHAR(20) | NO | Symbol |
+| price | NUMERIC(12,4) | NO | Price |
+| volume | BIGINT | YES | Volume |
+| observed_at | TIMESTAMPTZ | NO | Observation timestamp |
+
+### market_data.option_quotes
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| id | BIGINT (IDENTITY) | NO | Primary key |
+| ticker | VARCHAR(20) | NO | Underlying symbol |
+| expiry | DATE | NO | Option expiry |
+| strike | NUMERIC(12,4) | NO | Strike price |
+| option_type | VARCHAR(4) | NO | CALL or PUT |
+| bid/ask/mid | NUMERIC(12,4) | YES | Price fields |
+| implied_volatility | NUMERIC(10,6) | YES | IV |
+| delta/gamma/theta/vega | NUMERIC(10,6) | YES | Greeks |
+| observed_at | TIMESTAMPTZ | NO | Observation timestamp |
+
+### market_data.iv_observations
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| id | BIGINT (IDENTITY) | NO | Primary key |
+| ticker | VARCHAR(20) | NO | Symbol |
+| atm_iv | NUMERIC(10,6) | NO | ATM implied volatility |
+| observed_date | DATE | NO | Date (unique with ticker) |
+
+### market_data.contract_cache
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| id | BIGINT (IDENTITY) | NO | Primary key |
+| symbol | VARCHAR(30) | NO | Symbol |
+| con_id | INTEGER | NO | IBKR contract ID |
+| sec_type | VARCHAR(10) | NO | STK or OPT |
+| expiry | DATE | YES | Option expiry |
+| strike | NUMERIC(12,4) | YES | Strike price |
+| option_right | VARCHAR(4) | YES | C or P |
+| cached_at | TIMESTAMPTZ | NO | Cache timestamp |
+
+---
+
+## Strategy Schema (`strategy`)
+
+**Service:** strategy-service (port 8083)
+**Migration:** `backend/strategy/src/main/resources/db/migration/V1__strategy_schema.sql`
+
+### strategy.orders
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| id | BIGINT (IDENTITY) | NO | Primary key |
+| user_id | BIGINT | NO | User reference |
+| strategy_type | VARCHAR(30) | NO | Strategy enum name |
+| underlying | VARCHAR(20) | NO | Underlying symbol |
+| order_type | VARCHAR(20) | NO | LIMIT (default) |
+| net_price | NUMERIC(12,4) | YES | Net price |
+| quantity | INTEGER | NO | Contract quantity |
+| status | VARCHAR(20) | NO | SUBMITTED/FILLED/CANCELLED |
+| snaptrade_order_id | VARCHAR(100) | YES | SnapTrade order reference |
+| created_at/updated_at | TIMESTAMPTZ | NO | Timestamps |
+
+### strategy.order_legs
+
+Order legs with fill prices. FK to orders(id) CASCADE.
+
+### strategy.positions
+
+Open/closed positions with P&L tracking. FK to orders for entry/exit.
+
+### strategy.wheel_accounts / wheel_configs / wheel_recommendations / wheel_holdings
+
+Wheel writer automation tables for CSP/CC strategy management.
+
+---
+
+## Broker Gateway Schema (`broker_gateway`)
+
+**Service:** broker-gateway-service (port 8084)
+**Migration:** `backend/broker-gateway/src/main/resources/db/migration/V1__broker_gateway_schema.sql`
+
+### broker_gateway.connections
+
+Stores encrypted broker credentials and connection metadata for IBKR, Questrade, and Wealthsimple integrations.
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | VARCHAR(36) | NO | (PK) |
+| user_id | BIGINT | NO | |
+| broker_type | VARCHAR(20) | NO | CHECK (IBKR, QUESTRADE, WEALTHSIMPLE) |
+| status | VARCHAR(20) | NO | |
+| credentials_encrypted | TEXT | YES | |
+| accounts_json | JSONB | YES | |
+| last_validated_at | TIMESTAMPTZ | YES | |
+| last_refreshed_at | TIMESTAMPTZ | YES | |
+| error_message | TEXT | YES | |
+| created_at | TIMESTAMPTZ | NO | now() |
+| updated_at | TIMESTAMPTZ | NO | now() |
+
+- **PK**: `id`
+- **Indexes**: `idx_connections_user_id` (user_id), `idx_connections_user_broker` (user_id, broker_type), `idx_connections_status` (status)
+- **Notes**: `credentials_encrypted` is AES-256-GCM encrypted using `BROKER_ENCRYPTION_KEY`. `accounts_json` caches discovered account metadata as JSONB. `broker_type` is constrained to IBKR, QUESTRADE, or WEALTHSIMPLE via CHECK constraint.

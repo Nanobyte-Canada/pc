@@ -54,6 +54,14 @@ class DashboardController(
 
     // ========== Widget Data Endpoints ==========
 
+    @GetMapping("/irr")
+    fun getIrr(
+        @AuthenticationPrincipal principal: UserPrincipal,
+        @RequestParam(required = false) connectionId: Long?
+    ): ResponseEntity<DashboardIrrResponse> {
+        return ResponseEntity.ok(dashboardDataService.getIrrData(principal.id, connectionId))
+    }
+
     @GetMapping("/summary")
     fun getSummary(
         @AuthenticationPrincipal principal: UserPrincipal,

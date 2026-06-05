@@ -1,0 +1,199 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: portfolio-alerts
+    folder: Portfolio
+    interval: 1m
+    rules:
+      - uid: service-down
+        title: Service Down
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'up{job=~"portfolio-.*"} == 0'
+              intervalMs: 15000
+              maxDataPoints: 43200
+          - refId: C
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "The service {{ $labels.job }} on instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - uid: high-error-rate
+        title: High Error Rate
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: '(sum by (service) (rate(http_server_requests_seconds_count{status=~"5.."}[5m])) / sum by (service) (rate(http_server_requests_seconds_count[5m]))) * 100 > 5'
+              intervalMs: 15000
+              maxDataPoints: 43200
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on service {{ $labels.service }}"
+          description: "Service {{ $labels.service }} has more than 5% of requests returning 5xx errors over the last 5 minutes."
+
+      - uid: jvm-heap-critical
+        title: JVM Heap Critical
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} * 100 > 85'
+              intervalMs: 15000
+              maxDataPoints: 43200
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM heap usage critical on {{ $labels.instance }}"
+          description: "JVM heap usage on instance {{ $labels.instance }} has exceeded 85% for more than 5 minutes. Current usage: {{ $value }}%"
+
+      - uid: disk-usage-high
+        title: Disk Usage High
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: '(1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 > 80'
+              intervalMs: 15000
+              maxDataPoints: 43200
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk usage high on {{ $labels.instance }}"
+          description: "Disk usage on instance {{ $labels.instance }} has exceeded 80% for more than 5 minutes. Current usage: {{ $value }}%"
+
+      - uid: db-pool-exhaustion
+        title: DB Pool Exhaustion
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'hikaricp_connections_idle < 2'
+              intervalMs: 15000
+              maxDataPoints: 43200
+          - refId: C
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool nearly exhausted on {{ $labels.pool }}"
+          description: "HikariCP pool {{ $labels.pool }} has less than 2 idle connections for more than 2 minutes. Current idle: {{ $value }}"
+
+      - uid: container-restart-loop
+        title: Container Restart Loop
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'increase(container_restart_count{name=~"prod-.*"}[5m]) > 3'
+              intervalMs: 15000
+              maxDataPoints: 43200
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container {{ $labels.name }} in restart loop"
+          description: "Container {{ $labels.name }} has restarted more than 3 times in the last 5 minutes. Total restarts: {{ $value }}"

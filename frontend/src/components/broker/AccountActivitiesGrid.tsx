@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import type { ColDef, ValueFormatterParams } from 'ag-grid-community'
 import { useConnectionActivities, useSyncActivities } from '../../hooks/useBrokerConnections'
@@ -7,7 +7,12 @@ import type { BrokerActivityDto } from '../../types/broker'
 
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
+import { useAutoPageSize } from '@/hooks/useAutoPageSize'
 import './AccountActivitiesGrid.css'
+
+/* Reserved height: filters row ~60px + AG Grid column headers ~40px + pagination bar ~48px */
+const ACTIVITIES_RESERVED_HEIGHT = 148
 
 const ACTIVITY_TYPES = ['BUY', 'SELL', 'DIVIDEND', 'TRANSFER_IN', 'TRANSFER_OUT', 'FEE', 'INTEREST', 'OTHER']
 
@@ -25,9 +30,13 @@ const typeColors: Record<string, string> = {
 interface AccountActivitiesGridProps {
   connectionId: number
   connectionActive: boolean
+  autoFit?: boolean
 }
 
-export function AccountActivitiesGrid({ connectionId, connectionActive }: AccountActivitiesGridProps) {
+export function AccountActivitiesGrid({ connectionId, connectionActive, autoFit }: AccountActivitiesGridProps) {
+  const agTheme = useAgGridTheme()
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const autoPageSize = useAutoPageSize(wrapperRef, 44, ACTIVITIES_RESERVED_HEIGHT)
   const [page, setPage] = useState(0)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -130,7 +139,7 @@ export function AccountActivitiesGrid({ connectionId, connectionActive }: Accoun
   ]
 
   return (
-    <div className="activities-grid-wrapper">
+    <div className="activities-grid-wrapper" ref={autoFit ? wrapperRef : undefined}>
       <div className="activities-filters">
         <div className="filter-group">
           <label>From</label>
@@ -170,7 +179,8 @@ export function AccountActivitiesGrid({ connectionId, connectionActive }: Accoun
         </div>
       ) : (
         <>
-          <div className="ag-theme-quartz activities-grid-container">
+          {/* Desktop: AG Grid */}
+          <div className={`${agTheme} activities-grid-container activities-desktop-only`}>
             <AgGridReact
               rowData={activities}
               columnDefs={columnDefs}
@@ -178,8 +188,41 @@ export function AccountActivitiesGrid({ connectionId, connectionActive }: Accoun
               animateRows={true}
               suppressCellFocus={true}
               domLayout="autoHeight"
+              pagination={autoFit}
+              paginationPageSize={autoFit ? autoPageSize : undefined}
+              rowHeight={44}
             />
           </div>
+
+          {/* Mobile: Card list */}
+          <div className="activities-mobile-only">
+            {activities.map((activity, idx) => {
+              const amt = activity.amount ?? 0
+              const isPositive = amt >= 0
+              const typeColor = typeColors[activity.type] || typeColors.OTHER
+              return (
+                <div key={idx} className="activity-card">
+                  <div className="activity-card__left">
+                    <span className="activity-card__date">
+                      {activity.tradeDate ? new Date(activity.tradeDate).toLocaleDateString() : '-'}
+                    </span>
+                  </div>
+                  <div className="activity-card__center">
+                    <span className="activity-card__type-badge" style={{ color: typeColor, background: `${typeColor}15` }}>
+                      {activity.type}
+                    </span>
+                    <span className="activity-card__symbol">{activity.symbol || '-'}</span>
+                  </div>
+                  <div className="activity-card__right">
+                    <span className={`activity-card__amount ${isPositive ? 'activity-card__amount--positive' : 'activity-card__amount--negative'}`}>
+                      {isPositive ? '+' : ''}{formatCurrency(amt)}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
           <div className="activities-pagination">
             <span className="pagination-info">
               Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, totalCount)} of {totalCount}

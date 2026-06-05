@@ -3,6 +3,7 @@ import { AgGridReact } from 'ag-grid-react'
 import type { ColDef, ICellRendererParams } from 'ag-grid-community'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import type { Broker } from '../../types/broker'
 import './BrokerageMatrix.css'
 
@@ -61,6 +62,7 @@ function StatusCellRenderer(params: ICellRendererParams<Broker>) {
 }
 
 export function BrokerageMatrix({ brokers, onConnect, connectedSlugs, isConnecting }: BrokerageMatrixProps) {
+  const agTheme = useAgGridTheme()
   const columnDefs = useMemo<ColDef<Broker>[]>(() => [
     { headerName: '', field: 'logoUrl', width: 50, cellRenderer: LogoCellRenderer, sortable: false, filter: false },
     { headerName: 'Brokerage', field: 'name', flex: 1, minWidth: 180 },
@@ -93,7 +95,7 @@ export function BrokerageMatrix({ brokers, onConnect, connectedSlugs, isConnecti
   ], [onConnect, connectedSlugs, isConnecting])
 
   return (
-    <div className="ag-theme-quartz brokerage-matrix-container">
+    <div className={`${agTheme} brokerage-matrix-container`}>
       <AgGridReact
         rowData={brokers}
         columnDefs={columnDefs}

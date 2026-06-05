@@ -13,6 +13,11 @@ export interface TradeOrder {
   requestedPrice: number
   requestedAmount: number
   limitPrice: number | null
+  optionType?: string
+  strikePrice?: number
+  expirationDate?: string
+  symbolId?: number
+  stopPrice?: number
   filledUnits: number | null
   filledPrice: number | null
   filledAmount: number | null
@@ -67,4 +72,9 @@ export interface TradeExecutionInput {
   currency: string
   connectionId: number
   limitPrice?: number
+  optionType?: string
+  strikePrice?: number
+  expirationDate?: string
+  symbolId?: number
+  stopPrice?: number
 }

@@ -1,98 +1,128 @@
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { LayoutGrid, Table } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { LayoutGrid, Table, Loader2 } from 'lucide-react'
 import { BrokerCard } from '../components/broker/BrokerCard'
 import { BrokerageMatrix } from '../components/broker/BrokerageMatrix'
 import { BrokerConnectionCard } from '../components/broker/BrokerConnectionCard'
-import { SnapTradeBadge } from '../components/broker/SnapTradeBadge'
+import { ConnectBrokerDialog } from '../components/broker/ConnectBrokerDialog'
 import {
   useAvailableBrokers,
   useBrokerConnections,
   useConnectBroker,
   useDisconnectBroker,
-  useTriggerPositionFetch,
-  useSyncConnections
+  useSyncConnections,
+  useSyncAll
 } from '../hooks/useBrokerConnections'
+import { syncAllConnectionData } from '../services/brokerService'
+import type { SyncAllResponse } from '../services/brokerService'
+import type { ConnectBrokerRequest } from '../types/broker'
 import './BrokerConnectionsPage.css'
 
 export function BrokerConnectionsPage() {
-  const [searchParams] = useSearchParams()
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  const [fetchingConnectionId, setFetchingConnectionId] = useState<number | null>(null)
+  const [syncingConnectionId, setSyncingConnectionId] = useState<number | null>(null)
   const [brokerView, setBrokerView] = useState<'cards' | 'matrix'>('cards')
+  const [isSyncingNewConnection, setIsSyncingNewConnection] = useState(false)
+  const [syncStatus, setSyncStatus] = useState('')
+  const [connectDialogBroker, setConnectDialogBroker] = useState<string | null>(null)
+  const [connectError, setConnectError] = useState<string | null>(null)
+  const syncCalledRef = useRef(false)
 
   const { data: brokersData, isLoading: brokersLoading } = useAvailableBrokers()
   const { data: connectionsData, isLoading: connectionsLoading, refetch: refetchConnections } = useBrokerConnections()
 
   const connectBroker = useConnectBroker()
   const disconnectBroker = useDisconnectBroker()
-  const triggerFetch = useTriggerPositionFetch()
   const sync = useSyncConnections()
+  const syncAll = useSyncAll()
 
-  // Always sync connections from SnapTrade on page load
   useEffect(() => {
+    if (syncCalledRef.current) return
+    syncCalledRef.current = true
     sync.mutate(undefined, {
       onSuccess: () => refetchConnections()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Handle return from SnapTrade portal (query params) — show notification + auto-fetch
-  useEffect(() => {
-    const success = searchParams.get('success')
-    const error = searchParams.get('error')
-    const status = searchParams.get('status')
-
-    if (success === 'true' || status === 'SUCCESS') {
-      setNotification({ type: 'success', message: 'Broker connected successfully! Fetching positions...' })
-      // Sync first, then auto-fetch for new connections with no positions
-      sync.mutate(undefined, {
-        onSuccess: () => {
-          refetchConnections().then(({ data }) => {
-            const conns = data?.connections || []
-            conns.filter(c => c.positionsCount === 0).forEach(c => {
-              triggerFetch.mutate(c.id)
-            })
-          })
-        }
-      })
-    } else if (error) {
-      const errorMessages: Record<string, string> = {
-        state_invalid: 'Connection session expired. Please try again.',
-        connection_failed: 'Failed to connect to broker. Please try again.',
-        ABANDONED: 'Connection was cancelled.'
-      }
-      setNotification({ type: 'error', message: errorMessages[error] || 'An error occurred' })
-    }
-
-    // Clear params from URL
-    if (success || error || status) {
-      window.history.replaceState({}, '', '/brokers/connections')
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
-
   // Auto-dismiss notification
   useEffect(() => {
     if (notification) {
-      const timer = setTimeout(() => setNotification(null), 5000)
+      const timer = setTimeout(() => setNotification(null), 8000)
       return () => clearTimeout(timer)
     }
   }, [notification])
 
   const handleConnect = (brokerSlug?: string) => {
-    connectBroker.mutate(brokerSlug ? { broker: brokerSlug } : undefined)
+    setConnectError(null)
+    setConnectDialogBroker(brokerSlug || null)
   }
 
-  const handleReconnect = (authorizationId: string) => {
-    connectBroker.mutate({ reconnectAuthId: authorizationId })
+  const handleConnectSubmit = async (request: ConnectBrokerRequest) => {
+    setConnectError(null)
+    connectBroker.mutate(request, {
+      onSuccess: async (data) => {
+        setConnectDialogBroker(null)
+        const accountCount = data.connections?.length || 0
+        setNotification({
+          type: 'success',
+          message: `Connected! Found ${accountCount} account${accountCount !== 1 ? 's' : ''}.`
+        })
+
+        if (accountCount > 0) {
+          setIsSyncingNewConnection(true)
+          setSyncStatus('Syncing accounts...')
+
+          let totalPositions = 0
+          let totalActivities = 0
+          const newConnections = data.connections || []
+
+          for (let i = 0; i < newConnections.length; i++) {
+            const conn = newConnections[i]
+            setSyncStatus(`Syncing ${conn.accountName || conn.accountType || `Account ${i + 1}`} (${i + 1}/${newConnections.length})...`)
+            try {
+              const result: SyncAllResponse = await syncAllConnectionData(conn.id)
+              totalPositions += result.positionsFetched
+              totalActivities += result.activitiesSynced
+            } catch (e) {
+              console.warn(`Sync failed for connection ${conn.id}:`, e)
+            }
+          }
+
+          await refetchConnections()
+          setIsSyncingNewConnection(false)
+          setSyncStatus('')
+          setNotification({
+            type: 'success',
+            message: `Synced ${totalPositions} positions and ${totalActivities} activities across ${newConnections.length} accounts.`
+          })
+        }
+      },
+      onError: (error) => {
+        setConnectError(error.message || 'Failed to connect. Please check your token and try again.')
+      }
+    })
   }
 
-  const handleFetch = (connectionId: number) => {
-    setFetchingConnectionId(connectionId)
-    triggerFetch.mutate(connectionId, {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleReconnect = (_gatewayConnectionId: string) => {
+    setConnectError(null)
+    setConnectDialogBroker('questrade')
+  }
+
+  const handleSyncAll = (connectionId: number) => {
+    setSyncingConnectionId(connectionId)
+    syncAll.mutate(connectionId, {
+      onSuccess: (data) => {
+        setNotification({
+          type: 'success',
+          message: `Synced ${data.positionsFetched} positions and ${data.activitiesSynced} activities`
+        })
+      },
+      onError: () => {
+        setNotification({ type: 'error', message: 'Failed to sync connection data' })
+      },
       onSettled: () => {
-        setTimeout(() => setFetchingConnectionId(null), 2000)
+        setTimeout(() => setSyncingConnectionId(null), 2000)
       }
     })
   }
@@ -111,7 +141,6 @@ export function BrokerConnectionsPage() {
   const brokers = brokersData?.brokers || []
   const connections = connectionsData?.connections || []
 
-  // Check which brokers have existing connections
   const connectedBrokerSlugs = new Set(connections.map(c => c.broker.slug).filter((s): s is string => !!s))
 
   if (brokersLoading || connectionsLoading) {
@@ -124,11 +153,18 @@ export function BrokerConnectionsPage() {
 
   return (
     <div className="broker-connections-page">
-      {/* Header */}
+      {/* Header — no connect button; clicking broker cards initiates connection */}
       <div className="broker-connections-header">
         <h1>Broker Connections</h1>
-        <SnapTradeBadge />
       </div>
+
+      {/* Syncing overlay for new connections */}
+      {isSyncingNewConnection && (
+        <div className="broker-syncing-overlay">
+          <Loader2 className="broker-syncing-spinner" size={20} />
+          <span>{syncStatus || 'Setting up your accounts...'}</span>
+        </div>
+      )}
 
       {/* Notification */}
       {notification && (
@@ -140,7 +176,7 @@ export function BrokerConnectionsPage() {
         </div>
       )}
 
-      {/* Available Brokers */}
+      {/* Available Brokers — primary section, above connected accounts */}
       <section className="broker-section">
         <div className="broker-section-header">
           <h2>Available Brokers</h2>
@@ -172,6 +208,7 @@ export function BrokerConnectionsPage() {
                   onConnect={handleConnect}
                   isConnecting={connectBroker.isPending}
                   hasExistingConnection={connectedBrokerSlugs.has(broker.slug || '')}
+                  connections={connections}
                 />
               ))}
             </div>
@@ -185,14 +222,16 @@ export function BrokerConnectionsPage() {
           )
         ) : (
           <div className="broker-no-data">
-            No brokerages available. Check your SnapTrade configuration.
+            No brokerages available. Check your broker gateway configuration.
           </div>
         )}
       </section>
 
       {/* Connected Accounts */}
       <section className="broker-section">
-        <h2>Connected Accounts</h2>
+        <div className="broker-section-header">
+          <h2>Connected Accounts</h2>
+        </div>
 
         {connections.length === 0 ? (
           <div className="broker-empty-state">
@@ -205,15 +244,26 @@ export function BrokerConnectionsPage() {
               <BrokerConnectionCard
                 key={connection.id}
                 connection={connection}
-                onFetch={handleFetch}
+                onSyncAll={handleSyncAll}
                 onDisconnect={handleDisconnect}
                 onReconnect={handleReconnect}
-                isFetching={fetchingConnectionId === connection.id}
+                isSyncing={syncingConnectionId === connection.id}
               />
             ))}
           </div>
         )}
       </section>
+
+      {/* Connect Broker Dialog */}
+      {connectDialogBroker && (
+        <ConnectBrokerDialog
+          brokerType={connectDialogBroker}
+          onConnect={handleConnectSubmit}
+          onCancel={() => { setConnectDialogBroker(null); setConnectError(null) }}
+          isConnecting={connectBroker.isPending}
+          error={connectError}
+        />
+      )}
     </div>
   )
 }

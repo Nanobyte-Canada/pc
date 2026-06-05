@@ -60,24 +60,24 @@ User -->1:* PortfolioGroup
 User -->1:* TradeOrder
 User -->1:* Notification
 User -->1:* DashboardPreference
+User -->1:* AccountAnalytics
 
                          +------------------+
-                         |      Broker      |
+                         |      Broker      |  (standalone registry, no FK from BrokerConnection)
                          +------------------+
-                               |1
-                               |
-                               |*
+
                     +--------------------+
                     | BrokerConnection   |1---------*+------------------+
                     +--------------------+           | BrokerPosition   |
-                      |1   |1   |1   |1             +------------------+
-                      |    |    |    |                       |*
-                      |    |    |    |               +------------------+
-                      |*   |*   |*   |*             | PositionFetchLog |
+                      |1   |1   |1   |1   |1        +------------------+
+                      |    |    |    |     |                |*
+                      |    |    |    |     |         +------------------+
+                      |*   |*   |*   |*   |1        | PositionFetchLog |
                 +------+ +---+ +---+ +--------+    +------------------+
-                |BrkAct| |Bal| |Trd|  |         |
-                +------+ |Snp| |Ord|  |ModelPort|
-                         +---+ +---+  +---------+
+                |BrkAct| |Bal| |Trd|  |         |        |
+                +------+ |Snp| |Ord|  |ModelPort|  +------------------+
+                         +---+ +---+  +---------+  |AccountAnalytics  |
+                                                    +------------------+
                                           |1
                                           |
                                           |*
@@ -122,7 +122,6 @@ TradeOrder --> User, PortfolioGroup (nullable), BrokerConnection
 
 DataSource -->1:* IngestionBatch -->1:* EtfHolding
 BenchmarkReturn (standalone, no FK relationships)
-SnapTradeStatusCheck (standalone, no FK relationships)
 ```
 
 ---
@@ -150,8 +149,8 @@ SnapTradeStatusCheck (standalone, no FK relationships)
 | lastLoginIp | String? | last_login_ip | nullable, length=45 |
 | createdAt | OffsetDateTime | created_at | not null, updatable=false |
 | updatedAt | OffsetDateTime | updated_at | not null |
-| snaptradeUserId | String? | snaptrade_user_id | nullable, length=255 |
-| snaptradeUserSecretEncrypted | String? | snaptrade_user_secret_encrypted | TEXT |
+
+**V72:** Removed `snaptradeUserId` and `snaptradeUserSecretEncrypted` fields (columns dropped in V72 migration).
 
 **Relationships:**
 - `identities` -> `UserIdentity` (OneToMany, mappedBy="user", CASCADE ALL, orphanRemoval, LAZY)
@@ -356,8 +355,6 @@ SnapTradeStatusCheck (standalone, no FK relationships)
 |-------|------------|--------|-------------|
 | id | Long | id | @Id @GeneratedValue(IDENTITY) |
 | user | User | user_id | @ManyToOne(LAZY), not null |
-| broker | Broker? | broker_id | @ManyToOne(LAZY), nullable |
-| snaptradeAuthorizationId | String? | snaptrade_authorization_id | nullable, length=255 |
 | accountIdExternal | String? | account_id_external | nullable, length=100 |
 | accountNumber | String? | account_number | nullable, length=50 |
 | accountType | String? | account_type | nullable, length=50 |
@@ -378,6 +375,7 @@ SnapTradeStatusCheck (standalone, no FK relationships)
 | lastBalanceFetchedAt | OffsetDateTime? | last_balance_fetched_at | nullable |
 | updatedAt | OffsetDateTime | updated_at | not null |
 | connectionType | String? | connection_type | nullable, length=20 |
+| gatewayConnectionId | String? | gateway_connection_id | nullable, length=36 |
 | modelPortfolio | ModelPortfolio? | model_portfolio_id | @ManyToOne(LAZY), nullable |
 | modelAccuracy | BigDecimal? | model_accuracy | nullable |
 | lastRebalancedAt | OffsetDateTime? | last_rebalanced_at | nullable |
@@ -387,6 +385,8 @@ SnapTradeStatusCheck (standalone, no FK relationships)
 - `fetchLogs` -> `PositionFetchLog` (OneToMany, mappedBy="connection", CASCADE ALL, orphanRemoval, LAZY)
 
 **Enum -- ConnectionStatus:** `PENDING`, `ACTIVE`, `EXPIRED`, `ERROR`, `DISCONNECTED`
+
+**V72/V73 Notes:** `gatewayConnectionId` references a connection in the broker-gateway service (`broker_gateway.connections.id`) and is now the primary broker reference field. **V73:** Removed `broker: Broker?` ManyToOne relationship and `snaptradeAuthorizationId` field (columns dropped in V73 migration). The `brokers` table still exists as a registry but is no longer referenced by `BrokerConnection`.
 
 **Methods:** `isActive()`, `needsReauth()`, `markAsExpired(msg?)`, `markAsError(code, msg)`, `clearError()`
 
@@ -795,24 +795,12 @@ No foreign key relationships (standalone entity).
 
 ---
 
-### SnapTradeStatusCheck
+### SnapTradeStatusCheck (REMOVED IN V72)
 
-**File:** `broker/entity/SnapTradeStatusCheck.kt`
-**Table:** `snaptrade_status_checks`
+**File:** `broker/entity/SnapTradeStatusCheck.kt` (removed)
+**Table:** `snaptrade_status_checks` (DROPPED IN V72)
 
-| Field | Kotlin Type | Column | Annotations |
-|-------|------------|--------|-------------|
-| id | Long | id | @Id @GeneratedValue(IDENTITY) |
-| status | SnapTradeApiStatus | status | @Enumerated(STRING), not null, length=20 |
-| responseTimeMs | Int? | response_time_ms | nullable |
-| version | String? | version | nullable |
-| errorMessage | String? | error_message | TEXT |
-| rawResponse | String? | raw_response | jsonb, @JdbcTypeCode(JSON) |
-| checkedAt | OffsetDateTime | checked_at | not null |
-
-**Enum -- SnapTradeApiStatus:** `ONLINE`, `DEGRADED`, `OFFLINE`, `UNKNOWN`
-
-No foreign key relationships (standalone entity).
+Removed as part of the SnapTrade to broker-gateway migration. The entity, repository, service (`SnapTradeStatusService`), and scheduler (`SnapTradeHealthScheduler`) were all deleted.
 
 ---
 
@@ -843,6 +831,35 @@ No foreign key relationships (standalone entity).
 **Enum -- FetchStatus:** `PENDING`, `IN_PROGRESS`, `SUCCESS`, `FAILED`, `PARTIAL`, `CANCELLED`
 
 **Methods:** `markSuccess(count, value)`, `markFailed(code, msg)`, `markPartial(count, msg)`
+
+---
+
+### AccountAnalytics
+
+**File:** `broker/entity/AccountAnalytics.kt`
+**Table:** `account_analytics`
+
+| Field | Kotlin Type | Column | Annotations |
+|-------|------------|--------|-------------|
+| id | Long | id | @Id @GeneratedValue(IDENTITY) |
+| connection | BrokerConnection | connection_id | @ManyToOne(LAZY), not null |
+| userId | Long | user_id | not null |
+| sectorExposure | String? | sector_exposure | jsonb, @JdbcTypeCode(JSON) |
+| geographyExposure | String? | geography_exposure | jsonb, @JdbcTypeCode(JSON) |
+| riskProfile | String? | risk_profile | jsonb, @JdbcTypeCode(JSON) |
+| holdings | String? | holdings | jsonb, @JdbcTypeCode(JSON) |
+| merWeighted | BigDecimal? | mer_weighted | precision=18, scale=6 |
+| totalValue | BigDecimal? | total_value | precision=18, scale=2 |
+| coveragePercent | BigDecimal? | coverage_percent | precision=5, scale=2 |
+| positionsCount | Int? | positions_count | nullable |
+| computedAt | OffsetDateTime | computed_at | not null |
+| createdAt | OffsetDateTime | created_at | not null, updatable=false |
+| updatedAt | OffsetDateTime | updated_at | not null |
+
+**Relationships:**
+- `connection` -> `BrokerConnection` (ManyToOne, LAZY, not null) -- UNIQUE constraint ensures one snapshot per connection
+
+**Notes:** Pre-computed analytics snapshot per brokerage connection. JSONB columns store sector/geography exposure arrays, risk profile object, and look-through holdings list. All values normalized to CAD. Upserted by `AccountAnalyticsComputeService` on each position sync -- see [backend-services.md](backend-services.md). The `userId` column is a plain Long (not a JPA relationship) used for efficient lookups via `AccountAnalyticsRepository.findAllByUserId()`.
 
 ---
 
@@ -1189,18 +1206,16 @@ No foreign key relationships (standalone entity).
 
 | DTO | Fields |
 |-----|--------|
-| `ConnectBrokerRequest` | broker?, reconnectAuthId?, connectionType? ("read"\|"trade"\|"trade-if-available") |
+| `ConnectBrokerRequest` | brokerType: String, credentials: Record<String, unknown> |
 
 **Response DTOs:**
 
 | DTO | Fields | Maps From |
 |-----|--------|-----------|
-| `BrokerDto` | id?, code?, name, slug?, status?, logoUrl?, description?, url?, openUrl?, enabled?, maintenanceMode?, isDegraded?, allowsTrading?, allowsFractionalUnits?, hasReporting?, isRealTimeConnection?, brokerageType?, authTypes? | Broker entity via `Broker.toDto()`, or SnapTrade API |
-| `BrokerAuthTypeDto` | type ("read"\|"trade"), authType ("OAUTH"\|"SCRAPE"\|"UNOFFICIAL_API") | SnapTrade API |
-| `BrokerConnectionDto` | id, broker: BrokerDto, snaptradeAuthorizationId?, accountNumber?, accountType?, accountName?, accountNumberActual?, accountMetaType?, status, lastPositionsFetchedAt?, positionsCount, totalValue?, errorMessage?, createdAt, modelPortfolioId?, modelPortfolioName? | BrokerConnection entity via `BrokerConnection.toDto()` |
+| `BrokerDto` | id?, code?, name, slug?, status?, logoUrl?, description? | Broker entity via `Broker.toDto()` |
+| `BrokerConnectionDto` | id, broker: BrokerDto, gatewayConnectionId?, accountNumber?, accountType?, accountName?, accountNumberActual?, accountMetaType?, status, lastPositionsFetchedAt?, positionsCount, totalValue?, errorMessage?, createdAt, modelPortfolioId?, modelPortfolioName? | BrokerConnection entity via `BrokerConnection.toDto()` |
 | `BrokerPositionDto` | id, symbol, securityName?, instrumentType?, quantity, averageCost?, currentPrice?, currentValue?, totalPnl?, totalPnlPercent?, currency, strikePrice?, expirationDate?, optionType?, underlyingSymbol? | BrokerPosition entity via `BrokerPosition.toDto()` |
 | `AggregatedPositionDto` | symbol, securityName?, instrumentType?, totalQuantity, totalValue, averageCost?, totalPnl?, totalPnlPercent?, currency, brokerBreakdown[] | Aggregated from BrokerPosition entities |
-| `SnapTradeStatusDto` | status, responseTimeMs?, version?, uptimePercent24h, lastChecked | SnapTradeStatusCheck entities |
 | `BrokerActivityDto` | id, type, symbol?, description?, quantity?, price?, amount, fee?, currency, tradeDate, settlementDate?, accountName?, optionType? | BrokerActivity entity via `BrokerActivity.toActivityDto()` |
 | `BalanceSnapshotDto` | totalValue?, cash: Map<String, BigDecimal>, currency, asOfDate | BrokerBalanceSnapshot entity |
 | `ReportingPerformanceResponse` | contributionsWithdrawals[], totalValueHistory[], dividendHistory[], totalDividendsBySymbol[], kpis | Computed from BrokerActivity entities |
@@ -1224,6 +1239,8 @@ No foreign key relationships (standalone entity).
 | `DividendCalendarResponse` | month, totalDividends, entries[] | BrokerActivity entities |
 | `HoldingsTableResponse` | holdings[], totalCount, coveragePercent | LookThroughService |
 | `DashboardAccountsResponse` | accounts[] | BrokerConnection entities |
+| `AccountIrrDto` | connectionId, brokerName?, accountName?, irr?, startDate?, endDate? | Computed from BrokerBalanceSnapshot + BrokerActivity |
+| `DashboardIrrResponse` | portfolioIrr?, accounts[] | Composite |
 
 ### broker/dto/ModelPortfolioDtos.kt
 
@@ -1401,28 +1418,9 @@ No foreign key relationships (standalone entity).
 
 ---
 
-## SnapTrade Adapter DTOs
+## SnapTrade Adapter DTOs (REMOVED IN V72)
 
-**File:** `broker/adapter/SnapTradeDtos.kt`
-
-These DTOs map raw SnapTrade SDK responses into internal representations.
-
-| DTO | Fields | SnapTrade API Source |
-|-----|--------|---------------------|
-| `SnapTradeAccountDto` | id (UUID?), brokerageAuthorization (UUID?), number?, name?, institutionName?, currency?, metaType?, metaAccountNumber?, rawType?, balance?, balanceCurrency? | Account listing |
-| `SnapTradeConnectionDto` | id (UUID?), disabled?, brokerageName?, brokerLogoUrl?, type? | Brokerage authorization |
-| `SnapTradePositionDto` | symbol?, symbolId?, symbolDescription?, symbolTypeCode?, currencyCode?, units?, price?, averagePurchasePrice? | Account positions |
-| `SnapTradeOptionPositionDto` | symbol?, strikePrice?, expirationDate?, optionType? (CALL\|PUT), underlyingSymbol?, units?, price?, averagePurchasePrice?, currencyCode? | Option positions |
-| `SnapTradeHoldingsDto` | totalValue?, totalValueCurrency?, positions[], balances[] | Account holdings |
-| `SnapTradeBalanceDto` | currency?, cash?, buyingPower? | Account balances |
-| `SnapTradeActivityDto` | id?, type?, symbol?, description?, units?, price?, amount?, fee?, currency?, tradeDate?, settlementDate?, optionType?, rawJson? | Account activities |
-| `SnapTradeBrokerageDto` | id (UUID?), name?, slug?, displayName?, logoUrl?, description?, url?, openUrl?, enabled?, maintenanceMode?, isDegraded?, allowsTrading?, allowsFractionalUnits?, hasReporting?, isRealTimeConnection?, brokerageType? | Brokerage listing |
-| `SnapTradeBrokerageAuthTypeDto` | id (UUID?), type? ("read"\|"trade"), authType? ("OAUTH"\|"SCRAPE"\|"UNOFFICIAL_API"), brokerageId? | Brokerage auth types |
-| `SnapTradeOrderDto` | brokerageOrderId?, status?, symbol?, action?, units?, price? | Order placement response |
-| `SnapTradeAccountOrderDto` | brokerageOrderId?, status?, symbol?, action?, totalQuantity?, openQuantity?, filledQuantity?, executionPrice?, limitPrice?, stopPrice?, orderType?, timeInForce?, timePlaced?, timeUpdated?, timeExecuted?, currency? | Account orders listing |
-| `SnapTradeApiStatusDto` | online, version? | API status check |
-
-**Exception class:** `SnapTradeApiException` with `errorCode: Int?` and constant `ERROR_PERSONAL_KEY_SLOT_OCCUPIED = 1012`.
+The SnapTrade adapter layer (`SnapTradeAdapter`, `SnapTradeAdapterImpl`, `SnapTradeDtos.kt`) was removed as part of the SnapTrade to broker-gateway migration. The portfolio service now communicates with brokers via `BrokerGatewayClient` which uses the broker-gateway service's unified DTOs.
 
 ---
 

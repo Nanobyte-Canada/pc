@@ -26,6 +26,7 @@ data class UpdateDashboardPreferencesRequest(
 data class PortfolioValueDto(
     val totalValue: BigDecimal,
     val investmentValue: BigDecimal,
+    val investmentByCurrency: List<CurrencyAmountDto> = emptyList(),
     val cashValue: BigDecimal,
     val totalChange: BigDecimal?,
     val totalChangePercent: BigDecimal?,
@@ -70,7 +71,8 @@ data class DashboardCashResponse(
     val availableCash: List<CurrencyAmountDto>,
     val buyingPower: List<CurrencyAmountDto>,
     val totalCashCAD: BigDecimal,
-    val totalBuyingPowerCAD: BigDecimal = BigDecimal.ZERO
+    val totalBuyingPowerCAD: BigDecimal = BigDecimal.ZERO,
+    val totalBuyingPowerUSD: BigDecimal = BigDecimal.ZERO
 )
 
 // ========== Sector Exposure ==========
@@ -180,12 +182,14 @@ data class DividendEntryDto(
     val symbol: String?,
     val amount: BigDecimal,
     val currency: String,
-    val accountName: String?
+    val accountName: String?,
+    val type: String = "DIVIDEND"
 )
 
 data class DividendCalendarResponse(
     val month: String,
     val totalDividends: BigDecimal,
+    val totalReinvestments: BigDecimal,
     val entries: List<DividendEntryDto>
 )
 
@@ -250,4 +254,26 @@ data class DashboardAccountsResponse(
 data class RefreshAllResponse(
     val connectionsRefreshed: Int,
     val message: String
+)
+
+// ========== Performance Metrics (XIRR, Total Return, Dividend Yield) ==========
+
+data class AccountIrrDto(
+    val connectionId: Long,
+    val brokerName: String?,
+    val accountName: String?,
+    val irr: BigDecimal?,
+    val totalReturn: BigDecimal?,
+    val totalReturnPct: BigDecimal?,
+    val dividendYield: BigDecimal?,
+    val startDate: String?,
+    val endDate: String?
+)
+
+data class DashboardIrrResponse(
+    val portfolioIrr: BigDecimal?,
+    val portfolioTotalReturn: BigDecimal?,
+    val portfolioTotalReturnPct: BigDecimal?,
+    val portfolioDividendYield: BigDecimal?,
+    val accounts: List<AccountIrrDto>
 )

@@ -5,6 +5,7 @@ import { usePortfolioStore } from '../../store/portfolioStore';
 import { InstrumentType } from '../../types/screener';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
+import { useAgGridTheme } from '@/hooks/useAgGridTheme';
 import './ScreenerGrid.css';
 
 interface ScreenerGridProps<T> {
@@ -26,6 +27,7 @@ export function ScreenerGrid<T>({
   getTicker,
   getName,
 }: ScreenerGridProps<T>) {
+  const agTheme = useAgGridTheme();
   const { addPosition, hasPosition } = usePortfolioStore();
 
   const handleAddToPortfolio = useCallback((data: T) => {
@@ -79,7 +81,7 @@ export function ScreenerGrid<T>({
   };
 
   return (
-    <div className="ag-theme-quartz screener-grid">
+    <div className={`${agTheme} screener-grid`}>
       <AgGridReact
         rowData={rowData}
         columnDefs={allColumns}

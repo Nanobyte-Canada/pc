@@ -30,7 +30,7 @@ export interface BrokersResponse {
 export interface BrokerConnection {
   id: number
   broker: Broker
-  snaptradeAuthorizationId: string | null
+  gatewayConnectionId: string | null
   accountNumber: string | null
   accountType: string | null
   accountName: string | null
@@ -44,6 +44,7 @@ export interface BrokerConnection {
   createdAt: string
   modelPortfolioId: number | null
   modelPortfolioName: string | null
+  supportedOrderTypes?: string[]
 }
 
 export interface BrokerConnectionsResponse {
@@ -51,13 +52,12 @@ export interface BrokerConnectionsResponse {
 }
 
 export interface ConnectBrokerRequest {
-  broker?: string
-  reconnectAuthId?: string
-  connectionType?: 'read' | 'trade' | 'trade-if-available'
+  brokerType: string
+  credentials: Record<string, unknown>
 }
 
 export interface ConnectBrokerResponse {
-  redirectUrl: string
+  connections: BrokerConnection[]
 }
 
 export interface PositionFetchResponse {
@@ -134,19 +134,6 @@ export interface AggregatedPositionsResponse {
   asOfDate: string
   positions: AggregatedPosition[]
   aggregateSummary: AggregateSummary
-}
-
-// SnapTrade Status types
-export interface SnapTradeStatus {
-  status: 'ONLINE' | 'DEGRADED' | 'OFFLINE' | 'UNKNOWN'
-  responseTimeMs: number | null
-  version: string | null
-  uptimePercent24h: number
-  lastChecked: string
-}
-
-export interface SnapTradeStatusResponse {
-  status: SnapTradeStatus
 }
 
 export interface ConnectionSyncResponse {

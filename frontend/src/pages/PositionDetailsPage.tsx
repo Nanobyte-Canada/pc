@@ -11,11 +11,13 @@ import type { BrokerPosition } from '../types/broker'
 
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import './PositionDetailsPage.css'
 
 type TabType = 'positions' | 'activities'
 
 export function PositionDetailsPage() {
+  const agTheme = useAgGridTheme()
   const { connectionId } = useParams<{ connectionId: string }>()
   const navigate = useNavigate()
   const id = parseInt(connectionId || '0', 10)
@@ -246,7 +248,7 @@ export function PositionDetailsPage() {
             </p>
           </div>
         ) : (
-          <div className="ag-theme-quartz position-grid-container">
+          <div className={`${agTheme} position-grid-container`}>
             <AgGridReact
               rowData={positions}
               columnDefs={columnDefs}
@@ -254,6 +256,9 @@ export function PositionDetailsPage() {
                 sortable: true,
                 resizable: true
               }}
+              domLayout="autoHeight"
+              pagination={true}
+              paginationPageSize={15}
               animateRows={true}
               rowSelection="single"
               suppressCellFocus={true}

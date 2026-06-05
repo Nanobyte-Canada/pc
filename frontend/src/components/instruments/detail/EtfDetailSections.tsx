@@ -104,20 +104,6 @@ function fmtLargeNumber(v: number | null): string {
 }
 
 /** Extract an object with numbered keys ("0", "1", ...) to an array. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function numberedObjectToArray(obj: Record<string, any> | null | undefined): any[] {
-  if (!obj || typeof obj !== 'object') return [];
-  const entries: [number, unknown][] = [];
-  for (const key of Object.keys(obj)) {
-    const idx = parseInt(key, 10);
-    if (!isNaN(idx)) {
-      entries.push([idx, obj[key]]);
-    }
-  }
-  entries.sort((a, b) => a[0] - b[0]);
-  return entries.map((e) => e[1]);
-}
-
 /** Extract sector/region weights from an object keyed by name. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function namedWeightsToArray(obj: Record<string, any> | null | undefined, pctKey = 'Equity_%'): { name: string; weight: number }[] {
@@ -174,26 +160,36 @@ function extractRiskMetrics(etfData: Record<string, any> | null, technicals: Rec
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractTopHoldings(etfData: Record<string, any> | null): { holdings: HoldingEntry[]; holdingsCount: number | null } {
   const holdingsCount = parseNum(etfData?.Holdings_Count);
-  const raw = numberedObjectToArray(etfData?.Top_10_Holdings);
-  const holdings: HoldingEntry[] = raw
-    .map((h) => ({
+  // EODHD holdings are keyed by ticker (e.g., "AAPL.US": { Code, Name, Assets_% })
+  const holdingsObj = etfData?.Top_10_Holdings ?? etfData?.Holdings;
+  if (!holdingsObj || typeof holdingsObj !== 'object') return { holdings: [], holdingsCount };
+
+  const holdings: HoldingEntry[] = Object.values(holdingsObj)
+    .map((h: any) => ({
       ticker: (h?.Code ?? '') as string,
       name: (h?.Name ?? '') as string,
       weight: parseNum(h?.['Assets_%']) ?? 0,
     }))
-    .filter((h) => h.ticker && h.weight > 0);
+    .filter((h) => h.name && h.weight > 0)
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 10);
   return { holdings, holdingsCount };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractMarketCap(etfData: Record<string, any> | null): { caps: CapEntry[]; avgCap: number | null } {
-  const raw = numberedObjectToArray(etfData?.Market_Capitalisation);
-  const caps: CapEntry[] = raw
-    .map((c) => ({
-      size: (c?.Size ?? '') as string,
-      pct: parseNum(c?.['Portfolio_%']) ?? 0,
-    }))
-    .filter((c) => c.size && c.pct > 0);
+  const capObj = etfData?.Market_Capitalisation;
+  let caps: CapEntry[] = [];
+  if (capObj && typeof capObj === 'object') {
+    // EODHD format: { "Big": "39.15", "Mega": "30.97", "Small": "4.18", ... }
+    caps = Object.entries(capObj)
+      .map(([size, val]) => ({
+        size,
+        pct: parseNum(val) ?? 0,
+      }))
+      .filter((c) => c.size && c.pct > 0)
+      .sort((a, b) => b.pct - a.pct);
+  }
   const avgCap = parseNum(etfData?.Average_Mkt_Cap_Mil);
   return { caps, avgCap };
 }
@@ -210,11 +206,14 @@ function extractRegions(etfData: Record<string, any> | null): RegionEntry[] {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractAssetAllocation(etfData: Record<string, any> | null): AssetEntry[] {
-  const raw = numberedObjectToArray(etfData?.Asset_Allocation);
-  return raw
-    .map((a) => ({
-      type: (a?.Type ?? '') as string,
-      pct: parseNum(a?.['Net_%']) ?? 0,
+  const alloc = etfData?.Asset_Allocation;
+  if (!alloc || typeof alloc !== 'object') return [];
+  // EODHD asset allocation keyed by category ("Bond", "Cash", "Stock US", etc.)
+  // Each value has Net_Assets_% or Net_%
+  return Object.entries(alloc)
+    .map(([type, val]: [string, any]) => ({
+      type,
+      pct: parseNum(val?.['Net_Assets_%']) ?? parseNum(val?.['Net_%']) ?? 0,
     }))
     .filter((a) => a.type && a.pct > 0)
     .sort((a, b) => b.pct - a.pct);

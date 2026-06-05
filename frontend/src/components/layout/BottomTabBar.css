@@ -1,0 +1,120 @@
+.bottom-tab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 64px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+.bottom-tab-bar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.bottom-tab-bar__item--active {
+  color: var(--accent);
+}
+
+.bottom-tab-bar__label {
+  font-size: 9px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* More sheet overlay */
+.more-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+
+.more-sheet {
+  width: 100%;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 0 16px 80px;
+}
+
+.more-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 10px auto 14px;
+}
+
+.more-sheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.more-sheet__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.more-sheet__close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.more-sheet__items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.more-sheet__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.more-sheet__item:hover {
+  background: var(--bg-tertiary);
+}
+
+.more-sheet__item--active {
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--accent);
+}
+
+@media (min-width: 768px) {
+  .bottom-tab-bar,
+  .more-sheet-overlay {
+    display: none;
+  }
+}

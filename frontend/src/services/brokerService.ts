@@ -7,7 +7,6 @@ import type {
   PositionFetchResponse,
   ConnectionPositionsResponse,
   AggregatedPositionsResponse,
-  SnapTradeStatusResponse,
   ConnectionSyncResponse,
   ActivitiesResponse,
   BalanceHistoryResponse,
@@ -36,18 +35,14 @@ export async function getUserConnections(): Promise<BrokerConnectionsResponse> {
   return response.json()
 }
 
-export async function connectBroker(request?: ConnectBrokerRequest): Promise<ConnectBrokerResponse> {
-  const body = {
-    ...request,
-    connectionType: request?.connectionType ?? 'trade-if-available'
-  }
+export async function connectBroker(request: ConnectBrokerRequest): Promise<ConnectBrokerResponse> {
   const response = await apiFetch(`${BROKER_API_BASE}/connect`, {
     method: 'POST',
-    body: JSON.stringify(body)
+    body: JSON.stringify(request)
   })
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
-    throw new Error(error.message || 'Failed to initiate broker connection')
+    throw new Error(error.message || 'Failed to connect to broker')
   }
   return response.json()
 }
@@ -90,16 +85,6 @@ export async function getAggregatedPositions(): Promise<AggregatedPositionsRespo
   return response.json()
 }
 
-// ========== SnapTrade Status ==========
-
-export async function getSnapTradeStatus(): Promise<SnapTradeStatusResponse> {
-  const response = await apiFetch(`${BROKER_API_BASE}/snaptrade/status`)
-  if (!response.ok) {
-    throw new Error('Failed to fetch SnapTrade status')
-  }
-  return response.json()
-}
-
 // ========== Connection Sync ==========
 
 export async function syncConnections(): Promise<ConnectionSyncResponse> {
@@ -133,6 +118,20 @@ export async function getConnectionActivities(
 export async function syncConnectionActivities(connectionId: number): Promise<{ activitiesSynced: number; message: string }> {
   const response = await apiFetch(`${BROKER_API_BASE}/connections/${connectionId}/sync-activities`, { method: 'POST' })
   if (!response.ok) throw new Error('Failed to sync activities')
+  return response.json()
+}
+
+export interface SyncAllResponse {
+  connectionId: number
+  positionsFetched: number
+  activitiesSynced: number
+  balanceSynced: boolean
+  message: string
+}
+
+export async function syncAllConnectionData(connectionId: number): Promise<SyncAllResponse> {
+  const response = await apiFetch(`${BROKER_API_BASE}/connections/${connectionId}/sync-all`, { method: 'POST' })
+  if (!response.ok) throw new Error('Failed to sync connection data')
   return response.json()
 }
 

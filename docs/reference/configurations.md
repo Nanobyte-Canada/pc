@@ -32,11 +32,11 @@ File: `backend/portfolio/src/main/resources/application-local.yml`
 | `org.hibernate.type.descriptor.sql` | OFF |
 | `org.hibernate.orm.jdbc.bind` | OFF |
 
-### application-dev.yml -- VPS Dev Overrides
+### application-dev.yml -- UAT / Dev Overrides
 
 File: `backend/portfolio/src/main/resources/application-dev.yml`
 
-- `server.forward-headers-strategy: framework` (trust X-Forwarded-* headers from Nginx)
+- `server.forward-headers-strategy: framework` (trust X-Forwarded-* headers from reverse proxy)
 - SQL logging: disabled
 
 **Logging levels:**
@@ -173,16 +173,15 @@ Every environment variable referenced in `application.yml`, organized by categor
 | `BROKER_ENCRYPTION_KEY` | Base64-encoded 32-byte AES-256 key | (empty) | All profiles |
 | `BROKER_SYNC_ENABLED` | Enable automated broker sync | `false` | All profiles |
 | `BROKER_SYNC_CRON` | Cron for broker sync | `0 30 22 * * *` (10:30 PM) | All profiles |
+| `BROKER_SYNC_MAX_LOOKBACK_YEARS` | Max years of historical activity data to fetch on first sync | `25` | All profiles |
 
-### SnapTrade
+### Broker Gateway (Portfolio Service)
 
 | Variable | Description | Default | Used By |
 |----------|-------------|---------|---------|
-| `SNAPTRADE_CLIENT_ID` | SnapTrade API client ID | (empty) | All profiles |
-| `SNAPTRADE_CONSUMER_KEY` | SnapTrade API consumer key | (empty) | All profiles |
-| `SNAPTRADE_REDIRECT_URI` | OAuth redirect URI | `http://localhost:3000/brokers/connections` | All profiles |
-| `SNAPTRADE_HEALTH_CHECK_ENABLED` | Enable SnapTrade health checks | `false` | All profiles |
-| `SNAPTRADE_HEALTH_CHECK_CRON` | Cron for health checks | `0 */15 * * * *` (every 15 min) | All profiles |
+| `BROKER_GATEWAY_URL` | URL for portfolio service to reach the broker gateway | `http://broker-gateway-service:8084` | Portfolio service |
+| `GATEWAY_API_KEY` | Service-to-service authentication key for the broker gateway | `dev-gateway-key` | Portfolio service, Broker gateway service |
+| `BROKER_GATEWAY_TIMEOUT` | HTTP request timeout for gateway calls | `30s` | Portfolio service |
 
 ### Frontend
 
@@ -202,7 +201,6 @@ All feature flags default to values in `application.yml` and can be overridden v
 | AlphaVantage enrichment | `AV_ENRICHMENT_ENABLED` | `true` | Enable stock data enrichment from AlphaVantage |
 | ETF.com enrichment | `ETFCOM_ENABLED` | `true` | Enable ETF data enrichment from ETF.com |
 | Broker sync | `BROKER_SYNC_ENABLED` | `false` | Automated position/balance sync from brokers |
-| SnapTrade health check | `SNAPTRADE_HEALTH_CHECK_ENABLED` | `false` | Periodic SnapTrade API connectivity checks |
 
 ---
 
@@ -288,7 +286,8 @@ HikariCP configuration from `spring.datasource.hikari` in `application.yml`:
 | `maximum-pool-size` | 10 | Maximum number of connections in the pool |
 | `minimum-idle` | 2 | Minimum idle connections maintained |
 | `idle-timeout` | 300,000 ms (5 min) | Max time a connection can sit idle |
-| `connection-timeout` | 20,000 ms (20 sec) | Max time to wait for a connection from the pool |
+| `connection-timeout` | 30,000 ms (30 sec) | Max time to wait for a connection from the pool |
+| `initialization-fail-timeout` | -1 | Don't fail fast on startup; retry DB connection in background (tolerates transient DNS/network issues in Docker) |
 
 ### JPA/Hibernate
 - **DDL auto:** `validate` (schema managed exclusively by Flyway)
@@ -344,7 +343,6 @@ Health details are shown only when the request is authenticated (`when-authorize
 |------|--------------|---------|-------------|
 | Data ingestion | `INGESTION_SCHEDULE` | `0 0 22 * * *` (10 PM daily) | `INGESTION_ENABLED` |
 | Broker position sync | `BROKER_SYNC_CRON` | `0 30 22 * * *` (10:30 PM daily) | `BROKER_SYNC_ENABLED` |
-| SnapTrade health check | `SNAPTRADE_HEALTH_CHECK_CRON` | `0 */15 * * * *` (every 15 min) | `SNAPTRADE_HEALTH_CHECK_ENABLED` |
 
 ---
 
@@ -362,15 +360,15 @@ Configured under `ingestion.exchanges.north-america`:
 
 ## Profile Summary
 
-| Property | local | dev | prod |
-|----------|-------|-----|------|
+| Property | local | dev (UAT) | prod |
+|----------|-------|-----------|------|
 | Spring profile | `local` | `dev` | `prod` |
 | Forward headers | Not set | `framework` | Not set |
 | App logging | DEBUG | DEBUG | WARN |
 | Security logging | Not set | DEBUG/TRACE | Not set |
 | Hibernate SQL | OFF | OFF | OFF |
-| Redis | Available (Docker) | Not available | Not configured |
-| CORS origins | `http://localhost:3000` | `https://devpc.nanobyte.ca` | Configured per deployment |
+| Redis | Available (Docker) | Available (Docker) | Available (Docker) |
+| CORS origins | `http://localhost:3000` | `https://uatportfolio.nanobyte.ca` | `https://portfolio.nanobyte.ca` |
 
 ---
 
@@ -394,10 +392,10 @@ SPRING_PROFILES_ACTIVE=local
 # Frontend Configuration
 VITE_API_URL=http://localhost:8080
 
-# SnapTrade Configuration (obtain from https://snaptrade.com)
-SNAPTRADE_CLIENT_ID=
-SNAPTRADE_CONSUMER_KEY=
-SNAPTRADE_REDIRECT_URI=http://localhost:3000/brokers/connections
+# Broker Gateway Configuration
+BROKER_GATEWAY_URL=http://broker-gateway-service:8084
+GATEWAY_API_KEY=dev-gateway-key
+BROKER_GATEWAY_TIMEOUT=30s
 
 # Broker Encryption Key (Base64-encoded 32-byte key for AES-256)
 BROKER_ENCRYPTION_KEY=
@@ -468,6 +466,131 @@ spring.mvc.problemdetails.enabled: true
 | `ingestion.eodhd.dailyQuota` | Int | `100000` | Daily API call limit |
 | `ingestion.eodhd.fundamentalsCost` | Int | `10` | API calls per fundamentals request |
 | `ingestion.eodhd.batchSize` | Int | `500` | Instruments per batch |
+
+---
+
+## Market Data Service Configuration
+
+**File:** `backend/market-data/src/main/resources/application.yml`
+**Port:** 8082
+**DB Schema:** `market_data`
+
+### Market Data Service Environment Variables
+
+| Variable | Description | Default | Used By |
+|---|---|---|---|
+| `DATABASE_URL` | JDBC connection string | `jdbc:postgresql://localhost:5432/portfolio` | Market data service |
+| `DATABASE_USERNAME` | Database username | `portfolio` | Market data service |
+| `DATABASE_PASSWORD` | Database password | `portfolio` | Market data service |
+| `REDIS_HOST` | Redis hostname | `localhost` | Market data service |
+| `REDIS_PORT` | Redis port | `6379` | Market data service |
+| `IBKR_HOST` | Interactive Brokers TWS/Gateway host | (empty) | Market data service |
+| `IBKR_PORT` | Interactive Brokers TWS/Gateway port | `4001` | Market data service |
+| `IBKR_CLIENT_ID` | IBKR client connection ID | `1` | Market data service |
+
+---
+
+## Strategy Service Configuration
+
+**File:** `backend/strategy/src/main/resources/application.yml`
+**Port:** 8083
+**DB Schema:** `strategy`
+
+### Strategy Service Environment Variables
+
+| Variable | Description | Default | Used By |
+|---|---|---|---|
+| `DATABASE_URL` | JDBC connection string | `jdbc:postgresql://localhost:5432/portfolio` | Strategy service |
+| `DATABASE_USERNAME` | Database username | `portfolio` | Strategy service |
+| `DATABASE_PASSWORD` | Database password | `portfolio` | Strategy service |
+| `REDIS_HOST` | Redis hostname | `localhost` | Strategy service |
+| `REDIS_PORT` | Redis port | `6379` | Strategy service |
+| `MARKET_DATA_SERVICE_URL` | Market data service base URL | `http://localhost:8082` | Strategy service |
+| `PORTFOLIO_SERVICE_URL` | Portfolio backend base URL | `http://localhost:8080` | Strategy service |
+
+---
+
+## Broker Gateway Service Configuration
+
+**File:** `backend/broker-gateway/src/main/resources/application.yml`
+**Port:** 8084
+**DB Schema:** `broker_gateway`
+
+### Broker Gateway Service Environment Variables
+
+| Variable | Description | Default | Used By |
+|---|---|---|---|
+| `PORT` | Server port | `8084` | Broker gateway service |
+| `DATABASE_URL` | JDBC connection string | `jdbc:postgresql://localhost:5432/portfolio` | Broker gateway service |
+| `DATABASE_USERNAME` | Database username | `portfolio` | Broker gateway service |
+| `DATABASE_PASSWORD` | Database password | `portfolio` | Broker gateway service |
+| `REDIS_HOST` | Redis hostname | `localhost` | Broker gateway service |
+| `REDIS_PORT` | Redis port | `6379` | Broker gateway service |
+| `BROKER_ENCRYPTION_KEY` | AES-256-GCM key for encrypting broker credentials | (empty) | Broker gateway service |
+| `GATEWAY_API_KEY` | Service-to-service authentication key | `dev-gateway-key` | Broker gateway service |
+| `IBKR_GATEWAY_ENABLED` | Enable IBKR adapter | `false` | Broker gateway service |
+| `IBKR_HOST` | TWS/IB Gateway host (shared with market-data) | (empty) | Broker gateway service |
+| `IBKR_PORT` | TWS/IB Gateway port | `4001` | Broker gateway service |
+| `IBKR_GATEWAY_CLIENT_ID` | TWS client ID for gateway (market-data uses `1`) | `2` | Broker gateway service |
+| `IBKR_FLEX_TOKEN` | Flex Web Service token for historical transactions | (empty) | Broker gateway service |
+| `IBKR_FLEX_QUERY_ID` | Pre-configured Flex Query ID | (empty) | Broker gateway service |
+| `QUESTRADE_ENABLED` | Enable Questrade adapter | `false` | Broker gateway service |
+| `QUESTRADE_AUTH_URL` | OAuth token endpoint | `https://login.questrade.com/oauth2/token` | Broker gateway service |
+| `QUESTRADE_PRACTICE_AUTH_URL` | Practice/sandbox auth URL | (empty) | Broker gateway service |
+| `QUESTRADE_USE_PRACTICE` | Use practice environment | `false` | Broker gateway service |
+| `QUESTRADE_RATE_LIMIT` | Requests per second limit | `1` | Broker gateway service |
+| `WEALTHSIMPLE_ENABLED` | Enable Wealthsimple adapter | `false` | Broker gateway service |
+| `WEALTHSIMPLE_AUTH_URL` | OAuth token endpoint | (empty) | Broker gateway service |
+| `WEALTHSIMPLE_GRAPHQL_URL` | GraphQL API URL | (empty) | Broker gateway service |
+| `WEALTHSIMPLE_CLIENT_ID` | OAuth client ID (hardcoded from WS web app) | (empty) | Broker gateway service |
+| `WS_ORDER_RATE_LIMIT` | Max orders per hour | `7` | Broker gateway service |
+
+---
+
+## Secret Management
+
+Production and UAT secrets are stored in HashiCorp Vault at `vault.nanobyte.ca`. The deploy workflow fetches secrets at deploy time using AppRole authentication.
+
+### Vault Secret Paths
+
+| Path | Environment |
+|------|-------------|
+| `secret/portfolio/prod` | Production |
+| `secret/portfolio/uat` | UAT |
+
+### GitHub Actions Secrets (per environment)
+
+| Secret | Purpose |
+|--------|---------|
+| `VAULT_ROLE_ID` | Vault AppRole role ID for authenticating to Vault |
+| `VAULT_SECRET_ID` | Vault AppRole secret ID for authenticating to Vault |
+
+### Keys Stored in Vault
+
+The following keys are stored in Vault for each environment (`secret/portfolio/prod` and `secret/portfolio/uat`):
+
+| Key | Description |
+|-----|-------------|
+| `POSTGRES_DB` | PostgreSQL database name |
+| `POSTGRES_USER` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | PostgreSQL password |
+| `JWT_SIGNING_KEY` | HS512 JWT signing key (min 64 chars) |
+| `GOOGLE_CLIENT_ID` | Google OAuth2 client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret |
+| `BROKER_ENCRYPTION_KEY` | Base64-encoded AES-256 key for broker credential encryption |
+| `GATEWAY_API_KEY` | Service-to-service authentication key for broker gateway |
+| `EODHD_API_KEY` | EODHD market data API key |
+| `IBKR_USERNAME` | Interactive Brokers account username |
+| `IBKR_PASSWORD` | Interactive Brokers account password |
+| `IBKR_VNC_PASSWORD` | VNC password for IBKR Gateway remote access |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed CORS origins |
+| `BROKER_SYNC_CRON` | Cron expression for evening broker sync |
+| `BROKER_SYNC_CRON_MORNING` | Cron expression for morning broker sync |
+| `BROKER_SYNC_ENABLED` | Enable/disable automated broker sync |
+| `QUESTRADE_ENABLED` | Enable/disable Questrade broker adapter |
+| `WEALTHSIMPLE_ENABLED` | Enable/disable Wealthsimple broker adapter |
+| `IBKR_CLIENT_ID` | IBKR client connection ID for market-data service |
+| `IBKR_GATEWAY_CLIENT_ID` | IBKR client connection ID for broker-gateway service |
 
 ---
 

@@ -4,6 +4,7 @@ import com.portfolio.broker.entity.OrderStatus
 import com.portfolio.broker.entity.TradeOrder
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Repository
@@ -22,4 +23,11 @@ interface TradeOrderRepository : JpaRepository<TradeOrder, Long> {
     fun findTop5ByUserIdOrderByCreatedAtDesc(userId: Long): List<TradeOrder>
 
     fun findByUserIdAndStatusInOrderByCreatedAtDesc(userId: Long, statuses: List<OrderStatus>): List<TradeOrder>
+
+    fun findByConnectionIdAndStatusIn(connectionId: Long, statuses: List<OrderStatus>): List<TradeOrder>
+
+    fun findByStatusInAndCreatedAtAfter(
+        statuses: List<OrderStatus>,
+        after: OffsetDateTime
+    ): List<TradeOrder>
 }

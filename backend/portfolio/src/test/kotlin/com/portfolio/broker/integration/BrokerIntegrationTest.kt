@@ -30,9 +30,8 @@ class BrokerIntegrationTest {
             registry.add("spring.datasource.url", postgres::getJdbcUrl)
             registry.add("spring.datasource.username", postgres::getUsername)
             registry.add("spring.datasource.password", postgres::getPassword)
-            registry.add("snaptrade.client-id") { "test-client-id" }
-            registry.add("snaptrade.consumer-key") { "test-consumer-key" }
-            registry.add("snaptrade.redirect-uri") { "http://localhost:3000/brokers/connections" }
+            registry.add("broker-gateway.url") { "http://localhost:8084" }
+            registry.add("broker-gateway.api-key") { "test-gateway-key" }
         }
     }
 

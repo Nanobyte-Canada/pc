@@ -12,8 +12,8 @@
 | Environment | URL |
 |-------------|-----|
 | Local | `http://localhost:8080` |
-| Development | `https://devpc.nanobyte.ca` |
-| Production | `https://api.portfolio.example.com` |
+| UAT | `https://uatportfolio.nanobyte.ca` |
+| Production | `https://portfolio.nanobyte.ca` |
 
 ## Error Response Format
 
@@ -56,13 +56,13 @@ All errors follow a consistent format:
 | [ScreenerController](#screenercontroller) | `/api/v1/screener` | 5 | Authenticated |
 | [PortfolioController](#portfoliocontroller) | `/api/v1/portfolio` | 3 | Authenticated |
 | [BrokerController](#brokercontroller) | `/api/v1/brokers` | 14 | Authenticated |
-| [DashboardController](#dashboardcontroller) | `/api/v1/dashboard` | 14 | Authenticated |
+| [DashboardController](#dashboardcontroller) | `/api/v1/dashboard` | 15 | Authenticated |
 | [ModelPortfolioController](#modelportfoliocontroller) | `/api/v1/model-portfolios` | 6 | Authenticated |
 | [PerformanceController](#performancecontroller) | `/api/v1/portfolio-groups/{groupId}/performance` | 3 | Authenticated |
 | [PortfolioGroupController](#portfoliogroupcontroller) | `/api/v1/portfolio-groups` | 14 | Authenticated |
 | [TradingController](#tradingcontroller) | `/api/v1/trading` | 5 | Authenticated |
 | [NotificationController](#notificationcontroller) | `/api/v1/notifications` | 5 | Authenticated |
-**Total: 81 endpoints**
+**Total: 82 endpoints**
 
 ---
 
@@ -192,17 +192,14 @@ Returns count of instruments by type from the ingestion schema.
 ## BrokerController
 
 **File:** `broker/controller/BrokerController.kt`
-**Dependencies:** `BrokerService`, `PositionFetchService`, `SnapTradeConfig`, `SnapTradeStatusService`, `ActivityIngestionService`, `ReportingService`, `DriftCalculationService`, `RebalanceService`
+**Dependencies:** `BrokerService`, `PositionFetchService`, `BrokerGatewayClient`, `ActivityIngestionService`, `ReportingService`, `DriftCalculationService`, `RebalanceService`
 
 | Method | Path | Auth | Service Method | Response |
 |---|---|---|---|---|
-| `GET` | `/api/v1/brokers` | Authenticated | `brokerService.getAvailableBrokers()` | `BrokersResponse` |
-| `GET` | `/api/v1/brokers/authorization-types` | Authenticated | `brokerService.getBrokerageAuthorizationTypes()` | `List<BrokerAuthTypeDto>` |
-| `GET` | `/api/v1/brokers/config-status` | Authenticated | (inline) | `Map<String, Any>` |
-| `GET` | `/api/v1/brokers/snaptrade/status` | Authenticated | `snapTradeStatusService.getLatestStatus()` | `SnapTradeStatusResponse` |
 | `POST` | `/api/v1/brokers/connections/sync` | Authenticated | `brokerService.syncConnections()` | `ConnectionSyncResponse` |
 | `GET` | `/api/v1/brokers/connections` | Authenticated | `brokerService.getUserConnections()` | `BrokerConnectionsResponse` |
-| `POST` | `/api/v1/brokers/connect` | Authenticated | `brokerService.getConnectionPortalUrl()` | `ConnectBrokerResponse` |
+| `POST` | `/api/v1/brokers/connect` | Authenticated | `brokerService.createGatewayConnection()` | `BrokerConnectionsResponse` |
+| `GET` | `/api/v1/brokers/gateway/health` | Authenticated | `brokerGatewayClient.getGatewayHealth()` | `GatewayHealthResponse` |
 | `DELETE` | `/api/v1/brokers/connections/{authorizationId}` | Authenticated | `brokerService.disconnectBroker()` | 204 No Content |
 | `POST` | `/api/v1/brokers/connections/{connectionId}/fetch` | Authenticated | `positionFetchService.triggerManualFetch()` | `PositionFetchResponse` (202) |
 | `GET` | `/api/v1/brokers/connections/{connectionId}/positions` | Authenticated | `brokerService.getPositionsForConnection()` | `ConnectionPositionsResponse` |
@@ -220,11 +217,9 @@ Returns count of instruments by type from the ingestion schema.
 | `GET` | `/api/v1/brokers/connections/{connectionId}/rebalance-progress` | Authenticated | `driftCalculationService.getRebalanceProgress()` | `RebalanceProgressDto` |
 | `GET` | `/api/v1/brokers/connections/{connectionId}/pending-orders` | Authenticated | `rebalanceService.calculateTradesForAccount()` | `PendingOrdersResponse` |
 
-### `GET /api/v1/brokers/authorization-types`
-**Query params:** `brokerage: String?` -- Filter by brokerage slug
-
 ### `POST /api/v1/brokers/connect`
-**Request body:** `ConnectBrokerRequest? { broker: String?, reconnectAuthId: String?, connectionType: String? }`
+**Request body:** `ConnectBrokerRequest { brokerType: String, credentials: Record<String, unknown> }`
+**Response:** `BrokerConnectionsResponse` -- returns a list of `BrokerConnectionDto` (one per account discovered for the connection). Previously returned a single connection; now supports multi-account brokers.
 
 ### `GET /api/v1/brokers/connections/{connectionId}/activities`
 **Query params:**
@@ -257,6 +252,7 @@ Returns count of instruments by type from the ingestion schema.
 | `GET` | `/api/v1/dashboard/preferences` | Authenticated | `dashboardPreferenceService.getPreferences()` | `DashboardPreferencesResponse` |
 | `PUT` | `/api/v1/dashboard/preferences` | Authenticated | `dashboardPreferenceService.updatePreferences()` | `DashboardPreferencesResponse` |
 | `POST` | `/api/v1/dashboard/preferences/reset` | Authenticated | `dashboardPreferenceService.resetPreferences()` | `DashboardPreferencesResponse` |
+| `GET` | `/api/v1/dashboard/irr` | Authenticated | `dashboardDataService.getIrrData()` | `DashboardIrrResponse` |
 | `GET` | `/api/v1/dashboard/summary` | Authenticated | `dashboardDataService.getSummary()` | `DashboardSummaryResponse` |
 | `GET` | `/api/v1/dashboard/cash` | Authenticated | `dashboardDataService.getCash()` | `DashboardCashResponse` |
 | `GET` | `/api/v1/dashboard/exposure/sector` | Authenticated | `dashboardDataService.getSectorExposure()` | `SectorExposureResponse` |
@@ -280,6 +276,18 @@ Most dashboard widget endpoints accept: `connectionId: Long?` -- Filter to a spe
 ### `PUT /api/v1/dashboard/preferences`
 **Request body:** `UpdateDashboardPreferencesRequest { widgets: List<WidgetPreferenceInput> }`
 **Query params:** `contextType: String` (default `DASHBOARD`), `contextId: Long?`
+
+### `GET /api/v1/dashboard/summary`
+**Response:** `DashboardSummaryResponse { portfolioValue: PortfolioValueDto, positionsSummary, holdingsCount }`
+- `portfolioValue.investmentByCurrency`: Per-currency investment breakdown (e.g., `[{currency: "CAD", amount: 35000}, {currency: "USD", amount: 8000}]`). Computed from positions grouped by currency.
+
+### `GET /api/v1/dashboard/cash`
+**Response includes:** `totalBuyingPowerUSD: BigDecimal` — Raw USD buying power from broker balance snapshot (not FX-converted). Added alongside existing `totalBuyingPowerCAD`.
+
+### `GET /api/v1/dashboard/irr`
+Returns Internal Rate of Return (IRR) for individual accounts and portfolio-wide.
+**Query params:** `connectionId: Long?` -- Filter to a specific broker connection.
+**Response:** `DashboardIrrResponse { portfolioIrr: BigDecimal?, accounts: List<AccountIrrDto> }`
 
 ### `GET /api/v1/dashboard/dividends`
 **Query params:** `month: String?` (format `YYYY-MM`, default current month), `connectionId: Long?`
@@ -447,11 +455,12 @@ Additional param: `benchmark: String?` -- Benchmark symbol (e.g., `SPY`, `XIU`) 
 ### CORS
 - Configurable via `CORS_ALLOWED_ORIGINS` environment variable
 - Local development: `http://localhost:3000`
-- VPS: `https://devpc.nanobyte.ca`
+- UAT: `https://uatportfolio.nanobyte.ca`
+- Production: `https://portfolio.nanobyte.ca`
 - Credentials allowed
 
 ### Rate Limiting
-Currently no global rate limiting is implemented. Resilience4j rate limiters are used for external API calls (SnapTrade, EODHD, AlphaVantage).
+Currently no global rate limiting is implemented. Resilience4j rate limiters are used for external API calls (EODHD, AlphaVantage).
 
 ---
 
@@ -500,3 +509,127 @@ Separate Spring Boot application at `backend/ingestion/`. No authentication requ
 | `GET` | `/admin/ingestion/runs` | None | Lists recent ingestion runs. Query param: `limit` (default 10). | `List<RunSummary>` |
 | `GET` | `/admin/ingestion/runs/{id}/steps` | None | Lists steps for a specific run with record counts. | `List<StepDetail>` |
 | `GET` | `/admin/ingestion/runs/{id}/errors` | None | Lists errors for a specific run (max 100). | `List<ErrorDetail>` |
+
+---
+
+## Market Data Service (Port 8082)
+
+**Base URL:** `http://localhost:8082`
+
+### Quote Endpoints
+
+**Prefix:** `/api/v1/quotes`
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/quotes/{symbol}` | None | Get quote for symbol. Checks Redis cache, then DB, then IBKR. | `QuoteResponse` |
+
+### Options Chain Endpoints
+
+**Prefix:** `/api/v1/chains`
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/chains/{underlying}` | None | Get options chain for underlying. Cached 30s in Redis. | `OptionsChainResponse` |
+| `GET` | `/api/v1/chains/{underlying}/greeks` | None | Get options chain with Black-Scholes computed Greeks. | `OptionsChainResponse` |
+
+### IV Rank Endpoints
+
+**Prefix:** `/api/v1/iv`
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/iv/{ticker}` | None | Get IV rank/percentile from last 365 days of observations. | `IvRankResponse` |
+
+### IBKR Health
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/health/ibkr` | None | IBKR connection status (connected, uptime, client ID). | `IbkrHealthResponse` |
+
+### WebSocket
+
+| Endpoint | Protocol | Description |
+|---|---|---|
+| `/ws/quotes` | WebSocket | Real-time quote streaming. Subscribe/unsubscribe via JSON messages. |
+
+**WebSocket Actions:**
+- `{"action": "subscribe", "symbol": "SPY"}` -- subscribe to stock quotes
+- `{"action": "unsubscribe", "symbol": "SPY"}` -- unsubscribe from stock quotes
+- `{"action": "subscribe_option", "symbol": "SPY", "expiry": "2026-06-19", "strike": "450.00", "optionType": "CALL"}` -- subscribe to option
+- `{"action": "unsubscribe_option", ...}` -- unsubscribe from option
+
+---
+
+## Broker Gateway Service (Port 8084)
+
+**Base URL:** `http://localhost:8084`
+
+Broker data gateway microservice for connecting to IBKR, Questrade, and Wealthsimple. Provides a unified API for account data and order execution across multiple brokerages.
+
+### Connection Management
+
+**Prefix:** `/api/v1/gateway/connections`
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `POST` | `/api/v1/gateway/connections` | API Key | Register a new broker connection. | `ConnectionDto` |
+| `GET` | `/api/v1/gateway/connections?userId={id}` | API Key | List all connections for a user. | `List<ConnectionDto>` |
+| `GET` | `/api/v1/gateway/connections/{id}` | API Key | Get connection details by ID. | `ConnectionDto` |
+| `DELETE` | `/api/v1/gateway/connections/{id}` | API Key | Remove a broker connection. | 204 No Content |
+| `POST` | `/api/v1/gateway/connections/{id}/validate` | API Key | Test connectivity to the broker. | `ValidationResult` |
+| `POST` | `/api/v1/gateway/connections/{id}/refresh` | API Key | Rotate OAuth tokens for the connection. | `ConnectionDto` |
+
+### Data Retrieval
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/gateway/connections/{id}/accounts` | API Key | List accounts for a connection. | `List<AccountDto>` |
+| `GET` | `/api/v1/gateway/connections/{id}/accounts/{accId}/balances` | API Key | Get account balances. | `List<BalanceDto>` |
+| `GET` | `/api/v1/gateway/connections/{id}/accounts/{accId}/positions` | API Key | Get account positions. | `List<PositionDto>` |
+| `GET` | `/api/v1/gateway/connections/{id}/accounts/{accId}/activities` | API Key | Get account transactions. | `List<ActivityDto>` |
+| `GET` | `/api/v1/gateway/connections/{id}/accounts/{accId}/orders` | API Key | Get account orders. | `List<OrderDto>` |
+
+**`GET .../activities` query params:**
+| Param | Type | Description |
+|---|---|---|
+| `startDate` | String (ISO date) | Start of date range |
+| `endDate` | String (ISO date) | End of date range |
+
+**`GET .../orders` query params:**
+| Param | Type | Description |
+|---|---|---|
+| `status` | String | Filter by order status |
+
+### Order Execution
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `POST` | `/api/v1/gateway/connections/{id}/accounts/{accId}/orders` | API Key | Place a new order. | `OrderDto` |
+| `POST` | `/api/v1/gateway/connections/{id}/accounts/{accId}/orders/impact` | API Key | Preview order impact (estimated cost, buying power effect). Supports options via `symbolId`, `primaryRoute`, `secondaryRoute` fields. | `OrderImpactResult` |
+| `DELETE` | `/api/v1/gateway/connections/{id}/accounts/{accId}/orders/{orderId}` | API Key | Cancel an existing order. | 204 No Content |
+
+### Health
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/gateway/health` | None | Overall gateway health with per-broker status. | `GatewayHealthResponse` |
+| `GET` | `/api/v1/gateway/health/{brokerType}` | None | Health status for a specific broker (IBKR, QUESTRADE, WEALTHSIMPLE). | `BrokerHealthResponse` |
+| `GET` | `/api/v1/gateway/health/ibkr` | None | IBKR-specific health with connection status, managed accounts, and uptime. | `IbkrHealthResponse` |
+
+---
+
+## Strategy Service (Port 8083)
+
+**Base URL:** `http://localhost:8083`
+
+### Strategy Endpoints
+
+**Prefix:** `/api/v1/strategies`
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `GET` | `/api/v1/strategies` | None | List all 7 strategy definitions. | `List<StrategyListResponse>` |
+| `GET` | `/api/v1/strategies/{name}` | None | Get strategy info with education content. | `StrategyInfoResponse` |
+| `POST` | `/api/v1/strategies/calculate` | None | Calculate P&L, break-evens, Greeks for leg combination. | `CalculateResponse` |
+| `POST` | `/api/v1/strategies/suggest` | None | Suggest strategies by market outlook (bullish/bearish/neutral). | `List<StrategyListResponse>` |

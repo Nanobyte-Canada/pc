@@ -48,16 +48,16 @@
 
 | File | Component | Description |
 |------|-----------|-------------|
-| `BrokerCard.tsx` | BrokerCard | Card displaying a single broker with logo, name, and connect button |
-| `BrokerConnectionCard.tsx` | BrokerConnectionCard | Card showing a connected broker account with status, value, and actions |
+| `BrokerCard.tsx` | BrokerCard | Card displaying a broker with brand-colored icon (Q/W/IB), name, auth badges, and connection state pill. Whole card is clickable to connect. |
+| `BrokerConnectionCard.tsx` | BrokerConnectionCard | Horizontal card for a connected account: brand icon, account type, masked number, status dot, sync time, value, Sync + More (3-dot) menu |
 | `ConnectionStatus.tsx` | ConnectionStatus | Badge-style status indicator for broker connection status |
-| `SnapTradeBadge.tsx` | SnapTradeBadge | Badge showing SnapTrade API status (ONLINE/DEGRADED/OFFLINE) |
-| `CashBalanceCards.tsx` | CashBalanceCards | Cards displaying cash balances by currency |
+| `ConnectBrokerDialog.tsx` | ConnectBrokerDialog | Dialog with manual token entry form for connecting to brokers (e.g., Questrade refresh token). Replaces the old SnapTrade redirect flow. |
+| `CashBalanceCards.tsx` | CashBalanceCards | Cash balance cards with dual-currency breakdown (total in C$ at top, divider, C$/US$ component rows) |
 | `AccountActivitiesGrid.tsx` | AccountActivitiesGrid | AG Grid table showing broker account activities (trades, dividends, etc.) |
 | `BrokerageMatrix.tsx` | BrokerageMatrix | Grid showing available brokerages with features (trading, fractional, etc.) |
 | `BrokerCard.css` | -- | Styles for BrokerCard |
 | `BrokerConnectionCard.css` | -- | Styles for BrokerConnectionCard |
-| `SnapTradeBadge.css` | -- | Styles for SnapTradeBadge |
+| `CashBalanceCards.css` | -- | Styles for CashBalanceCards |
 | `AccountActivitiesGrid.css` | -- | Styles for AccountActivitiesGrid |
 | `BrokerageMatrix.css` | -- | Styles for BrokerageMatrix |
 
@@ -130,18 +130,27 @@
 | `detail/MutualFundDetailSections.tsx` | MutualFundDetailSections | Stub: type-specific sections for mutual fund instruments (Overview, Performance, Holdings, Sectors, Regions, Valuation) |
 | `detail/BasicDetailSections.tsx` | BasicDetailSections | Stub: basic overview section for sparse instrument types (Preferred Stock, Index, Bond) |
 
-### layout/ (5 files)
+### IbkrConnectionBadge (2 files)
 
 | File | Component | Description |
 |------|-----------|-------------|
-| `AppLayout.tsx` | AppLayout | Main authenticated layout with sidebar, header, and Outlet for child routes |
-| `AppSidebar.tsx` | AppSidebar | Collapsible sidebar navigation with route links and icons |
-| `MobileHeader.tsx` | MobileHeader | Mobile-responsive header with hamburger menu |
+| `IbkrConnectionBadge.tsx` | IbkrConnectionBadge | Small badge in IconRail showing IBKR connection status (green dot when connected, red when disconnected). Reads `ibkrConnected` from `quoteStore`. |
+| `IbkrConnectionBadge.css` | -- | Styles for IbkrConnectionBadge |
+
+### layout/ (5 files)
+
+**Navigation pattern:** Desktop uses a narrow `IconRail` pinned to the left edge; mobile uses a `BottomTabBar` fixed to the bottom. The old collapsible `AppSidebar` and `MobileHeader` (hamburger menu) were removed as part of the Verdant Dark redesign.
+
+| File | Component | Description |
+|------|-----------|-------------|
+| `AppLayout.tsx` | AppLayout | Main authenticated layout: IconRail (desktop sidebar), BottomTabBar (mobile), main content area via Outlet, ToastContainer |
+| `IconRail.tsx` | IconRail | Narrow vertical icon-only navigation rail (desktop, hidden on mobile). Shows logo, nav items (Dashboard, Accounts, Screener, Options), theme toggle, admin link, IbkrConnectionBadge, and user avatar with initials. Active route highlighted with emerald accent |
+| `BottomTabBar.tsx` | BottomTabBar | Fixed bottom tab bar (mobile only, hidden on desktop). Five tabs: Home, Accounts, Screener, Options, More. "More" tab covers Wheel, Reporting, Admin, and Profile routes |
 | `ThemeToggle.tsx` | ThemeToggle | Dark/light theme toggle button |
 | `NotificationBell.tsx` | NotificationBell | Notification bell icon with unread count badge and dropdown |
 | `AppLayout.css` | -- | Styles for AppLayout |
-| `AppSidebar.css` | -- | Styles for AppSidebar |
-| `MobileHeader.css` | -- | Styles for MobileHeader |
+| `IconRail.css` | -- | Styles for IconRail |
+| `BottomTabBar.css` | -- | Styles for BottomTabBar |
 | `ThemeToggle.css` | -- | Styles for ThemeToggle |
 | `NotificationBell.css` | -- | Styles for NotificationBell |
 
@@ -236,13 +245,13 @@
 | `ScreenerPage.tsx` | ScreenerPage | `/screener/:type` | Unified instrument screener with filters, grid, and sidebar for all instrument types (STOCK, ETF, MUTUAL_FUND, PREFERRED_STOCK, INDEX, BOND) |
 | `InstrumentDetailPage.tsx` | InstrumentDetailPage | `/instruments/:type/:ticker` | Unified instrument detail page with hero metrics, section nav, and type-specific sections |
 | `AnalyticsPage.tsx` | AnalyticsPage | `/analytics` | Portfolio analysis builder with sector, geography, and risk charts |
-| `BrokerConnectionsPage.tsx` | BrokerConnectionsPage | `/brokers/connections` | Broker connection management (connect, disconnect, status) |
+| `BrokerConnectionsPage.tsx` | BrokerConnectionsPage | `/brokers/connections` | Broker connection management (dialog-based connect flow via ConnectBrokerDialog, disconnect, status) |
 | `BrokerPositionsPage.tsx` | BrokerPositionsPage | `/brokers/positions` | Aggregated positions view across all broker accounts |
 | `PositionDetailsPage.tsx` | PositionDetailsPage | `/brokers/positions/:connectionId` | Detailed positions for a single broker connection |
-| `AccountDetailPage.tsx` | AccountDetailPage | `/brokers/accounts/:connectionId` | Individual account detail with widgets and activities |
+| `AccountDetailPage.tsx` | AccountDetailPage | `/brokers/accounts/:connectionId` | Individual account detail with breadcrumb nav ("Accounts > [Type]") and DashboardGrid in ACCOUNT context. Shows 4 KPI cards: Returns, Total Value, Investment, and Buying Power (instead of Returns for account-specific view) |
 | `ReportingPage.tsx` | ReportingPage | `/brokers/reporting` | Reporting dashboard with KPIs, charts, and activity table |
 | `ProfilePage.tsx` | ProfilePage | `/profile` | User profile management (name, avatar, password, linked identities) |
-| `admin/AdminPage.tsx` | AdminPage | `/admin` (ADMIN role required) | Admin panel rewired to ingestion-service (port 8081). Enhanced stats with per-instrument-type breakdowns, async triggers with live progress polling, auto-refresh every 10 seconds |
+| `admin/AdminPage.tsx` + `.css` | AdminPage | `/admin` (ADMIN role required) | Admin panel rewired to ingestion-service (port 8081). Verdant Dark redesign with 6-column summary stats, instrument type breakdown grid, two-column workflows + recent runs layout, status dots and progress bars. Auto-refresh every 10 seconds |
 | `auth/LoginPage.tsx` | LoginPage | `/login` (public) | Login form with Google OAuth option |
 | `auth/SignupPage.tsx` | SignupPage | `/signup` (public) | Registration form |
 | `auth/ForgotPasswordPage.tsx` | ForgotPasswordPage | `/forgot-password` (public) | Password reset request form |
@@ -275,6 +284,8 @@ Defined in `App.tsx`. All pages are lazy-loaded with `React.lazy()` and wrapped 
   /brokers/positions/:connectionId  -- PositionDetailsPage
   /brokers/accounts/:connectionId   -- AccountDetailPage
   /brokers/reporting                -- ReportingPage
+  /options                          -- OptionsPage
+  /wheel                            -- WheelPage
   /profile                          -- ProfilePage
   /admin                            -- AdminPage (ProtectedRoute with ADMIN role)
 
@@ -293,7 +304,6 @@ Defined in `App.tsx`. All pages are lazy-loaded with `React.lazy()` and wrapped 
 | `useBrokerConnections` | Query | `['brokers', 'connections']` | `getUserConnections()` | 30 sec | -- |
 | `useConnectionPositions(id)` | Query | `['brokers', 'positions', id]` | `getConnectionPositions(id)` | 1 min | -- |
 | `useAggregatedPositions` | Query | `['brokers', 'positions', 'aggregated']` | `getAggregatedPositions()` | 1 min | -- |
-| `useSnapTradeStatus` | Query | `['brokers', 'snaptrade-status']` | `getSnapTradeStatus()` | 1 min | 5 min |
 | `useConnectionActivities(id, params)` | Query | `['brokers', 'activities', id, params]` | `getConnectionActivities(id, params)` | 1 min | -- |
 | `useBalanceHistory(id, days)` | Query | `['brokers', 'balance-history', id, days]` | `getBalanceHistory(id, days)` | 1 min | -- |
 | `useConnectBroker` | Mutation | -- | `connectBroker(request)` | -- | -- |
@@ -448,12 +458,11 @@ Base API utility module. All other services depend on this.
 |--------|-----------|----------|--------|
 | `getAvailableBrokers()` | -- | `/api/v1/brokers` | GET |
 | `getUserConnections()` | -- | `/api/v1/brokers/connections` | GET |
-| `connectBroker(request?)` | `ConnectBrokerRequest?` | `/api/v1/brokers/connect` | POST |
+| `connectBroker(request)` | `ConnectBrokerRequest { brokerType: string, credentials: Record<string, unknown> }` | `/api/v1/brokers/connect` | POST |
 | `disconnectBroker(authId)` | `authorizationId: string` | `/api/v1/brokers/connections/{authId}` | DELETE |
 | `triggerPositionFetch(id)` | `connectionId: number` | `/api/v1/brokers/connections/{id}/fetch` | POST |
 | `getConnectionPositions(id)` | `connectionId: number` | `/api/v1/brokers/connections/{id}/positions` | GET |
 | `getAggregatedPositions()` | -- | `/api/v1/brokers/positions` | GET |
-| `getSnapTradeStatus()` | -- | `/api/v1/brokers/snaptrade/status` | GET |
 | `syncConnections()` | -- | `/api/v1/brokers/connections/sync` | POST |
 | `getConnectionActivities(id, params)` | `connectionId, {page, size, startDate, endDate, type}` | `/api/v1/brokers/connections/{id}/activities` | GET |
 | `syncConnectionActivities(id)` | `connectionId: number` | `/api/v1/brokers/connections/{id}/sync-activities` | POST |
@@ -626,7 +635,9 @@ interface ToastState {
 
 **Usage:** Import `useToast()` in components to show toast notifications for API errors, success confirmations, etc.
 
-### stores/sidebarStore.ts (Zustand with persist)
+### stores/sidebarStore.ts (Zustand with persist) -- UNUSED
+
+No longer imported by any component after AppSidebar removal. Retained for now; safe to delete.
 
 **State shape:**
 ```typescript
@@ -705,7 +716,6 @@ interface PortfolioStore {
 | `AggregatedPosition` | symbol, totalQuantity, totalValue, brokerBreakdown[] |
 | `BrokerActivityDto` | id, type, symbol, amount, fee, tradeDate |
 | `BalanceSnapshotDto` | totalValue, cash: Record, currency, asOfDate |
-| `SnapTradeStatus` | status ('ONLINE'\|'DEGRADED'\|'OFFLINE'\|'UNKNOWN'), responseTimeMs, uptimePercent24h |
 | `ReportingPerformanceResponse` | contributionsWithdrawals[], totalValueHistory[], dividendHistory[], kpis |
 | `ConnectionStatusType` | Union: 'PENDING'\|'ACTIVE'\|'EXPIRED'\|'ERROR'\|'DISCONNECTED' |
 
@@ -715,7 +725,8 @@ interface PortfolioStore {
 |------|------------|
 | `WidgetPreference` | key, visible, sortOrder, columnSpan |
 | `DashboardSummaryResponse` | portfolioValue, positionsSummary, holdingsCount |
-| `DashboardCashResponse` | availableCash[], buyingPower[], totalCashCAD |
+| `PortfolioValueData` | totalValue, investmentValue, cashValue, totalChange?, totalChangePercent?, currency, investmentByCurrency? |
+| `DashboardCashResponse` | availableCash[], buyingPower[], totalCashCAD, totalBuyingPowerCAD?, totalBuyingPowerUSD? |
 | `SectorExposureResponse` | sectors[], coveragePercent, unmappedWeight |
 | `GeographyExposureResponse` | regions[], coveragePercent, unmappedWeight |
 | `RiskProfileResponse` | riskScore, riskLevel, factors |
@@ -815,15 +826,16 @@ interface PortfolioStore {
 ### By directory
 - `components/analytics/` -- SummaryCards.css, ChartStyles.css, TopHoldingsGrid.css
 - `components/auth/` -- (none, styled inline or in auth pages)
-- `components/broker/` -- BrokerCard.css, BrokerConnectionCard.css, SnapTradeBadge.css, AccountActivitiesGrid.css, BrokerageMatrix.css
+- `components/broker/` -- BrokerCard.css, BrokerConnectionCard.css, CashBalanceCards.css, AccountActivitiesGrid.css, BrokerageMatrix.css
 - `components/dashboard/` -- DashboardGrid.css, DashboardEditMode.css, AccountTabs.css, PositionsHoldingsTabs.css, WidgetWrapper.css
 - `components/dashboard/widgets/` -- 18 widget CSS files (one per widget that has custom styles)
 - `components/instruments/` -- InstrumentSearchAutocomplete.css, InstrumentTabs.css
-- `components/layout/` -- AppLayout.css, AppSidebar.css, MobileHeader.css, ThemeToggle.css, NotificationBell.css
+- `components/layout/` -- AppLayout.css, IconRail.css, BottomTabBar.css, ThemeToggle.css, NotificationBell.css
 - `components/portfolios/` -- ModelPortfolioCard.css, CustomPortfolioBuilder.css, ApplyToAccountModal.css, ModelAnalysisPanel.css
 - `components/screener/` -- ScreenerFilters.css, ScreenerGrid.css
 - `components/ui/` -- button.css, badge.css, card.css, dialog.css, sheet.css, skeleton.css, switch.css, separator.css, tooltip.css, Pagination.css, ErrorBoundary.css
 - `pages/` -- DashboardPage.css, PortfolioPage.css, AnalyticsPage.css, InstrumentDetailPage.css, ScreenerPage.css, BrokerConnectionsPage.css, BrokerPositionsPage.css, PositionDetailsPage.css, AccountDetailPage.css, ReportingPage.css, ProfilePage.css, UnauthorizedPage.css
+- `pages/admin/` -- AdminPage.css
 - `pages/auth/` -- AuthPages.css (shared auth page styles)
 
 ---
@@ -937,3 +949,98 @@ interface PortfolioStore {
 | `test:run` | `vitest run` (single run) |
 | `test:coverage` | `vitest run --coverage` |
 | `lint` | `eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0` |
+
+---
+
+## Options Trading Module
+
+### Pages
+
+| File | Route | Description |
+|---|---|---|
+| `pages/OptionsPage.tsx` + `.css` | `/options` | Two-column layout (55% chain / 45% sidebar). Header with integrated search + live indicator. Mobile: floating "N Legs Selected" bar, bottom sheet for leg builder + P&L results |
+
+### Components (`components/options/`)
+
+| File | Description |
+|---|---|
+| `UnderlyingSearch.tsx` + `.css` | Symbol search input joined to "Load Chain" button, monospace uppercase input |
+| `QuoteBar.tsx` + `.css` | Full-width quote bar: symbol (20px), price (22px), change indicator, bid/ask/spread/volume (15px) with vertical divider |
+| `StrategySelector.tsx` + `.css` | Desktop: pill buttons (rounded, 13px). Mobile: dropdown select. Supports toggle on/off via store |
+| `OptionsChainTable.tsx` + `.css` | Desktop: 7-column bidirectional (Bid,Ask,Delta | Strike | Delta,Bid,Ask) with expiry tabs. ATM row emerald left border. Mobile: expiry dropdown + calls/puts segmented toggle, 4-column (Strike,Bid,Ask,Delta). JetBrains Mono 14px data |
+| `LegBuilder.tsx` + `.css` | Card-based leg display with BUY/SELL + CALL/PUT color-coded badges (12px), 3-column fields (Strike, Mid, Expiry). Clear All + Calculate P&L buttons |
+| `PnlChart.tsx` + `.css` | SVG P&L curve with green/red fill areas, 2x2 metrics grid (18px values), styled break-even row, warning cards |
+
+### Hooks
+
+| File | Description |
+|---|---|
+| `hooks/useMarketDataWebSocket.ts` | WebSocket connection to `/ws/quotes` with subscribe/unsubscribe, exponential backoff reconnection (1s-30s). Parses `connection_status` messages from the server and updates `ibkrConnected` in `quoteStore`. |
+
+### Services
+
+| File | Description |
+|---|---|
+| `services/marketDataService.ts` | REST: getQuote, getOptionsChain, getOptionsChainWithGreeks, getIvRank via `/market-data-api/` proxy |
+| `services/optionsStrategyService.ts` | REST: getStrategies, getStrategyInfo, calculateStrategy, suggestStrategy, submitOptionsOrder, getOptionsOrders via `/strategy-api/` proxy |
+
+### Stores
+
+| File | Description |
+|---|---|
+| `stores/quoteStore.ts` | Zustand: quotes map, chains map, selectedUnderlying, ibkrConnected (boolean), setIbkrConnected setter |
+| `stores/strategyStore.ts` | Zustand: strategies list, selectedStrategy, legs array, calculationResult, isCalculating |
+
+### Types
+
+| File | Description |
+|---|---|
+| `types/options.ts` | Quote, OptionQuote, Greeks, OptionsChain, StrikeData, StrategyType (7 values), Leg, CalculationResult, PnlPoint, NetGreeks, StrategyInfo, EducationContent, WheelAccount/Config/Recommendation, OptionsOrderRequest/Response |
+
+### Vite Proxy Routes
+
+| Path | Target | Description |
+|---|---|---|
+| `/market-data-api/*` | `http://market-data-service:8082` | Market data REST API (path prefix stripped) |
+| `/ws/quotes` | `ws://market-data-service:8082` | WebSocket for real-time quotes |
+| `/strategy-api/*` | `http://strategy-service:8083` | Strategy REST API (path prefix stripped) |
+
+---
+
+## Wheel Strategy Module
+
+### Pages
+
+| File | Route | Description |
+|---|---|---|
+| `pages/WheelPage.tsx` + `.css` | `/wheel` | Wheel positions landing page (Screen 1). Dynamic ticker discovery from positions + CC-eligible stocks. 5 KPI cards (Capital Available, Capital Deployed, CC Available, Premium & P&L, Positions). Calendar grid with ticker rows × weekly expiry columns, ← → timeline navigation. Desktop: 4 columns. Mobile: 2 columns. Position click → OrderPanel. Empty slot click → OrderPanel (future: Screen 2 quotes). |
+
+### Components (`components/wheel/`)
+
+| File | Description |
+|---|---|
+| `WheelCalendarGrid.tsx` + `.css` | Transposed calendar grid: ticker rows (Y-axis) × weekly Friday expiry columns (X-axis). Sticky ticker column with name, price, exposure, CC badge. Expiry headers with date, DTE badge (red/yellow/green), day, Monthly tag. Timeline nav (prev/next/today). Empty CSP slots (dashed +), CC opportunity slots (orange "Sell CC"). "Add Ticker" row. Desktop: 4 columns, Mobile: 2 columns |
+| `WheelKpiCards.tsx` + `.css` | 5 KPI cards matching dashboard KpiCard pattern. Capital Available (C$/US$), Capital Deployed (CSP/CC), CC Available (per-ticker), Premium & P&L, Positions (CSP/CC/Expiring). Desktop: 5-column grid. Mobile: 2×2 + 1 full-width CC row |
+| `PositionCard.tsx` + `.css` | Compact position card: CSP = indigo (var(--csp-*)), CC = orange (var(--cc-*)). Row 1: strike + type label + OTM%. Row 2: P&L. Click navigates to order. No premium or account badge |
+| `OrderPanel.tsx` + `.css` | Desktop: 340px side panel. Mobile: bottom sheet overlay. Order entry for options with live API submission via `submitOptionsOrder`. All fields editable: option type, expiry, strike, order type (broker-specific: Limit/Market/Stop/Stop Limit for Questrade/IBKR), quantity stepper, limit price, stop price (conditional on order type), duration, account selector with buying power. Buy/Sell buttons submit to `/api/v1/trading/execute` with option fields. Error display on failure. |
+| `WheelChainPanel.tsx` + `.css` | Side panel (desktop 340px) + bottom sheet (mobile). Options chain with live WebSocket streaming. Shows Strike/Delta, Bid/Ask with discount·yield per strike. Expiry dropdown (desktop) / trigger+dots (mobile). Auto-selects puts (CSP context) or calls (CC context). ATM highlighted, ITM dimmed. Tap strike → transitions to OrderPanel with pre-filled data |
+| `WheelChainRow.tsx` | Single strike row in the chain panel table |
+| `ClosePositionDialog.tsx` + `.css` | Close position dialog with CSP (indigo) / CC (orange) type indicator strip, X close button, detail rows, and confirm/cancel actions |
+
+### Hooks
+
+| File | Description |
+|---|---|
+| `hooks/useWheelPositions.ts` | Fetches positions via React Query, groups into grid structure. Exports: `useWheelPositions`, `buildWheelGrid`, `computeTickerTotals`, `discoverTickers` (dynamic ticker discovery from options), `detectCCEligible` (stocks with 100+ shares), `generateWeeklyExpiries` (calendar column generation) |
+
+### Types
+
+| File | Description |
+|---|---|
+| `types/wheel.ts` | WheelTicker, WheelPosition, WheelCell, WheelExpiryRow, WheelGridData, TickerTotals, CapitalMetrics, DteUrgency, CCInfo, TickerRowData, CalendarWindow, CalendarGridData, getDteUrgency(), isMonthlyExpiry() |
+
+### Tests
+
+| File | Description |
+|---|---|
+| `hooks/__tests__/useWheelPositions.test.ts` | 9 unit tests: position placement (CSP/CC), filtering (non-options, beyond 90 DTE), stacking, DTE calculation, available expiries, ticker totals, capital metrics |

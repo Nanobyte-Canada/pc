@@ -57,6 +57,78 @@
   width: 100%;
 }
 
+/* Page size selector and column separators now handled globally in index.css */
+
+/* -- Mobile/Desktop toggle -- */
+.activities-mobile-only {
+  display: none;
+}
+
+/* -- Mobile card styles -- */
+.activity-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.activity-card:last-child {
+  border-bottom: none;
+}
+
+.activity-card__left {
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.activity-card__date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.activity-card__center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.activity-card__type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.activity-card__symbol {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.activity-card__right {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.activity-card__amount {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.activity-card__amount--positive {
+  color: var(--success);
+}
+
+.activity-card__amount--negative {
+  color: var(--error);
+}
+
 .activities-loading,
 .activities-empty {
   text-align: center;
@@ -113,4 +185,20 @@
 
 .pagination-controls button:hover:not(:disabled) {
   background: var(--bg-primary);
+}
+
+/* -- Mobile -- */
+@media (max-width: 767px) {
+  .activities-desktop-only {
+    display: none;
+  }
+
+  .activities-mobile-only {
+    display: block;
+  }
+
+  .activities-filters {
+    flex-direction: column;
+    gap: 8px;
+  }
 }

@@ -13,7 +13,7 @@ describe('BrokerConnectionCard', () => {
       logoUrl: null,
       description: null
     },
-    snaptradeAuthorizationId: 'auth-uuid-123',
+    gatewayConnectionId: 'gw-conn-uuid-123',
     accountNumber: '51234567',
     accountType: 'TFSA',
     accountName: 'My TFSA',
@@ -29,66 +29,54 @@ describe('BrokerConnectionCard', () => {
     modelPortfolioName: null
   }
 
-  it('renders broker name with account type', () => {
+  it('renders account type as heading', () => {
     render(
       <BrokerConnectionCard
         connection={mockConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
-    expect(screen.getByText('Questrade - TFSA')).toBeInTheDocument()
+    expect(screen.getByText('TFSA')).toBeInTheDocument()
   })
 
-  it('renders account type', () => {
+  it('renders masked account number', () => {
     render(
       <BrokerConnectionCard
         connection={mockConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
-    expect(screen.getByText(/TFSA/)).toBeInTheDocument()
-  })
-
-  it('renders actual account number', () => {
-    render(
-      <BrokerConnectionCard
-        connection={mockConnection}
-        onFetch={vi.fn()}
-        onDisconnect={vi.fn()}
-        onReconnect={vi.fn()}
-        isFetching={false}
-      />
-    )
-    expect(screen.getByText('Account: 53105513')).toBeInTheDocument()
+    // Shows last 4 digits masked
+    expect(screen.getByText(/5513/)).toBeInTheDocument()
   })
 
   it('renders total value', () => {
     render(
       <BrokerConnectionCard
         connection={mockConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
-    expect(screen.getByText('$25,000.50')).toBeInTheDocument()
+    expect(screen.getByText('C$ 25,001')).toBeInTheDocument()
   })
 
   it('renders positions count', () => {
     render(
       <BrokerConnectionCard
         connection={mockConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
     expect(screen.getByText('5 positions')).toBeInTheDocument()
@@ -99,55 +87,55 @@ describe('BrokerConnectionCard', () => {
     render(
       <BrokerConnectionCard
         connection={singlePositionConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
     expect(screen.getByText('1 position')).toBeInTheDocument()
   })
 
-  it('shows Fetch Now button for active connections', () => {
+  it('shows Sync button for active connections', () => {
     render(
       <BrokerConnectionCard
         connection={mockConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
-    expect(screen.getByText('Fetch Now')).toBeInTheDocument()
+    expect(screen.getByText('Sync')).toBeInTheDocument()
   })
 
-  it('shows Fetching... when isFetching is true', () => {
+  it('shows Syncing... when isSyncing is true', () => {
     render(
       <BrokerConnectionCard
         connection={mockConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={true}
+        isSyncing={true}
       />
     )
-    expect(screen.getByText('Fetching...')).toBeInTheDocument()
+    expect(screen.getByText('Syncing...')).toBeInTheDocument()
   })
 
-  it('calls onFetch with connection id when Fetch Now clicked', () => {
-    const mockOnFetch = vi.fn()
+  it('calls onSyncAll with connection id when Sync clicked', () => {
+    const mockOnSyncAll = vi.fn()
     render(
       <BrokerConnectionCard
         connection={mockConnection}
-        onFetch={mockOnFetch}
+        onSyncAll={mockOnSyncAll}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
 
-    fireEvent.click(screen.getByText('Fetch Now'))
-    expect(mockOnFetch).toHaveBeenCalledWith(1)
+    fireEvent.click(screen.getByText('Sync'))
+    expect(mockOnSyncAll).toHaveBeenCalledWith(1)
   })
 
   it('shows Reconnect button for EXPIRED status', () => {
@@ -155,10 +143,10 @@ describe('BrokerConnectionCard', () => {
     render(
       <BrokerConnectionCard
         connection={expiredConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
     expect(screen.getByText('Reconnect')).toBeInTheDocument()
@@ -169,80 +157,13 @@ describe('BrokerConnectionCard', () => {
     render(
       <BrokerConnectionCard
         connection={errorConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
     expect(screen.getByText('Reconnect')).toBeInTheDocument()
-  })
-
-  it('shows Disconnect button', () => {
-    render(
-      <BrokerConnectionCard
-        connection={mockConnection}
-        onFetch={vi.fn()}
-        onDisconnect={vi.fn()}
-        onReconnect={vi.fn()}
-        isFetching={false}
-      />
-    )
-    expect(screen.getByText('Disconnect')).toBeInTheDocument()
-  })
-
-  it('shows confirmation buttons when Disconnect clicked', () => {
-    render(
-      <BrokerConnectionCard
-        connection={mockConnection}
-        onFetch={vi.fn()}
-        onDisconnect={vi.fn()}
-        onReconnect={vi.fn()}
-        isFetching={false}
-      />
-    )
-
-    fireEvent.click(screen.getByText('Disconnect'))
-
-    expect(screen.getByText('Confirm')).toBeInTheDocument()
-    expect(screen.getByText('Cancel')).toBeInTheDocument()
-  })
-
-  it('calls onDisconnect with authorizationId when Confirm clicked', () => {
-    const mockOnDisconnect = vi.fn()
-    render(
-      <BrokerConnectionCard
-        connection={mockConnection}
-        onFetch={vi.fn()}
-        onDisconnect={mockOnDisconnect}
-        onReconnect={vi.fn()}
-        isFetching={false}
-      />
-    )
-
-    fireEvent.click(screen.getByText('Disconnect'))
-    fireEvent.click(screen.getByText('Confirm'))
-
-    expect(mockOnDisconnect).toHaveBeenCalledWith('auth-uuid-123')
-  })
-
-  it('hides confirmation when Cancel clicked', () => {
-    render(
-      <BrokerConnectionCard
-        connection={mockConnection}
-        onFetch={vi.fn()}
-        onDisconnect={vi.fn()}
-        onReconnect={vi.fn()}
-        isFetching={false}
-      />
-    )
-
-    fireEvent.click(screen.getByText('Disconnect'))
-    expect(screen.getByText('Confirm')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByText('Cancel'))
-    expect(screen.queryByText('Confirm')).not.toBeInTheDocument()
-    expect(screen.getByText('Disconnect')).toBeInTheDocument()
   })
 
   it('displays error message when present', () => {
@@ -254,25 +175,25 @@ describe('BrokerConnectionCard', () => {
     render(
       <BrokerConnectionCard
         connection={errorConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
     expect(screen.getByText('Token refresh failed')).toBeInTheDocument()
   })
 
-  it('renders broker initials as avatar', () => {
+  it('renders broker brand icon for Questrade', () => {
     render(
       <BrokerConnectionCard
         connection={mockConnection}
-        onFetch={vi.fn()}
+        onSyncAll={vi.fn()}
         onDisconnect={vi.fn()}
         onReconnect={vi.fn()}
-        isFetching={false}
+        isSyncing={false}
       />
     )
-    expect(screen.getByText('Qu')).toBeInTheDocument()
+    expect(screen.getByText('Q')).toBeInTheDocument()
   })
 })

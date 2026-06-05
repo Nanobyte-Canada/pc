@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   redis:
     image: redis:7-alpine
@@ -33,6 +31,30 @@ services:
     networks:
       - portfolio-network
 
+  ib-gateway:
+    image: ghcr.io/gnzsnz/ib-gateway:10.30.1t
+    container_name: portfolio-ib-gateway
+    environment:
+      TWS_USERID: ${IBKR_USERNAME:-}
+      TWS_PASSWORD: ${IBKR_PASSWORD:-}
+      TRADING_MODE: paper
+      TWS_ACCEPT_INCOMING: "accept"
+      READ_ONLY_API: "yes"
+      VNC_SERVER_PASSWORD: ${IBKR_VNC_PASSWORD:-}
+      TWS_PORT: "4004"
+    ports:
+      - "4002:4004"
+      - "5900:5900"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/4004"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+    networks:
+      - portfolio-network
+
   backend:
     build:
       context: ./backend/portfolio
@@ -47,10 +69,11 @@ services:
       REDIS_PORT: 6379
       APP_VERSION: ${APP_VERSION:-0.0.1-SNAPSHOT}
       APP_ENVIRONMENT: local
-      SNAPTRADE_CLIENT_ID: ${SNAPTRADE_CLIENT_ID:-}
-      SNAPTRADE_CONSUMER_KEY: ${SNAPTRADE_CONSUMER_KEY:-}
-      SNAPTRADE_REDIRECT_URI: ${SNAPTRADE_REDIRECT_URI:-http://localhost:3000/brokers/connections}
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY:-}
+      BROKER_GATEWAY_URL: http://broker-gateway-service:8084
+      BROKER_SYNC_ENABLED: ${BROKER_SYNC_ENABLED:-true}
+      BROKER_SYNC_CRON: ${BROKER_SYNC_CRON:-0 20 16 * * *}
+      BROKER_SYNC_CRON_MORNING: ${BROKER_SYNC_CRON_MORNING:-0 0 6 * * *}
       JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     ports:
       - "8080:8080"
@@ -66,6 +89,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    restart: unless-stopped
     networks:
       - portfolio-network
 
@@ -89,6 +113,121 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - portfolio-network
+
+  market-data-service:
+    build:
+      context: ./backend
+      dockerfile: market-data/Dockerfile
+    container_name: portfolio-market-data
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
+      DATABASE_USERNAME: ${POSTGRES_USER:-portfolio}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      IBKR_HOST: ib-gateway
+      IBKR_PORT: "4004"
+      IBKR_CLIENT_ID: ${IBKR_CLIENT_ID:-1}
+    ports:
+      - "8082:8082"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ib-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - portfolio-network
+
+  strategy-service:
+    build:
+      context: ./backend
+      dockerfile: strategy/Dockerfile
+    container_name: portfolio-strategy
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
+      DATABASE_USERNAME: ${POSTGRES_USER:-portfolio}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MARKET_DATA_SERVICE_URL: http://market-data-service:8082
+      PORTFOLIO_SERVICE_URL: http://backend:8080
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - portfolio-network
+
+  broker-gateway-service:
+    build:
+      context: ./backend
+      dockerfile: broker-gateway/Dockerfile
+    container_name: portfolio-broker-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
+      DATABASE_USERNAME: ${POSTGRES_USER:-portfolio}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY:-}
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-}
+      IBKR_GATEWAY_ENABLED: "true"
+      IBKR_HOST: ib-gateway
+      IBKR_PORT: "4004"
+      IBKR_GATEWAY_CLIENT_ID: ${IBKR_GATEWAY_CLIENT_ID:-2}
+      QUESTRADE_ENABLED: ${QUESTRADE_ENABLED:-false}
+      WEALTHSIMPLE_ENABLED: ${WEALTHSIMPLE_ENABLED:-false}
+    ports:
+      - "8084:8084"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ib-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
     networks:
       - portfolio-network
 
@@ -102,15 +241,20 @@ services:
       VITE_API_URL: http://localhost:8080
       VITE_PROXY_BACKEND_URL: http://backend:8080
       VITE_PROXY_INGESTION_URL: http://ingestion-service:8081
+      VITE_PROXY_MARKET_DATA_URL: http://market-data-service:8082
+      VITE_PROXY_STRATEGY_URL: http://strategy-service:8083
     ports:
       - "3000:3000"
     volumes:
       - ./frontend/src:/app/src:ro
       - ./frontend/public:/app/public:ro
       - ./frontend/index.html:/app/index.html:ro
+      - ./frontend/vite.config.ts:/app/vite.config.ts:ro
     depends_on:
       - backend
       - ingestion-service
+      - market-data-service
+      - strategy-service
     networks:
       - portfolio-network
 

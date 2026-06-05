@@ -7,6 +7,7 @@ import type { BrokerActivityDto } from '../../types/broker'
 
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 
 const ACTIVITY_TYPES = ['BUY', 'SELL', 'DIVIDEND', 'TRANSFER_IN', 'TRANSFER_OUT', 'FEE', 'INTEREST', 'OTHER']
 
@@ -28,6 +29,7 @@ interface ActivityTableProps {
 }
 
 export function ActivityTable({ startDate, endDate, accounts }: ActivityTableProps) {
+  const agTheme = useAgGridTheme()
   const [page, setPage] = useState(0)
   const [typeFilter, setTypeFilter] = useState('')
   const pageSize = 50
@@ -159,7 +161,7 @@ export function ActivityTable({ startDate, endDate, accounts }: ActivityTablePro
         <div className="activity-table-empty">No activities found for the selected filters.</div>
       ) : (
         <>
-          <div className="ag-theme-quartz activity-grid-container">
+          <div className={`${agTheme} activity-grid-container`}>
             <AgGridReact
               rowData={activities}
               columnDefs={columnDefs}

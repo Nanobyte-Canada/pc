@@ -4,6 +4,7 @@ import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
+import { useAgGridTheme } from '@/hooks/useAgGridTheme';
 import { Search } from 'lucide-react';
 import { ScreenerFilters, FilterInput, FilterSelect } from '@/components/screener/ScreenerFilters';
 import { Pagination } from '@/components/ui/Pagination';
@@ -468,6 +469,7 @@ const FILTER_LABELS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export function ScreenerPage() {
+  const agTheme = useAgGridTheme();
   const { type: routeType = 'stocks' } = useParams<{ type: string }>();
   const navigate = useNavigate();
 
@@ -628,7 +630,7 @@ export function ScreenerPage() {
         </div>
       ) : (
         <div className="screener-grid-card">
-          <div className="ag-theme-quartz screener-grid-container">
+          <div className={`${agTheme} screener-grid-container`}>
             <AgGridReact
               rowData={data?.data ?? []}
               columnDefs={columnDefs}

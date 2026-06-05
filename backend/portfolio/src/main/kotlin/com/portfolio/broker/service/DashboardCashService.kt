@@ -38,7 +38,7 @@ class DashboardCashService(
 
             try {
                 val parsed = objectMapper.readValue(cashJson, cashTypeRef)
-                // SnapTrade stores cash and buying_power in the JSONB
+                // Cash and buying_power are stored in the JSONB
                 for ((key, value) in parsed) {
                     if (key.startsWith("buying_power_")) {
                         val currency = key.removePrefix("buying_power_").uppercase()
@@ -66,13 +66,17 @@ class DashboardCashService(
             acc + amount * rate
         }
 
+        val totalBuyingPowerUSD = (buyingPowerByCurrency["USD"] ?: BigDecimal.ZERO)
+            .setScale(2, RoundingMode.HALF_UP)
+
         return DashboardCashResponse(
             availableCash = cashByCurrency.map { CurrencyAmountDto(it.key, it.value.setScale(2, RoundingMode.HALF_UP)) }
                 .sortedByDescending { it.amount },
             buyingPower = buyingPowerByCurrency.map { CurrencyAmountDto(it.key, it.value.setScale(2, RoundingMode.HALF_UP)) }
                 .sortedByDescending { it.amount },
             totalCashCAD = totalCashCAD.setScale(2, RoundingMode.HALF_UP),
-            totalBuyingPowerCAD = totalBuyingPowerCAD.setScale(2, RoundingMode.HALF_UP)
+            totalBuyingPowerCAD = totalBuyingPowerCAD.setScale(2, RoundingMode.HALF_UP),
+            totalBuyingPowerUSD = totalBuyingPowerUSD
         )
     }
 

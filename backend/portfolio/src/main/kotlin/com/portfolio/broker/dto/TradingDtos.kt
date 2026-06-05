@@ -22,7 +22,12 @@ data class TradeExecutionInput(
     val amount: BigDecimal,
     val currency: String = "CAD",
     val connectionId: Long,
-    val limitPrice: BigDecimal? = null
+    val limitPrice: BigDecimal? = null,
+    val optionType: String? = null,
+    val strikePrice: BigDecimal? = null,
+    val expirationDate: String? = null,
+    val symbolId: Long? = null,
+    val stopPrice: BigDecimal? = null
 )
 
 // ========== Response DTOs ==========
@@ -40,6 +45,11 @@ data class TradeOrderDto(
     val requestedPrice: BigDecimal,
     val requestedAmount: BigDecimal,
     val limitPrice: BigDecimal?,
+    val optionType: String?,
+    val strikePrice: BigDecimal?,
+    val expirationDate: String?,
+    val symbolId: Long?,
+    val stopPrice: BigDecimal?,
     val filledUnits: BigDecimal?,
     val filledPrice: BigDecimal?,
     val filledAmount: BigDecimal?,
@@ -82,6 +92,11 @@ fun TradeOrder.toDto() = TradeOrderDto(
     requestedPrice = requestedPrice,
     requestedAmount = requestedAmount,
     limitPrice = limitPrice,
+    optionType = optionType,
+    strikePrice = strikePrice,
+    expirationDate = expirationDate?.toString(),
+    symbolId = symbolId,
+    stopPrice = stopPrice,
     filledUnits = filledUnits,
     filledPrice = filledPrice,
     filledAmount = filledAmount,

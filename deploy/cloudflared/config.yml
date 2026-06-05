@@ -1,0 +1,38 @@
+# Cloudflare Tunnel configuration
+# Replace TUNNEL_ID with the actual tunnel ID after running:
+#   cloudflared tunnel create portfolio-tunnel
+#
+# After creating the tunnel, update the credentials-file path
+# and add DNS records:
+#   cloudflared tunnel route dns portfolio-tunnel portfolio.nanobyte.ca
+#   cloudflared tunnel route dns portfolio-tunnel uatportfolio.nanobyte.ca
+#   cloudflared tunnel route dns portfolio-tunnel status.nanobyte.ca
+#   cloudflared tunnel route dns portfolio-tunnel grafana.nanobyte.ca
+#   cloudflared tunnel route dns portfolio-tunnel vault.nanobyte.ca
+
+tunnel: TUNNEL_ID
+credentials-file: /etc/cloudflared/TUNNEL_ID.json
+
+ingress:
+  # Production — all traffic through frontend Nginx (reverse proxies to backend services)
+  - hostname: portfolio.nanobyte.ca
+    service: http://localhost:10000
+
+  # UAT — all traffic through frontend Nginx (reverse proxies to backend services)
+  - hostname: uatportfolio.nanobyte.ca
+    service: http://localhost:20000
+
+  # Uptime Kuma status page
+  - hostname: status.nanobyte.ca
+    service: http://localhost:13001
+
+  # Grafana dashboards (Cloudflare Access protected)
+  - hostname: grafana.nanobyte.ca
+    service: http://localhost:13000
+
+  # Vault secrets manager (Cloudflare Access protected)
+  - hostname: vault.nanobyte.ca
+    service: http://localhost:18200
+
+  # Catch-all (required by cloudflared)
+  - service: http_status:404

@@ -1,25 +1,9 @@
-// ========== Dashboard Preferences ==========
-
-export interface WidgetPreference {
-  key: string
-  visible: boolean
-  sortOrder: number
-  columnSpan: number
-}
-
-export interface DashboardPreferencesResponse {
-  widgets: WidgetPreference[]
-}
-
-export interface UpdateDashboardPreferencesRequest {
-  widgets: WidgetPreference[]
-}
-
 // ========== Dashboard Summary ==========
 
 export interface PortfolioValueData {
   totalValue: number
   investmentValue: number
+  investmentByCurrency?: CurrencyAmount[]
   cashValue: number
   totalChange: number | null
   totalChangePercent: number | null
@@ -64,6 +48,7 @@ export interface DashboardCashResponse {
   buyingPower: CurrencyAmount[]
   totalCashCAD: number
   totalBuyingPowerCAD?: number
+  totalBuyingPowerUSD?: number
 }
 
 // ========== Sector Exposure ==========
@@ -172,11 +157,13 @@ export interface DividendEntry {
   amount: number
   currency: string
   accountName: string | null
+  type: string
 }
 
 export interface DividendCalendarResponse {
   month: string
   totalDividends: number
+  totalReinvestments: number
   entries: DividendEntry[]
 }
 
@@ -243,35 +230,25 @@ export interface RefreshAllResponse {
   message: string
 }
 
-// ========== Widget Registry Types ==========
+// ========== Performance Metrics ==========
 
-export type WidgetCategory = 'CATEGORY_1' | 'CATEGORY_2' | 'ALWAYS_VISIBLE'
-
-export type WidgetKey =
-  | 'PORTFOLIO_VALUE'
-  | 'AVAILABLE_CASH'
-  | 'BUYING_POWER'
-  | 'RISK_PROFILE'
-  | 'SECTOR_EXPOSURE'
-  | 'GEOGRAPHY_EXPOSURE'
-  | 'OPEN_ORDERS'
-  | 'FEES_COMMISSION'
-  | 'DIVIDEND_CALENDAR'
-  | 'POSITIONS_TABLE'
-  | 'HOLDINGS_TABLE'
-  | 'CONNECTED_ACCOUNTS'
-  | 'REBALANCING_PROGRESS'
-  | 'PENDING_ORDERS'
-  | 'ACCOUNT_SUMMARY'
-  | 'ORDERS'
-  | 'FEES_AND_DIVIDENDS'
-  | 'POSITIONS_HOLDINGS'
-  | 'PORTFOLIO_SUMMARY'
-
-export interface WidgetDefinition {
-  key: WidgetKey
-  title: string
-  defaultVisible: boolean
-  defaultColumnSpan: number
-  defaultSortOrder: number
+export interface AccountIrr {
+  connectionId: number
+  brokerName: string | null
+  accountName: string | null
+  irr: number | null
+  totalReturn: number | null
+  totalReturnPct: number | null
+  dividendYield: number | null
+  startDate: string | null
+  endDate: string | null
 }
+
+export interface DashboardIrrResponse {
+  portfolioIrr: number | null
+  portfolioTotalReturn: number | null
+  portfolioTotalReturnPct: number | null
+  portfolioDividendYield: number | null
+  accounts: AccountIrr[]
+}
+

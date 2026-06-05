@@ -1,0 +1,60 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "portfolio-backend"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:10080"]
+        labels:
+          service: backend
+          environment: prod
+
+  - job_name: "portfolio-ingestion"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:10081"]
+        labels:
+          service: ingestion
+          environment: prod
+
+  - job_name: "portfolio-market-data"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:10082"]
+        labels:
+          service: market-data
+          environment: prod
+
+  - job_name: "portfolio-strategy"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:10083"]
+        labels:
+          service: strategy
+          environment: prod
+
+  - job_name: "portfolio-broker-gateway"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:10084"]
+        labels:
+          service: broker-gateway
+          environment: prod
+
+  - job_name: "cadvisor"
+    static_configs:
+      - targets: ["cadvisor:8080"]
+
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  - job_name: "postgres-exporter"
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  - job_name: "redis-exporter"
+    static_configs:
+      - targets: ["redis-exporter:9121"]

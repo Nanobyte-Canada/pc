@@ -1,0 +1,256 @@
+/* ====== PositionsTable — Verdant Dark ====== */
+
+.positions-table {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+/* -- Header bar -- */
+.positions-table__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.positions-table__header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.positions-table__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* -- Tab pills -- */
+.positions-table__tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.positions-table__tab {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.positions-table__tab--active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+
+.positions-table__tab--inactive {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.positions-table__tab--inactive:hover {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}
+
+/* -- Search -- */
+.positions-table__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.positions-table__search-icon {
+  position: absolute;
+  left: 8px;
+  width: 13px;
+  height: 13px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.positions-table__search-input {
+  padding: 5px 8px 5px 28px;
+  font-size: 11px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  outline: none;
+  width: 160px;
+  transition: border-color 0.15s ease;
+}
+
+.positions-table__search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.positions-table__search-input:focus {
+  border-color: var(--accent);
+}
+
+/* -- Grid container -- */
+.positions-table__grid {
+  width: 100%;
+}
+
+/* Column separators, alignment, resize handles, and page size selector
+   are handled globally in index.css for all AG Grid themes */
+
+/* -- Symbol cell with name subtitle -- */
+.positions-table__symbol-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.3;
+  justify-content: center;
+  height: 100%;
+}
+
+.positions-table__symbol {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.positions-table__name {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* -- Numeric cell style -- */
+.positions-table__mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: left;
+}
+
+/* -- P&L colors -- */
+.positions-table__pnl--positive {
+  color: #6ee7b7;
+}
+
+.positions-table__pnl--negative {
+  color: #f87171;
+}
+
+/* -- Empty state -- */
+.positions-table__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.positions-table__empty-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--text-muted);
+}
+
+/* -- Desktop/Mobile toggle -- */
+.positions-table__mobile-only {
+  display: none;
+}
+
+/* -- Mobile card list -- */
+.positions-table__card {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.positions-table__card:last-child {
+  border-bottom: none;
+}
+
+.positions-table__card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.positions-table__card-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.positions-table__card-symbol {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.positions-table__card-weight {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.positions-table__card-right {
+  text-align: right;
+}
+
+.positions-table__card-value {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.positions-table__card-pnl {
+  display: block;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+.positions-table__card-pnl--positive {
+  color: #6ee7b7;
+}
+
+.positions-table__card-pnl--negative {
+  color: #f87171;
+}
+
+/* -- Mobile -- */
+@media (max-width: 768px) {
+  .positions-table {
+    padding: 12px;
+  }
+
+  .positions-table__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .positions-table__search-input {
+    width: 100%;
+  }
+
+  .positions-table__search {
+    width: 100%;
+  }
+
+  .positions-table__desktop-only {
+    display: none;
+  }
+
+  .positions-table__mobile-only {
+    display: block;
+  }
+}

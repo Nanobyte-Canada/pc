@@ -34,6 +34,10 @@ const PortfolioPage = lazy(() => import('./pages/PortfolioPage'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const AccountDetailPage = lazy(() => import('./pages/AccountDetailPage').then(m => ({ default: m.AccountDetailPage })))
 
+// Options Trading (lazy loaded)
+const OptionsPage = lazy(() => import('./pages/OptionsPage').then(m => ({ default: m.OptionsPage })))
+const WheelPage = lazy(() => import('./pages/WheelPage').then(m => ({ default: m.WheelPage })))
+
 import './App.css'
 
 function App() {
@@ -95,6 +99,8 @@ function App() {
           <Route path="brokers/positions/:connectionId" element={<PositionDetailsPage />} />
           <Route path="brokers/accounts/:connectionId" element={<AccountDetailPage />} />
           <Route path="brokers/reporting" element={<ReportingPage />} />
+          <Route path="options" element={<OptionsPage />} />
+          <Route path="wheel" element={<WheelPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route
             path="admin"

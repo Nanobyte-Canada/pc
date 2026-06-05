@@ -1,0 +1,198 @@
+/* ====== KpiCard — Verdant Dark ====== */
+
+.kpi-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.kpi-card--emerald {
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+}
+
+/* -- Header row -- */
+.kpi-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpi-card__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin: 0;
+}
+
+.kpi-card__icon {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+/* -- Value -- */
+.kpi-card__value {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  margin: 8px 0 0;
+}
+
+.kpi-card__value--positive {
+  color: #6ee7b7;
+}
+
+.kpi-card__value--negative {
+  color: #f87171;
+}
+
+/* -- Divider -- */
+.kpi-card__divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+/* -- Breakdown rows (currency variant) -- */
+.kpi-card__breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.kpi-card__breakdown-label {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.kpi-card__breakdown-value {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.kpi-card__breakdown-value--positive {
+  color: #6ee7b7;
+}
+
+.kpi-card__breakdown-value--negative {
+  color: #f87171;
+}
+
+/* -- Sectors variant (horizontal bars) -- */
+.kpi-card__sectors {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.kpi-card__sector-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kpi-card__sector-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kpi-card__sector-name {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+}
+
+.kpi-card__sector-pct {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.kpi-card__sector-bar-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.kpi-card__sector-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* -- Loading state -- */
+.kpi-card__skeleton {
+  height: 120px;
+  border-radius: 10px;
+}
+
+/* ====== Combined Variant (Total Value / Investment / Cash) ====== */
+
+.kpi-card--combined {
+  /* No extra background — uses same card style */
+}
+
+.kpi-card__combined-primary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.kpi-card__combined-cad {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.kpi-card__combined-usd {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.kpi-card__combined-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.kpi-card__combined-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.kpi-card__combined-col-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.kpi-card__combined-col-cad {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.kpi-card__combined-col-usd {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}

@@ -1,15 +1,19 @@
 package com.portfolio.broker.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.portfolio.auth.repository.UserRepository
+import com.portfolio.broker.client.BrokerGatewayClient
 import com.portfolio.broker.entity.BrokerActivity
 import com.portfolio.broker.entity.BrokerBalanceSnapshot
+import com.portfolio.broker.entity.BrokerConnection
 import com.portfolio.broker.entity.ConnectionStatus
 import com.portfolio.broker.repository.BrokerActivityRepository
 import com.portfolio.broker.repository.BrokerBalanceRepository
 import com.portfolio.broker.repository.BrokerConnectionRepository
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -20,98 +24,187 @@ class ActivityIngestionService(
     private val connectionRepository: BrokerConnectionRepository,
     private val activityRepository: BrokerActivityRepository,
     private val balanceRepository: BrokerBalanceRepository,
-    private val snapTradeService: SnapTradeService,
-    private val userRepository: UserRepository,
+    private val gatewayClient: BrokerGatewayClient,
     private val objectMapper: ObjectMapper,
-    private val exchangeRateService: ExchangeRateService
+    private val exchangeRateService: ExchangeRateService,
+    @Value("\${broker.sync.max-lookback-years:30}")
+    private val maxLookbackYears: Int = 30,
+    @Value("\${broker.sync.chunk-days:29}")
+    private val chunkDays: Int = 29
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun syncActivitiesForConnection(connectionId: Long): Int {
         val connection = connectionRepository.findById(connectionId).orElseThrow {
             IllegalArgumentException("Connection not found: $connectionId")
         }
-        val user = connection.user
 
-        // Incremental sync: find latest trade_date in DB
         val latestDate = activityRepository.findLatestTradeDateByConnectionId(connectionId)
-        val startDate = latestDate?.minusDays(1) // overlap by 1 day for safety
 
-        log.info("Syncing activities for connection {} (user {}), startDate={}",
-            connectionId, user.id, startDate ?: "all-time")
-
-        val activities = try {
-            snapTradeService.getActivities(
-                user = user,
-                startDate = startDate,
-                accounts = connection.accountIdExternal
-            )
-        } catch (e: Exception) {
-            log.error("Failed to fetch activities for connection {}: {}", connectionId, e.message)
-            throw e
-        }
-
-        var insertedCount = 0
-        for (activity in activities) {
-            val externalId = activity.id
-            if (externalId != null) {
-                val existing = activityRepository.findByConnectionIdAndExternalId(connectionId, externalId)
-                if (existing != null) continue
-            }
-
-            val tradeDate = activity.tradeDate ?: continue
-
-            val rawAmount = activity.amount?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
-            val currency = activity.currency ?: "CAD"
-            val mappedType = mapActivityType(activity.type)
-
-            // Compute CAD-equivalent amount for reporting
-            val (amountCad, exchangeRate) = computeCadAmount(rawAmount, currency, tradeDate, mappedType)
-
-            val entity = BrokerActivity(
-                connection = connection,
-                externalId = externalId,
-                type = mappedType,
-                symbol = activity.symbol,
-                description = activity.description,
-                quantity = activity.units?.let { BigDecimal(it.toString()) },
-                price = activity.price?.let { BigDecimal(it.toString()) },
-                amount = rawAmount,
-                fee = activity.fee?.let { BigDecimal(it.toString()) },
-                currency = currency,
-                tradeDate = tradeDate,
-                settlementDate = activity.settlementDate,
-                accountName = connection.accountName,
-                optionType = activity.optionType,
-                amountCad = amountCad,
-                exchangeRate = exchangeRate,
-                rawPayload = activity.rawJson
-            )
-            activityRepository.save(entity)
-            insertedCount++
+        val insertedCount = if (latestDate == null) {
+            // No activities exist — full historical sync
+            log.info("No existing activities for connection {} (user {}), starting full historical sync " +
+                "(lookback={}y)", connectionId, connection.user.id, maxLookbackYears)
+            syncFullHistory(connection)
+        } else {
+            // Incremental sync from latest known date
+            val startDate = latestDate.minusDays(1)
+            log.info("Incremental sync for connection {} (user {}), startDate={}",
+                connectionId, connection.user.id, startDate)
+            syncIncremental(connection, startDate)
         }
 
         connection.lastActivitiesFetchedAt = OffsetDateTime.now()
         connectionRepository.save(connection)
 
-        log.info("Synced {} new activities for connection {} (total fetched: {})",
-            insertedCount, connectionId, activities.size)
+        log.info("Synced {} new activities for connection {}", insertedCount, connectionId)
         return insertedCount
     }
 
-    @Transactional
+    private fun syncFullHistory(connection: BrokerConnection): Int {
+        val now = LocalDate.now()
+        val earliest = now.minusYears(maxLookbackYears.toLong())
+        val gwConnId = connection.gatewayConnectionId
+            ?: run {
+                log.warn("Connection {} has no gateway connection ID, skipping historical sync", connection.id)
+                return 0
+            }
+        val accountId = connection.accountIdExternal
+            ?: run {
+                log.warn("Connection {} has no external account ID, skipping historical sync", connection.id)
+                return 0
+            }
+
+        log.info("Full historical sync for connection {}: {} to {} in {}-day chunks",
+            connection.id, earliest, now, chunkDays)
+
+        var totalInserted = 0
+        var chunkEnd = now
+        var emptyChunksInRow = 0
+
+        while (chunkEnd.isAfter(earliest)) {
+            val chunkStart = maxOf(chunkEnd.minusDays(chunkDays.toLong()), earliest)
+
+            try {
+                val activitiesJson = gatewayClient.getActivities(gwConnId, accountId, chunkStart, chunkEnd)
+                val activities = activitiesJson.path("activities")
+                val inserted = processAndSaveActivities(activities, connection)
+                totalInserted += inserted
+
+                if (activities.size() == 0) {
+                    emptyChunksInRow++
+                } else {
+                    emptyChunksInRow = 0
+                    log.info("Chunk {} to {}: {} fetched, {} new for connection {}",
+                        chunkStart, chunkEnd, activities.size(), inserted, connection.id)
+                }
+
+                if (emptyChunksInRow >= 12) {
+                    log.info("Stopping historical sync for connection {} — {} consecutive empty chunks (reached account start)",
+                        connection.id, emptyChunksInRow)
+                    break
+                }
+            } catch (e: Exception) {
+                log.warn("Chunk {} to {} failed for connection {}: {}", chunkStart, chunkEnd, connection.id, e.message)
+            }
+
+            chunkEnd = chunkStart.minusDays(1)
+        }
+
+        log.info("Historical sync complete for connection {}: {} new activities",
+            connection.id, totalInserted)
+
+        return totalInserted
+    }
+
+    private fun syncIncremental(connection: BrokerConnection, startDate: LocalDate): Int {
+        val gwConnId = connection.gatewayConnectionId
+            ?: run {
+                log.warn("Connection {} has no gateway connection ID, skipping incremental sync", connection.id)
+                return 0
+            }
+        val accountId = connection.accountIdExternal
+            ?: run {
+                log.warn("Connection {} has no external account ID, skipping incremental sync", connection.id)
+                return 0
+            }
+
+        val activitiesJson = try {
+            gatewayClient.getActivities(gwConnId, accountId, startDate, null)
+        } catch (e: Exception) {
+            log.error("Failed to fetch activities for connection {}: {}", connection.id, e.message)
+            throw e
+        }
+
+        val activities = activitiesJson.path("activities")
+        return processAndSaveActivities(activities, connection)
+    }
+
+    private fun processAndSaveActivities(activities: JsonNode, connection: BrokerConnection): Int {
+        var insertedCount = 0
+        for (activity in activities) {
+            val externalId = activity.path("externalId").asText(null)
+            if (externalId != null) {
+                val existing = activityRepository.findByConnectionIdAndExternalId(connection.id, externalId)
+                if (existing != null) continue
+            }
+
+            val tradeDate = parseJsonLocalDate(activity.path("tradeDate")) ?: continue
+
+            val rawAmount = if (activity.has("amount") && !activity.path("amount").isNull)
+                BigDecimal(activity.path("amount").asText()) else BigDecimal.ZERO
+            val currency = activity.path("currency").asText("CAD")
+            val type = activity.path("type").asText("OTHER")
+
+            val (amountCad, exchangeRate) = computeCadAmount(rawAmount, currency, tradeDate, type)
+
+            val settlementDate = parseJsonLocalDate(activity.path("settlementDate"))
+
+            val quantity = if (activity.has("quantity") && !activity.path("quantity").isNull)
+                BigDecimal(activity.path("quantity").asText()) else null
+            val price = if (activity.has("price") && !activity.path("price").isNull)
+                BigDecimal(activity.path("price").asText()) else null
+            val fee = if (activity.has("fee") && !activity.path("fee").isNull)
+                BigDecimal(activity.path("fee").asText()) else null
+
+            val entity = BrokerActivity(
+                connection = connection,
+                externalId = externalId,
+                type = type,
+                symbol = activity.path("symbol").asText(null),
+                description = activity.path("description").asText(null),
+                quantity = quantity,
+                price = price,
+                amount = rawAmount,
+                fee = fee,
+                currency = currency,
+                tradeDate = tradeDate,
+                settlementDate = settlementDate,
+                accountName = connection.accountName,
+                optionType = activity.path("optionType").asText(null),
+                amountCad = amountCad,
+                exchangeRate = exchangeRate,
+                rawPayload = objectMapper.writeValueAsString(activity)
+            )
+            activityRepository.save(entity)
+            insertedCount++
+        }
+        return insertedCount
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun syncBalanceForConnection(connectionId: Long) {
         val connection = connectionRepository.findById(connectionId).orElseThrow {
             IllegalArgumentException("Connection not found: $connectionId")
         }
-        val user = connection.user
+        val gwConnId = connection.gatewayConnectionId ?: return
         val accountId = connection.accountIdExternal ?: return
 
-        log.info("Syncing balance for connection {} (user {})", connectionId, user.id)
+        log.info("Syncing balance for connection {} (user {})", connectionId, connection.user.id)
 
-        val balances = try {
-            snapTradeService.getAccountBalance(user, accountId)
+        val balanceJson = try {
+            gatewayClient.getBalances(gwConnId, accountId)
         } catch (e: Exception) {
             log.error("Failed to fetch balance for connection {}: {}", connectionId, e.message)
             throw e
@@ -120,19 +213,26 @@ class ActivityIngestionService(
         val today = LocalDate.now()
         val cashMap = mutableMapOf<String, BigDecimal>()
         val buyingPowerMap = mutableMapOf<String, BigDecimal>()
-        for (balance in balances) {
-            val curr = balance.currency ?: "CAD"
-            val amount = balance.cash?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
-            cashMap["cash_$curr"] = (cashMap["cash_$curr"] ?: BigDecimal.ZERO) + amount
 
-            val bp = balance.buyingPower?.let { BigDecimal(it.toString()) } ?: BigDecimal.ZERO
-            if (bp > BigDecimal.ZERO) {
-                buyingPowerMap["buying_power_$curr"] = (buyingPowerMap["buying_power_$curr"] ?: BigDecimal.ZERO) + bp
-            }
+        val cashBalances = balanceJson.path("cashBalances")
+        for (cb in cashBalances) {
+            val curr = cb.path("currency").asText("CAD")
+            val amount = if (cb.has("amount") && !cb.path("amount").isNull)
+                BigDecimal(cb.path("amount").asText()) else BigDecimal.ZERO
+            cashMap["cash_$curr"] = (cashMap["cash_$curr"] ?: BigDecimal.ZERO) + amount
         }
+
+        val buyingPower = if (balanceJson.has("buyingPower") && !balanceJson.path("buyingPower").isNull)
+            BigDecimal(balanceJson.path("buyingPower").asText()) else BigDecimal.ZERO
+        val balanceCurrency = balanceJson.path("currency").asText("CAD")
+        if (buyingPower > BigDecimal.ZERO) {
+            buyingPowerMap["buying_power_$balanceCurrency"] = buyingPower
+        }
+
         val combined = cashMap + buyingPowerMap
 
-        val totalValue = connection.totalValue
+        val totalValue = if (balanceJson.has("totalValue") && !balanceJson.path("totalValue").isNull)
+            BigDecimal(balanceJson.path("totalValue").asText()) else connection.totalValue
 
         val existing = balanceRepository.findByConnectionIdAndAsOfDate(connectionId, today)
         if (existing != null) {
@@ -183,36 +283,24 @@ class ActivityIngestionService(
     }
 
     /**
-     * Maps raw SnapTrade activity type strings to normalized types.
-     *
-     * SnapTrade may send plural forms (e.g. "TRANSFERS", "WITHDRAWALS") or
-     * various synonyms. This function normalizes them to a consistent set:
-     * - TRANSFER_IN: contributions, deposits, transfers in
-     * - TRANSFER_OUT: withdrawals, transfers out
-     */
-    private fun mapActivityType(type: String?): String {
-        return when (type?.uppercase()) {
-            "BUY" -> "BUY"
-            "SELL" -> "SELL"
-            "DIVIDEND" -> "DIVIDEND"
-            "CONTRIBUTION", "DEPOSIT", "TRANSFER_IN", "TRANSFERS" -> "TRANSFER_IN"
-            "WITHDRAWAL", "TRANSFER_OUT", "WITHDRAWALS" -> "TRANSFER_OUT"
-            "FEE" -> "FEE"
-            "COMMISSION" -> "COMMISSION"
-            "INTEREST" -> "INTEREST"
-            "OPTIONEXPIRATION", "OPTION_EXPIRATION" -> "OPTIONEXPIRATION"
-            "OPTIONASSIGNMENT", "OPTION_ASSIGNMENT" -> "OPTIONASSIGNMENT"
-            "OPTIONEXERCISE", "OPTION_EXERCISE" -> "OPTIONEXERCISE"
-            else -> type?.uppercase() ?: "OTHER"
-        }
-    }
-
-    /**
      * Computes the CAD-equivalent amount and the exchange rate used.
      *
      * For CAD amounts or zero amounts, no FX lookup is performed.
      * For non-CAD, calls [ExchangeRateService] and falls back to the raw amount if unavailable.
      */
+    private fun parseJsonLocalDate(node: JsonNode): LocalDate? {
+        if (node.isMissingNode || node.isNull) return null
+        if (node.isArray && node.size() >= 3) {
+            return try {
+                LocalDate.of(node[0].asInt(), node[1].asInt(), node[2].asInt())
+            } catch (_: Exception) { null }
+        }
+        val text = node.asText(null) ?: return null
+        return try {
+            LocalDate.parse(text.substring(0, minOf(text.length, 10)))
+        } catch (_: Exception) { null }
+    }
+
     private fun computeCadAmount(
         amount: BigDecimal,
         currency: String,

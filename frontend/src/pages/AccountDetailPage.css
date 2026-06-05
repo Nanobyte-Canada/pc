@@ -1,93 +1,321 @@
+/* ====== AccountDetailPage — Verdant Dark ====== */
+
 .account-detail-page {
   padding: 0;
-}
-
-.account-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.account-header-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  height: 100%;
+  overflow: hidden;
 }
 
-.account-header-broker {
-  font-size: 1.25rem;
+.account-detail-page > .account-detail-section:last-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.account-detail-page > .account-detail-section:last-child > .positions-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.account-detail-page > .account-detail-section:last-child > .activities-grid-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -- Breadcrumb navigation -- */
+.account-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 24px 8px;
+  font-size: 13px;
+}
+
+.breadcrumb-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.breadcrumb-link:hover {
+  color: var(--accent);
+}
+
+.breadcrumb-separator {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.breadcrumb-current {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* -- Account header -- */
+.account-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 24px 16px;
+}
+
+.account-detail-header__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.account-detail-header__icon--questrade {
+  background: #1a5c3a;
+  color: #4ade80;
+}
+.account-detail-header__icon--wealthsimple {
+  background: #1a1a3a;
+  color: #a78bfa;
+}
+.account-detail-header__icon--ibkr {
+  background: #3a1a1a;
+  color: #f87171;
+}
+
+.account-detail-header__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-detail-header__title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.account-detail-header__type {
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
 }
 
-.account-header-subtitle {
-  font-size: 0.875rem;
+.account-detail-header__number {
+  font-size: 12px;
+  font-family: var(--font-mono);
   color: var(--text-muted);
 }
 
-.account-header-model {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 0.125rem;
-}
-
-.account-header-right {
+.account-detail-header__meta-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 8px;
+}
+
+.account-detail-header__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 
-.account-header-model-badge {
-  background: var(--model-badge-bg);
-  color: var(--model-badge-text);
-  padding: 3px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
+.account-detail-header__status-dot--active {
+  background: #10b981;
+}
+.account-detail-header__status-dot--error {
+  background: #f87171;
+}
+.account-detail-header__status-dot--pending {
+  background: #f59e0b;
 }
 
-.account-header-accuracy {
-  display: inline-flex;
+.account-detail-header__sync-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* -- KPI row (4 columns for account detail) -- */
+.account-detail-section {
+  padding: 0 24px;
+  margin-bottom: 16px;
+}
+
+.account-detail-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* -- Tab bar -- */
+.account-detail-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 24px;
+  margin-bottom: 16px;
+}
+
+.account-detail-tab {
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.account-detail-tab--active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+
+.account-detail-tab--inactive {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.account-detail-tab--inactive:hover {
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+}
+
+/* -- Loading / empty -- */
+.account-detail-loading {
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 50%;
-  border: 3px solid;
-  font-size: 0.875rem;
-  font-weight: 700;
-  flex-shrink: 0;
+  padding: 60px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
-/* Model widgets row */
-.widget-row--model {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 1.25rem;
+/* -- Activities list -- */
+.account-activities {
+  padding: 0 24px;
+}
+
+.account-activities__empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* -- Dividends desktop/mobile toggle -- */
+.dividends-mobile-only {
+  display: none;
+}
+
+/* -- Dividend card styles -- */
+.dividend-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dividend-card:last-child {
+  border-bottom: none;
+}
+
+.dividend-card__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dividend-card__date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dividend-card__symbol {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dividend-card__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dividend-card__amount {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: #6ee7b7;
+}
+
+.dividend-card__currency {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ====== Mobile ====== */
+@media (max-width: 767px) {
+  .account-detail-page {
+    height: auto;
+    overflow-y: auto;
+  }
 }
 
 @media (max-width: 768px) {
-  .widget-row--model {
-    grid-template-columns: 1fr;
+  .account-breadcrumb {
+    padding: 12px 16px 4px;
+  }
+
+  .account-detail-header {
+    padding: 8px 16px 12px;
+  }
+
+  .account-detail-section {
+    padding: 0 16px;
+    margin-bottom: 12px;
+  }
+
+  .account-detail-kpi-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .account-detail-tabs {
+    padding: 0 16px;
+  }
+
+  .account-activities {
+    padding: 0 16px;
+  }
+
+  .dividends-desktop-only {
+    display: none;
+  }
+
+  .dividends-mobile-only {
+    display: block;
   }
 }
 
-@media (max-width: 600px) {
-  .account-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+@media (max-width: 480px) {
+  .account-detail-header__type {
+    font-size: 18px;
   }
 
-  .account-header-right {
-    align-self: flex-end;
+  .account-detail-header__icon {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
   }
 }

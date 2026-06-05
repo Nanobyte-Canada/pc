@@ -1,0 +1,165 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - uat
+          - prod
+      tag:
+        description: "Image tag to deploy (e.g., main-a1b2c3d)"
+        required: true
+        type: string
+
+env:
+  DEPLOY_PATH: /opt/portfolio
+  VAULT_ADDR: https://vault.nanobyte.ca
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Validate tag format
+        run: |
+          if [[ ! "${{ github.event.inputs.tag }}" =~ ^main-[a-f0-9]{7,}$ ]]; then
+            echo "::error::Invalid tag format. Expected: main-<short-sha> (e.g., main-a1b2c3d)"
+            exit 1
+          fi
+
+      - name: Fetch secrets from Vault
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          TAG="${{ github.event.inputs.tag }}"
+
+          echo "Authenticating to Vault..."
+          VAULT_TOKEN=$(curl -sf \
+            --request POST \
+            --data "{\"role_id\": \"${{ secrets.VAULT_ROLE_ID }}\", \"secret_id\": \"${{ secrets.VAULT_SECRET_ID }}\"}" \
+            "${VAULT_ADDR}/v1/auth/approle/login" | jq -r '.auth.client_token')
+
+          if [ -z "$VAULT_TOKEN" ] || [ "$VAULT_TOKEN" = "null" ]; then
+            echo "::error::Failed to authenticate to Vault — received null token"
+            exit 1
+          fi
+          echo "Vault authentication successful"
+
+          echo "Fetching secrets for environment: ${ENV}..."
+          SECRETS_JSON=$(curl -sf \
+            --header "X-Vault-Token: ${VAULT_TOKEN}" \
+            "${VAULT_ADDR}/v1/secret/data/portfolio/${ENV}" | jq -r '.data.data')
+
+          if [ -z "$SECRETS_JSON" ] || [ "$SECRETS_JSON" = "null" ]; then
+            echo "::error::Failed to fetch secrets from Vault — empty response"
+            exit 1
+          fi
+
+          # Generate .env file from Vault secrets
+          echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' > /tmp/deploy.env
+
+          # Append IMAGE_TAG
+          echo "IMAGE_TAG=${TAG}" >> /tmp/deploy.env
+
+          # Validate secrets
+          KEY_COUNT=$(wc -l < /tmp/deploy.env)
+          echo "Generated .env with ${KEY_COUNT} keys"
+
+          if [ "$KEY_COUNT" -lt 2 ]; then
+            echo "::error::Secrets validation failed — expected multiple keys, got ${KEY_COUNT}"
+            exit 1
+          fi
+
+          echo "Secrets fetched and validated successfully"
+
+      - name: Install cloudflared
+        run: |
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared.deb
+
+      - name: Configure SSH via Cloudflare Tunnel
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          cat >> ~/.ssh/config << EOF
+          Host portfolio-server
+            HostName ${{ secrets.SERVER_HOSTNAME }}
+            User deploy
+            IdentityFile ~/.ssh/deploy_key
+            ProxyCommand cloudflared access ssh --hostname %h
+          EOF
+
+      - name: Deploy to ${{ github.event.inputs.environment }}
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          TAG="${{ github.event.inputs.tag }}"
+
+          # Copy generated .env to server
+          echo "Uploading .env to server..."
+          scp /tmp/deploy.env portfolio-server:${DEPLOY_PATH}/${ENV}/.env
+
+          ssh portfolio-server << REMOTE_SCRIPT
+            set -euo pipefail
+            cd ${DEPLOY_PATH}/${ENV}
+
+            echo "=== Deploying ${TAG} to ${ENV} ==="
+
+            # Pull new images
+            echo "Pulling images..."
+            docker compose pull
+
+            # Restart services
+            echo "Starting services..."
+            docker compose up -d
+
+            # Wait for health checks
+            echo "Waiting for health checks..."
+            sleep 10
+
+            # Check container status
+            echo "Container status:"
+            docker compose ps
+
+            # Verify all containers are healthy/running
+            UNHEALTHY=\$(docker compose ps --format json | jq -r 'select(.Health != "healthy" and .Health != "" and .State != "running") | .Name' 2>/dev/null || true)
+            if [ -n "\$UNHEALTHY" ]; then
+              echo "WARNING: Unhealthy containers: \$UNHEALTHY"
+              docker compose logs --tail=50 \$UNHEALTHY
+              exit 1
+            fi
+
+            echo "=== Deploy complete ==="
+          REMOTE_SCRIPT
+
+      - name: Cleanup
+        if: always()
+        run: rm -f /tmp/deploy.env
+
+      - name: Post deploy summary
+        if: success()
+        run: |
+          echo "### Deploy Successful :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Environment:** ${{ github.event.inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Tag:** \`${{ github.event.inputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Secrets:** Fetched from Vault" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Triggered by:** ${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && ':rocket:' || ':x:' }} Deploy *${{ github.event.inputs.tag }}* to *${{ github.event.inputs.environment }}* ${{ job.status }}\nTriggered by: ${{ github.actor }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+            }

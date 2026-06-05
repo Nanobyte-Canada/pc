@@ -103,7 +103,8 @@ html.dark .screener-grid-card {
 }
 
 /* Override AG Grid border radius inside card */
-.screener-grid-card .ag-theme-quartz {
+.screener-grid-card .ag-theme-quartz,
+.screener-grid-card .ag-theme-quartz-dark {
   --ag-wrapper-border-radius: 0;
   --ag-border-radius: 0;
 }
