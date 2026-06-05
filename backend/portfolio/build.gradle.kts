@@ -92,9 +92,12 @@ kotlin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-    if (project.hasProperty("excludeIntegration")) {
-        exclude("**/integration/**")
-        exclude("**/ApplicationTest*")
+}
+
+if (project.hasProperty("excludeIntegration")) {
+    sourceSets.named("test") {
+        kotlin.exclude("**/integration/**")
+        kotlin.exclude("**/ApplicationTest.kt")
     }
 }
 
