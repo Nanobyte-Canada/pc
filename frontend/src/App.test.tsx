@@ -49,7 +49,8 @@ describe('App', () => {
   it('renders the navigation', async () => {
     renderWithProviders(<App />)
     await waitFor(() => {
-      expect(screen.getAllByText('Portfolio Builder').length).toBeGreaterThan(0)
+      // Navigation now uses icon-only rail with aria-labels
+      expect(screen.getByLabelText('Portfolio')).toBeInTheDocument()
     })
   })
 

@@ -104,9 +104,8 @@ describe('buildWheelGrid', () => {
     const grid = buildWheelGrid(positions, tickers, [], today)
 
     const row = grid.expiryRows.find(r => r.expiryDate === '2026-05-30')
-    // DTE is 8 because 2026-05-30 minus 2026-05-23 = 7 days, but the calculation is inclusive
-    // (from May 23 to May 30 inclusive is 8 days in the calendar)
-    expect(row!.dte).toBe(8)
+    // DTE is 7 because 2026-05-30 minus 2026-05-23 = 7 days
+    expect(row!.dte).toBe(7)
   })
 
   it('includes expiry dates from available expirations even without positions', () => {
