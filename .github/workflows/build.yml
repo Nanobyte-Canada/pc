@@ -3,6 +3,8 @@ name: Build & Push Images
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 env:
   REGISTRY: ghcr.io
@@ -76,6 +78,7 @@ jobs:
 
   build-and-push:
     name: Build & Push Docker Images
+    if: github.event_name == 'push'
     needs: [test-backend, test-frontend]
     runs-on: ubuntu-latest
     permissions:
