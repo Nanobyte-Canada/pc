@@ -15,7 +15,7 @@ Monorepo for a portfolio construction and analysis application using public ETFs
 | Broker | Broker Gateway Service (port 8084) |
 | Auth | Spring Security + JWT (HttpOnly cookies) + Google OAuth2 |
 | Ingestion | Separate Spring Boot 3.3.5 microservice (port 8081), `ingestion` schema |
-| Infra | Docker Compose (local), Terraform (GCP), Nginx (VPS) |
+| Infra | Docker Compose (local), Cloudflare Tunnel, GitHub Actions CI/CD |
 
 ## Reference Files
 
@@ -26,7 +26,7 @@ Monorepo for a portfolio construction and analysis application using public ETFs
 | [backend-services.md](backend-services.md) | All services, schedulers, adapters, configuration classes, and their responsibilities. Includes dependency injection patterns and key algorithms. |
 | [frontend-map.md](frontend-map.md) | Complete frontend directory: components, pages, hooks, stores, services, types, CSS files, and test coverage. |
 | [entity-relationships.md](entity-relationships.md) | JPA entities, DTOs, enum values, relationship graph, and the mapping between entities and database tables. |
-| [infrastructure.md](infrastructure.md) | Docker Compose, CI/CD workflows (GitHub Actions), Terraform modules, Nginx config, deploy scripts, and environment files. |
+| [infrastructure.md](infrastructure.md) | Docker Compose, CI/CD workflows (GitHub Actions), Cloudflare Tunnel, deploy scripts, and environment files. |
 | [configurations.md](configurations.md) | Spring profiles (local/dev/prod), all environment variables, feature flags, rate limit settings, security configuration, and Redis cache keys. |
 | [unused-legacy.md](unused-legacy.md) | Dead code, orphan database tables, redundant services, unused widgets, and deprecated migration artifacts. |
 | [improvements.md](improvements.md) | Improvement recommendations organized by priority and effort. Tracks completed items. |

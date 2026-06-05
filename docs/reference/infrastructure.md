@@ -1,6 +1,6 @@
 # Infrastructure Reference
 
-Complete infrastructure reference for the Portfolio Construction App. Covers architecture, Docker, CI/CD, Terraform, Nginx, scripts, and environment files.
+Complete infrastructure reference for the Portfolio Construction App. Covers architecture, Docker, CI/CD, Cloudflare Tunnel, scripts, and environment files.
 
 ---
 
