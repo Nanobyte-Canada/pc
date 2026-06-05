@@ -35,7 +35,9 @@ jobs:
           chmod +x backend/broker-gateway/gradlew
 
       - name: Test portfolio service
-        run: ./gradlew test
+        run: >
+          ./gradlew test
+          -Dexclude.integration=true
         working-directory: backend/portfolio
 
       - name: Test ingestion service

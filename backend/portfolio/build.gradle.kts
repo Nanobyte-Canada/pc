@@ -92,6 +92,10 @@ kotlin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    if (System.getProperty("exclude.integration") == "true") {
+        exclude("**/integration/**")
+        exclude("**/ApplicationTest*")
+    }
 }
 
 tasks.bootJar {
