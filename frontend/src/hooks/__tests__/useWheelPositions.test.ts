@@ -27,7 +27,7 @@ function makePosition(overrides: Partial<BrokerPosition> = {}): BrokerPosition {
 
 describe('buildWheelGrid', () => {
   const tickers = ['SOXL', 'TECL']
-  const today = new Date('2026-05-23')
+  const today = new Date('2026-05-23T00:00:00')
 
   it('places a CSP position in the correct cell', () => {
     const positions = [makePosition()]
@@ -149,7 +149,7 @@ describe('computeTickerTotals', () => {
       }),
     ]
     const tickers = ['SOXL']
-    const today = new Date('2026-05-23')
+    const today = new Date('2026-05-23T00:00:00')
     const fxRate = 1.40
     const grid = buildWheelGrid(positions, tickers, [], today, null, null, 0, {}, new Map(), fxRate)
     const totals = computeTickerTotals(grid, fxRate)
@@ -164,7 +164,7 @@ describe('computeTickerTotals', () => {
 
 describe('buildWheelGrid with symbol-parsed positions', () => {
   const tickers = ['SOXL', 'TQQQ']
-  const today = new Date('2026-05-23')
+  const today = new Date('2026-05-23T00:00:00')
 
   it('parses option data from symbol when fields are null', () => {
     const positions = [
