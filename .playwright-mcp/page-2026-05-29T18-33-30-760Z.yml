@@ -1,0 +1,224 @@
+- generic [ref=e23]:
+  - complementary [ref=e24]:
+    - navigation "Main navigation" [ref=e25]:
+      - generic [ref=e26]: P
+      - button "Portfolio" [ref=e27] [cursor=pointer]:
+        - img [ref=e28]
+      - button "Wheel" [ref=e33] [cursor=pointer]:
+        - img [ref=e34]
+      - button "Connections" [ref=e38] [cursor=pointer]:
+        - img [ref=e39]
+      - button "Toggle theme" [ref=e42] [cursor=pointer]:
+        - img [ref=e43]
+      - button "Admin settings" [ref=e49] [cursor=pointer]:
+        - img [ref=e50]
+      - button "User profile" [ref=e53] [cursor=pointer]: S
+  - main [ref=e55]:
+    - generic [ref=e56]:
+      - generic [ref=e58]:
+        - button "All Accounts" [ref=e59] [cursor=pointer]
+        - button "Q LIRA ••9683" [ref=e60] [cursor=pointer]:
+          - generic [ref=e61]: Q
+          - generic [ref=e62]: LIRA
+          - generic [ref=e63]: ••9683
+        - button "Q RRSP ••8214" [ref=e64] [cursor=pointer]:
+          - generic [ref=e65]: Q
+          - generic [ref=e66]: RRSP
+          - generic [ref=e67]: ••8214
+        - button "Q MARGIN ••4150" [ref=e68] [cursor=pointer]:
+          - generic [ref=e69]: Q
+          - generic [ref=e70]: MARGIN
+          - generic [ref=e71]: ••4150
+        - button "Q RRSP ••2736" [ref=e72] [cursor=pointer]:
+          - generic [ref=e73]: Q
+          - generic [ref=e74]: RRSP
+          - generic [ref=e75]: ••2736
+        - button "Q TFSA ••0190" [active] [ref=e76] [cursor=pointer]:
+          - generic [ref=e77]: Q
+          - generic [ref=e78]: TFSA
+          - generic [ref=e79]: ••0190
+      - generic [ref=e80]:
+        - heading "Portfolio" [level=1] [ref=e82]
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - img
+            - textbox "Search..." [ref=e85]
+          - button "Notifications" [ref=e86] [cursor=pointer]:
+            - img [ref=e87]
+          - button "Settings" [ref=e90] [cursor=pointer]:
+            - img [ref=e91]
+      - generic [ref=e95]:
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - generic [ref=e98]: Total Value
+            - img [ref=e100]
+          - generic [ref=e104]: C$ 128,090
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - generic [ref=e108]: Investment
+              - generic [ref=e109]: C$ 37,299.54
+            - generic [ref=e110]:
+              - generic [ref=e111]: Cash
+              - generic [ref=e112]: C$ 60,735.18
+              - generic [ref=e281]: US$ 18,072.46
+        - generic [ref=e114]:
+          - generic [ref=e115]:
+            - generic [ref=e116]: Buying Power
+            - img [ref=e118]
+          - generic [ref=e122]: C$ 39,697
+          - generic [ref=e124]:
+            - generic [ref=e125]: C$
+            - generic [ref=e126]: 39,696.86
+          - generic [ref=e282]:
+            - generic [ref=e283]: US$
+            - generic [ref=e284]: "0.00"
+        - generic [ref=e130]:
+          - generic [ref=e131]:
+            - generic [ref=e132]: Returns
+            - img [ref=e134]
+          - generic [ref=e136]: +C$ 45,740
+          - generic [ref=e138]:
+            - generic [ref=e139]: ROI
+            - generic [ref=e140]: +55.5%
+          - generic [ref=e141]:
+            - generic [ref=e142]: IRR
+            - generic [ref=e143]: +1000.0%
+          - generic [ref=e144]:
+            - generic [ref=e145]: Div Yield
+            - generic [ref=e146]: +0.9%
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - generic [ref=e149]: Sectors
+            - img [ref=e151]
+          - generic [ref=e288]:
+            - generic [ref=e289]: Unknown
+            - generic [ref=e290]: 100.0%
+      - generic [ref=e293]:
+        - button "Positions" [ref=e294] [cursor=pointer]
+        - button "Activities" [ref=e295] [cursor=pointer]
+        - button "Dividends" [ref=e296] [cursor=pointer]
+      - generic [ref=e298]:
+        - generic [ref=e299]:
+          - generic [ref=e300]:
+            - heading "Positions" [level=3] [ref=e301]
+            - generic [ref=e302]:
+              - button "Holdings" [ref=e303] [cursor=pointer]
+              - button "Orders" [ref=e304] [cursor=pointer]
+          - generic [ref=e305]:
+            - img
+            - textbox "Search..." [ref=e306]
+        - generic [ref=e308]:
+          - generic [ref=e309]: 1 to 7 of 8. Page 1 of 2
+          - treegrid [ref=e310]:
+            - rowgroup [ref=e311]:
+              - row "Symbol Market Value Qty Avg Cost Price P&L Weight" [ref=e312]:
+                - columnheader "Symbol" [ref=e313]:
+                  - text: 
+                  - generic [ref=e314] [cursor=pointer]: Symbol
+                  - text: 
+                  - generic:    
+                - columnheader "Market Value" [ref=e315]:
+                  - text: 
+                  - generic [ref=e316] [cursor=pointer]: Market Value
+                  - text: 
+                  - generic:    
+                - columnheader "Qty" [ref=e317]:
+                  - text: 
+                  - generic [ref=e318] [cursor=pointer]: Qty
+                  - text: 
+                  - generic:    
+                - columnheader "Avg Cost" [ref=e319]:
+                  - text: 
+                  - generic [ref=e320] [cursor=pointer]: Avg Cost
+                  - text: 
+                  - generic:    
+                - columnheader "Price" [ref=e321]:
+                  - text: 
+                  - generic [ref=e322] [cursor=pointer]: Price
+                  - text: 
+                  - generic:    
+                - columnheader "P&L" [ref=e323]:
+                  - text: 
+                  - generic [ref=e324] [cursor=pointer]: P&L
+                  - text: 
+                  - generic:    
+                - columnheader "Weight" [ref=e325]:
+                  - text: 
+                  - generic [ref=e326] [cursor=pointer]: Weight
+                  - text: 
+                  - generic:    
+            - rowgroup [ref=e327]:
+              - row "QQU.TO C$ 12,519.00 300 C$ 21.94 C$ 41.73 C$ 5,937.22 33.56%" [ref=e328]:
+                - gridcell "QQU.TO" [ref=e329]:
+                  - generic [ref=e331]: QQU.TO
+                - gridcell "C$ 12,519.00" [ref=e332]
+                - gridcell "300" [ref=e333]
+                - gridcell "C$ 21.94" [ref=e334]
+                - gridcell "C$ 41.73" [ref=e335]
+                - gridcell "C$ 5,937.22" [ref=e336]
+                - gridcell "33.56%" [ref=e337]
+              - row "SPXU.TO C$ 11,187.00 300 C$ 21.92 C$ 37.29 C$ 4,611.74 29.99%" [ref=e338]:
+                - gridcell "SPXU.TO" [ref=e339]:
+                  - generic [ref=e341]: SPXU.TO
+                - gridcell "C$ 11,187.00" [ref=e342]
+                - gridcell "300" [ref=e343]
+                - gridcell "C$ 21.92" [ref=e344]
+                - gridcell "C$ 37.29" [ref=e345]
+                - gridcell "C$ 4,611.74" [ref=e346]
+                - gridcell "29.99%" [ref=e347]
+              - row "TECL C$ 9,246.54 38 C$ 82.79 C$ 243.33 C$ 6,100.61 24.79%" [ref=e348]:
+                - gridcell "TECL" [ref=e349]:
+                  - generic [ref=e351]: TECL
+                - gridcell "C$ 9,246.54" [ref=e352]
+                - gridcell "38" [ref=e353]
+                - gridcell "C$ 82.79" [ref=e354]
+                - gridcell "C$ 243.33" [ref=e355]
+                - gridcell "C$ 6,100.61" [ref=e356]
+                - gridcell "24.79%" [ref=e357]
+              - row "TQQQ C$ 8,473.00 100 C$ 40.00 C$ 84.73 C$ 4,473.00 22.72%" [ref=e358]:
+                - gridcell "TQQQ" [ref=e359]:
+                  - generic [ref=e361]: TQQQ
+                - gridcell "C$ 8,473.00" [ref=e362]
+                - gridcell "100" [ref=e363]
+                - gridcell "C$ 40.00" [ref=e364]
+                - gridcell "C$ 84.73" [ref=e365]
+                - gridcell "C$ 4,473.00" [ref=e366]
+                - gridcell "22.72%" [ref=e367]
+              - row "SOXL29May26P70.00 C$ -1.00 -1 C$ 2.90 C$ 1.00 C$ 289.00 -0.00%" [ref=e368]:
+                - gridcell "SOXL29May26P70.00" [ref=e369]:
+                  - generic [ref=e371]: SOXL29May26P70.00
+                - gridcell "C$ -1.00" [ref=e372]
+                - gridcell "-1" [ref=e373]
+                - gridcell "C$ 2.90" [ref=e374]
+                - gridcell "C$ 1.00" [ref=e375]
+                - gridcell "C$ 289.00" [ref=e376]
+                - gridcell "-0.00%" [ref=e377]
+              - row "TECL18Jun26P140.00 C$ -80.00 -1 C$ 4.40 C$ 80.00 C$ 360.00 -0.21%" [ref=e378]:
+                - gridcell "TECL18Jun26P140.00" [ref=e379]:
+                  - generic [ref=e381]: TECL18Jun26P140.00
+                - gridcell "C$ -80.00" [ref=e382]
+                - gridcell "-1" [ref=e383]
+                - gridcell "C$ 4.40" [ref=e384]
+                - gridcell "C$ 80.00" [ref=e385]
+                - gridcell "C$ 360.00" [ref=e386]
+                - gridcell "-0.21%" [ref=e387]
+              - row "SOXL18Jun26P120.00 C$ -235.00 -1 C$ 9.60 C$ 235.00 C$ 725.00 -0.63%" [ref=e388]:
+                - gridcell "SOXL18Jun26P120.00" [ref=e389]:
+                  - generic [ref=e391]: SOXL18Jun26P120.00
+                - gridcell "C$ -235.00" [ref=e392]
+                - gridcell "-1" [ref=e393]
+                - gridcell "C$ 9.60" [ref=e394]
+                - gridcell "C$ 235.00" [ref=e395]
+                - gridcell "C$ 725.00" [ref=e396]
+                - gridcell "-0.63%" [ref=e397]
+            - rowgroup
+            - rowgroup [ref=e398]
+            - rowgroup
+          - generic [ref=e399]:
+            - text: 
+            - generic [ref=e400]: 1 to 7 of 8
+            - button "First Page" [disabled] [ref=e401]: 
+            - button "Previous Page" [disabled] [ref=e402]: 
+            - generic [ref=e403]: Page 1 of 2
+            - button "Next Page" [ref=e404] [cursor=pointer]: 
+            - button "Last Page" [ref=e405] [cursor=pointer]: 

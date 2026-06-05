@@ -53,8 +53,7 @@ function formatDate(value: string | null | undefined): string {
   }
 }
 
-/** Safely get a numeric value from a record */
-function num(obj: Record<string, any> | null | undefined, key: string): number | null {
+function num(obj: Record<string, unknown> | null | undefined, key: string): number | null {
   if (!obj) return null;
   const v = obj[key];
   if (v == null || v === '' || v === 'None' || v === 'N/A') return null;
@@ -62,8 +61,7 @@ function num(obj: Record<string, any> | null | undefined, key: string): number |
   return isNaN(n) ? null : n;
 }
 
-/** Safely get a string value from a record */
-function str(obj: Record<string, any> | null | undefined, key: string): string | null {
+function str(obj: Record<string, unknown> | null | undefined, key: string): string | null {
   if (!obj) return null;
   const v = obj[key];
   if (v == null || v === '' || v === 'None' || v === 'N/A') return null;
@@ -200,10 +198,9 @@ const CASHFLOW_ROWS: FinancialRow[] = [
 ];
 
 function getFinancialYears(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  statements: Record<string, any> | null | undefined,
+  statements: Record<string, unknown> | null | undefined,
   period: FinPeriod
-): { dates: string[]; data: Record<string, Record<string, any>> } {
+): { dates: string[]; data: Record<string, Record<string, unknown>> } {
   if (!statements) return { dates: [], data: {} };
 
   const periodData = period === 'annual' ? statements.yearly : statements.quarterly;
@@ -250,8 +247,7 @@ function RevenueBreakdownChart({
   setPeriod,
   chartTheme,
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  financials: Record<string, any>;
+  financials: Record<string, unknown>;
   period: FinPeriod;
   setPeriod: (p: FinPeriod) => void;
   chartTheme: ReturnType<typeof useChartTheme>;
@@ -351,8 +347,7 @@ function YoYTable({
   tab,
   setTab,
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  financials: Record<string, any>;
+  financials: Record<string, unknown>;
   period: FinPeriod;
   tab: FinTab;
   setTab: (t: FinTab) => void;
@@ -493,7 +488,7 @@ function ValuationBarChart({
   valuation,
   chartTheme,
 }: {
-  valuation: Record<string, any> | null;
+  valuation: Record<string, unknown> | null;
   chartTheme: ReturnType<typeof useChartTheme>;
 }) {
   const chartData = useMemo(() => {
@@ -566,8 +561,8 @@ function MarginTrends({
   highlights,
   financials,
 }: {
-  highlights: Record<string, any> | null;
-  financials: Record<string, any> | null;
+  highlights: Record<string, unknown> | null;
+  financials: Record<string, unknown> | null;
 }) {
   // Compute margins from financials yearly data
   const margins = useMemo(() => {
@@ -821,7 +816,7 @@ function DividendHistoryPanel({
   splitsDividends,
   chartTheme,
 }: {
-  splitsDividends: Record<string, any> | null;
+  splitsDividends: Record<string, unknown> | null;
   chartTheme: ReturnType<typeof useChartTheme>;
 }) {
   const chartData = useMemo(() => {
@@ -918,7 +913,7 @@ function OwnershipDonutPanel({
   sharesStats,
   chartTheme,
 }: {
-  sharesStats: Record<string, any> | null;
+  sharesStats: Record<string, unknown> | null;
   chartTheme: ReturnType<typeof useChartTheme>;
 }) {
   const donutData = useMemo(() => {
@@ -961,7 +956,7 @@ function OwnershipDonutPanel({
                 }),
               },
             },
-          ] as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+          ],
           legend: { enabled: false },
         }
       : null;

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Screen 3 — Order</title>
+<style>
+  :root {
+    --bg-primary: #0a0f1a;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #10b981;
+    --success-text: #6ee7b7;
+    --danger-text: #f87171;
+    --border: rgba(255,255,255,0.06);
+    --border-hover: rgba(255,255,255,0.1);
+    --csp-bg: rgba(99,102,241,0.08);
+    --csp-border: rgba(99,102,241,0.3);
+    --cc-bg: rgba(249,115,22,0.08);
+    --cc-border: rgba(249,115,22,0.3);
+    --indigo-text: #818cf8;
+    --orange-text: #fb923c;
+    --font-mono: 'JetBrains Mono', 'source-code-pro', Menlo, Monaco, Consolas, monospace;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-xl: 16px;
+    --transition-fast: 150ms ease-out;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#060a14; color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:16px; }
+  .layout { display:flex; gap:20px; align-items:flex-start; }
+  .viewport-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); text-align:center; margin-bottom:8px; font-weight:500; }
+
+  /* ===== DESKTOP ===== */
+  .desktop-frame { flex:1; max-width:1100px; background:var(--bg-primary); border-radius:12px; border:1.5px solid rgba(255,255,255,0.05); overflow:hidden; display:flex; height:720px; }
+  .icon-rail { width:48px; background:var(--bg-secondary); border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; padding:12px 0; gap:4px; flex-shrink:0; }
+  .ir-logo { width:28px; height:28px; border-radius:8px; background:rgba(16,185,129,0.15); color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; margin-bottom:12px; }
+  .ir-btn { width:36px; height:36px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .ir-btn--active { background:rgba(16,185,129,0.12); color:var(--accent); }
+  .ir-spacer { flex:1; }
+  .ir-avatar { width:28px; height:28px; border-radius:50%; background:rgba(16,185,129,0.15); color:var(--success-text); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; }
+  .desktop-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .desktop-content { padding:0 24px; flex:1; display:flex; overflow:hidden; gap:16px; }
+
+  /* Grid area (compressed, same as screen 2) */
+  .grid-area { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+  .page-header { display:flex; align-items:center; padding:8px 0 12px; }
+  .page-title { font-size:22px; font-weight:700; color:var(--text-primary); }
+  .kpi-strip { display:flex; gap:12px; margin-bottom:10px; flex-shrink:0; font-size:11px; }
+  .kpi-strip__item { color:var(--text-muted); }
+  .kpi-strip__val { font-family:var(--font-mono); color:var(--text-secondary); font-weight:500; }
+  .kpi-strip__sep { color:rgba(255,255,255,0.08); }
+  .gw { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:0; }
+  .gs { overflow:auto; flex:1; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { padding:6px 8px; font-size:8px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); font-weight:500; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg-secondary); z-index:2; }
+  th.tc { text-align:left; width:90px; position:sticky; left:0; z-index:3; }
+  th.ec { text-align:center; min-width:100px; }
+  .ed { font-size:10px; font-weight:600; color:var(--text-primary); text-transform:none; letter-spacing:0; }
+  .em { display:flex; align-items:center; justify-content:center; gap:3px; margin-top:1px; }
+  .dte { padding:0px 4px; border-radius:3px; font-size:7px; font-weight:600; }
+  .dte--c { background:rgba(248,113,113,0.2); color:var(--danger-text); }
+  .dte--s { background:rgba(16,185,129,0.15); color:var(--success-text); }
+  tbody td { padding:3px 5px; vertical-align:top; border-bottom:1px solid rgba(255,255,255,0.025); }
+  td.tkc { padding:5px 8px; position:sticky; left:0; background:var(--bg-secondary); z-index:1; }
+  .tk-name { font-size:11px; font-weight:700; color:var(--text-primary); }
+  .tk-price { font-size:8px; color:var(--text-secondary); font-family:var(--font-mono); }
+  .pc { border-radius:4px; padding:4px 6px; cursor:pointer; }
+  .pc--csp { background:var(--csp-bg); border:1px solid var(--csp-border); }
+  .pc--cc { background:var(--cc-bg); border:1px solid var(--cc-border); }
+  .pc__r { display:flex; justify-content:space-between; align-items:center; }
+  .pc__s { font-weight:600; font-family:var(--font-mono); font-size:9px; }
+  .pc__s--csp { color:var(--indigo-text); }
+  .pc__s--cc { color:var(--orange-text); }
+  .pc__p { font-family:var(--font-mono); font-size:8px; }
+  .pc__p--pos { color:var(--success-text); }
+  .pc__p--neg { color:var(--danger-text); }
+  .es { display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:4px; padding:8px; cursor:pointer; color:var(--text-muted); font-size:12px; }
+  .ce { background:rgba(248,113,113,0.03); }
+  /* Selected position highlighted */
+  .pc--selected { border:2px solid var(--indigo-text) !important; box-shadow:0 0 8px rgba(99,102,241,0.2); }
+
+  /* ===== ORDER PANEL ===== */
+  .order-panel { width:340px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-md); display:flex; flex-direction:column; overflow-y:auto; flex-shrink:0; }
+  .op-inner { display:flex; flex-direction:column; gap:12px; padding:16px; }
+
+  /* Header */
+  .op-header { display:flex; justify-content:space-between; align-items:flex-start; }
+  .op-header__text { display:flex; flex-direction:column; gap:2px; }
+  .op-symbol { font-size:16px; font-weight:700; color:var(--text-primary); letter-spacing:-0.3px; }
+  .op-desc { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .op-close { background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:4px; border-radius:var(--radius-sm); font-size:16px; }
+
+  /* Quote */
+  .op-quote { display:flex; flex-direction:column; gap:8px; }
+  .op-quote__main { display:flex; align-items:baseline; gap:8px; }
+  .op-quote__price { font-size:20px; font-family:var(--font-mono); font-weight:700; color:var(--text-primary); letter-spacing:-0.5px; }
+  .op-quote__change { font-size:13px; font-family:var(--font-mono); font-weight:500; }
+  .op-quote__cards { display:flex; gap:6px; }
+  .op-quote__card { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:5px; padding:6px; }
+  .op-quote__card-label { font-size:8px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); }
+  .op-quote__card-value { font-size:11px; font-family:var(--font-mono); font-weight:500; color:var(--text-primary); }
+
+  /* Contract section */
+  .op-section { display:flex; flex-direction:column; gap:4px; }
+  .op-contract-title { font-size:11px; font-weight:600; color:var(--text-secondary); letter-spacing:-0.2px; margin-bottom:2px; }
+  .op-contract-last { font-size:10px; color:var(--text-muted); margin-bottom:8px; }
+  .op-contract-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .op-field { display:flex; flex-direction:column; gap:3px; }
+  .op-label { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); font-weight:500; }
+  .op-select-wrap { position:relative; display:flex; align-items:center; }
+  .op-select { width:100%; padding:6px 26px 6px 10px; border-radius:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); font-size:12px; font-family:inherit; color:var(--text-primary); cursor:pointer; appearance:none; -webkit-appearance:none; outline:none; }
+  .op-select-chevron { position:absolute; right:8px; color:var(--text-muted); font-size:10px; pointer-events:none; }
+
+  /* Stepper */
+  .op-stepper { display:flex; align-items:center; border-radius:5px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); width:fit-content; }
+  .op-stepper__btn { display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.06); border:none; color:var(--text-secondary); cursor:pointer; padding:7px 14px; font-size:14px; }
+  .op-stepper__val { min-width:40px; text-align:center; font-family:var(--font-mono); font-weight:600; font-size:13px; color:var(--text-primary); padding:7px 4px; background:rgba(255,255,255,0.02); }
+
+  /* Price input */
+  .op-price-wrap { display:flex; align-items:center; border-radius:5px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04); overflow:hidden; }
+  .op-price-currency { font-size:11px; font-weight:600; color:var(--text-muted); padding:6px 0 6px 10px; white-space:nowrap; }
+  .op-price-input { flex:1; background:none; border:none; outline:none; font-family:var(--font-mono); font-size:12px; font-weight:500; color:var(--text-primary); padding:6px 10px 6px 6px; }
+
+  /* Account selector */
+  .op-account { display:flex; flex-direction:column; gap:4px; }
+  .op-account__row { display:flex; align-items:center; gap:8px; }
+  .op-broker-icon { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; font-size:11px; font-weight:700; background:#1a5c3a; color:#4ade80; flex-shrink:0; }
+  .op-account__select-wrap { flex:1; min-width:0; }
+  .op-buying-power { display:flex; justify-content:flex-end; padding-top:4px; }
+  .op-buying-power__val { font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--text-secondary); }
+
+  /* Estimated total */
+  .op-estimated { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid var(--border); }
+  .op-estimated__label { font-size:12px; font-weight:500; color:var(--text-secondary); }
+  .op-estimated__value { font-family:var(--font-mono); font-size:14px; font-weight:700; color:var(--text-primary); }
+
+  /* Action buttons */
+  .op-actions { display:flex; gap:8px; }
+  .op-action { flex:1; padding:10px 0; border-radius:var(--radius-sm); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; letter-spacing:0.3px; }
+  .op-action--buy { background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; }
+  .op-action--sell { background:rgba(248,113,113,0.15); border:1px solid rgba(248,113,113,0.3); color:#f87171; }
+
+  /* ===== MOBILE ===== */
+  .mobile-frame { width:375px; height:860px; background:var(--bg-primary); border-radius:24px; border:1.5px solid rgba(255,255,255,0.05); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; position:relative; }
+  .m-bg { flex:1; padding:10px 16px; opacity:0.3; pointer-events:none; overflow:hidden; }
+  .m-bg__title { font-size:18px; font-weight:700; color:var(--text-primary); margin-bottom:8px; }
+  .m-bg__kpi { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .m-bg__card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-md); padding:8px 10px; }
+  .m-bg__label { font-size:8px; text-transform:uppercase; color:var(--text-secondary); }
+  .m-bg__val { font-size:14px; font-weight:700; font-family:var(--font-mono); color:var(--text-primary); margin-top:2px; }
+
+  .m-modal-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:flex-end; z-index:10; border-radius:24px; overflow:hidden; }
+  .m-modal { width:100%; max-height:90%; background:var(--bg-secondary); border-radius:var(--radius-xl) var(--radius-xl) 0 0; display:flex; flex-direction:column; overflow:hidden; }
+  .m-modal__handle { width:36px; height:4px; border-radius:2px; background:rgba(255,255,255,0.15); margin:10px auto 6px; flex-shrink:0; }
+
+  .m-modal__scroll { overflow-y:auto; flex:1; padding:0 16px 80px; }
+
+  /* Mobile order form */
+  .m-op-header { display:flex; justify-content:space-between; align-items:flex-start; padding:0 0 12px; }
+  .m-op-symbol { font-size:18px; font-weight:700; color:var(--text-primary); }
+  .m-op-desc { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+
+  .m-op-quote { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+  .m-op-quote__main { display:flex; align-items:baseline; gap:8px; }
+  .m-op-quote__price { font-size:22px; font-family:var(--font-mono); font-weight:700; color:var(--text-primary); }
+  .m-op-quote__change { font-size:12px; font-family:var(--font-mono); }
+  .m-op-quote__cards { display:flex; gap:6px; }
+  .m-op-quote__card { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:5px; padding:6px; }
+  .m-op-quote__card-label { font-size:8px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); }
+  .m-op-quote__card-value { font-size:12px; font-family:var(--font-mono); font-weight:500; color:var(--text-primary); }
+
+  .m-op-contract { font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:2px; }
+  .m-op-last { font-size:10px; color:var(--text-muted); margin-bottom:10px; }
+  .m-op-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+  .m-op-field { display:flex; flex-direction:column; gap:3px; }
+  .m-op-label { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); font-weight:500; }
+  .m-op-select { width:100%; padding:8px 10px; border-radius:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); font-size:13px; font-family:inherit; color:var(--text-primary); appearance:none; }
+
+  .m-op-stepper { display:flex; align-items:center; border-radius:5px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); width:fit-content; margin-bottom:12px; }
+  .m-op-stepper__btn { background:rgba(255,255,255,0.06); border:none; color:var(--text-secondary); cursor:pointer; padding:8px 16px; font-size:16px; }
+  .m-op-stepper__val { min-width:44px; text-align:center; font-family:var(--font-mono); font-weight:600; font-size:14px; color:var(--text-primary); padding:8px 4px; }
+
+  .m-op-price-wrap { display:flex; align-items:center; border-radius:5px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04); overflow:hidden; margin-bottom:12px; }
+  .m-op-price-currency { font-size:12px; font-weight:600; color:var(--text-muted); padding:8px 0 8px 12px; }
+  .m-op-price-input { flex:1; background:none; border:none; outline:none; font-family:var(--font-mono); font-size:14px; font-weight:500; color:var(--text-primary); padding:8px 12px 8px 6px; }
+
+  .m-op-account { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .m-op-broker-icon { width:30px; height:30px; border-radius:6px; background:#1a5c3a; color:#4ade80; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+  .m-op-account-info { flex:1; }
+  .m-op-account-name { font-size:12px; color:var(--text-primary); font-weight:500; }
+  .m-op-account-bp { font-size:10px; font-family:var(--font-mono); color:var(--text-secondary); margin-top:1px; }
+
+  .m-op-estimated { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid var(--border); margin-bottom:12px; }
+  .m-op-estimated__label { font-size:13px; font-weight:500; color:var(--text-secondary); }
+  .m-op-estimated__value { font-family:var(--font-mono); font-size:16px; font-weight:700; color:var(--text-primary); }
+
+  .m-op-actions { display:flex; gap:8px; }
+  .m-op-action { flex:1; padding:12px 0; border-radius:var(--radius-sm); font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:center; }
+  .m-op-action--buy { background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; }
+  .m-op-action--sell { background:rgba(248,113,113,0.15); border:1px solid rgba(248,113,113,0.3); color:#f87171; }
+
+  .btabs { display:flex; border-top:1px solid var(--border); background:var(--bg-secondary); padding:8px 0 20px; flex-shrink:0; position:relative; z-index:0; }
+  .btab { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--text-muted); font-size:9px; cursor:pointer; }
+  .btab--active { color:var(--accent); }
+  .btab__icon { font-size:18px; }
+
+  /* Navigation flow diagram */
+  .flow { padding:12px 0; font-size:10px; color:var(--text-muted); text-align:center; }
+  .flow__arrow { color:var(--indigo-text); margin:0 6px; }
+  .flow__active { color:var(--success-text); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- DESKTOP -->
+  <div>
+    <div class="viewport-label">Desktop — Order panel (from clicking position card on Screen 1)</div>
+    <div class="flow">Screen 1 <span class="flow__arrow">→</span> click $100 Put <span class="flow__arrow">→</span> <span class="flow__active">Screen 3: Order</span></div>
+    <div class="desktop-frame">
+      <nav class="icon-rail">
+        <div class="ir-logo">P</div>
+        <button class="ir-btn">&#9633;</button>
+        <button class="ir-btn ir-btn--active">&#9678;</button>
+        <button class="ir-btn">&#128279;</button>
+        <div class="ir-spacer"></div>
+        <button class="ir-btn">&#9788;</button>
+        <button class="ir-btn">&#9881;</button>
+        <div class="ir-avatar">S</div>
+      </nav>
+      <div class="desktop-main">
+        <div class="desktop-content" style="padding-top:16px;">
+          <!-- Grid (compressed) -->
+          <div class="grid-area">
+            <div class="page-header"><h1 class="page-title">Wheel Strategy</h1></div>
+            <div class="kpi-strip">
+              <span class="kpi-strip__item">Capital <span class="kpi-strip__val">C$ 79,834</span></span>
+              <span class="kpi-strip__sep">|</span>
+              <span class="kpi-strip__item">P&L <span class="kpi-strip__val" style="color:var(--danger-text);">-US$ 1,386</span></span>
+            </div>
+            <div class="gw">
+              <div class="gs">
+                <table>
+                  <thead><tr>
+                    <th class="tc">Ticker</th>
+                    <th class="ec" style="background:rgba(248,113,113,0.03);"><div class="ed">May 29</div><div class="em"><span class="dte dte--c">0d</span></div></th>
+                    <th class="ec"><div class="ed">Jun 19</div><div class="em"><span class="dte dte--s">21d</span></div></th>
+                  </tr></thead>
+                  <tbody>
+                    <tr><td class="tkc"><div class="tk-name">SOXL</div><div class="tk-price">$676</div></td>
+                      <td class="ce"><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$70P</span><span class="pc__p pc__p--pos">+$289</span></div></div></td>
+                      <td><div style="display:flex;flex-direction:column;gap:2px;"><div class="pc pc--csp pc--selected"><div class="pc__r"><span class="pc__s pc__s--csp">$100P</span><span class="pc__p pc__p--pos">+$382</span></div></div><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$120P</span><span class="pc__p pc__p--pos">+$743</span></div></div></div></td>
+                    </tr>
+                    <tr><td class="tkc"><div class="tk-name">TECL</div><div class="tk-price">$256</div></td>
+                      <td class="ce"><div class="es">+</div></td>
+                      <td><div class="pc pc--cc"><div class="pc__r"><span class="pc__s pc__s--cc">$140C</span><span class="pc__p pc__p--pos">+$344</span></div></div></td>
+                    </tr>
+                    <tr><td class="tkc"><div class="tk-name">TQQQ</div><div class="tk-price">$827</div></td>
+                      <td class="ce"><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$45P</span><span class="pc__p pc__p--pos">+$124</span></div></div></td>
+                      <td><div style="display:flex;flex-direction:column;gap:2px;"><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$57P</span><span class="pc__p pc__p--pos">+$94</span></div></div><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$48P</span><span class="pc__p pc__p--neg">-$3.4k</span></div></div></div></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Panel -->
+          <div class="order-panel">
+            <div class="op-inner">
+              <!-- 1. Header -->
+              <div class="op-header">
+                <div class="op-header__text">
+                  <span class="op-symbol">SOXL</span>
+                  <span class="op-desc">Cash-Secured Put</span>
+                </div>
+                <button class="op-close">&#10005;</button>
+              </div>
+
+              <!-- 2. Live Quote -->
+              <div class="op-quote">
+                <div class="op-quote__main">
+                  <span class="op-quote__price">$676.00</span>
+                  <span class="op-quote__change" style="color:var(--success-text);">+$382.00</span>
+                </div>
+                <div class="op-quote__cards">
+                  <div class="op-quote__card"><span class="op-quote__card-label">Bid</span><span class="op-quote__card-value">$4.80</span></div>
+                  <div class="op-quote__card"><span class="op-quote__card-label">Mid</span><span class="op-quote__card-value">$5.00</span></div>
+                  <div class="op-quote__card"><span class="op-quote__card-label">Ask</span><span class="op-quote__card-value">$5.20</span></div>
+                </div>
+              </div>
+
+              <!-- 3. Contract -->
+              <div class="op-section">
+                <div class="op-contract-title">SOXL 19 Jun 2026 100 Put</div>
+                <div class="op-contract-last">Last: US$500.00</div>
+                <div class="op-contract-grid">
+                  <div class="op-field">
+                    <span class="op-label">Option Type</span>
+                    <div class="op-select-wrap"><select class="op-select"><option selected>Put</option><option>Call</option></select><span class="op-select-chevron">&#9660;</span></div>
+                  </div>
+                  <div class="op-field">
+                    <span class="op-label">Expiration</span>
+                    <div class="op-select-wrap"><select class="op-select"><option selected>19 Jun 2026</option></select><span class="op-select-chevron">&#9660;</span></div>
+                  </div>
+                  <div class="op-field">
+                    <span class="op-label">Strike</span>
+                    <div class="op-select-wrap"><select class="op-select"><option selected>100.00</option></select><span class="op-select-chevron">&#9660;</span></div>
+                  </div>
+                  <div class="op-field">
+                    <span class="op-label">Order Type</span>
+                    <div class="op-select-wrap"><select class="op-select"><option selected>Limit</option><option>Market</option></select><span class="op-select-chevron">&#9660;</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. Quantity -->
+              <div class="op-section">
+                <span class="op-label">Quantity</span>
+                <div class="op-stepper">
+                  <button class="op-stepper__btn">−</button>
+                  <span class="op-stepper__val">1</span>
+                  <button class="op-stepper__btn">+</button>
+                </div>
+              </div>
+
+              <!-- 5. Limit Price -->
+              <div class="op-section">
+                <span class="op-label">Limit Price</span>
+                <div class="op-price-wrap">
+                  <span class="op-price-currency">US$</span>
+                  <input class="op-price-input" value="5.00" readonly>
+                </div>
+              </div>
+
+              <!-- 6. Duration -->
+              <div class="op-section">
+                <span class="op-label">Duration</span>
+                <div class="op-select-wrap"><select class="op-select"><option selected>Day</option><option>GTC</option></select><span class="op-select-chevron">&#9660;</span></div>
+              </div>
+
+              <!-- 7. Account -->
+              <div class="op-account">
+                <span class="op-label">Account</span>
+                <div class="op-account__row">
+                  <span class="op-broker-icon">Q</span>
+                  <div class="op-account__select-wrap">
+                    <select class="op-select"><option selected>QUESTRADE TFSA ••0190</option></select>
+                  </div>
+                </div>
+                <div class="op-buying-power"><span class="op-buying-power__val">US$ 33,108</span></div>
+              </div>
+
+              <!-- 8. Estimated Total -->
+              <div class="op-estimated">
+                <span class="op-estimated__label">Estimated Total</span>
+                <span class="op-estimated__value">US$ 500.00</span>
+              </div>
+
+              <!-- 9. Actions -->
+              <div class="op-actions">
+                <button class="op-action op-action--buy">Buy</button>
+                <button class="op-action op-action--sell">Sell</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE -->
+  <div>
+    <div class="viewport-label">Mobile — Order bottom sheet (from clicking position or strike)</div>
+    <div class="flow">Screen 1/2 <span class="flow__arrow">→</span> <span class="flow__active">Screen 3: Order</span></div>
+    <div class="mobile-frame">
+      <div class="m-bg">
+        <div class="m-bg__title">Wheel Strategy</div>
+        <div class="m-bg__kpi">
+          <div class="m-bg__card"><div class="m-bg__label">Capital</div><div class="m-bg__val">C$ 79,834</div></div>
+          <div class="m-bg__card"><div class="m-bg__label">P&L</div><div class="m-bg__val" style="color:var(--danger-text);">-US$ 1,386</div></div>
+        </div>
+      </div>
+      <div class="m-modal-overlay">
+        <div class="m-modal">
+          <div class="m-modal__handle"></div>
+          <div class="m-modal__scroll">
+            <!-- Header -->
+            <div class="m-op-header">
+              <div>
+                <div class="m-op-symbol">SOXL</div>
+                <div class="m-op-desc">Cash-Secured Put</div>
+              </div>
+            </div>
+
+            <!-- Quote -->
+            <div class="m-op-quote">
+              <div class="m-op-quote__main">
+                <span class="m-op-quote__price">$676.00</span>
+                <span class="m-op-quote__change" style="color:var(--success-text);">+$382.00</span>
+              </div>
+              <div class="m-op-quote__cards">
+                <div class="m-op-quote__card"><span class="m-op-quote__card-label">Bid</span><span class="m-op-quote__card-value">$4.80</span></div>
+                <div class="m-op-quote__card"><span class="m-op-quote__card-label">Mid</span><span class="m-op-quote__card-value">$5.00</span></div>
+                <div class="m-op-quote__card"><span class="m-op-quote__card-label">Ask</span><span class="m-op-quote__card-value">$5.20</span></div>
+              </div>
+            </div>
+
+            <!-- Contract -->
+            <div class="m-op-contract">SOXL 19 Jun 2026 100 Put</div>
+            <div class="m-op-last">Last: US$500.00</div>
+            <div class="m-op-grid">
+              <div class="m-op-field"><span class="m-op-label">Option Type</span><select class="m-op-select"><option selected>Put</option></select></div>
+              <div class="m-op-field"><span class="m-op-label">Expiration</span><select class="m-op-select"><option selected>19 Jun 2026</option></select></div>
+              <div class="m-op-field"><span class="m-op-label">Strike</span><select class="m-op-select"><option selected>100.00</option></select></div>
+              <div class="m-op-field"><span class="m-op-label">Order Type</span><select class="m-op-select"><option selected>Limit</option></select></div>
+            </div>
+
+            <!-- Quantity -->
+            <div style="margin-bottom:12px;">
+              <span class="m-op-label">Quantity</span>
+              <div class="m-op-stepper" style="margin-top:4px;">
+                <button class="m-op-stepper__btn">−</button>
+                <span class="m-op-stepper__val">1</span>
+                <button class="m-op-stepper__btn">+</button>
+              </div>
+            </div>
+
+            <!-- Limit Price + Duration side by side -->
+            <div class="m-op-grid">
+              <div class="m-op-field">
+                <span class="m-op-label">Limit Price</span>
+                <div class="m-op-price-wrap" style="margin-bottom:0;">
+                  <span class="m-op-price-currency">US$</span>
+                  <input class="m-op-price-input" value="5.00" readonly>
+                </div>
+              </div>
+              <div class="m-op-field">
+                <span class="m-op-label">Duration</span>
+                <select class="m-op-select"><option selected>Day</option><option>GTC</option></select>
+              </div>
+            </div>
+
+            <!-- Account -->
+            <div class="m-op-account" style="margin-top:12px;">
+              <span class="m-op-broker-icon">Q</span>
+              <div class="m-op-account-info">
+                <div class="m-op-account-name">QUESTRADE TFSA ••0190</div>
+                <div class="m-op-account-bp">US$ 33,108</div>
+              </div>
+            </div>
+
+            <!-- Estimated Total -->
+            <div class="m-op-estimated">
+              <span class="m-op-estimated__label">Estimated Total</span>
+              <span class="m-op-estimated__value">US$ 500.00</span>
+            </div>
+
+            <!-- Actions -->
+            <div class="m-op-actions">
+              <button class="m-op-action m-op-action--buy">Buy</button>
+              <button class="m-op-action m-op-action--sell">Sell</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="btabs">
+        <div class="btab"><span class="btab__icon">&#9633;</span>Portfolio</div>
+        <div class="btab btab--active"><span class="btab__icon">&#9678;</span>Wheel</div>
+        <div class="btab"><span class="btab__icon">&#128279;</span>Connections</div>
+        <div class="btab"><span class="btab__icon">&#8943;</span>More</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

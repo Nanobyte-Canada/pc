@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC Opportunities — Two Options</title>
+<style>
+  :root {
+    --bg-primary: #0c1220;
+    --bg-secondary: #111a2e;
+    --border: rgba(255,255,255,0.06);
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg-primary); color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:24px; }
+
+  h2 { font-size:18px; font-weight:700; margin-bottom:4px; }
+  .subtitle { font-size:12px; color:var(--text-secondary); margin-bottom:20px; }
+  .option-label { font-size:14px; font-weight:700; color:#e2e8f0; margin:24px 0 8px; display:flex; align-items:center; gap:8px; }
+  .option-label span { background:rgba(99,102,241,0.2); color:#a78bfa; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+
+  .grid-wrapper { background:var(--bg-secondary); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:16px; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { padding:10px 12px; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); font-weight:500; border-bottom:1px solid var(--border); }
+  thead th.ticker-col { text-align:left; width:160px; }
+  thead th.expiry-col { text-align:center; min-width:170px; }
+  .expiry-date { font-size:13px; font-weight:600; color:var(--text-primary); text-transform:none; letter-spacing:0; }
+  .expiry-meta { display:flex; align-items:center; justify-content:center; gap:4px; margin-top:2px; }
+  .dte-badge { padding:1px 6px; border-radius:3px; font-size:10px; font-weight:600; }
+  .dte-badge--critical { background:rgba(239,68,68,0.25); color:#f87171; }
+  .dte-badge--safe { background:rgba(34,197,94,0.2); color:#22c55e; }
+  .monthly-badge { background:rgba(99,102,241,0.2); color:#a78bfa; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:500; }
+
+  tbody td { padding:6px 8px; vertical-align:top; border-bottom:1px solid rgba(255,255,255,0.03); }
+  td.ticker-cell { padding:10px 14px; }
+  .ticker-name { font-size:15px; font-weight:700; color:var(--text-primary); }
+  .ticker-price { font-size:10px; color:var(--text-secondary); font-family:var(--font-mono); }
+  .ticker-summary { font-size:10px; margin-top:2px; }
+  .ticker-shares { font-size:10px; color:#94a3b8; margin-top:1px; }
+  .ticker-cc-badge { display:inline-flex; align-items:center; gap:3px; background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.2); color:#fb923c; padding:1px 6px; border-radius:3px; font-size:9px; font-weight:500; margin-top:3px; }
+
+  .pos-card { border-radius:6px; padding:8px 10px; cursor:pointer; }
+  .pos-card--csp { background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.18); }
+  .pos-card--cc { background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.18); }
+  .pos-card__row { display:flex; justify-content:space-between; align-items:center; }
+  .pos-card__row + .pos-card__row { margin-top:4px; }
+  .pos-card__strike { font-weight:600; font-family:var(--font-mono); font-size:12px; }
+  .pos-card__strike--csp { color:#a78bfa; }
+  .pos-card__strike--cc { color:#fb923c; }
+  .pos-card__otm { color:var(--text-muted); font-size:10px; }
+  .pos-card__prem { color:var(--text-muted); font-size:10px; }
+  .pos-card__pnl { font-family:var(--font-mono); font-size:11px; }
+  .pos-card__pnl--positive { color:#6ee7b7; }
+  .pos-card__pnl--negative { color:#f87171; }
+
+  .empty-slot { display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px; }
+  .empty-slot:hover { border-color:rgba(99,102,241,0.3); color:#a78bfa; }
+
+  /* CC opportunity slot */
+  .cc-slot { display:flex; align-items:center; justify-content:center; border:1px dashed rgba(249,115,22,0.15); border-radius:6px; padding:10px; cursor:pointer; color:#92400e; font-size:11px; gap:4px; transition: all 0.15s; }
+  .cc-slot:hover { border-color:rgba(249,115,22,0.4); color:#fb923c; background:rgba(249,115,22,0.04); }
+  .cc-slot__icon { font-size:14px; }
+
+  /* Section divider */
+  .section-divider { display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid var(--border); background:rgba(249,115,22,0.03); }
+  .section-divider__label { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:#fb923c; font-weight:600; }
+  .section-divider__line { flex:1; height:1px; background:rgba(249,115,22,0.15); }
+  .section-divider__count { font-size:10px; color:#94a3b8; }
+
+  .add-ticker { display:flex; align-items:center; justify-content:center; border-top:1px solid var(--border); padding:10px; cursor:pointer; color:var(--text-muted); font-size:12px; }
+
+  .desc-box { padding:12px 16px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; font-size:11px; color:var(--text-secondary); margin-top:6px; margin-bottom:24px; line-height:1.5; }
+  .col-expiring { background:rgba(239,68,68,0.03); }
+</style>
+</head>
+<body>
+
+<h2>Covered Call Opportunities — Two Approaches</h2>
+<p class="subtitle">Both options use dynamic tickers from actual account positions (no hardcoding).</p>
+
+<!-- ========== OPTION A ========== -->
+<div class="option-label"><span>A</span> Same Grid — CC Opportunity Row per Ticker</div>
+<div class="desc-box">
+  Tickers you own 100+ shares of get a <strong style="color:#fb923c;">CC badge</strong> in the ticker column showing available contracts. The "+" slots for those tickers open the quotes screen filtered to <strong>calls</strong> instead of puts. Active CC positions and CSP positions live in the same grid — no separation.
+</div>
+
+<div class="grid-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th class="ticker-col">Ticker</th>
+        <th class="expiry-col" style="background:rgba(239,68,68,0.04);">
+          <div class="expiry-date">May 29</div>
+          <div class="expiry-meta"><span class="dte-badge dte-badge--critical">0d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+        </th>
+        <th class="expiry-col">
+          <div class="expiry-date">Jun 19 <span class="monthly-badge">Monthly</span></div>
+          <div class="expiry-meta"><span class="dte-badge dte-badge--safe">21d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- SOXL — only options, no shares owned -->
+      <tr>
+        <td class="ticker-cell">
+          <div class="ticker-name">SOXL</div>
+          <div class="ticker-price">$676.00</div>
+          <div class="ticker-summary" style="color:#6ee7b7;">3 pos · +$1,414</div>
+        </td>
+        <td class="col-expiring">
+          <div class="pos-card pos-card--csp">
+            <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$70 Put</span><span class="pos-card__otm">89.6%</span></div>
+            <div class="pos-card__row"><span class="pos-card__prem">prem $290</span><span class="pos-card__pnl pos-card__pnl--positive">+$289</span></div>
+          </div>
+        </td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div class="pos-card pos-card--csp">
+              <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$100 Put</span><span class="pos-card__otm">85.2%</span></div>
+              <div class="pos-card__row"><span class="pos-card__prem">prem $500</span><span class="pos-card__pnl pos-card__pnl--positive">+$382</span></div>
+            </div>
+            <div class="pos-card pos-card--csp">
+              <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$120 Put</span><span class="pos-card__otm">82.2%</span></div>
+              <div class="pos-card__row"><span class="pos-card__prem">prem $960</span><span class="pos-card__pnl pos-card__pnl--positive">+$743</span></div>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <!-- TQQQ — has 100 shares = 1 CC available -->
+      <tr>
+        <td class="ticker-cell">
+          <div class="ticker-name">TQQQ</div>
+          <div class="ticker-price">$827.00</div>
+          <div class="ticker-summary" style="color:#f87171;">3 pos · -$3,144</div>
+          <div class="ticker-shares">100 shares owned</div>
+          <div class="ticker-cc-badge">&#x25B2; 1 CC available</div>
+        </td>
+        <td class="col-expiring">
+          <div class="pos-card pos-card--csp">
+            <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$45 Put</span><span class="pos-card__otm">94.6%</span></div>
+            <div class="pos-card__row"><span class="pos-card__prem">prem $125</span><span class="pos-card__pnl pos-card__pnl--positive">+$124</span></div>
+          </div>
+        </td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div class="pos-card pos-card--csp">
+              <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$57.50 Put</span><span class="pos-card__otm">93.0%</span></div>
+              <div class="pos-card__row"><span class="pos-card__prem">prem $130</span><span class="pos-card__pnl pos-card__pnl--positive">+$94</span></div>
+            </div>
+            <div class="cc-slot"><span class="cc-slot__icon">+</span> Sell CC</div>
+          </div>
+        </td>
+      </tr>
+      <!-- QQU.TO — 300 shares = 3 CC available, no options yet -->
+      <tr>
+        <td class="ticker-cell">
+          <div class="ticker-name">QQU.TO</div>
+          <div class="ticker-price">$41.38</div>
+          <div class="ticker-summary" style="color:#94a3b8;">0 pos</div>
+          <div class="ticker-shares">300 shares owned</div>
+          <div class="ticker-cc-badge">&#x25B2; 3 CC available</div>
+        </td>
+        <td class="col-expiring"><div class="cc-slot"><span class="cc-slot__icon">+</span> Sell CC</div></td>
+        <td><div class="cc-slot"><span class="cc-slot__icon">+</span> Sell CC</div></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ========== OPTION B ========== -->
+<div class="option-label"><span>B</span> Split Grid — Active Positions + CC Opportunities Section</div>
+<div class="desc-box">
+  Top section shows all active CSP and CC positions (existing behavior). Below a divider, a <strong style="color:#fb923c;">CC Opportunities</strong> section shows tickers where you own 100+ shares but haven't written calls. Clean separation — manage what you have vs discover what you could do.
+</div>
+
+<div class="grid-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th class="ticker-col">Ticker</th>
+        <th class="expiry-col" style="background:rgba(239,68,68,0.04);">
+          <div class="expiry-date">May 29</div>
+          <div class="expiry-meta"><span class="dte-badge dte-badge--critical">0d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+        </th>
+        <th class="expiry-col">
+          <div class="expiry-date">Jun 19 <span class="monthly-badge">Monthly</span></div>
+          <div class="expiry-meta"><span class="dte-badge dte-badge--safe">21d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Active positions section -->
+      <tr>
+        <td class="ticker-cell">
+          <div class="ticker-name">SOXL</div>
+          <div class="ticker-price">$676.00</div>
+          <div class="ticker-summary" style="color:#6ee7b7;">3 pos · +$1,414</div>
+        </td>
+        <td class="col-expiring">
+          <div class="pos-card pos-card--csp">
+            <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$70 Put</span><span class="pos-card__otm">89.6%</span></div>
+            <div class="pos-card__row"><span class="pos-card__prem">prem $290</span><span class="pos-card__pnl pos-card__pnl--positive">+$289</span></div>
+          </div>
+        </td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div class="pos-card pos-card--csp">
+              <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$100 Put</span><span class="pos-card__otm">85.2%</span></div>
+              <div class="pos-card__row"><span class="pos-card__prem">prem $500</span><span class="pos-card__pnl pos-card__pnl--positive">+$382</span></div>
+            </div>
+            <div class="pos-card pos-card--csp">
+              <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$120 Put</span><span class="pos-card__otm">82.2%</span></div>
+              <div class="pos-card__row"><span class="pos-card__prem">prem $960</span><span class="pos-card__pnl pos-card__pnl--positive">+$743</span></div>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="ticker-cell">
+          <div class="ticker-name">TQQQ</div>
+          <div class="ticker-price">$827.00</div>
+          <div class="ticker-summary" style="color:#f87171;">3 pos · -$3,144</div>
+          <div class="ticker-shares">100 shares owned</div>
+        </td>
+        <td class="col-expiring">
+          <div class="pos-card pos-card--csp">
+            <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$45 Put</span><span class="pos-card__otm">94.6%</span></div>
+            <div class="pos-card__row"><span class="pos-card__prem">prem $125</span><span class="pos-card__pnl pos-card__pnl--positive">+$124</span></div>
+          </div>
+        </td>
+        <td>
+          <div class="pos-card pos-card--csp">
+            <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$57.50 Put</span><span class="pos-card__otm">93.0%</span></div>
+            <div class="pos-card__row"><span class="pos-card__prem">prem $130</span><span class="pos-card__pnl pos-card__pnl--positive">+$94</span></div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="ticker-cell">
+          <div class="ticker-name">TECL</div>
+          <div class="ticker-price">$256.00</div>
+          <div class="ticker-summary" style="color:#6ee7b7;">1 pos · +$344</div>
+        </td>
+        <td class="col-expiring"><div class="empty-slot">+</div></td>
+        <td>
+          <div class="pos-card pos-card--cc">
+            <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--cc">$140 CC</span><span class="pos-card__otm">45.3%</span></div>
+            <div class="pos-card__row"><span class="pos-card__prem">prem $440</span><span class="pos-card__pnl pos-card__pnl--positive">+$344</span></div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- CC Opportunities Section Divider -->
+  <div class="section-divider">
+    <div class="section-divider__label">&#x25B2; Covered Call Opportunities</div>
+    <div class="section-divider__line"></div>
+    <div class="section-divider__count">3 tickers · 7 contracts available</div>
+  </div>
+
+  <table>
+    <tbody>
+      <!-- TQQQ CC opportunity -->
+      <tr>
+        <td class="ticker-cell" style="width:160px;">
+          <div class="ticker-name">TQQQ</div>
+          <div class="ticker-price">$827.00</div>
+          <div class="ticker-shares">100 shares · 1 contract</div>
+        </td>
+        <td style="padding:6px 8px; vertical-align:top; min-width:170px;">
+          <div class="cc-slot"><span class="cc-slot__icon">+</span> Sell CC</div>
+        </td>
+        <td style="padding:6px 8px; vertical-align:top; min-width:170px;">
+          <div class="cc-slot"><span class="cc-slot__icon">+</span> Sell CC</div>
+        </td>
+      </tr>
+      <!-- QQU.TO CC opportunity -->
+      <tr>
+        <td class="ticker-cell" style="width:160px;">
+          <div class="ticker-name">QQU.TO</div>
+          <div class="ticker-price">$41.38</div>
+          <div class="ticker-shares">300 shares · 3 contracts</div>
+        </td>
+        <td style="padding:6px 8px; vertical-align:top;">
+          <div class="cc-slot"><span class="cc-slot__icon">+</span> Sell CC</div>
+        </td>
+        <td style="padding:6px 8px; vertical-align:top;">
+          <div class="cc-slot"><span class="cc-slot__icon">+</span> Sell CC</div>
+        </td>
+      </tr>
+      <!-- SPXU.TO CC opportunity -->
+      <tr>
+        <td class="ticker-cell" style="width:160px;">
+          <div class="ticker-name">SPXU.TO</div>
+          <div class="ticker-price">$37.08</div>
+          <div class="ticker-shares">300 shares · 3 contracts</div>
+        </td>
+        <td style="padding:6px 8px; vertical-align:top;">
+          <div class="cc-slot"><span class="cc-slot__icon">+</span> Sell CC</div>
+        </td>
+        <td style="padding:6px 8px; vertical-align:top;">
+          <div class="cc-slot"><span class="cc-slot__icon">+</span> Sell CC</div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="add-ticker">+ Add Ticker</div>
+</div>
+
+<div style="padding:12px 16px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; font-size:11px; color:var(--text-secondary); margin-top:8px; line-height:1.6;">
+  <strong style="color:#e2e8f0;">How it works:</strong><br>
+  <strong>Option A:</strong> CC badges inline — simpler, everything in one grid. TQQQ shows both its CSP positions and a "Sell CC" slot in the same row. Good when most tickers have both options and shares.<br>
+  <strong>Option B:</strong> Separated sections — active positions stay clean and uncluttered. CC opportunities below act like a "what could you do?" suggestion area. TQQQ appears in both sections (positions above, CC opportunities below). Good when you have many CC-eligible tickers that would otherwise clutter the positions grid.
+</div>
+
+</body>
+</html>

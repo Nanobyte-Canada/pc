@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wheel Strategy — Screen 1 Design</title>
+<style>
+  :root {
+    --bg-primary: #0c1220;
+    --bg-secondary: #111a2e;
+    --border: rgba(255,255,255,0.06);
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #10b981;
+    --accent-subtle: rgba(16,185,129,0.08);
+    --accent-border: rgba(16,185,129,0.2);
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius-md: 10px;
+    --transition-fast: 0.15s;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg-primary); color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; height:100vh; overflow:hidden; }
+
+  .page { display:flex; height:100vh; }
+
+  /* Icon rail */
+  .icon-rail { width:48px; background:var(--bg-secondary); border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; padding:12px 0; gap:4px; flex-shrink:0; }
+  .icon-rail__logo { width:28px; height:28px; border-radius:8px; background:rgba(16,185,129,0.15); color:#10b981; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; margin-bottom:12px; }
+  .icon-rail__btn { width:36px; height:36px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .icon-rail__btn--active { background:rgba(16,185,129,0.12); color:#10b981; }
+  .icon-rail__spacer { flex:1; }
+  .icon-rail__avatar { width:28px; height:28px; border-radius:50%; background:rgba(16,185,129,0.15); color:#10b981; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; }
+
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* Account nav */
+  .account-nav { display:flex; gap:6px; padding:10px 24px 0; flex-wrap:wrap; }
+  .account-pill { padding:5px 14px; border-radius:16px; border:1px solid var(--border); background:rgba(255,255,255,0.03); color:var(--text-secondary); font-size:11px; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:500; }
+  .account-pill--active { background:rgba(16,185,129,0.12); border-color:rgba(16,185,129,0.25); color:#6ee7b7; }
+  .account-pill__icon { width:16px; height:16px; border-radius:4px; background:#1a5c3a; color:#4ade80; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:700; }
+
+  .content { padding:0 24px; flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* Header */
+  .page-header { display:flex; align-items:center; justify-content:space-between; padding:8px 0 16px; }
+  .page-title { font-size:22px; font-weight:700; color:var(--text-primary); }
+
+  /* KPI row */
+  .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; flex-shrink:0; }
+  .kpi-card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .kpi-card__header { display:flex; align-items:center; justify-content:space-between; }
+  .kpi-card__label { font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); font-weight:500; }
+  .kpi-card__icon { color:var(--text-secondary); font-size:14px; }
+  .kpi-card__value { font-size:18px; font-weight:700; font-family:var(--font-mono); color:var(--text-primary); margin-top:8px; }
+  .kpi-card__value--positive { color:#6ee7b7; }
+  .kpi-card__value--negative { color:#f87171; }
+  .kpi-card__divider { height:1px; background:var(--border); margin:8px 0; }
+  .kpi-card__breakdown { display:flex; justify-content:space-between; padding:2px 0; }
+  .kpi-card__breakdown-label { font-size:10px; color:var(--text-muted); }
+  .kpi-card__breakdown-value { font-size:11px; font-family:var(--font-mono); color:var(--text-secondary); }
+
+  /* Option tabs */
+  .option-tabs { display:flex; gap:4px; margin-bottom:12px; flex-shrink:0; }
+  .option-tab { padding:6px 16px; border-radius:8px; border:none; cursor:pointer; font-weight:500; font-size:12px; font-family:inherit; transition: background 0.15s, color 0.15s; }
+  .option-tab--active { background:rgba(16,185,129,0.15); color:#6ee7b7; }
+  .option-tab--inactive { background:transparent; color:var(--text-muted); }
+  .option-tab--inactive:hover { color:var(--text-secondary); background:var(--bg-secondary); }
+
+  /* Timeline nav */
+  .timeline-nav { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-shrink:0; }
+  .timeline-btn { background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; color:var(--text-primary); padding:5px 12px; cursor:pointer; font-size:14px; font-family:inherit; }
+  .timeline-btn:hover { border-color:rgba(255,255,255,0.15); }
+  .timeline-range { flex:1; text-align:center; font-size:11px; color:var(--text-secondary); letter-spacing:0.5px; text-transform:uppercase; }
+  .timeline-today { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:6px; color:#6ee7b7; padding:4px 12px; cursor:pointer; font-size:11px; font-weight:500; border:1px solid rgba(16,185,129,0.25); font-family:inherit; }
+
+  /* Grid */
+  .grid-wrapper { background:var(--bg-secondary); border:1px solid var(--border); border-radius:10px; overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:0; }
+  .grid-scroll { overflow:auto; flex:1; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { padding:10px 12px; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); font-weight:500; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg-secondary); z-index:2; }
+  thead th.ticker-col { text-align:left; width:160px; position:sticky; left:0; z-index:3; }
+  thead th.expiry-col { text-align:center; min-width:180px; }
+  .expiry-date { font-size:13px; font-weight:600; color:var(--text-primary); text-transform:none; letter-spacing:0; }
+  .expiry-meta { display:flex; align-items:center; justify-content:center; gap:4px; margin-top:2px; }
+  .dte-badge { padding:1px 6px; border-radius:3px; font-size:10px; font-weight:600; }
+  .dte-badge--critical { background:rgba(239,68,68,0.25); color:#f87171; }
+  .dte-badge--warning { background:rgba(234,179,8,0.2); color:#eab308; }
+  .dte-badge--safe { background:rgba(34,197,94,0.2); color:#22c55e; }
+  .monthly-badge { background:rgba(99,102,241,0.2); color:#a78bfa; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:500; }
+
+  tbody td { padding:6px 8px; vertical-align:top; border-bottom:1px solid rgba(255,255,255,0.03); }
+  td.ticker-cell { padding:10px 14px; position:sticky; left:0; background:var(--bg-secondary); z-index:1; }
+  .ticker-name { font-size:15px; font-weight:700; color:var(--text-primary); }
+  .ticker-price { font-size:10px; color:var(--text-secondary); font-family:var(--font-mono); }
+  .ticker-summary { font-size:10px; margin-top:2px; }
+  .ticker-shares { font-size:10px; color:#94a3b8; margin-top:1px; }
+  .ticker-cc-badge { display:inline-flex; align-items:center; gap:3px; background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.2); color:#fb923c; padding:1px 6px; border-radius:3px; font-size:9px; font-weight:500; margin-top:3px; }
+
+  .pos-card { border-radius:6px; padding:8px 10px; cursor:pointer; transition: border-color 0.15s, transform 0.15s; }
+  .pos-card:hover { transform:translateY(-1px); }
+  .pos-card--csp { background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.18); }
+  .pos-card--csp:hover { border-color:rgba(99,102,241,0.35); }
+  .pos-card--cc { background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.18); }
+  .pos-card--cc:hover { border-color:rgba(249,115,22,0.35); }
+  .pos-card__row { display:flex; justify-content:space-between; align-items:center; }
+  .pos-card__row + .pos-card__row { margin-top:4px; }
+  .pos-card__strike { font-weight:600; font-family:var(--font-mono); font-size:12px; }
+  .pos-card__strike--csp { color:#a78bfa; }
+  .pos-card__strike--cc { color:#fb923c; }
+  .pos-card__otm { color:var(--text-muted); font-size:10px; }
+  .pos-card__prem { color:var(--text-muted); font-size:10px; }
+  .pos-card__pnl { font-family:var(--font-mono); font-size:11px; }
+  .pos-card__pnl--positive { color:#6ee7b7; }
+  .pos-card__pnl--negative { color:#f87171; }
+
+  .empty-slot { display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px; transition: border-color 0.15s, color 0.15s; }
+  .empty-slot:hover { border-color:rgba(99,102,241,0.3); color:#a78bfa; }
+
+  .cc-slot { display:flex; align-items:center; justify-content:center; border:1px dashed rgba(249,115,22,0.15); border-radius:6px; padding:14px; cursor:pointer; color:#92400e; font-size:11px; gap:4px; transition: all 0.15s; }
+  .cc-slot:hover { border-color:rgba(249,115,22,0.4); color:#fb923c; background:rgba(249,115,22,0.04); }
+
+  .section-divider { display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid var(--border); background:rgba(249,115,22,0.03); position:sticky; left:0; }
+  .section-divider__label { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:#fb923c; font-weight:600; white-space:nowrap; }
+  .section-divider__line { flex:1; height:1px; background:rgba(249,115,22,0.15); }
+  .section-divider__count { font-size:10px; color:#94a3b8; white-space:nowrap; }
+
+  .add-ticker { display:flex; align-items:center; justify-content:center; border-top:1px solid var(--border); padding:10px; cursor:pointer; color:var(--text-muted); font-size:12px; flex-shrink:0; }
+  .add-ticker:hover { color:#a78bfa; }
+
+  .legend { display:flex; gap:16px; padding:8px 0; font-size:10px; color:var(--text-muted); flex-shrink:0; }
+  .legend__item { display:flex; align-items:center; gap:4px; }
+  .legend__dot { width:8px; height:8px; border-radius:2px; }
+  .legend__dot--csp { background:rgba(99,102,241,0.4); }
+  .legend__dot--cc { background:rgba(249,115,22,0.4); }
+  .legend__dot--expiring { background:rgba(239,68,68,0.4); }
+
+  .col-expiring { background:rgba(239,68,68,0.03); }
+
+  .tab-panel { display:none; flex:1; flex-direction:column; overflow:hidden; min-height:0; }
+  .tab-panel--active { display:flex; }
+</style>
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.option-tab').forEach(t => {
+    t.classList.remove('option-tab--active');
+    t.classList.add('option-tab--inactive');
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-panel--active'));
+  document.getElementById('tab-' + tab).classList.add('option-tab--active');
+  document.getElementById('tab-' + tab).classList.remove('option-tab--inactive');
+  document.getElementById('panel-' + tab).classList.add('tab-panel--active');
+}
+</script>
+</head>
+<body>
+<div class="page">
+  <!-- Icon Rail -->
+  <nav class="icon-rail">
+    <div class="icon-rail__logo">P</div>
+    <button class="icon-rail__btn" title="Portfolio">&#9633;</button>
+    <button class="icon-rail__btn icon-rail__btn--active" title="Wheel">&#9678;</button>
+    <button class="icon-rail__btn" title="Connections">&#128279;</button>
+    <div class="icon-rail__spacer"></div>
+    <button class="icon-rail__btn" title="Theme">&#9788;</button>
+    <button class="icon-rail__btn" title="Admin">&#9881;</button>
+    <div class="icon-rail__avatar">S</div>
+  </nav>
+
+  <div class="main">
+    <!-- Account NavBar -->
+    <div class="account-nav">
+      <div class="account-pill account-pill--active">All Accounts</div>
+      <div class="account-pill"><span class="account-pill__icon">Q</span> LIRA ••9683</div>
+      <div class="account-pill"><span class="account-pill__icon">Q</span> RRSP ••8214</div>
+      <div class="account-pill"><span class="account-pill__icon">Q</span> MARGIN ••4150</div>
+      <div class="account-pill"><span class="account-pill__icon">Q</span> RRSP ••2736</div>
+      <div class="account-pill"><span class="account-pill__icon">Q</span> TFSA ••0190</div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <h1 class="page-title">Wheel Strategy</h1>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-card__header"><span class="kpi-card__label">Capital Deployed</span><span class="kpi-card__icon">&#128176;</span></div>
+          <div class="kpi-card__value">US$ 53,250</div>
+          <div class="kpi-card__divider"></div>
+          <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">CSP</span><span class="kpi-card__breakdown-value">US$ 53,250</span></div>
+          <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">CC</span><span class="kpi-card__breakdown-value">US$ 4,800</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card__header"><span class="kpi-card__label">Buying Power</span><span class="kpi-card__icon">&#128722;</span></div>
+          <div class="kpi-card__value">C$ 79,834</div>
+          <div class="kpi-card__divider"></div>
+          <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">C$</span><span class="kpi-card__breakdown-value">79,833.62</span></div>
+          <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">US$</span><span class="kpi-card__breakdown-value">33,108.50</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card__header"><span class="kpi-card__label">Premium & P&L</span><span class="kpi-card__icon">$</span></div>
+          <div class="kpi-card__value kpi-card__value--negative">-US$ 1,386</div>
+          <div class="kpi-card__divider"></div>
+          <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">Premium Collected</span><span class="kpi-card__breakdown-value" style="color:#6ee7b7;">+US$ 2,675</span></div>
+          <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">Unrealized P&L</span><span class="kpi-card__breakdown-value" style="color:#f87171;">-US$ 1,386</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card__header"><span class="kpi-card__label">Positions</span><span class="kpi-card__icon">&#9673;</span></div>
+          <div class="kpi-card__value">7</div>
+          <div class="kpi-card__divider"></div>
+          <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">Cash-Secured Puts</span><span class="kpi-card__breakdown-value">6</span></div>
+          <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">Covered Calls</span><span class="kpi-card__breakdown-value">1</span></div>
+          <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">Expiring This Week</span><span class="kpi-card__breakdown-value" style="color:#f87171;">2</span></div>
+        </div>
+      </div>
+
+      <!-- Option A/B tabs -->
+      <div class="option-tabs">
+        <button class="option-tab option-tab--active" id="tab-a" onclick="switchTab('a')">Option A — Inline CC</button>
+        <button class="option-tab option-tab--inactive" id="tab-b" onclick="switchTab('b')">Option B — Split Sections</button>
+      </div>
+
+      <!-- ========== OPTION A PANEL ========== -->
+      <div class="tab-panel tab-panel--active" id="panel-a">
+        <div class="timeline-nav">
+          <button class="timeline-btn">&#8592;</button>
+          <div class="timeline-range">May 29 — Jun 19, 2026</div>
+          <button class="timeline-btn">&#8594;</button>
+          <button class="timeline-today">Today</button>
+        </div>
+
+        <div class="grid-wrapper">
+          <div class="grid-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th class="ticker-col">Ticker</th>
+                  <th class="expiry-col" style="background:rgba(239,68,68,0.04);">
+                    <div class="expiry-date">May 29</div>
+                    <div class="expiry-meta"><span class="dte-badge dte-badge--critical">0d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+                  </th>
+                  <th class="expiry-col">
+                    <div class="expiry-date">Jun 5</div>
+                    <div class="expiry-meta"><span class="dte-badge dte-badge--warning">7d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+                  </th>
+                  <th class="expiry-col">
+                    <div class="expiry-date">Jun 12</div>
+                    <div class="expiry-meta"><span class="dte-badge dte-badge--safe">14d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+                  </th>
+                  <th class="expiry-col">
+                    <div class="expiry-date">Jun 19 <span class="monthly-badge">Monthly</span></div>
+                    <div class="expiry-meta"><span class="dte-badge dte-badge--safe">21d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- SOXL -->
+                <tr>
+                  <td class="ticker-cell">
+                    <div class="ticker-name">SOXL</div>
+                    <div class="ticker-price">$676.00</div>
+                    <div class="ticker-summary" style="color:#6ee7b7;">3 pos · +$1,414</div>
+                  </td>
+                  <td class="col-expiring">
+                    <div class="pos-card pos-card--csp">
+                      <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$70 Put</span><span class="pos-card__otm">89.6%</span></div>
+                      <div class="pos-card__row"><span class="pos-card__prem">prem $290</span><span class="pos-card__pnl pos-card__pnl--positive">+$289</span></div>
+                    </div>
+                  </td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td>
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                      <div class="pos-card pos-card--csp">
+                        <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$100 Put</span><span class="pos-card__otm">85.2%</span></div>
+                        <div class="pos-card__row"><span class="pos-card__prem">prem $500</span><span class="pos-card__pnl pos-card__pnl--positive">+$382</span></div>
+                      </div>
+                      <div class="pos-card pos-card--csp">
+                        <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$120 Put</span><span class="pos-card__otm">82.2%</span></div>
+                        <div class="pos-card__row"><span class="pos-card__prem">prem $960</span><span class="pos-card__pnl pos-card__pnl--positive">+$743</span></div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <!-- TECL -->
+                <tr>
+                  <td class="ticker-cell">
+                    <div class="ticker-name">TECL</div>
+                    <div class="ticker-price">$256.00</div>
+                    <div class="ticker-summary" style="color:#6ee7b7;">1 pos · +$344</div>
+                  </td>
+                  <td class="col-expiring"><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td>
+                    <div class="pos-card pos-card--cc">
+                      <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--cc">$140 CC</span><span class="pos-card__otm">45.3%</span></div>
+                      <div class="pos-card__row"><span class="pos-card__prem">prem $440</span><span class="pos-card__pnl pos-card__pnl--positive">+$344</span></div>
+                    </div>
+                  </td>
+                </tr>
+                <!-- TQQQ — has shares + CC badge -->
+                <tr>
+                  <td class="ticker-cell">
+                    <div class="ticker-name">TQQQ</div>
+                    <div class="ticker-price">$827.00</div>
+                    <div class="ticker-summary" style="color:#f87171;">3 pos · -$3,144</div>
+                    <div class="ticker-shares">100 shares owned</div>
+                    <div class="ticker-cc-badge">&#x25B2; 1 CC available</div>
+                  </td>
+                  <td class="col-expiring">
+                    <div class="pos-card pos-card--csp">
+                      <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$45 Put</span><span class="pos-card__otm">94.6%</span></div>
+                      <div class="pos-card__row"><span class="pos-card__prem">prem $125</span><span class="pos-card__pnl pos-card__pnl--positive">+$124</span></div>
+                    </div>
+                  </td>
+                  <td><div class="cc-slot">+ Sell CC</div></td>
+                  <td><div class="cc-slot">+ Sell CC</div></td>
+                  <td>
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                      <div class="pos-card pos-card--csp">
+                        <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$57.50 Put</span><span class="pos-card__otm">93.0%</span></div>
+                        <div class="pos-card__row"><span class="pos-card__prem">prem $130</span><span class="pos-card__pnl pos-card__pnl--positive">+$94</span></div>
+                      </div>
+                      <div class="pos-card pos-card--csp">
+                        <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$48 Put</span><span class="pos-card__otm">94.2%</span></div>
+                        <div class="pos-card__row"><span class="pos-card__prem">prem $230</span><span class="pos-card__pnl pos-card__pnl--negative">-$3,362</span></div>
+                      </div>
+                      <div class="cc-slot">+ Sell CC</div>
+                    </div>
+                  </td>
+                </tr>
+                <!-- QQU.TO — shares only, CC eligible -->
+                <tr>
+                  <td class="ticker-cell">
+                    <div class="ticker-name">QQU.TO</div>
+                    <div class="ticker-price">$41.38</div>
+                    <div class="ticker-summary" style="color:#94a3b8;">0 options</div>
+                    <div class="ticker-shares">300 shares owned</div>
+                    <div class="ticker-cc-badge">&#x25B2; 3 CC available</div>
+                  </td>
+                  <td class="col-expiring"><div class="cc-slot">+ Sell CC</div></td>
+                  <td><div class="cc-slot">+ Sell CC</div></td>
+                  <td><div class="cc-slot">+ Sell CC</div></td>
+                  <td><div class="cc-slot">+ Sell CC</div></td>
+                </tr>
+                <!-- SPXU.TO — shares only, CC eligible -->
+                <tr>
+                  <td class="ticker-cell">
+                    <div class="ticker-name">SPXU.TO</div>
+                    <div class="ticker-price">$37.08</div>
+                    <div class="ticker-summary" style="color:#94a3b8;">0 options</div>
+                    <div class="ticker-shares">300 shares owned</div>
+                    <div class="ticker-cc-badge">&#x25B2; 3 CC available</div>
+                  </td>
+                  <td class="col-expiring"><div class="cc-slot">+ Sell CC</div></td>
+                  <td><div class="cc-slot">+ Sell CC</div></td>
+                  <td><div class="cc-slot">+ Sell CC</div></td>
+                  <td><div class="cc-slot">+ Sell CC</div></td>
+                </tr>
+                <!-- UPRO — no shares, no options -->
+                <tr>
+                  <td class="ticker-cell">
+                    <div class="ticker-name">UPRO</div>
+                    <div class="ticker-price">$236.00</div>
+                    <div class="ticker-summary" style="color:#94a3b8;">0 pos</div>
+                  </td>
+                  <td class="col-expiring"><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="add-ticker">+ Add Ticker</div>
+        </div>
+
+        <div class="legend">
+          <div class="legend__item"><span class="legend__dot legend__dot--csp"></span> Cash-Secured Put</div>
+          <div class="legend__item"><span class="legend__dot legend__dot--cc"></span> Covered Call</div>
+          <div class="legend__item"><span class="legend__dot legend__dot--expiring"></span> Expiring today</div>
+          <div class="legend__item"><span class="monthly-badge" style="font-size:9px;">Monthly</span> 3rd Friday</div>
+        </div>
+      </div>
+
+      <!-- ========== OPTION B PANEL ========== -->
+      <div class="tab-panel" id="panel-b">
+        <div class="timeline-nav">
+          <button class="timeline-btn">&#8592;</button>
+          <div class="timeline-range">May 29 — Jun 19, 2026</div>
+          <button class="timeline-btn">&#8594;</button>
+          <button class="timeline-today">Today</button>
+        </div>
+
+        <div class="grid-wrapper">
+          <div class="grid-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th class="ticker-col">Ticker</th>
+                  <th class="expiry-col" style="background:rgba(239,68,68,0.04);">
+                    <div class="expiry-date">May 29</div>
+                    <div class="expiry-meta"><span class="dte-badge dte-badge--critical">0d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+                  </th>
+                  <th class="expiry-col">
+                    <div class="expiry-date">Jun 5</div>
+                    <div class="expiry-meta"><span class="dte-badge dte-badge--warning">7d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+                  </th>
+                  <th class="expiry-col">
+                    <div class="expiry-date">Jun 12</div>
+                    <div class="expiry-meta"><span class="dte-badge dte-badge--safe">14d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+                  </th>
+                  <th class="expiry-col">
+                    <div class="expiry-date">Jun 19 <span class="monthly-badge">Monthly</span></div>
+                    <div class="expiry-meta"><span class="dte-badge dte-badge--safe">21d</span><span style="font-size:10px;color:#64748b;">Fri</span></div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- SOXL -->
+                <tr>
+                  <td class="ticker-cell">
+                    <div class="ticker-name">SOXL</div>
+                    <div class="ticker-price">$676.00</div>
+                    <div class="ticker-summary" style="color:#6ee7b7;">3 pos · +$1,414</div>
+                  </td>
+                  <td class="col-expiring">
+                    <div class="pos-card pos-card--csp">
+                      <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$70 Put</span><span class="pos-card__otm">89.6%</span></div>
+                      <div class="pos-card__row"><span class="pos-card__prem">prem $290</span><span class="pos-card__pnl pos-card__pnl--positive">+$289</span></div>
+                    </div>
+                  </td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td>
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                      <div class="pos-card pos-card--csp">
+                        <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$100 Put</span><span class="pos-card__otm">85.2%</span></div>
+                        <div class="pos-card__row"><span class="pos-card__prem">prem $500</span><span class="pos-card__pnl pos-card__pnl--positive">+$382</span></div>
+                      </div>
+                      <div class="pos-card pos-card--csp">
+                        <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$120 Put</span><span class="pos-card__otm">82.2%</span></div>
+                        <div class="pos-card__row"><span class="pos-card__prem">prem $960</span><span class="pos-card__pnl pos-card__pnl--positive">+$743</span></div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <!-- TECL -->
+                <tr>
+                  <td class="ticker-cell">
+                    <div class="ticker-name">TECL</div>
+                    <div class="ticker-price">$256.00</div>
+                    <div class="ticker-summary" style="color:#6ee7b7;">1 pos · +$344</div>
+                  </td>
+                  <td class="col-expiring"><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td>
+                    <div class="pos-card pos-card--cc">
+                      <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--cc">$140 CC</span><span class="pos-card__otm">45.3%</span></div>
+                      <div class="pos-card__row"><span class="pos-card__prem">prem $440</span><span class="pos-card__pnl pos-card__pnl--positive">+$344</span></div>
+                    </div>
+                  </td>
+                </tr>
+                <!-- TQQQ -->
+                <tr>
+                  <td class="ticker-cell">
+                    <div class="ticker-name">TQQQ</div>
+                    <div class="ticker-price">$827.00</div>
+                    <div class="ticker-summary" style="color:#f87171;">3 pos · -$3,144</div>
+                    <div class="ticker-shares">100 shares owned</div>
+                  </td>
+                  <td class="col-expiring">
+                    <div class="pos-card pos-card--csp">
+                      <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$45 Put</span><span class="pos-card__otm">94.6%</span></div>
+                      <div class="pos-card__row"><span class="pos-card__prem">prem $125</span><span class="pos-card__pnl pos-card__pnl--positive">+$124</span></div>
+                    </div>
+                  </td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td>
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                      <div class="pos-card pos-card--csp">
+                        <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$57.50 Put</span><span class="pos-card__otm">93.0%</span></div>
+                        <div class="pos-card__row"><span class="pos-card__prem">prem $130</span><span class="pos-card__pnl pos-card__pnl--positive">+$94</span></div>
+                      </div>
+                      <div class="pos-card pos-card--csp">
+                        <div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$48 Put</span><span class="pos-card__otm">94.2%</span></div>
+                        <div class="pos-card__row"><span class="pos-card__prem">prem $230</span><span class="pos-card__pnl pos-card__pnl--negative">-$3,362</span></div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <!-- UPRO -->
+                <tr>
+                  <td class="ticker-cell">
+                    <div class="ticker-name">UPRO</div>
+                    <div class="ticker-price">$236.00</div>
+                    <div class="ticker-summary" style="color:#94a3b8;">0 pos</div>
+                  </td>
+                  <td class="col-expiring"><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                  <td><div class="empty-slot">+</div></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- CC Opportunities Section Divider -->
+            <div class="section-divider">
+              <div class="section-divider__label">&#x25B2; Covered Call Opportunities</div>
+              <div class="section-divider__line"></div>
+              <div class="section-divider__count">3 tickers · 7 contracts available</div>
+            </div>
+
+            <table>
+              <tbody>
+                <tr>
+                  <td class="ticker-cell" style="width:160px;">
+                    <div class="ticker-name">TQQQ</div>
+                    <div class="ticker-price">$827.00</div>
+                    <div class="ticker-shares">100 shares · 1 contract</div>
+                  </td>
+                  <td style="padding:6px 8px;vertical-align:top;min-width:180px;" class="col-expiring"><div class="cc-slot">+ Sell CC</div></td>
+                  <td style="padding:6px 8px;vertical-align:top;min-width:180px;"><div class="cc-slot">+ Sell CC</div></td>
+                  <td style="padding:6px 8px;vertical-align:top;min-width:180px;"><div class="cc-slot">+ Sell CC</div></td>
+                  <td style="padding:6px 8px;vertical-align:top;min-width:180px;"><div class="cc-slot">+ Sell CC</div></td>
+                </tr>
+                <tr>
+                  <td class="ticker-cell" style="width:160px;">
+                    <div class="ticker-name">QQU.TO</div>
+                    <div class="ticker-price">$41.38</div>
+                    <div class="ticker-shares">300 shares · 3 contracts</div>
+                  </td>
+                  <td style="padding:6px 8px;vertical-align:top;" class="col-expiring"><div class="cc-slot">+ Sell CC</div></td>
+                  <td style="padding:6px 8px;vertical-align:top;"><div class="cc-slot">+ Sell CC</div></td>
+                  <td style="padding:6px 8px;vertical-align:top;"><div class="cc-slot">+ Sell CC</div></td>
+                  <td style="padding:6px 8px;vertical-align:top;"><div class="cc-slot">+ Sell CC</div></td>
+                </tr>
+                <tr>
+                  <td class="ticker-cell" style="width:160px;">
+                    <div class="ticker-name">SPXU.TO</div>
+                    <div class="ticker-price">$37.08</div>
+                    <div class="ticker-shares">300 shares · 3 contracts</div>
+                  </td>
+                  <td style="padding:6px 8px;vertical-align:top;" class="col-expiring"><div class="cc-slot">+ Sell CC</div></td>
+                  <td style="padding:6px 8px;vertical-align:top;"><div class="cc-slot">+ Sell CC</div></td>
+                  <td style="padding:6px 8px;vertical-align:top;"><div class="cc-slot">+ Sell CC</div></td>
+                  <td style="padding:6px 8px;vertical-align:top;"><div class="cc-slot">+ Sell CC</div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="add-ticker">+ Add Ticker</div>
+        </div>
+
+        <div class="legend">
+          <div class="legend__item"><span class="legend__dot legend__dot--csp"></span> Cash-Secured Put</div>
+          <div class="legend__item"><span class="legend__dot legend__dot--cc"></span> Covered Call</div>
+          <div class="legend__item"><span class="legend__dot legend__dot--expiring"></span> Expiring today</div>
+          <div class="legend__item"><span class="monthly-badge" style="font-size:9px;">Monthly</span> 3rd Friday</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

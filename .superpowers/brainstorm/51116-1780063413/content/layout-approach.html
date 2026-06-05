@@ -1,0 +1,325 @@
+<h2>Screen 1: Positions & Financials — Layout Structure</h2>
+<p class="subtitle">How should positions be organized? The current expiry×ticker grid is dense and doesn't scale.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Ticker-First Cards</h3>
+      <p>Each ticker gets its own card/section. Inside each card: all positions for that ticker grouped by expiry, plus ticker-level metrics (total premium, P&L, capital deployed). Scales naturally — add/remove tickers freely.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-body" style="padding:16px; font-family: system-ui; font-size:13px;">
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <!-- SOXL Card -->
+            <div style="flex:1; min-width:300px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div>
+                  <div style="font-size:18px; font-weight:700; color:#e2e8f0;">SOXL</div>
+                  <div style="font-size:11px; color:#94a3b8;">Direxion Daily Semiconductor Bull 3X</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:16px; font-weight:600; color:#e2e8f0; font-family:monospace;">$676.00</div>
+                  <div style="font-size:11px; color:#10b981;">+2.3%</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; margin-bottom:12px; font-size:11px;">
+                <div style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); border-radius:6px; padding:6px 10px; flex:1; text-align:center;">
+                  <div style="color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; font-size:9px;">Positions</div>
+                  <div style="color:#e2e8f0; font-weight:600; font-family:monospace;">3</div>
+                </div>
+                <div style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); border-radius:6px; padding:6px 10px; flex:1; text-align:center;">
+                  <div style="color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; font-size:9px;">Capital</div>
+                  <div style="color:#e2e8f0; font-weight:600; font-family:monospace;">$29,000</div>
+                </div>
+                <div style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); border-radius:6px; padding:6px 10px; flex:1; text-align:center;">
+                  <div style="color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; font-size:9px;">P&L</div>
+                  <div style="color:#10b981; font-weight:600; font-family:monospace;">+$1,414</div>
+                </div>
+              </div>
+              <!-- Positions list -->
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.15); border-radius:6px; padding:8px 12px; cursor:pointer;">
+                  <div>
+                    <span style="color:#a78bfa; font-weight:600; font-family:monospace;">$70 Put</span>
+                    <span style="color:#94a3b8; margin-left:8px; font-size:11px;">May 29</span>
+                    <span style="background:rgba(239,68,68,0.2); color:#f87171; padding:1px 6px; border-radius:3px; font-size:10px; margin-left:6px;">0d</span>
+                  </div>
+                  <div style="text-align:right;">
+                    <span style="color:#10b981; font-family:monospace; font-size:12px;">+$289</span>
+                  </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.15); border-radius:6px; padding:8px 12px; cursor:pointer;">
+                  <div>
+                    <span style="color:#a78bfa; font-weight:600; font-family:monospace;">$100 Put</span>
+                    <span style="color:#94a3b8; margin-left:8px; font-size:11px;">Jun 18</span>
+                    <span style="background:rgba(34,197,94,0.2); color:#22c55e; padding:1px 6px; border-radius:3px; font-size:10px; margin-left:6px;">20d</span>
+                  </div>
+                  <div style="text-align:right;">
+                    <span style="color:#10b981; font-family:monospace; font-size:12px;">+$382</span>
+                  </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.15); border-radius:6px; padding:8px 12px; cursor:pointer;">
+                  <div>
+                    <span style="color:#a78bfa; font-weight:600; font-family:monospace;">$120 Put</span>
+                    <span style="color:#94a3b8; margin-left:8px; font-size:11px;">Jun 18</span>
+                    <span style="background:rgba(34,197,94,0.2); color:#22c55e; padding:1px 6px; border-radius:3px; font-size:10px; margin-left:6px;">20d</span>
+                  </div>
+                  <div style="text-align:right;">
+                    <span style="color:#10b981; font-family:monospace; font-size:12px;">+$743</span>
+                  </div>
+                </div>
+                <!-- Add new position button -->
+                <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.1); border-radius:6px; padding:8px; cursor:pointer; color:#94a3b8; font-size:12px;">
+                  + New Position
+                </div>
+              </div>
+            </div>
+            <!-- TQQQ Card (abbreviated) -->
+            <div style="flex:1; min-width:300px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div>
+                  <div style="font-size:18px; font-weight:700; color:#e2e8f0;">TQQQ</div>
+                  <div style="font-size:11px; color:#94a3b8;">ProShares UltraPro QQQ</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:16px; font-weight:600; color:#e2e8f0; font-family:monospace;">$827.00</div>
+                  <div style="font-size:11px; color:#f87171;">-1.1%</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; margin-bottom:12px; font-size:11px;">
+                <div style="background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.2); border-radius:6px; padding:6px 10px; flex:1; text-align:center;">
+                  <div style="color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; font-size:9px;">Positions</div>
+                  <div style="color:#e2e8f0; font-weight:600; font-family:monospace;">3</div>
+                </div>
+                <div style="background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.2); border-radius:6px; padding:6px 10px; flex:1; text-align:center;">
+                  <div style="color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; font-size:9px;">Capital</div>
+                  <div style="color:#e2e8f0; font-weight:600; font-family:monospace;">$10,250</div>
+                </div>
+                <div style="background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.2); border-radius:6px; padding:6px 10px; flex:1; text-align:center;">
+                  <div style="color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; font-size:9px;">P&L</div>
+                  <div style="color:#f87171; font-weight:600; font-family:monospace;">-$3,144</div>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.15); border-radius:6px; padding:8px 12px; cursor:pointer;">
+                  <div>
+                    <span style="color:#fb923c; font-weight:600; font-family:monospace;">$45 Put</span>
+                    <span style="color:#94a3b8; margin-left:8px; font-size:11px;">May 29</span>
+                    <span style="background:rgba(239,68,68,0.2); color:#f87171; padding:1px 6px; border-radius:3px; font-size:10px; margin-left:6px;">0d</span>
+                  </div>
+                  <div><span style="color:#10b981; font-family:monospace; font-size:12px;">+$124</span></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.15); border-radius:6px; padding:8px 12px; cursor:pointer;">
+                  <div>
+                    <span style="color:#fb923c; font-weight:600; font-family:monospace;">$57.50 Put</span>
+                    <span style="color:#94a3b8; margin-left:8px; font-size:11px;">Jun 18</span>
+                    <span style="background:rgba(34,197,94,0.2); color:#22c55e; padding:1px 6px; border-radius:3px; font-size:10px; margin-left:6px;">20d</span>
+                  </div>
+                  <div><span style="color:#10b981; font-family:monospace; font-size:12px;">+$94</span></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.15); border-radius:6px; padding:8px 12px; cursor:pointer;">
+                  <div>
+                    <span style="color:#fb923c; font-weight:600; font-family:monospace;">$48 Put</span>
+                    <span style="color:#94a3b8; margin-left:8px; font-size:11px;">Jun 18</span>
+                    <span style="background:rgba(34,197,94,0.2); color:#22c55e; padding:1px 6px; border-radius:3px; font-size:10px; margin-left:6px;">20d</span>
+                  </div>
+                  <div><span style="color:#f87171; font-family:monospace; font-size:12px;">-$3,362</span></div>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.1); border-radius:6px; padding:8px; cursor:pointer; color:#94a3b8; font-size:12px;">
+                  + New Position
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Flat Position List</h3>
+      <p>All positions in a single sortable/filterable list (like an AG Grid table). Each row shows ticker, strike, type, expiry, DTE, premium, P&L, OTM%, account. Group/sort by any column. Compact and data-dense — scales to any number of tickers.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-body" style="padding:12px; font-family:monospace; font-size:12px;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.1); color:#94a3b8; font-size:10px; text-transform:uppercase; letter-spacing:0.5px;">
+                <th style="padding:6px 8px; text-align:left;">Ticker</th>
+                <th style="padding:6px 8px; text-align:left;">Type</th>
+                <th style="padding:6px 8px; text-align:right;">Strike</th>
+                <th style="padding:6px 8px; text-align:left;">Expiry</th>
+                <th style="padding:6px 8px; text-align:right;">DTE</th>
+                <th style="padding:6px 8px; text-align:right;">Premium</th>
+                <th style="padding:6px 8px; text-align:right;">P&L</th>
+                <th style="padding:6px 8px; text-align:right;">OTM%</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer;">
+                <td style="padding:8px; color:#a78bfa; font-weight:600;">SOXL</td>
+                <td style="padding:8px;"><span style="background:rgba(99,102,241,0.15); color:#a78bfa; padding:2px 6px; border-radius:3px; font-size:10px;">CSP</span></td>
+                <td style="padding:8px; text-align:right; color:#e2e8f0;">$70.00</td>
+                <td style="padding:8px; color:#e2e8f0;">May 29</td>
+                <td style="padding:8px; text-align:right;"><span style="color:#f87171;">0d</span></td>
+                <td style="padding:8px; text-align:right; color:#e2e8f0;">$290</td>
+                <td style="padding:8px; text-align:right; color:#10b981;">+$289</td>
+                <td style="padding:8px; text-align:right; color:#e2e8f0;">89.6%</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer;">
+                <td style="padding:8px; color:#a78bfa; font-weight:600;">SOXL</td>
+                <td style="padding:8px;"><span style="background:rgba(99,102,241,0.15); color:#a78bfa; padding:2px 6px; border-radius:3px; font-size:10px;">CSP</span></td>
+                <td style="padding:8px; text-align:right; color:#e2e8f0;">$100.00</td>
+                <td style="padding:8px; color:#e2e8f0;">Jun 18</td>
+                <td style="padding:8px; text-align:right;"><span style="color:#22c55e;">20d</span></td>
+                <td style="padding:8px; text-align:right; color:#e2e8f0;">$500</td>
+                <td style="padding:8px; text-align:right; color:#10b981;">+$382</td>
+                <td style="padding:8px; text-align:right; color:#e2e8f0;">85.2%</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer;">
+                <td style="padding:8px; color:#fb923c; font-weight:600;">TQQQ</td>
+                <td style="padding:8px;"><span style="background:rgba(249,115,22,0.15); color:#fb923c; padding:2px 6px; border-radius:3px; font-size:10px;">CSP</span></td>
+                <td style="padding:8px; text-align:right; color:#e2e8f0;">$48.00</td>
+                <td style="padding:8px; color:#e2e8f0;">Jun 18</td>
+                <td style="padding:8px; text-align:right;"><span style="color:#22c55e;">20d</span></td>
+                <td style="padding:8px; text-align:right; color:#e2e8f0;">$230</td>
+                <td style="padding:8px; text-align:right; color:#f87171;">-$3,362</td>
+                <td style="padding:8px; text-align:right; color:#e2e8f0;">94.2%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid: KPI Dashboard + Ticker Accordion</h3>
+      <p>Top section: prominent KPI cards (total P&L, premium collected, capital deployed, buying power). Below: expandable accordion per ticker — collapsed shows summary metrics, expanded shows position list. Best of both: quick glance at totals + drill-down per ticker.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-body" style="padding:16px; font-family:system-ui; font-size:13px;">
+          <!-- KPI Row -->
+          <div style="display:flex; gap:12px; margin-bottom:16px;">
+            <div style="flex:1; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:8px; padding:12px; text-align:center;">
+              <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8;">Total P&L</div>
+              <div style="font-size:20px; font-weight:700; color:#10b981; font-family:monospace;">-$1,386</div>
+              <div style="font-size:10px; color:#94a3b8;">-$1,914 CAD</div>
+            </div>
+            <div style="flex:1; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2); border-radius:8px; padding:12px; text-align:center;">
+              <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8;">Premium</div>
+              <div style="font-size:20px; font-weight:700; color:#a78bfa; font-family:monospace;">+$2,675</div>
+              <div style="font-size:10px; color:#94a3b8;">+$3,694 CAD</div>
+            </div>
+            <div style="flex:1; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px; text-align:center;">
+              <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8;">Capital Deployed</div>
+              <div style="font-size:20px; font-weight:700; color:#e2e8f0; font-family:monospace;">$53,250</div>
+              <div style="font-size:10px; color:#94a3b8;">$73,533 CAD</div>
+            </div>
+            <div style="flex:1; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px; text-align:center;">
+              <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8;">Buying Power</div>
+              <div style="font-size:20px; font-weight:700; color:#e2e8f0; font-family:monospace;">$33,109</div>
+              <div style="font-size:10px; color:#94a3b8;">$108,118 CAD</div>
+            </div>
+          </div>
+          <!-- Accordion -->
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <!-- SOXL expanded -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05);">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span style="font-size:16px; font-weight:700; color:#e2e8f0;">SOXL</span>
+                  <span style="font-size:12px; color:#94a3b8; font-family:monospace;">$676.00</span>
+                  <span style="font-size:11px; color:#10b981;">+2.3%</span>
+                </div>
+                <div style="display:flex; gap:16px; align-items:center; font-size:12px;">
+                  <span style="color:#94a3b8;">3 positions</span>
+                  <span style="color:#10b981; font-family:monospace;">+$1,414</span>
+                  <span style="color:#e2e8f0;">&#9660;</span>
+                </div>
+              </div>
+              <!-- Expanded positions -->
+              <div style="padding:8px 16px 12px;">
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; border-radius:4px; cursor:pointer; background:rgba(99,102,241,0.04);">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span style="color:#a78bfa; font-weight:600; font-family:monospace; min-width:80px;">$70 Put</span>
+                      <span style="color:#94a3b8; font-size:11px;">May 29</span>
+                      <span style="background:rgba(239,68,68,0.2); color:#f87171; padding:1px 5px; border-radius:3px; font-size:10px;">0d</span>
+                      <span style="color:#94a3b8; font-size:11px;">89.6% OTM</span>
+                    </div>
+                    <div style="display:flex; gap:16px; align-items:center;">
+                      <span style="color:#94a3b8; font-size:11px; font-family:monospace;">prem $290</span>
+                      <span style="color:#10b981; font-family:monospace; font-size:12px; min-width:60px; text-align:right;">+$289</span>
+                    </div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; border-radius:4px; cursor:pointer; background:rgba(99,102,241,0.04);">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span style="color:#a78bfa; font-weight:600; font-family:monospace; min-width:80px;">$100 Put</span>
+                      <span style="color:#94a3b8; font-size:11px;">Jun 18</span>
+                      <span style="background:rgba(34,197,94,0.2); color:#22c55e; padding:1px 5px; border-radius:3px; font-size:10px;">20d</span>
+                      <span style="color:#94a3b8; font-size:11px;">85.2% OTM</span>
+                    </div>
+                    <div style="display:flex; gap:16px; align-items:center;">
+                      <span style="color:#94a3b8; font-size:11px; font-family:monospace;">prem $500</span>
+                      <span style="color:#10b981; font-family:monospace; font-size:12px; min-width:60px; text-align:right;">+$382</span>
+                    </div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; border-radius:4px; cursor:pointer; background:rgba(99,102,241,0.04);">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span style="color:#a78bfa; font-weight:600; font-family:monospace; min-width:80px;">$120 Put</span>
+                      <span style="color:#94a3b8; font-size:11px;">Jun 18</span>
+                      <span style="background:rgba(34,197,94,0.2); color:#22c55e; padding:1px 5px; border-radius:3px; font-size:10px;">20d</span>
+                      <span style="color:#94a3b8; font-size:11px;">82.2% OTM</span>
+                    </div>
+                    <div style="display:flex; gap:16px; align-items:center;">
+                      <span style="color:#94a3b8; font-size:11px; font-family:monospace;">prem $960</span>
+                      <span style="color:#10b981; font-family:monospace; font-size:12px; min-width:60px; text-align:right;">+$743</span>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.08); border-radius:4px; padding:6px; cursor:pointer; color:#94a3b8; font-size:11px; margin-top:2px;">
+                    + New Position
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- TECL collapsed -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span style="font-size:16px; font-weight:700; color:#e2e8f0;">TECL</span>
+                  <span style="font-size:12px; color:#94a3b8; font-family:monospace;">$256.00</span>
+                </div>
+                <div style="display:flex; gap:16px; align-items:center; font-size:12px;">
+                  <span style="color:#94a3b8;">1 position</span>
+                  <span style="color:#10b981; font-family:monospace;">+$344</span>
+                  <span style="color:#e2e8f0;">&#9654;</span>
+                </div>
+              </div>
+            </div>
+            <!-- TQQQ collapsed -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span style="font-size:16px; font-weight:700; color:#e2e8f0;">TQQQ</span>
+                  <span style="font-size:12px; color:#94a3b8; font-family:monospace;">$827.00</span>
+                </div>
+                <div style="display:flex; gap:16px; align-items:center; font-size:12px;">
+                  <span style="color:#94a3b8;">3 positions</span>
+                  <span style="color:#f87171; font-family:monospace;">-$3,144</span>
+                  <span style="color:#e2e8f0;">&#9654;</span>
+                </div>
+              </div>
+            </div>
+            <!-- Add ticker -->
+            <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.1); border-radius:8px; padding:12px; cursor:pointer; color:#94a3b8; font-size:13px;">
+              + Add Ticker
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

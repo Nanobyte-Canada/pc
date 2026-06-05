@@ -1,0 +1,70 @@
+- generic [ref=e39]:
+  - main [ref=e40]:
+    - generic [ref=e41]:
+      - navigation [ref=e42]:
+        - link "Accounts" [ref=e43] [cursor=pointer]:
+          - /url: /brokers/connections
+        - img [ref=e44]
+        - generic [ref=e46]: Account 1
+      - generic [ref=e47]:
+        - generic [ref=e48]: U
+        - generic [ref=e49]:
+          - heading "Account 1" [level=1] [ref=e51]
+          - generic [ref=e54]: Never synced
+      - generic [ref=e56]:
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - generic [ref=e59]: Total Value
+            - img [ref=e61]
+          - generic [ref=e64]: C$ 0
+          - generic [ref=e66]:
+            - generic [ref=e67]: Gain
+            - generic [ref=e68]: +C$ 0
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - generic [ref=e71]: Investment
+            - img [ref=e73]
+          - generic [ref=e76]: C$ 0
+          - generic [ref=e78]:
+            - generic [ref=e79]: C$
+            - generic [ref=e80]: "0.00"
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - generic [ref=e83]: Cash
+            - img [ref=e85]
+          - generic [ref=e88]: C$ 0
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - generic [ref=e91]: Returns
+            - img [ref=e93]
+          - generic [ref=e95]: +C$ 0
+          - generic [ref=e97]:
+            - generic [ref=e98]: ROI
+            - generic [ref=e99]: 0.0%
+          - generic [ref=e100]:
+            - generic [ref=e101]: IRR
+            - generic [ref=e102]: 0.0%
+          - generic [ref=e103]:
+            - generic [ref=e104]: Div Yield
+            - generic [ref=e105]: 0.0%
+      - generic [ref=e106]:
+        - button "Positions" [ref=e107] [cursor=pointer]
+        - button "Activities" [ref=e108] [cursor=pointer]
+        - button "Dividends" [active] [ref=e109] [cursor=pointer]
+      - generic [ref=e166]: No dividend entries found for this period.
+  - navigation "Tab navigation" [ref=e124]:
+    - button "Home" [ref=e125] [cursor=pointer]:
+      - img [ref=e126]
+      - generic [ref=e131]: Home
+    - button "Accounts" [ref=e132] [cursor=pointer]:
+      - img [ref=e133]
+      - generic [ref=e137]: Accounts
+    - button "Screener" [ref=e138] [cursor=pointer]:
+      - img [ref=e139]
+      - generic [ref=e142]: Screener
+    - button "Options" [ref=e143] [cursor=pointer]:
+      - img [ref=e144]
+      - generic [ref=e147]: Options
+    - button "More" [ref=e148] [cursor=pointer]:
+      - img [ref=e149]
+      - generic [ref=e150]: More

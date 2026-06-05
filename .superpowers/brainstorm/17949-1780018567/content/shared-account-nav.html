@@ -1,0 +1,167 @@
+<h2>Shared Account Navigation Bar</h2>
+<p class="subtitle">A reusable top bar component used by both Portfolio and Wheel Strategy pages. Shows account pills with broker icon + type + masked number. Consistent across desktop and mobile.</p>
+
+<!-- Concept -->
+<div class="section">
+  <h3>Concept</h3>
+  <div style="background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.1);border-radius:10px;padding:16px;font-size:13px;color:#cbd5e1;line-height:1.8;">
+    <strong style="color:#6ee7b7;">One component, both pages.</strong> Extract the account switcher into a shared <code style="color:#6ee7b7;">AccountNavBar</code> component. It renders pill tabs on desktop and a dropdown + dots on mobile. Both Portfolio and Wheel Strategy pages use the same component, ensuring identical look and behavior. Each pill shows broker icon + account type + masked ••number.
+  </div>
+</div>
+
+<!-- Desktop: Portfolio Page -->
+<div class="section">
+  <h3>Desktop — Portfolio Page</h3>
+  <div class="mockup">
+    <div class="mockup-header">Portfolio — with shared AccountNavBar</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:200px;display:flex;font-family:'DM Sans',sans-serif;">
+        <div style="width:56px;background:#0f1520;border-right:1px solid rgba(255,255,255,0.06);flex-shrink:0;"></div>
+        <div style="flex:1;padding:20px 28px;">
+          <!-- Page title -->
+          <div style="font-size:22px;font-weight:700;color:#e2e8f0;margin-bottom:14px;">Portfolio</div>
+          <!-- Shared AccountNavBar -->
+          <div style="display:flex;gap:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:3px;width:fit-content;">
+            <div style="padding:6px 14px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-size:12px;font-weight:500;cursor:pointer;">All Accounts</div>
+            <div style="padding:6px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+              LIRA <span style="color:#64748b;font-family:'JetBrains Mono',monospace;font-size:10px;">••9683</span>
+            </div>
+            <div style="padding:6px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+              RRSP <span style="color:#64748b;font-family:'JetBrains Mono',monospace;font-size:10px;">••8214</span>
+            </div>
+            <div style="padding:6px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+              Margin <span style="color:#64748b;font-family:'JetBrains Mono',monospace;font-size:10px;">••4150</span>
+            </div>
+            <div style="padding:6px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+              RRSP <span style="color:#64748b;font-family:'JetBrains Mono',monospace;font-size:10px;">••2736</span>
+            </div>
+            <div style="padding:6px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+              TFSA <span style="color:#64748b;font-family:'JetBrains Mono',monospace;font-size:10px;">••0190</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Desktop: Wheel Strategy Page -->
+<div class="section">
+  <h3>Desktop — Wheel Strategy Page</h3>
+  <div class="mockup">
+    <div class="mockup-header">Wheel Strategy — with same shared AccountNavBar</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:200px;display:flex;font-family:'DM Sans',sans-serif;">
+        <div style="width:56px;background:#0f1520;border-right:1px solid rgba(255,255,255,0.06);flex-shrink:0;"></div>
+        <div style="flex:1;padding:20px 28px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="font-size:22px;font-weight:700;color:#e2e8f0;">Wheel Strategy</div>
+            <div style="display:flex;gap:14px;font-size:12px;">
+              <div style="display:flex;align-items:center;gap:5px;"><div style="width:12px;height:12px;border-radius:3px;background:rgba(99,102,241,0.15);border:1.5px solid rgba(99,102,241,0.5);"></div><span style="color:#94a3b8;">CSP</span></div>
+              <div style="display:flex;align-items:center;gap:5px;"><div style="width:12px;height:12px;border-radius:3px;background:rgba(249,115,22,0.15);border:1.5px solid rgba(249,115,22,0.5);"></div><span style="color:#94a3b8;">CC</span></div>
+            </div>
+          </div>
+          <!-- Same shared AccountNavBar -->
+          <div style="display:flex;gap:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:3px;width:fit-content;">
+            <div style="padding:6px 14px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-size:12px;font-weight:500;cursor:pointer;">All Accounts</div>
+            <div style="padding:6px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+              LIRA <span style="color:#64748b;font-family:'JetBrains Mono',monospace;font-size:10px;">••9683</span>
+            </div>
+            <div style="padding:6px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+              RRSP <span style="color:#64748b;font-family:'JetBrains Mono',monospace;font-size:10px;">••8214</span>
+            </div>
+            <div style="padding:6px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+              Margin <span style="color:#64748b;font-family:'JetBrains Mono',monospace;font-size:10px;">••4150</span>
+            </div>
+            <div style="padding:6px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+              RRSP <span style="color:#64748b;font-family:'JetBrains Mono',monospace;font-size:10px;">••2736</span>
+            </div>
+            <div style="padding:6px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+              TFSA <span style="color:#64748b;font-family:'JetBrains Mono',monospace;font-size:10px;">••0190</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile: Both pages -->
+<div class="section">
+  <h3>Mobile — Same on Both Pages</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">Portfolio — Mobile</div>
+      <div class="mockup-body" style="padding:0;">
+        <div style="background:#0a0f1a;min-height:160px;font-family:'DM Sans',sans-serif;max-width:280px;margin:0 auto;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+          <!-- Dropdown at top -->
+          <div style="display:flex;align-items:center;justify-content:center;padding:14px 16px 4px;">
+            <div style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#e2e8f0;">
+              ALL ACCOUNTS
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <!-- Dots -->
+          <div style="display:flex;justify-content:center;gap:5px;padding:6px 0 14px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#10b981;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:1px;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:1px;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:1px;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:1px;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:1px;"></div>
+          </div>
+          <div style="padding:0 14px 14px;font-size:11px;color:#64748b;text-align:center;">Portfolio content below...</div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Wheel — Mobile (same nav)</div>
+      <div class="mockup-body" style="padding:0;">
+        <div style="background:#0a0f1a;min-height:160px;font-family:'DM Sans',sans-serif;max-width:280px;margin:0 auto;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+          <!-- Same dropdown -->
+          <div style="display:flex;align-items:center;justify-content:center;padding:14px 16px 4px;">
+            <div style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#e2e8f0;">
+              <div style="width:18px;height:18px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:8px;color:#4ade80;font-weight:800;">Q</div>
+              TFSA ••0190
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <!-- Same dots -->
+          <div style="display:flex;justify-content:center;gap:5px;padding:6px 0 14px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#10b981;margin-top:-1px;"></div>
+          </div>
+          <div style="padding:0 14px 14px;font-size:11px;color:#64748b;text-align:center;">Wheel content below...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Component Spec -->
+<div class="section" style="margin-top:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;">
+  <h3 style="margin-top:0;font-size:14px;">AccountNavBar Component Spec</h3>
+  <ul style="font-size:13px;color:#cbd5e1;margin:0;padding-left:20px;line-height:1.8;">
+    <li><strong>File:</strong> <code style="color:#6ee7b7;">components/layout/AccountNavBar.tsx</code> + <code style="color:#6ee7b7;">AccountNavBar.css</code></li>
+    <li><strong>Props:</strong> <code style="color:#6ee7b7;">selectedId: number | null</code>, <code style="color:#6ee7b7;">onSelect: (id: number | null) =&gt; void</code>, <code style="color:#6ee7b7;">accounts: DashboardAccount[]</code></li>
+    <li><strong>Desktop (≥768px):</strong> Pill tabs in a container with background/border. "All Accounts" first, then per-account pills with broker icon (14px colored badge) + type + ••number (10px mono muted). Active pill: emerald bg + text.</li>
+    <li><strong>Mobile (&lt;768px):</strong> Centered dropdown trigger ("ALL ACCOUNTS" or "Q TFSA ••0190" with chevron) + dot indicators below. Tapping opens bottom sheet with account list.</li>
+    <li><strong>Account number format:</strong> Always show <code style="color:#6ee7b7;">••</code> + last 4 digits in monospace muted text</li>
+    <li><strong>Used by:</strong> DashboardPage (Portfolio) and WheelPage — both import the same component</li>
+    <li><strong>Replaces:</strong> Inline account switcher code in DashboardPage + <code style="color:#6ee7b7;">.wheel-account-tabs</code> in WheelPage</li>
+  </ul>
+</div>

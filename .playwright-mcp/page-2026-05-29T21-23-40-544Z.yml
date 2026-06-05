@@ -1,0 +1,396 @@
+- generic [ref=e6]:
+  - complementary [ref=e7]:
+    - navigation "Main navigation" [ref=e8]:
+      - generic [ref=e9]: P
+      - button "Portfolio" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+      - button "Wheel" [ref=e16] [cursor=pointer]:
+        - img [ref=e17]
+      - button "Connections" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - button "Toggle theme" [ref=e25] [cursor=pointer]:
+        - img [ref=e26]
+      - button "Admin settings" [ref=e32] [cursor=pointer]:
+        - img [ref=e33]
+      - button "User profile" [ref=e36] [cursor=pointer]: S
+  - main [ref=e38]:
+    - generic [ref=e39]:
+      - generic [ref=e41]:
+        - button "All Accounts" [ref=e42] [cursor=pointer]
+        - button "Q LIRA ••9683" [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]: Q
+          - generic [ref=e45]: LIRA
+          - generic [ref=e46]: ••9683
+        - button "Q RRSP ••8214" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: Q
+          - generic [ref=e49]: RRSP
+          - generic [ref=e50]: ••8214
+        - button "Q MARGIN ••4150" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: Q
+          - generic [ref=e53]: MARGIN
+          - generic [ref=e54]: ••4150
+        - button "Q RRSP ••2736" [ref=e55] [cursor=pointer]:
+          - generic [ref=e56]: Q
+          - generic [ref=e57]: RRSP
+          - generic [ref=e58]: ••2736
+        - button "Q TFSA ••0190" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]: Q
+          - generic [ref=e61]: TFSA
+          - generic [ref=e62]: ••0190
+      - heading "Wheel Strategy" [level=1] [ref=e64]
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - generic [ref=e69]:
+                - generic [ref=e70]: Capital Available
+                - img [ref=e71]
+              - generic [ref=e74]: C$ 39,697
+              - generic [ref=e76]:
+                - generic [ref=e77]: C$
+                - generic [ref=e78]: 39,696.86
+              - generic [ref=e79]:
+                - generic [ref=e80]: US$
+                - generic [ref=e81]: "0.00"
+            - generic [ref=e82]:
+              - generic [ref=e83]:
+                - generic [ref=e84]: Capital Deployed
+                - img [ref=e85]
+              - generic [ref=e87]: US$33,000.00
+              - generic [ref=e89]:
+                - generic [ref=e90]: CSP
+                - generic [ref=e91]: US$33,000.00
+              - generic [ref=e92]:
+                - generic [ref=e93]: CC
+                - generic [ref=e94]: US$4,800.00
+            - generic [ref=e95]:
+              - generic [ref=e96]:
+                - generic [ref=e97]: CC Available
+                - img [ref=e98]
+              - generic [ref=e100]: 7 contracts
+              - generic [ref=e242]:
+                - generic [ref=e243]: QQU.TO
+                - generic [ref=e244]: "3"
+              - generic [ref=e245]:
+                - generic [ref=e246]: SPXU.TO
+                - generic [ref=e247]: "3"
+              - generic [ref=e248]:
+                - generic [ref=e249]: TQQQ
+                - generic [ref=e250]: "1"
+            - generic [ref=e105]:
+              - generic [ref=e106]:
+                - generic [ref=e107]: Premium & P&L
+                - img [ref=e108]
+              - generic [ref=e110]: "-US$2,112.00"
+              - generic [ref=e112]:
+                - generic [ref=e113]: Premium
+                - generic [ref=e114]: +US$1,920.00
+              - generic [ref=e115]:
+                - generic [ref=e116]: Unrealized
+                - generic [ref=e117]: "-US$2,112.00"
+            - generic [ref=e118]:
+              - generic [ref=e119]:
+                - generic [ref=e120]: Positions
+                - img [ref=e121]
+              - generic [ref=e125]: "4"
+              - generic [ref=e127]:
+                - generic [ref=e128]: CSP
+                - generic [ref=e129]: "3"
+              - generic [ref=e130]:
+                - generic [ref=e131]: CC
+                - generic [ref=e132]: "1"
+              - generic [ref=e133]:
+                - generic [ref=e134]: Expiring
+                - generic [ref=e135]: "1"
+          - generic [ref=e251]:
+            - button "Previous weeks" [ref=e252] [cursor=pointer]:
+              - img [ref=e253]
+            - generic [ref=e255]: May 29 — Jun 19, 2026
+            - button "Next weeks" [ref=e256] [cursor=pointer]:
+              - img [ref=e257]
+            - button "Today" [ref=e259] [cursor=pointer]
+          - generic [ref=e260]:
+            - table [ref=e262]:
+              - rowgroup [ref=e263]:
+                - row "Ticker May 29 0d Fri Jun 5 7d Fri Jun 12 14d Fri Jun 19 Monthly 21d Fri" [ref=e264]:
+                  - columnheader "Ticker" [ref=e265]
+                  - columnheader "May 29 0d Fri" [ref=e266]:
+                    - generic [ref=e267]: May 29
+                    - generic [ref=e268]:
+                      - generic [ref=e269]: 0d
+                      - generic [ref=e270]: Fri
+                  - columnheader "Jun 5 7d Fri" [ref=e271]:
+                    - generic [ref=e272]: Jun 5
+                    - generic [ref=e273]:
+                      - generic [ref=e274]: 7d
+                      - generic [ref=e275]: Fri
+                  - columnheader "Jun 12 14d Fri" [ref=e276]:
+                    - generic [ref=e277]: Jun 12
+                    - generic [ref=e278]:
+                      - generic [ref=e279]: 14d
+                      - generic [ref=e280]: Fri
+                  - columnheader "Jun 19 Monthly 21d Fri" [ref=e281]:
+                    - generic [ref=e282]:
+                      - text: Jun 19
+                      - generic [ref=e283]: Monthly
+                    - generic [ref=e284]:
+                      - generic [ref=e285]: 21d
+                      - generic [ref=e286]: Fri
+              - rowgroup [ref=e287]:
+                - row "QQU.TO $56 C$ 0 300 shares ▲ 3 CC + Sell CC + Sell CC + Sell CC + Sell CC" [ref=e288]:
+                  - cell "QQU.TO $56 C$ 0 300 shares ▲ 3 CC" [ref=e289]:
+                    - generic [ref=e290]: QQU.TO
+                    - generic [ref=e291]: $56
+                    - generic [ref=e292]: C$ 0
+                    - generic [ref=e293]: 300 shares
+                    - generic [ref=e294]: ▲ 3 CC
+                  - cell "+ Sell CC" [ref=e295]:
+                    - button "+ Sell CC" [ref=e297] [cursor=pointer]
+                  - cell "+ Sell CC" [ref=e298]:
+                    - button "+ Sell CC" [ref=e300] [cursor=pointer]
+                  - cell "+ Sell CC" [ref=e301]:
+                    - button "+ Sell CC" [ref=e303] [cursor=pointer]
+                  - cell "+ Sell CC" [ref=e304]:
+                    - button "+ Sell CC" [ref=e306] [cursor=pointer]
+                - row "SOXL $676 US$ 19,000 $70 Put 89.6% +US$289.00 + + + +" [ref=e307]:
+                  - cell "SOXL $676 US$ 19,000" [ref=e308]:
+                    - generic [ref=e309]: SOXL
+                    - generic [ref=e310]: $676
+                    - generic [ref=e311]: US$ 19,000
+                  - cell "$70 Put 89.6% +US$289.00 +" [ref=e312]:
+                    - generic [ref=e313]:
+                      - button "$70 Put 89.6% +US$289.00" [ref=e314] [cursor=pointer]:
+                        - generic [ref=e315]:
+                          - generic [ref=e316]: $70 Put
+                          - generic [ref=e317]: 89.6%
+                        - generic [ref=e319]: +US$289.00
+                      - button "+" [ref=e320] [cursor=pointer]
+                  - cell "+" [ref=e321]:
+                    - button "+" [ref=e323] [cursor=pointer]
+                  - cell "+" [ref=e324]:
+                    - button "+" [ref=e326] [cursor=pointer]
+                  - cell "+" [ref=e327]:
+                    - button "+" [ref=e329] [cursor=pointer]
+                - row "SPXU.TO $743 C$ 0 300 shares ▲ 3 CC + Sell CC + Sell CC + Sell CC + Sell CC" [ref=e330]:
+                  - cell "SPXU.TO $743 C$ 0 300 shares ▲ 3 CC" [ref=e331]:
+                    - generic [ref=e332]: SPXU.TO
+                    - generic [ref=e333]: $743
+                    - generic [ref=e334]: C$ 0
+                    - generic [ref=e335]: 300 shares
+                    - generic [ref=e336]: ▲ 3 CC
+                  - cell "+ Sell CC" [ref=e337]:
+                    - button "+ Sell CC" [ref=e339] [cursor=pointer]
+                  - cell "+ Sell CC" [ref=e340]:
+                    - button "+ Sell CC" [ref=e342] [cursor=pointer]
+                  - cell "+ Sell CC" [ref=e343]:
+                    - button "+ Sell CC" [ref=e345] [cursor=pointer]
+                  - cell "+ Sell CC" [ref=e346]:
+                    - button "+ Sell CC" [ref=e348] [cursor=pointer]
+                - row "TECL $256 US$ 14,000 + + + +" [ref=e349]:
+                  - cell "TECL $256 US$ 14,000" [ref=e350]:
+                    - generic [ref=e351]: TECL
+                    - generic [ref=e352]: $256
+                    - generic [ref=e353]: US$ 14,000
+                  - cell "+" [ref=e354]:
+                    - button "+" [ref=e356] [cursor=pointer]
+                  - cell "+" [ref=e357]:
+                    - button "+" [active] [ref=e359] [cursor=pointer]
+                  - cell "+" [ref=e360]:
+                    - button "+" [ref=e362] [cursor=pointer]
+                  - cell "+" [ref=e363]:
+                    - button "+" [ref=e365] [cursor=pointer]
+                - row "TQQQ $827 US$ 0 100 shares ▲ 1 CC + Sell CC + Sell CC + Sell CC + Sell CC" [ref=e366]:
+                  - cell "TQQQ $827 US$ 0 100 shares ▲ 1 CC" [ref=e367]:
+                    - generic [ref=e368]: TQQQ
+                    - generic [ref=e369]: $827
+                    - generic [ref=e370]: US$ 0
+                    - generic [ref=e371]: 100 shares
+                    - generic [ref=e372]: ▲ 1 CC
+                  - cell "+ Sell CC" [ref=e373]:
+                    - button "+ Sell CC" [ref=e375] [cursor=pointer]
+                  - cell "+ Sell CC" [ref=e376]:
+                    - button "+ Sell CC" [ref=e378] [cursor=pointer]
+                  - cell "+ Sell CC" [ref=e379]:
+                    - button "+ Sell CC" [ref=e381] [cursor=pointer]
+                  - cell "+ Sell CC" [ref=e382]:
+                    - button "+ Sell CC" [ref=e384] [cursor=pointer]
+            - button "+ Add Ticker" [ref=e385] [cursor=pointer]
+          - generic [ref=e386]:
+            - generic [ref=e387]: CSP
+            - generic [ref=e389]: CC
+        - generic [ref=e1045]:
+          - generic [ref=e1046]:
+            - generic [ref=e1047]: QQU.TO
+            - generic [ref=e1048]: CC
+            - button "Close" [ref=e1049] [cursor=pointer]:
+              - img [ref=e1050]
+          - generic [ref=e1053]:
+            - generic [ref=e1054]: US$446.96
+            - generic [ref=e1055]: +0.0%
+            - generic [ref=e1056]: Live
+          - generic [ref=e1058]:
+            - generic [ref=e1059]: Expiry
+            - generic [ref=e1060]:
+              - combobox [ref=e1061] [cursor=pointer]:
+                - option "Jun 19, 2026 — 20 DTE" [selected]
+                - option "Jul 17, 2026 — 48 DTE"
+                - option "Aug 21, 2026 — 83 DTE"
+                - option "Sep 18, 2026 — 111 DTE"
+              - img
+          - generic [ref=e1062]:
+            - generic [ref=e1063]:
+              - text: Strike
+              - generic [ref=e1064]: Delta
+            - generic [ref=e1065]:
+              - text: Bid
+              - generic [ref=e1066]: Disc · Yield
+            - generic [ref=e1067]:
+              - text: Ask
+              - generic [ref=e1068]: Disc · Yield
+          - table [ref=e1070]:
+            - rowgroup [ref=e1071]:
+              - button "US$61.00 δ 1.00 US$453.25 +187.8% 13560.5% US$453.30 +187.8% 13562.0%" [ref=e1217]:
+                - cell "US$61.00 δ 1.00" [ref=e1073]:
+                  - generic [ref=e1074]: US$61.00
+                  - generic [ref=e1075]: δ 1.00
+                - cell "US$453.25 +187.8% 13560.5%" [ref=e1218]:
+                  - generic [ref=e1077]: US$453.25
+                  - generic [ref=e1078]: +187.8%
+                  - generic [ref=e1079]: 13560.5%
+                - cell "US$453.30 +187.8% 13562.0%" [ref=e1219]:
+                  - generic [ref=e1081]: US$453.30
+                  - generic [ref=e1082]: +187.8%
+                  - generic [ref=e1083]: 13562.0%
+              - button "US$60.00 δ 1.00 US$448.47 +186.9% 13640.8% US$448.52 +186.9% 13642.4%" [ref=e1220]:
+                - cell "US$60.00 δ 1.00" [ref=e1085]:
+                  - generic [ref=e1086]: US$60.00
+                  - generic [ref=e1087]: δ 1.00
+                - cell "US$448.47 +186.9% 13640.8%" [ref=e1221]:
+                  - generic [ref=e1089]: US$448.47
+                  - generic [ref=e1090]: +186.9%
+                  - generic [ref=e1091]: 13640.8%
+                - cell "US$448.52 +186.9% 13642.4%" [ref=e1222]:
+                  - generic [ref=e1093]: US$448.52
+                  - generic [ref=e1094]: +186.9%
+                  - generic [ref=e1095]: 13642.4%
+              - button "US$59.00 δ 1.00 US$449.71 +187.4% 13910.4% US$449.76 +187.4% 13911.9%" [ref=e1223]:
+                - cell "US$59.00 δ 1.00" [ref=e1097]:
+                  - generic [ref=e1098]: US$59.00
+                  - generic [ref=e1099]: δ 1.00
+                - cell "US$449.71 +187.4% 13910.4%" [ref=e1224]:
+                  - generic [ref=e1101]: US$449.71
+                  - generic [ref=e1102]: +187.4%
+                  - generic [ref=e1103]: 13910.4%
+                - cell "US$449.76 +187.4% 13911.9%" [ref=e1225]:
+                  - generic [ref=e1105]: US$449.76
+                  - generic [ref=e1106]: +187.4%
+                  - generic [ref=e1107]: 13911.9%
+              - button "US$58.00 δ 1.00 US$454.78 +188.8% 14310.0% US$454.83 +188.8% 14311.6%" [ref=e1226]:
+                - cell "US$58.00 δ 1.00" [ref=e1109]:
+                  - generic [ref=e1110]: US$58.00
+                  - generic [ref=e1111]: δ 1.00
+                - cell "US$454.78 +188.8% 14310.0%" [ref=e1227]:
+                  - generic [ref=e1113]: US$454.78
+                  - generic [ref=e1114]: +188.8%
+                  - generic [ref=e1115]: 14310.0%
+                - cell "US$454.83 +188.8% 14311.6%" [ref=e1228]:
+                  - generic [ref=e1117]: US$454.83
+                  - generic [ref=e1118]: +188.8%
+                  - generic [ref=e1119]: 14311.6%
+              - button "US$57.00 δ 1.00 US$454.22 +188.9% 14543.0% US$454.27 +188.9% 14544.6%" [ref=e1229]:
+                - cell "US$57.00 δ 1.00" [ref=e1121]:
+                  - generic [ref=e1122]: US$57.00
+                  - generic [ref=e1123]: δ 1.00
+                - cell "US$454.22 +188.9% 14543.0%" [ref=e1230]:
+                  - generic [ref=e1125]: US$454.22
+                  - generic [ref=e1126]: +188.9%
+                  - generic [ref=e1127]: 14543.0%
+                - cell "US$454.27 +188.9% 14544.6%" [ref=e1231]:
+                  - generic [ref=e1129]: US$454.27
+                  - generic [ref=e1130]: +188.9%
+                  - generic [ref=e1131]: 14544.6%
+              - button "US$56.00 δ 1.00 US$450.26 +188.2% 14673.8% US$450.31 +188.2% 14675.4%" [ref=e1232]:
+                - cell "US$56.00 δ 1.00" [ref=e1133]:
+                  - generic [ref=e1134]: US$56.00
+                  - generic [ref=e1135]: δ 1.00
+                - cell "US$450.26 +188.2% 14673.8%" [ref=e1233]:
+                  - generic [ref=e1137]: US$450.26
+                  - generic [ref=e1138]: +188.2%
+                  - generic [ref=e1139]: 14673.8%
+                - cell "US$450.31 +188.2% 14675.4%" [ref=e1234]:
+                  - generic [ref=e1141]: US$450.31
+                  - generic [ref=e1142]: +188.2%
+                  - generic [ref=e1143]: 14675.4%
+              - button "US$55.00 δ 1.00 US$452.08 +188.8% 15001.0% US$452.13 +188.9% 15002.6%" [ref=e1235]:
+                - cell "US$55.00 δ 1.00" [ref=e1145]:
+                  - generic [ref=e1146]: US$55.00
+                  - generic [ref=e1147]: δ 1.00
+                - cell "US$452.08 +188.8% 15001.0%" [ref=e1236]:
+                  - generic [ref=e1149]: US$452.08
+                  - generic [ref=e1150]: +188.8%
+                  - generic [ref=e1151]: 15001.0%
+                - cell "US$452.13 +188.9% 15002.6%" [ref=e1237]:
+                  - generic [ref=e1153]: US$452.13
+                  - generic [ref=e1154]: +188.9%
+                  - generic [ref=e1155]: 15002.6%
+              - button "US$54.00 δ 1.00 US$453.57 +189.4% 15329.0% US$453.62 +189.4% 15330.7%" [ref=e1238]:
+                - cell "US$54.00 δ 1.00" [ref=e1157]:
+                  - generic [ref=e1158]: US$54.00
+                  - generic [ref=e1159]: δ 1.00
+                - cell "US$453.57 +189.4% 15329.0%" [ref=e1239]:
+                  - generic [ref=e1161]: US$453.57
+                  - generic [ref=e1162]: +189.4%
+                  - generic [ref=e1163]: 15329.0%
+                - cell "US$453.62 +189.4% 15330.7%" [ref=e1240]:
+                  - generic [ref=e1165]: US$453.62
+                  - generic [ref=e1166]: +189.4%
+                  - generic [ref=e1167]: 15330.7%
+              - button "US$53.00 δ 1.00 US$445.20 +187.7% 15329.8% US$445.25 +187.8% 15331.6%" [ref=e1241]:
+                - cell "US$53.00 δ 1.00" [ref=e1169]:
+                  - generic [ref=e1170]: US$53.00
+                  - generic [ref=e1171]: δ 1.00
+                - cell "US$445.20 +187.7% 15329.8%" [ref=e1242]:
+                  - generic [ref=e1173]: US$445.20
+                  - generic [ref=e1174]: +187.7%
+                  - generic [ref=e1175]: 15329.8%
+                - cell "US$445.25 +187.8% 15331.6%" [ref=e1243]:
+                  - generic [ref=e1177]: US$445.25
+                  - generic [ref=e1178]: +187.8%
+                  - generic [ref=e1179]: 15331.6%
+              - button "US$52.00 δ 1.00 US$451.14 +189.3% 15833.2% US$451.19 +189.3% 15835.0%" [ref=e1244]:
+                - cell "US$52.00 δ 1.00" [ref=e1181]:
+                  - generic [ref=e1182]: US$52.00
+                  - generic [ref=e1183]: δ 1.00
+                - cell "US$451.14 +189.3% 15833.2%" [ref=e1245]:
+                  - generic [ref=e1185]: US$451.14
+                  - generic [ref=e1186]: +189.3%
+                  - generic [ref=e1187]: 15833.2%
+                - cell "US$451.19 +189.3% 15835.0%" [ref=e1246]:
+                  - generic [ref=e1189]: US$451.19
+                  - generic [ref=e1190]: +189.3%
+                  - generic [ref=e1191]: 15835.0%
+              - button "US$51.00 δ 1.00 US$454.41 +190.3% 16260.6% US$454.46 +190.3% 16262.4%" [ref=e1247]:
+                - cell "US$51.00 δ 1.00" [ref=e1193]:
+                  - generic [ref=e1194]: US$51.00
+                  - generic [ref=e1195]: δ 1.00
+                - cell "US$454.41 +190.3% 16260.6%" [ref=e1248]:
+                  - generic [ref=e1197]: US$454.41
+                  - generic [ref=e1198]: +190.3%
+                  - generic [ref=e1199]: 16260.6%
+                - cell "US$454.46 +190.3% 16262.4%" [ref=e1249]:
+                  - generic [ref=e1201]: US$454.46
+                  - generic [ref=e1202]: +190.3%
+                  - generic [ref=e1203]: 16262.4%
+              - button "US$50.00 δ 1.00 US$452.51 +190.1% 16516.8% US$452.56 +190.1% 16518.6%" [ref=e1250]:
+                - cell "US$50.00 δ 1.00" [ref=e1205]:
+                  - generic [ref=e1206]: US$50.00
+                  - generic [ref=e1207]: δ 1.00
+                - cell "US$452.51 +190.1% 16516.8%" [ref=e1251]:
+                  - generic [ref=e1209]: US$452.51
+                  - generic [ref=e1210]: +190.1%
+                  - generic [ref=e1211]: 16516.8%
+                - cell "US$452.56 +190.1% 16518.6%" [ref=e1252]:
+                  - generic [ref=e1213]: US$452.56
+                  - generic [ref=e1214]: +190.1%
+                  - generic [ref=e1215]: 16518.6%
+          - generic [ref=e1216]: Tap a strike to place order

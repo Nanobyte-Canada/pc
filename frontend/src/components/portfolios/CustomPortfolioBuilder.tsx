@@ -116,7 +116,7 @@ export function CustomPortfolioBuilder({ existingModelId, onSaved }: CustomPortf
   const isSaving = createMutation.isPending || updateMutation.isPending
   const searchResults = searchData?.data ?? []
 
-  const existingSymbols = new Set(allocations.map(a => a.symbol.toUpperCase()))
+  const existingSymbols = useMemo(() => new Set(allocations.map(a => a.symbol.toUpperCase())), [allocations])
 
   // ---------- Handlers ----------
 

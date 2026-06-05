@@ -1,0 +1,77 @@
+- generic [ref=e23]:
+  - complementary [ref=e24]:
+    - navigation "Main navigation" [ref=e25]:
+      - generic [ref=e26]: P
+      - button "Portfolio" [ref=e27] [cursor=pointer]:
+        - img [ref=e28]
+      - button "Wheel" [ref=e33] [cursor=pointer]:
+        - img [ref=e34]
+      - button "Connections" [ref=e38] [cursor=pointer]:
+        - img [ref=e39]
+      - button "Toggle theme" [ref=e42] [cursor=pointer]:
+        - img [ref=e43]
+      - button "Admin settings" [ref=e49] [cursor=pointer]:
+        - img [ref=e50]
+      - button "User profile" [ref=e53] [cursor=pointer]: S
+  - main [ref=e55]:
+    - generic [ref=e56]:
+      - button "All Accounts" [ref=e59] [cursor=pointer]
+      - heading "Wheel Strategy" [level=1] [ref=e61]
+      - generic [ref=e63]:
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - generic [ref=e66]:
+              - generic [ref=e67]: Capital Available
+              - img [ref=e68]
+            - generic [ref=e71]: C$ 0
+            - generic [ref=e73]:
+              - generic [ref=e74]: C$
+              - generic [ref=e75]: "0.00"
+            - generic [ref=e76]:
+              - generic [ref=e77]: US$
+              - generic [ref=e78]: "0.00"
+          - generic [ref=e79]:
+            - generic [ref=e80]:
+              - generic [ref=e81]: Capital Deployed
+              - img [ref=e82]
+            - generic [ref=e84]: US$53,250.00
+            - generic [ref=e86]:
+              - generic [ref=e87]: CSP
+              - generic [ref=e88]: US$53,250.00
+            - generic [ref=e89]:
+              - generic [ref=e90]: CC
+              - generic [ref=e91]: US$4,800.00
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - generic [ref=e94]: CC Available
+              - img [ref=e95]
+            - generic [ref=e97]: 0 contracts
+            - generic [ref=e99]:
+              - generic [ref=e100]: None
+              - generic [ref=e101]: "--"
+          - generic [ref=e102]:
+            - generic [ref=e103]:
+              - generic [ref=e104]: Premium & P&L
+              - img [ref=e105]
+            - generic [ref=e107]: "-US$1,539.00"
+            - generic [ref=e109]:
+              - generic [ref=e110]: Premium
+              - generic [ref=e111]: +US$755.00
+            - generic [ref=e112]:
+              - generic [ref=e113]: Unrealized
+              - generic [ref=e114]: "-US$1,539.00"
+          - generic [ref=e115]:
+            - generic [ref=e116]:
+              - generic [ref=e117]: Positions
+              - img [ref=e118]
+            - generic [ref=e122]: "7"
+            - generic [ref=e124]:
+              - generic [ref=e125]: CSP
+              - generic [ref=e126]: "6"
+            - generic [ref=e127]:
+              - generic [ref=e128]: CC
+              - generic [ref=e129]: "1"
+            - generic [ref=e130]:
+              - generic [ref=e131]: Expiring
+              - generic [ref=e132]: "2"
+        - generic [ref=e133]: Loading positions...

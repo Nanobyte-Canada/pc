@@ -1,0 +1,852 @@
+- generic [ref=e6]:
+  - complementary [ref=e7]:
+    - navigation "Main navigation" [ref=e8]:
+      - generic [ref=e9]: P
+      - button "Portfolio" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+      - button "Wheel" [ref=e16] [cursor=pointer]:
+        - img [ref=e17]
+      - button "Connections" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - 'generic "IBKR Gateway: connecting" [ref=e25]':
+        - generic [ref=e27]: IBKR...
+      - button "Toggle theme" [ref=e28] [cursor=pointer]:
+        - img [ref=e29]
+      - button "Admin settings" [ref=e35] [cursor=pointer]:
+        - img [ref=e36]
+      - button "User profile" [ref=e39] [cursor=pointer]: S
+  - main [ref=e41]:
+    - generic [ref=e42]:
+      - generic [ref=e44]:
+        - button "All Accounts" [ref=e45] [cursor=pointer]
+        - button "Q LIRA ••9683" [ref=e46] [cursor=pointer]:
+          - generic [ref=e47]: Q
+          - generic [ref=e48]: LIRA
+          - generic [ref=e49]: ••9683
+        - button "Q RRSP ••8214" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]: Q
+          - generic [ref=e52]: RRSP
+          - generic [ref=e53]: ••8214
+        - button "Q MARGIN ••4150" [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]: Q
+          - generic [ref=e56]: MARGIN
+          - generic [ref=e57]: ••4150
+        - button "Q RRSP ••2736" [ref=e58] [cursor=pointer]:
+          - generic [ref=e59]: Q
+          - generic [ref=e60]: RRSP
+          - generic [ref=e61]: ••2736
+        - button "Q TFSA ••0190" [ref=e62] [cursor=pointer]:
+          - generic [ref=e63]: Q
+          - generic [ref=e64]: TFSA
+          - generic [ref=e65]: ••0190
+      - heading "Wheel Strategy" [level=1] [ref=e67]
+      - generic [ref=e68]:
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - generic [ref=e71]:
+              - generic [ref=e72]:
+                - generic [ref=e73]: Capital Available
+                - img [ref=e74]
+              - generic [ref=e77]: C$ 95,889
+              - generic [ref=e79]:
+                - generic [ref=e80]: C$
+                - generic [ref=e81]: 95,889.00
+              - generic [ref=e82]:
+                - generic [ref=e83]: US$
+                - generic [ref=e84]: "0.00"
+            - generic [ref=e85]:
+              - generic [ref=e86]:
+                - generic [ref=e87]: Capital Deployed
+                - img [ref=e88]
+              - generic [ref=e90]: US$41,750.00
+              - generic [ref=e92]:
+                - generic [ref=e93]: CSP
+                - generic [ref=e94]: US$41,750.00
+              - generic [ref=e95]:
+                - generic [ref=e96]: CC
+                - generic [ref=e97]: US$4,800.00
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - generic [ref=e100]: CC Available
+                - img [ref=e101]
+              - generic [ref=e103]: 18 contracts
+              - generic [ref=e105]:
+                - generic [ref=e106]: QQU.TO
+                - generic [ref=e107]: "6"
+              - generic [ref=e108]:
+                - generic [ref=e109]: SPXU.TO
+                - generic [ref=e110]: "5"
+              - generic [ref=e111]:
+                - generic [ref=e112]: TQQQ
+                - generic [ref=e113]: "1"
+            - generic [ref=e114]:
+              - generic [ref=e115]:
+                - generic [ref=e116]: Premium & P&L
+                - img [ref=e117]
+              - generic [ref=e119]: "-US$1,952.00"
+              - generic [ref=e121]:
+                - generic [ref=e122]: Premium
+                - generic [ref=e123]: +US$2,260.00
+              - generic [ref=e124]:
+                - generic [ref=e125]: Unrealized
+                - generic [ref=e126]: "-US$1,952.00"
+            - generic [ref=e127]:
+              - generic [ref=e128]:
+                - generic [ref=e129]: Positions
+                - img [ref=e130]
+              - generic [ref=e134]: "5"
+              - generic [ref=e136]:
+                - generic [ref=e137]: CSP
+                - generic [ref=e138]: "4"
+              - generic [ref=e139]:
+                - generic [ref=e140]: CC
+                - generic [ref=e141]: "1"
+              - generic [ref=e142]:
+                - generic [ref=e143]: Expiring
+                - generic [ref=e144]: "0"
+          - generic [ref=e145]:
+            - button "Previous weeks" [ref=e146] [cursor=pointer]:
+              - img [ref=e147]
+            - generic [ref=e149]: Jun 5 — Jun 26, 2026
+            - button "Next weeks" [ref=e150] [cursor=pointer]:
+              - img [ref=e151]
+            - button "Today" [ref=e153] [cursor=pointer]
+          - generic [ref=e154]:
+            - table [ref=e156]:
+              - rowgroup [ref=e157]:
+                - row "Ticker Jun 5 1d Fri Jun 12 8d Fri Jun 18 Monthly 14d Thu Jun 26 22d Fri" [ref=e158]:
+                  - columnheader "Ticker" [ref=e159]
+                  - columnheader "Jun 5 1d Fri" [ref=e160]:
+                    - generic [ref=e161]: Jun 5
+                    - generic [ref=e162]:
+                      - generic [ref=e163]: 1d
+                      - generic [ref=e164]: Fri
+                  - columnheader "Jun 12 8d Fri" [ref=e165]:
+                    - generic [ref=e166]: Jun 12
+                    - generic [ref=e167]:
+                      - generic [ref=e168]: 8d
+                      - generic [ref=e169]: Fri
+                  - columnheader "Jun 18 Monthly 14d Thu" [ref=e170]:
+                    - generic [ref=e171]:
+                      - text: Jun 18
+                      - generic [ref=e172]: Monthly
+                    - generic [ref=e173]:
+                      - generic [ref=e174]: 14d
+                      - generic [ref=e175]: Thu
+                  - columnheader "Jun 26 22d Fri" [ref=e176]:
+                    - generic [ref=e177]: Jun 26
+                    - generic [ref=e178]:
+                      - generic [ref=e179]: 22d
+                      - generic [ref=e180]: Fri
+              - rowgroup [ref=e181]:
+                - row "AQN.TO 551 shares + CSP + CC + CSP + CC + CSP + CC + CSP + CC" [ref=e182]:
+                  - cell "AQN.TO 551 shares" [ref=e183]:
+                    - generic [ref=e184]: AQN.TO
+                    - generic [ref=e185]: 551 shares
+                  - cell "+ CSP + CC" [ref=e186]:
+                    - generic [ref=e188]:
+                      - button "+ CSP" [ref=e189] [cursor=pointer]
+                      - button "+ CC" [ref=e190] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e191]:
+                    - generic [ref=e193]:
+                      - button "+ CSP" [ref=e194] [cursor=pointer]
+                      - button "+ CC" [ref=e195] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e196]:
+                    - generic [ref=e198]:
+                      - button "+ CSP" [ref=e199] [cursor=pointer]
+                      - button "+ CC" [ref=e200] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e201]:
+                    - generic [ref=e203]:
+                      - button "+ CSP" [ref=e204] [cursor=pointer]
+                      - button "+ CC" [ref=e205] [cursor=pointer]
+                - row "NPI.TO 148 shares + CSP + CC + CSP + CC + CSP + CC + CSP + CC" [ref=e206]:
+                  - cell "NPI.TO 148 shares" [ref=e207]:
+                    - generic [ref=e208]: NPI.TO
+                    - generic [ref=e209]: 148 shares
+                  - cell "+ CSP + CC" [ref=e210]:
+                    - generic [ref=e212]:
+                      - button "+ CSP" [ref=e213] [cursor=pointer]
+                      - button "+ CC" [ref=e214] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e215]:
+                    - generic [ref=e217]:
+                      - button "+ CSP" [ref=e218] [cursor=pointer]
+                      - button "+ CC" [ref=e219] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e220]:
+                    - generic [ref=e222]:
+                      - button "+ CSP" [ref=e223] [cursor=pointer]
+                      - button "+ CC" [ref=e224] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e225]:
+                    - generic [ref=e227]:
+                      - button "+ CSP" [ref=e228] [cursor=pointer]
+                      - button "+ CC" [ref=e229] [cursor=pointer]
+                - row "QQU.TO 671 shares + CSP + CC + CSP + CC + CSP + CC + CSP + CC" [ref=e230]:
+                  - cell "QQU.TO 671 shares" [ref=e231]:
+                    - generic [ref=e232]: QQU.TO
+                    - generic [ref=e233]: 671 shares
+                  - cell "+ CSP + CC" [ref=e234]:
+                    - generic [ref=e236]:
+                      - button "+ CSP" [ref=e237] [cursor=pointer]
+                      - button "+ CC" [ref=e238] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e239]:
+                    - generic [ref=e241]:
+                      - button "+ CSP" [ref=e242] [cursor=pointer]
+                      - button "+ CC" [ref=e243] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e244]:
+                    - generic [ref=e246]:
+                      - button "+ CSP" [ref=e247] [cursor=pointer]
+                      - button "+ CC" [ref=e248] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e249]:
+                    - generic [ref=e251]:
+                      - button "+ CSP" [ref=e252] [cursor=pointer]
+                      - button "+ CC" [ref=e253] [cursor=pointer]
+                - row "SOXL + CSP + CC + CSP + CC $100 Put 61.4% +US$374.00 $120 Put 53.7% +US$755.00 + CSP + CC + CSP + CC" [ref=e254]:
+                  - cell "SOXL" [ref=e255]:
+                    - generic [ref=e256]: SOXL
+                  - cell "+ CSP + CC" [ref=e257]:
+                    - generic [ref=e259]:
+                      - button "+ CSP" [ref=e260] [cursor=pointer]
+                      - button "+ CC" [ref=e261] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e262]:
+                    - generic [ref=e264]:
+                      - button "+ CSP" [ref=e265] [cursor=pointer]
+                      - button "+ CC" [ref=e266] [cursor=pointer]
+                  - cell "$100 Put 61.4% +US$374.00 $120 Put 53.7% +US$755.00 + CSP + CC" [ref=e267]:
+                    - generic [ref=e268]:
+                      - button "$100 Put 61.4% +US$374.00" [ref=e269] [cursor=pointer]:
+                        - generic [ref=e270]:
+                          - generic [ref=e271]: $100 Put
+                          - generic [ref=e272]: 61.4%
+                        - generic [ref=e274]: +US$374.00
+                      - button "$120 Put 53.7% +US$755.00" [ref=e275] [cursor=pointer]:
+                        - generic [ref=e276]:
+                          - generic [ref=e277]: $120 Put
+                          - generic [ref=e278]: 53.7%
+                        - generic [ref=e280]: +US$755.00
+                      - generic [ref=e281]:
+                        - button "+ CSP" [active] [ref=e282] [cursor=pointer]
+                        - button "+ CC" [ref=e283] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e284]:
+                    - generic [ref=e286]:
+                      - button "+ CSP" [ref=e287] [cursor=pointer]
+                      - button "+ CC" [ref=e288] [cursor=pointer]
+                - row "SPXU.TO 574 shares + CSP + CC + CSP + CC + CSP + CC + CSP + CC" [ref=e289]:
+                  - cell "SPXU.TO 574 shares" [ref=e290]:
+                    - generic [ref=e291]: SPXU.TO
+                    - generic [ref=e292]: 574 shares
+                  - cell "+ CSP + CC" [ref=e293]:
+                    - generic [ref=e295]:
+                      - button "+ CSP" [ref=e296] [cursor=pointer]
+                      - button "+ CC" [ref=e297] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e298]:
+                    - generic [ref=e300]:
+                      - button "+ CSP" [ref=e301] [cursor=pointer]
+                      - button "+ CC" [ref=e302] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e303]:
+                    - generic [ref=e305]:
+                      - button "+ CSP" [ref=e306] [cursor=pointer]
+                      - button "+ CC" [ref=e307] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e308]:
+                    - generic [ref=e310]:
+                      - button "+ CSP" [ref=e311] [cursor=pointer]
+                      - button "+ CC" [ref=e312] [cursor=pointer]
+                - row "TECL + CSP + CC + CSP + CC $140 Put 44.2% +US$350.00 + CSP + CC + CSP + CC" [ref=e313]:
+                  - cell "TECL" [ref=e314]:
+                    - generic [ref=e315]: TECL
+                  - cell "+ CSP + CC" [ref=e316]:
+                    - generic [ref=e318]:
+                      - button "+ CSP" [ref=e319] [cursor=pointer]
+                      - button "+ CC" [ref=e320] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e321]:
+                    - generic [ref=e323]:
+                      - button "+ CSP" [ref=e324] [cursor=pointer]
+                      - button "+ CC" [ref=e325] [cursor=pointer]
+                  - cell "$140 Put 44.2% +US$350.00 + CSP + CC" [ref=e326]:
+                    - generic [ref=e327]:
+                      - button "$140 Put 44.2% +US$350.00" [ref=e328] [cursor=pointer]:
+                        - generic [ref=e329]:
+                          - generic [ref=e330]: $140 Put
+                          - generic [ref=e331]: 44.2%
+                        - generic [ref=e333]: +US$350.00
+                      - generic [ref=e334]:
+                        - button "+ CSP" [ref=e335] [cursor=pointer]
+                        - button "+ CC" [ref=e336] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e337]:
+                    - generic [ref=e339]:
+                      - button "+ CSP" [ref=e340] [cursor=pointer]
+                      - button "+ CC" [ref=e341] [cursor=pointer]
+                - row "TQQQ 100 shares + CSP + CC + CSP + CC $57.5 Put 32.2% +US$109.00 $48 CC 43.4% -US$3,540.00 + CSP + CC + CSP + CC" [ref=e342]:
+                  - cell "TQQQ 100 shares" [ref=e343]:
+                    - generic [ref=e344]: TQQQ
+                    - generic [ref=e345]: 100 shares
+                  - cell "+ CSP + CC" [ref=e346]:
+                    - generic [ref=e348]:
+                      - button "+ CSP" [ref=e349] [cursor=pointer]
+                      - button "+ CC" [ref=e350] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e351]:
+                    - generic [ref=e353]:
+                      - button "+ CSP" [ref=e354] [cursor=pointer]
+                      - button "+ CC" [ref=e355] [cursor=pointer]
+                  - cell "$57.5 Put 32.2% +US$109.00 $48 CC 43.4% -US$3,540.00 + CSP + CC" [ref=e356]:
+                    - generic [ref=e357]:
+                      - button "$57.5 Put 32.2% +US$109.00" [ref=e358] [cursor=pointer]:
+                        - generic [ref=e359]:
+                          - generic [ref=e360]: $57.5 Put
+                          - generic [ref=e361]: 32.2%
+                        - generic [ref=e363]: +US$109.00
+                      - button "$48 CC 43.4% -US$3,540.00" [ref=e364] [cursor=pointer]:
+                        - generic [ref=e365]:
+                          - generic [ref=e366]: $48 CC
+                          - generic [ref=e367]: 43.4%
+                        - generic [ref=e369]: "-US$3,540.00"
+                      - generic [ref=e370]:
+                        - button "+ CSP" [ref=e371] [cursor=pointer]
+                        - button "+ CC" [ref=e372] [cursor=pointer]
+                  - cell "+ CSP + CC" [ref=e373]:
+                    - generic [ref=e375]:
+                      - button "+ CSP" [ref=e376] [cursor=pointer]
+                      - button "+ CC" [ref=e377] [cursor=pointer]
+            - button "+ Add Ticker" [ref=e378] [cursor=pointer]
+          - generic [ref=e379]:
+            - generic [ref=e380]: CSP
+            - generic [ref=e382]: CC
+        - generic [ref=e385]:
+          - generic [ref=e386]:
+            - generic [ref=e387]: SOXL
+            - generic [ref=e388]: CSP
+            - button "Close" [ref=e389] [cursor=pointer]:
+              - img [ref=e390]
+          - generic [ref=e393]:
+            - generic [ref=e394]: US$259.00
+            - generic [ref=e395]: Live
+          - generic [ref=e397]:
+            - generic [ref=e398]: Expiry
+            - generic [ref=e399]:
+              - combobox [ref=e400] [cursor=pointer]:
+                - option "Jun 5, 2026 — 0 DTE"
+                - option "Jun 12, 2026 — 7 DTE"
+                - option "Jun 18, 2026 — 13 DTE" [selected]
+                - option "Jun 26, 2026 — 21 DTE"
+                - option "Jul 2, 2026 — 27 DTE"
+                - option "Jul 10, 2026 — 35 DTE"
+                - option "Jul 17, 2026 — 42 DTE"
+                - option "Jul 24, 2026 — 49 DTE"
+                - option "Aug 21, 2026 — 77 DTE"
+                - option "Sep 18, 2026 — 105 DTE"
+                - option "Nov 20, 2026 — 168 DTE"
+                - option "Dec 18, 2026 — 196 DTE"
+                - option "Jan 15, 2027 — 224 DTE"
+                - option "Jan 21, 2028 — 595 DTE"
+              - img
+          - generic [ref=e401]:
+            - generic [ref=e402]:
+              - text: Strike
+              - generic [ref=e403]: Delta
+            - generic [ref=e404]:
+              - text: Bid
+              - generic [ref=e405]: Disc · Yield
+            - generic [ref=e406]:
+              - text: Ask
+              - generic [ref=e407]: Disc · Yield
+          - table [ref=e411]:
+            - rowgroup [ref=e412]:
+              - button "US$176.00 δ 0.00 US$0.00 32.0% US$0.00 32.0%" [ref=e413] [cursor=pointer]:
+                - cell "US$176.00 δ 0.00" [ref=e414]:
+                  - generic [ref=e415]: US$176.00
+                  - generic [ref=e416]: δ 0.00
+                - cell "US$0.00 32.0%" [ref=e417]:
+                  - generic [ref=e418]: US$0.00
+                  - generic [ref=e419]: 32.0%
+                - cell "US$0.00 32.0%" [ref=e420]:
+                  - generic [ref=e421]: US$0.00
+                  - generic [ref=e422]: 32.0%
+              - button "US$177.00 δ 0.00 US$0.00 31.7% US$0.00 31.7%" [ref=e423] [cursor=pointer]:
+                - cell "US$177.00 δ 0.00" [ref=e424]:
+                  - generic [ref=e425]: US$177.00
+                  - generic [ref=e426]: δ 0.00
+                - cell "US$0.00 31.7%" [ref=e427]:
+                  - generic [ref=e428]: US$0.00
+                  - generic [ref=e429]: 31.7%
+                - cell "US$0.00 31.7%" [ref=e430]:
+                  - generic [ref=e431]: US$0.00
+                  - generic [ref=e432]: 31.7%
+              - button "US$178.00 δ 0.00 US$0.00 31.3% US$0.00 31.3%" [ref=e433] [cursor=pointer]:
+                - cell "US$178.00 δ 0.00" [ref=e434]:
+                  - generic [ref=e435]: US$178.00
+                  - generic [ref=e436]: δ 0.00
+                - cell "US$0.00 31.3%" [ref=e437]:
+                  - generic [ref=e438]: US$0.00
+                  - generic [ref=e439]: 31.3%
+                - cell "US$0.00 31.3%" [ref=e440]:
+                  - generic [ref=e441]: US$0.00
+                  - generic [ref=e442]: 31.3%
+              - button "US$179.00 δ 0.00 US$0.00 30.9% US$0.00 30.9%" [ref=e443] [cursor=pointer]:
+                - cell "US$179.00 δ 0.00" [ref=e444]:
+                  - generic [ref=e445]: US$179.00
+                  - generic [ref=e446]: δ 0.00
+                - cell "US$0.00 30.9%" [ref=e447]:
+                  - generic [ref=e448]: US$0.00
+                  - generic [ref=e449]: 30.9%
+                - cell "US$0.00 30.9%" [ref=e450]:
+                  - generic [ref=e451]: US$0.00
+                  - generic [ref=e452]: 30.9%
+              - button "US$180.00 δ 0.00 US$0.00 30.5% US$0.00 30.5%" [ref=e453] [cursor=pointer]:
+                - cell "US$180.00 δ 0.00" [ref=e454]:
+                  - generic [ref=e455]: US$180.00
+                  - generic [ref=e456]: δ 0.00
+                - cell "US$0.00 30.5%" [ref=e457]:
+                  - generic [ref=e458]: US$0.00
+                  - generic [ref=e459]: 30.5%
+                - cell "US$0.00 30.5%" [ref=e460]:
+                  - generic [ref=e461]: US$0.00
+                  - generic [ref=e462]: 30.5%
+              - button "US$181.00 δ 0.00 US$0.00 30.1% US$0.00 30.1%" [ref=e463] [cursor=pointer]:
+                - cell "US$181.00 δ 0.00" [ref=e464]:
+                  - generic [ref=e465]: US$181.00
+                  - generic [ref=e466]: δ 0.00
+                - cell "US$0.00 30.1%" [ref=e467]:
+                  - generic [ref=e468]: US$0.00
+                  - generic [ref=e469]: 30.1%
+                - cell "US$0.00 30.1%" [ref=e470]:
+                  - generic [ref=e471]: US$0.00
+                  - generic [ref=e472]: 30.1%
+              - button "US$185.00 δ 0.00 US$0.00 28.6% US$0.00 28.6%" [ref=e473] [cursor=pointer]:
+                - cell "US$185.00 δ 0.00" [ref=e474]:
+                  - generic [ref=e475]: US$185.00
+                  - generic [ref=e476]: δ 0.00
+                - cell "US$0.00 28.6%" [ref=e477]:
+                  - generic [ref=e478]: US$0.00
+                  - generic [ref=e479]: 28.6%
+                - cell "US$0.00 28.6%" [ref=e480]:
+                  - generic [ref=e481]: US$0.00
+                  - generic [ref=e482]: 28.6%
+              - button "US$190.00 δ 0.00 US$0.00 26.6% US$0.00 26.6%" [ref=e483] [cursor=pointer]:
+                - cell "US$190.00 δ 0.00" [ref=e484]:
+                  - generic [ref=e485]: US$190.00
+                  - generic [ref=e486]: δ 0.00
+                - cell "US$0.00 26.6%" [ref=e487]:
+                  - generic [ref=e488]: US$0.00
+                  - generic [ref=e489]: 26.6%
+                - cell "US$0.00 26.6%" [ref=e490]:
+                  - generic [ref=e491]: US$0.00
+                  - generic [ref=e492]: 26.6%
+              - button "US$195.00 δ -0.00 US$0.00 24.7% US$0.00 24.7%" [ref=e493] [cursor=pointer]:
+                - cell "US$195.00 δ -0.00" [ref=e494]:
+                  - generic [ref=e495]: US$195.00
+                  - generic [ref=e496]: δ -0.00
+                - cell "US$0.00 24.7%" [ref=e497]:
+                  - generic [ref=e498]: US$0.00
+                  - generic [ref=e499]: 24.7%
+                - cell "US$0.00 24.7%" [ref=e500]:
+                  - generic [ref=e501]: US$0.00
+                  - generic [ref=e502]: 24.7%
+              - button "US$200.00 δ -0.00 US$0.00 22.8% US$0.00 22.8%" [ref=e503] [cursor=pointer]:
+                - cell "US$200.00 δ -0.00" [ref=e504]:
+                  - generic [ref=e505]: US$200.00
+                  - generic [ref=e506]: δ -0.00
+                - cell "US$0.00 22.8%" [ref=e507]:
+                  - generic [ref=e508]: US$0.00
+                  - generic [ref=e509]: 22.8%
+                - cell "US$0.00 22.8%" [ref=e510]:
+                  - generic [ref=e511]: US$0.00
+                  - generic [ref=e512]: 22.8%
+              - button "US$202.50 δ -0.00 US$0.00 21.8% US$0.00 21.8%" [ref=e513] [cursor=pointer]:
+                - cell "US$202.50 δ -0.00" [ref=e514]:
+                  - generic [ref=e515]: US$202.50
+                  - generic [ref=e516]: δ -0.00
+                - cell "US$0.00 21.8%" [ref=e517]:
+                  - generic [ref=e518]: US$0.00
+                  - generic [ref=e519]: 21.8%
+                - cell "US$0.00 21.8%" [ref=e520]:
+                  - generic [ref=e521]: US$0.00
+                  - generic [ref=e522]: 21.8%
+              - button "US$205.00 δ -0.00 US$0.00 20.8% US$0.00 20.8%" [ref=e523] [cursor=pointer]:
+                - cell "US$205.00 δ -0.00" [ref=e524]:
+                  - generic [ref=e525]: US$205.00
+                  - generic [ref=e526]: δ -0.00
+                - cell "US$0.00 20.8%" [ref=e527]:
+                  - generic [ref=e528]: US$0.00
+                  - generic [ref=e529]: 20.8%
+                - cell "US$0.00 20.8%" [ref=e530]:
+                  - generic [ref=e531]: US$0.00
+                  - generic [ref=e532]: 20.8%
+              - button "US$207.50 δ -0.00 US$0.00 19.9% US$0.00 19.9%" [ref=e533] [cursor=pointer]:
+                - cell "US$207.50 δ -0.00" [ref=e534]:
+                  - generic [ref=e535]: US$207.50
+                  - generic [ref=e536]: δ -0.00
+                - cell "US$0.00 19.9%" [ref=e537]:
+                  - generic [ref=e538]: US$0.00
+                  - generic [ref=e539]: 19.9%
+                - cell "US$0.00 19.9%" [ref=e540]:
+                  - generic [ref=e541]: US$0.00
+                  - generic [ref=e542]: 19.9%
+              - button "US$210.00 δ -0.00 US$0.00 18.9% US$0.00 18.9%" [ref=e543] [cursor=pointer]:
+                - cell "US$210.00 δ -0.00" [ref=e544]:
+                  - generic [ref=e545]: US$210.00
+                  - generic [ref=e546]: δ -0.00
+                - cell "US$0.00 18.9%" [ref=e547]:
+                  - generic [ref=e548]: US$0.00
+                  - generic [ref=e549]: 18.9%
+                - cell "US$0.00 18.9%" [ref=e550]:
+                  - generic [ref=e551]: US$0.00
+                  - generic [ref=e552]: 18.9%
+              - button "US$212.50 δ -0.00 US$0.00 18.0% US$0.00 18.0%" [ref=e553] [cursor=pointer]:
+                - cell "US$212.50 δ -0.00" [ref=e554]:
+                  - generic [ref=e555]: US$212.50
+                  - generic [ref=e556]: δ -0.00
+                - cell "US$0.00 18.0%" [ref=e557]:
+                  - generic [ref=e558]: US$0.00
+                  - generic [ref=e559]: 18.0%
+                - cell "US$0.00 18.0%" [ref=e560]:
+                  - generic [ref=e561]: US$0.00
+                  - generic [ref=e562]: 18.0%
+              - button "US$215.00 δ -0.00 US$0.00 17.0% US$0.00 17.0%" [ref=e563] [cursor=pointer]:
+                - cell "US$215.00 δ -0.00" [ref=e564]:
+                  - generic [ref=e565]: US$215.00
+                  - generic [ref=e566]: δ -0.00
+                - cell "US$0.00 17.0%" [ref=e567]:
+                  - generic [ref=e568]: US$0.00
+                  - generic [ref=e569]: 17.0%
+                - cell "US$0.00 17.0%" [ref=e570]:
+                  - generic [ref=e571]: US$0.00
+                  - generic [ref=e572]: 17.0%
+              - button "US$217.50 δ -0.00 US$0.00 16.0% US$0.00 16.0%" [ref=e573] [cursor=pointer]:
+                - cell "US$217.50 δ -0.00" [ref=e574]:
+                  - generic [ref=e575]: US$217.50
+                  - generic [ref=e576]: δ -0.00
+                - cell "US$0.00 16.0%" [ref=e577]:
+                  - generic [ref=e578]: US$0.00
+                  - generic [ref=e579]: 16.0%
+                - cell "US$0.00 16.0%" [ref=e580]:
+                  - generic [ref=e581]: US$0.00
+                  - generic [ref=e582]: 16.0%
+              - button "US$220.00 δ -0.00 US$0.00 15.1% US$0.00 15.1%" [ref=e583] [cursor=pointer]:
+                - cell "US$220.00 δ -0.00" [ref=e584]:
+                  - generic [ref=e585]: US$220.00
+                  - generic [ref=e586]: δ -0.00
+                - cell "US$0.00 15.1%" [ref=e587]:
+                  - generic [ref=e588]: US$0.00
+                  - generic [ref=e589]: 15.1%
+                - cell "US$0.00 15.1%" [ref=e590]:
+                  - generic [ref=e591]: US$0.00
+                  - generic [ref=e592]: 15.1%
+              - button "US$225.00 δ -0.01 US$0.00 13.1% US$0.00 13.1%" [ref=e593] [cursor=pointer]:
+                - cell "US$225.00 δ -0.01" [ref=e594]:
+                  - generic [ref=e595]: US$225.00
+                  - generic [ref=e596]: δ -0.01
+                - cell "US$0.00 13.1%" [ref=e597]:
+                  - generic [ref=e598]: US$0.00
+                  - generic [ref=e599]: 13.1%
+                - cell "US$0.00 13.1%" [ref=e600]:
+                  - generic [ref=e601]: US$0.00
+                  - generic [ref=e602]: 13.1%
+              - button "US$230.00 δ -0.02 US$0.00 11.2% US$0.00 11.2%" [ref=e603] [cursor=pointer]:
+                - cell "US$230.00 δ -0.02" [ref=e604]:
+                  - generic [ref=e605]: US$230.00
+                  - generic [ref=e606]: δ -0.02
+                - cell "US$0.00 11.2%" [ref=e607]:
+                  - generic [ref=e608]: US$0.00
+                  - generic [ref=e609]: 11.2%
+                - cell "US$0.00 11.2%" [ref=e610]:
+                  - generic [ref=e611]: US$0.00
+                  - generic [ref=e612]: 11.2%
+              - button "US$235.00 δ -0.04 US$0.00 9.3% US$0.00 9.3%" [ref=e613] [cursor=pointer]:
+                - cell "US$235.00 δ -0.04" [ref=e614]:
+                  - generic [ref=e615]: US$235.00
+                  - generic [ref=e616]: δ -0.04
+                - cell "US$0.00 9.3%" [ref=e617]:
+                  - generic [ref=e618]: US$0.00
+                  - generic [ref=e619]: 9.3%
+                - cell "US$0.00 9.3%" [ref=e620]:
+                  - generic [ref=e621]: US$0.00
+                  - generic [ref=e622]: 9.3%
+              - button "US$240.00 δ -0.09 US$0.00 7.3% US$0.00 7.3%" [ref=e623] [cursor=pointer]:
+                - cell "US$240.00 δ -0.09" [ref=e624]:
+                  - generic [ref=e625]: US$240.00
+                  - generic [ref=e626]: δ -0.09
+                - cell "US$0.00 7.3%" [ref=e627]:
+                  - generic [ref=e628]: US$0.00
+                  - generic [ref=e629]: 7.3%
+                - cell "US$0.00 7.3%" [ref=e630]:
+                  - generic [ref=e631]: US$0.00
+                  - generic [ref=e632]: 7.3%
+              - button "US$245.00 δ -0.16 US$0.00 5.4% US$0.00 5.4%" [ref=e633] [cursor=pointer]:
+                - cell "US$245.00 δ -0.16" [ref=e634]:
+                  - generic [ref=e635]: US$245.00
+                  - generic [ref=e636]: δ -0.16
+                - cell "US$0.00 5.4%" [ref=e637]:
+                  - generic [ref=e638]: US$0.00
+                  - generic [ref=e639]: 5.4%
+                - cell "US$0.00 5.4%" [ref=e640]:
+                  - generic [ref=e641]: US$0.00
+                  - generic [ref=e642]: 5.4%
+              - button "US$250.00 δ -0.26 US$0.00 3.5% US$0.00 3.5%" [ref=e643] [cursor=pointer]:
+                - cell "US$250.00 δ -0.26" [ref=e644]:
+                  - generic [ref=e645]: US$250.00
+                  - generic [ref=e646]: δ -0.26
+                - cell "US$0.00 3.5%" [ref=e647]:
+                  - generic [ref=e648]: US$0.00
+                  - generic [ref=e649]: 3.5%
+                - cell "US$0.00 3.5%" [ref=e650]:
+                  - generic [ref=e651]: US$0.00
+                  - generic [ref=e652]: 3.5%
+              - button "US$255.00 δ -0.38 US$0.00 1.5% US$0.00 1.5%" [ref=e653] [cursor=pointer]:
+                - cell "US$255.00 δ -0.38" [ref=e654]:
+                  - generic [ref=e655]: US$255.00
+                  - generic [ref=e656]: δ -0.38
+                - cell "US$0.00 1.5%" [ref=e657]:
+                  - generic [ref=e658]: US$0.00
+                  - generic [ref=e659]: 1.5%
+                - cell "US$0.00 1.5%" [ref=e660]:
+                  - generic [ref=e661]: US$0.00
+                  - generic [ref=e662]: 1.5%
+              - button "US$260.00 δ -0.51 US$0.00 -0.4% US$0.00 -0.4%" [ref=e663] [cursor=pointer]:
+                - cell "US$260.00 δ -0.51" [ref=e664]:
+                  - generic [ref=e665]: US$260.00
+                  - generic [ref=e666]: δ -0.51
+                - cell "US$0.00 -0.4%" [ref=e667]:
+                  - generic [ref=e668]: US$0.00
+                  - generic [ref=e669]: "-0.4%"
+                - cell "US$0.00 -0.4%" [ref=e670]:
+                  - generic [ref=e671]: US$0.00
+                  - generic [ref=e672]: "-0.4%"
+              - button "US$265.00 δ -0.63 US$0.00 -2.3% US$0.00 -2.3%" [ref=e673] [cursor=pointer]:
+                - cell "US$265.00 δ -0.63" [ref=e674]:
+                  - generic [ref=e675]: US$265.00
+                  - generic [ref=e676]: δ -0.63
+                - cell "US$0.00 -2.3%" [ref=e677]:
+                  - generic [ref=e678]: US$0.00
+                  - generic [ref=e679]: "-2.3%"
+                - cell "US$0.00 -2.3%" [ref=e680]:
+                  - generic [ref=e681]: US$0.00
+                  - generic [ref=e682]: "-2.3%"
+              - button "US$270.00 δ -0.74 US$0.00 -4.2% US$0.00 -4.2%" [ref=e683] [cursor=pointer]:
+                - cell "US$270.00 δ -0.74" [ref=e684]:
+                  - generic [ref=e685]: US$270.00
+                  - generic [ref=e686]: δ -0.74
+                - cell "US$0.00 -4.2%" [ref=e687]:
+                  - generic [ref=e688]: US$0.00
+                  - generic [ref=e689]: "-4.2%"
+                - cell "US$0.00 -4.2%" [ref=e690]:
+                  - generic [ref=e691]: US$0.00
+                  - generic [ref=e692]: "-4.2%"
+              - button "US$275.00 δ -0.83 US$0.00 -6.2% US$0.00 -6.2%" [ref=e693] [cursor=pointer]:
+                - cell "US$275.00 δ -0.83" [ref=e694]:
+                  - generic [ref=e695]: US$275.00
+                  - generic [ref=e696]: δ -0.83
+                - cell "US$0.00 -6.2%" [ref=e697]:
+                  - generic [ref=e698]: US$0.00
+                  - generic [ref=e699]: "-6.2%"
+                - cell "US$0.00 -6.2%" [ref=e700]:
+                  - generic [ref=e701]: US$0.00
+                  - generic [ref=e702]: "-6.2%"
+              - button "US$280.00 δ -0.90 US$0.00 -8.1% US$0.00 -8.1%" [ref=e703] [cursor=pointer]:
+                - cell "US$280.00 δ -0.90" [ref=e704]:
+                  - generic [ref=e705]: US$280.00
+                  - generic [ref=e706]: δ -0.90
+                - cell "US$0.00 -8.1%" [ref=e707]:
+                  - generic [ref=e708]: US$0.00
+                  - generic [ref=e709]: "-8.1%"
+                - cell "US$0.00 -8.1%" [ref=e710]:
+                  - generic [ref=e711]: US$0.00
+                  - generic [ref=e712]: "-8.1%"
+              - button "US$285.00 δ -0.94 US$0.00 -10.0% US$0.00 -10.0%" [ref=e713] [cursor=pointer]:
+                - cell "US$285.00 δ -0.94" [ref=e714]:
+                  - generic [ref=e715]: US$285.00
+                  - generic [ref=e716]: δ -0.94
+                - cell "US$0.00 -10.0%" [ref=e717]:
+                  - generic [ref=e718]: US$0.00
+                  - generic [ref=e719]: "-10.0%"
+                - cell "US$0.00 -10.0%" [ref=e720]:
+                  - generic [ref=e721]: US$0.00
+                  - generic [ref=e722]: "-10.0%"
+              - button "US$290.00 δ -0.97 US$0.00 -12.0% US$0.00 -12.0%" [ref=e723] [cursor=pointer]:
+                - cell "US$290.00 δ -0.97" [ref=e724]:
+                  - generic [ref=e725]: US$290.00
+                  - generic [ref=e726]: δ -0.97
+                - cell "US$0.00 -12.0%" [ref=e727]:
+                  - generic [ref=e728]: US$0.00
+                  - generic [ref=e729]: "-12.0%"
+                - cell "US$0.00 -12.0%" [ref=e730]:
+                  - generic [ref=e731]: US$0.00
+                  - generic [ref=e732]: "-12.0%"
+              - button "US$295.00 δ -0.98 US$0.00 -13.9% US$0.00 -13.9%" [ref=e733] [cursor=pointer]:
+                - cell "US$295.00 δ -0.98" [ref=e734]:
+                  - generic [ref=e735]: US$295.00
+                  - generic [ref=e736]: δ -0.98
+                - cell "US$0.00 -13.9%" [ref=e737]:
+                  - generic [ref=e738]: US$0.00
+                  - generic [ref=e739]: "-13.9%"
+                - cell "US$0.00 -13.9%" [ref=e740]:
+                  - generic [ref=e741]: US$0.00
+                  - generic [ref=e742]: "-13.9%"
+              - button "US$300.00 δ -0.99 US$0.00 -15.8% US$0.00 -15.8%" [ref=e743] [cursor=pointer]:
+                - cell "US$300.00 δ -0.99" [ref=e744]:
+                  - generic [ref=e745]: US$300.00
+                  - generic [ref=e746]: δ -0.99
+                - cell "US$0.00 -15.8%" [ref=e747]:
+                  - generic [ref=e748]: US$0.00
+                  - generic [ref=e749]: "-15.8%"
+                - cell "US$0.00 -15.8%" [ref=e750]:
+                  - generic [ref=e751]: US$0.00
+                  - generic [ref=e752]: "-15.8%"
+              - button "US$305.00 δ -1.00 US$0.00 -17.8% US$0.00 -17.8%" [ref=e753] [cursor=pointer]:
+                - cell "US$305.00 δ -1.00" [ref=e754]:
+                  - generic [ref=e755]: US$305.00
+                  - generic [ref=e756]: δ -1.00
+                - cell "US$0.00 -17.8%" [ref=e757]:
+                  - generic [ref=e758]: US$0.00
+                  - generic [ref=e759]: "-17.8%"
+                - cell "US$0.00 -17.8%" [ref=e760]:
+                  - generic [ref=e761]: US$0.00
+                  - generic [ref=e762]: "-17.8%"
+              - button "US$310.00 δ -1.00 US$0.00 -19.7% US$0.00 -19.7%" [ref=e763] [cursor=pointer]:
+                - cell "US$310.00 δ -1.00" [ref=e764]:
+                  - generic [ref=e765]: US$310.00
+                  - generic [ref=e766]: δ -1.00
+                - cell "US$0.00 -19.7%" [ref=e767]:
+                  - generic [ref=e768]: US$0.00
+                  - generic [ref=e769]: "-19.7%"
+                - cell "US$0.00 -19.7%" [ref=e770]:
+                  - generic [ref=e771]: US$0.00
+                  - generic [ref=e772]: "-19.7%"
+              - button "US$315.00 δ -1.00 US$0.00 -21.6% US$0.00 -21.6%" [ref=e773] [cursor=pointer]:
+                - cell "US$315.00 δ -1.00" [ref=e774]:
+                  - generic [ref=e775]: US$315.00
+                  - generic [ref=e776]: δ -1.00
+                - cell "US$0.00 -21.6%" [ref=e777]:
+                  - generic [ref=e778]: US$0.00
+                  - generic [ref=e779]: "-21.6%"
+                - cell "US$0.00 -21.6%" [ref=e780]:
+                  - generic [ref=e781]: US$0.00
+                  - generic [ref=e782]: "-21.6%"
+              - button "US$320.00 δ -1.00 US$0.00 -23.6% US$0.00 -23.6%" [ref=e783] [cursor=pointer]:
+                - cell "US$320.00 δ -1.00" [ref=e784]:
+                  - generic [ref=e785]: US$320.00
+                  - generic [ref=e786]: δ -1.00
+                - cell "US$0.00 -23.6%" [ref=e787]:
+                  - generic [ref=e788]: US$0.00
+                  - generic [ref=e789]: "-23.6%"
+                - cell "US$0.00 -23.6%" [ref=e790]:
+                  - generic [ref=e791]: US$0.00
+                  - generic [ref=e792]: "-23.6%"
+              - button "US$325.00 δ -1.00 US$0.00 -25.5% US$0.00 -25.5%" [ref=e793] [cursor=pointer]:
+                - cell "US$325.00 δ -1.00" [ref=e794]:
+                  - generic [ref=e795]: US$325.00
+                  - generic [ref=e796]: δ -1.00
+                - cell "US$0.00 -25.5%" [ref=e797]:
+                  - generic [ref=e798]: US$0.00
+                  - generic [ref=e799]: "-25.5%"
+                - cell "US$0.00 -25.5%" [ref=e800]:
+                  - generic [ref=e801]: US$0.00
+                  - generic [ref=e802]: "-25.5%"
+              - button "US$330.00 δ -1.00 US$0.00 -27.4% US$0.00 -27.4%" [ref=e803] [cursor=pointer]:
+                - cell "US$330.00 δ -1.00" [ref=e804]:
+                  - generic [ref=e805]: US$330.00
+                  - generic [ref=e806]: δ -1.00
+                - cell "US$0.00 -27.4%" [ref=e807]:
+                  - generic [ref=e808]: US$0.00
+                  - generic [ref=e809]: "-27.4%"
+                - cell "US$0.00 -27.4%" [ref=e810]:
+                  - generic [ref=e811]: US$0.00
+                  - generic [ref=e812]: "-27.4%"
+              - button "US$335.00 δ -1.00 US$0.00 -29.3% US$0.00 -29.3%" [ref=e813] [cursor=pointer]:
+                - cell "US$335.00 δ -1.00" [ref=e814]:
+                  - generic [ref=e815]: US$335.00
+                  - generic [ref=e816]: δ -1.00
+                - cell "US$0.00 -29.3%" [ref=e817]:
+                  - generic [ref=e818]: US$0.00
+                  - generic [ref=e819]: "-29.3%"
+                - cell "US$0.00 -29.3%" [ref=e820]:
+                  - generic [ref=e821]: US$0.00
+                  - generic [ref=e822]: "-29.3%"
+              - button "US$340.00 δ -1.00 US$0.00 -31.3% US$0.00 -31.3%" [ref=e823] [cursor=pointer]:
+                - cell "US$340.00 δ -1.00" [ref=e824]:
+                  - generic [ref=e825]: US$340.00
+                  - generic [ref=e826]: δ -1.00
+                - cell "US$0.00 -31.3%" [ref=e827]:
+                  - generic [ref=e828]: US$0.00
+                  - generic [ref=e829]: "-31.3%"
+                - cell "US$0.00 -31.3%" [ref=e830]:
+                  - generic [ref=e831]: US$0.00
+                  - generic [ref=e832]: "-31.3%"
+              - button "US$345.00 δ -1.00 US$0.00 -33.2% US$0.00 -33.2%" [ref=e833] [cursor=pointer]:
+                - cell "US$345.00 δ -1.00" [ref=e834]:
+                  - generic [ref=e835]: US$345.00
+                  - generic [ref=e836]: δ -1.00
+                - cell "US$0.00 -33.2%" [ref=e837]:
+                  - generic [ref=e838]: US$0.00
+                  - generic [ref=e839]: "-33.2%"
+                - cell "US$0.00 -33.2%" [ref=e840]:
+                  - generic [ref=e841]: US$0.00
+                  - generic [ref=e842]: "-33.2%"
+              - button "US$350.00 δ -1.00 US$0.00 -35.1% US$0.00 -35.1%" [ref=e843] [cursor=pointer]:
+                - cell "US$350.00 δ -1.00" [ref=e844]:
+                  - generic [ref=e845]: US$350.00
+                  - generic [ref=e846]: δ -1.00
+                - cell "US$0.00 -35.1%" [ref=e847]:
+                  - generic [ref=e848]: US$0.00
+                  - generic [ref=e849]: "-35.1%"
+                - cell "US$0.00 -35.1%" [ref=e850]:
+                  - generic [ref=e851]: US$0.00
+                  - generic [ref=e852]: "-35.1%"
+              - button "US$355.00 δ -1.00 US$0.00 -37.1% US$0.00 -37.1%" [ref=e853] [cursor=pointer]:
+                - cell "US$355.00 δ -1.00" [ref=e854]:
+                  - generic [ref=e855]: US$355.00
+                  - generic [ref=e856]: δ -1.00
+                - cell "US$0.00 -37.1%" [ref=e857]:
+                  - generic [ref=e858]: US$0.00
+                  - generic [ref=e859]: "-37.1%"
+                - cell "US$0.00 -37.1%" [ref=e860]:
+                  - generic [ref=e861]: US$0.00
+                  - generic [ref=e862]: "-37.1%"
+              - button "US$360.00 δ -1.00 US$0.00 -39.0% US$0.00 -39.0%" [ref=e863] [cursor=pointer]:
+                - cell "US$360.00 δ -1.00" [ref=e864]:
+                  - generic [ref=e865]: US$360.00
+                  - generic [ref=e866]: δ -1.00
+                - cell "US$0.00 -39.0%" [ref=e867]:
+                  - generic [ref=e868]: US$0.00
+                  - generic [ref=e869]: "-39.0%"
+                - cell "US$0.00 -39.0%" [ref=e870]:
+                  - generic [ref=e871]: US$0.00
+                  - generic [ref=e872]: "-39.0%"
+              - button "US$365.00 δ -1.00 US$0.00 -40.9% US$0.00 -40.9%" [ref=e873] [cursor=pointer]:
+                - cell "US$365.00 δ -1.00" [ref=e874]:
+                  - generic [ref=e875]: US$365.00
+                  - generic [ref=e876]: δ -1.00
+                - cell "US$0.00 -40.9%" [ref=e877]:
+                  - generic [ref=e878]: US$0.00
+                  - generic [ref=e879]: "-40.9%"
+                - cell "US$0.00 -40.9%" [ref=e880]:
+                  - generic [ref=e881]: US$0.00
+                  - generic [ref=e882]: "-40.9%"
+              - button "US$370.00 δ -1.00 US$0.00 -42.9% US$0.00 -42.9%" [ref=e883] [cursor=pointer]:
+                - cell "US$370.00 δ -1.00" [ref=e884]:
+                  - generic [ref=e885]: US$370.00
+                  - generic [ref=e886]: δ -1.00
+                - cell "US$0.00 -42.9%" [ref=e887]:
+                  - generic [ref=e888]: US$0.00
+                  - generic [ref=e889]: "-42.9%"
+                - cell "US$0.00 -42.9%" [ref=e890]:
+                  - generic [ref=e891]: US$0.00
+                  - generic [ref=e892]: "-42.9%"
+              - button "US$375.00 δ -1.00 US$0.00 -44.8% US$0.00 -44.8%" [ref=e893] [cursor=pointer]:
+                - cell "US$375.00 δ -1.00" [ref=e894]:
+                  - generic [ref=e895]: US$375.00
+                  - generic [ref=e896]: δ -1.00
+                - cell "US$0.00 -44.8%" [ref=e897]:
+                  - generic [ref=e898]: US$0.00
+                  - generic [ref=e899]: "-44.8%"
+                - cell "US$0.00 -44.8%" [ref=e900]:
+                  - generic [ref=e901]: US$0.00
+                  - generic [ref=e902]: "-44.8%"
+              - button "US$380.00 δ -1.00 US$0.00 -46.7% US$0.00 -46.7%" [ref=e903] [cursor=pointer]:
+                - cell "US$380.00 δ -1.00" [ref=e904]:
+                  - generic [ref=e905]: US$380.00
+                  - generic [ref=e906]: δ -1.00
+                - cell "US$0.00 -46.7%" [ref=e907]:
+                  - generic [ref=e908]: US$0.00
+                  - generic [ref=e909]: "-46.7%"
+                - cell "US$0.00 -46.7%" [ref=e910]:
+                  - generic [ref=e911]: US$0.00
+                  - generic [ref=e912]: "-46.7%"
+          - generic [ref=e410]: Tap a strike to place order

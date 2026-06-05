@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wheel Strategy — Screen 1 Final</title>
+<style>
+  /* Exact tokens from index.css dark theme */
+  :root {
+    --bg-primary: #0a0f1a;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #10b981;
+    --accent-light: rgba(16,185,129,0.15);
+    --border: rgba(255,255,255,0.06);
+    --border-hover: rgba(255,255,255,0.1);
+    --success: #10b981;
+    --success-text: #6ee7b7;
+    --success-light: rgba(16,185,129,0.12);
+    --danger-text: #f87171;
+    --danger-light: rgba(248,113,113,0.12);
+    --warning-text: #fbbf24;
+    --warning-light: rgba(251,191,36,0.12);
+    --csp: #6366f1;
+    --csp-bg: rgba(99,102,241,0.08);
+    --csp-border: rgba(99,102,241,0.3);
+    --cc: #f97316;
+    --cc-bg: rgba(249,115,22,0.08);
+    --cc-border: rgba(249,115,22,0.3);
+    --orange-text: #fb923c;
+    --indigo-text: #818cf8;
+    --font-mono: 'JetBrains Mono', 'source-code-pro', Menlo, Monaco, Consolas, monospace;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --transition-fast: 150ms ease-out;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#060a14; color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:16px; font-size:14px; }
+  .layout { display:flex; gap:20px; align-items:flex-start; }
+  .viewport-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); text-align:center; margin-bottom:8px; font-weight:500; }
+
+  /* ===== DESKTOP ===== */
+  .desktop-frame { flex:1; max-width:1100px; background:var(--bg-primary); border-radius:12px; border:1.5px solid rgba(255,255,255,0.05); overflow:hidden; display:flex; height:720px; }
+
+  /* Icon rail — exact match */
+  .icon-rail { width:48px; background:var(--bg-secondary); border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; padding:12px 0; gap:4px; flex-shrink:0; }
+  .ir-logo { width:28px; height:28px; border-radius:8px; background:rgba(16,185,129,0.15); color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; margin-bottom:12px; }
+  .ir-btn { width:36px; height:36px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; transition:background var(--transition-fast),color var(--transition-fast); }
+  .ir-btn:hover { background:rgba(255,255,255,0.04); color:var(--text-secondary); }
+  .ir-btn--active { background:rgba(16,185,129,0.12); color:var(--accent); }
+  .ir-spacer { flex:1; }
+  .ir-avatar { width:28px; height:28px; border-radius:50%; background:rgba(16,185,129,0.15); color:var(--success-text); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; }
+
+  .desktop-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* Account nav — exact match */
+  .acct-nav { padding:0 24px; margin-bottom:12px; padding-top:10px; }
+  .acct-pills { display:flex; align-items:center; gap:2px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; padding:3px; width:fit-content; }
+  .acct-pill { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border:none; border-radius:6px; background:transparent; color:var(--text-secondary); font-size:12px; font-weight:400; cursor:pointer; white-space:nowrap; font-family:inherit; transition:background var(--transition-fast),color var(--transition-fast); }
+  .acct-pill:hover { background:rgba(255,255,255,0.04); color:var(--text-primary); }
+  .acct-pill--active { background:rgba(16,185,129,0.1); color:var(--accent); font-weight:500; }
+  .acct-pill__icon { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; font-size:9px; font-weight:700; line-height:1; background:#1a5c3a; color:#4ade80; }
+  .acct-pill__type { font-size:12px; }
+  .acct-pill__num { font-size:10px; font-family:var(--font-mono); color:var(--text-muted); }
+
+  .desktop-content { padding:0 24px; flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* Page header — exact match */
+  .page-header { display:flex; align-items:center; justify-content:space-between; padding:8px 0 16px; gap:16px; }
+  .page-title { font-size:22px; font-weight:700; color:var(--text-primary); }
+
+  /* KPI row — exact match from KpiCard.css */
+  .kpi-row { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px; flex-shrink:0; }
+  .kpi-card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; }
+  .kpi__header { display:flex; align-items:center; justify-content:space-between; }
+  .kpi__label { font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); font-weight:500; }
+  .kpi__icon { color:var(--text-secondary); font-size:14px; }
+  .kpi__value { font-size:18px; font-weight:700; font-family:var(--font-mono); color:var(--text-primary); margin:8px 0 0; }
+  .kpi__value--pos { color:var(--success-text); }
+  .kpi__value--neg { color:var(--danger-text); }
+  .kpi__value--cc { color:var(--orange-text); }
+  .kpi__divider { height:1px; background:var(--border); margin:8px 0; }
+  .kpi__row { display:flex; justify-content:space-between; align-items:center; padding:2px 0; }
+  .kpi__row-label { font-size:10px; color:var(--text-muted); }
+  .kpi__row-value { font-size:11px; font-family:var(--font-mono); color:var(--text-secondary); }
+
+  /* Timeline */
+  .tl-nav { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-shrink:0; }
+  .tl-btn { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); padding:5px 12px; cursor:pointer; font-size:14px; font-family:inherit; transition:border-color var(--transition-fast); }
+  .tl-btn:hover { border-color:var(--border-hover); }
+  .tl-range { flex:1; text-align:center; font-size:11px; color:var(--text-secondary); letter-spacing:0.5px; text-transform:uppercase; }
+  .tl-today { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:var(--radius-sm); color:var(--success-text); padding:5px 12px; cursor:pointer; font-size:11px; font-weight:500; font-family:inherit; }
+
+  /* Grid */
+  .gw { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:0; }
+  .gs { overflow:auto; flex:1; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { padding:8px 10px; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); font-weight:500; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg-secondary); z-index:2; }
+  th.tc { text-align:left; width:120px; position:sticky; left:0; z-index:3; }
+  th.ec { text-align:center; min-width:150px; }
+  .ed { font-size:12px; font-weight:600; color:var(--text-primary); text-transform:none; letter-spacing:0; }
+  .em { display:flex; align-items:center; justify-content:center; gap:4px; margin-top:2px; }
+  .dte { padding:1px 6px; border-radius:3px; font-size:9px; font-weight:600; }
+  .dte--c { background:rgba(248,113,113,0.2); color:var(--danger-text); }
+  .dte--w { background:rgba(251,191,36,0.15); color:var(--warning-text); }
+  .dte--s { background:rgba(16,185,129,0.15); color:var(--success-text); }
+  .mb { background:rgba(99,102,241,0.15); color:var(--indigo-text); padding:1px 5px; border-radius:3px; font-size:8px; font-weight:500; }
+  tbody td { padding:4px 6px; vertical-align:top; border-bottom:1px solid rgba(255,255,255,0.025); }
+  td.tkc { padding:8px 12px; position:sticky; left:0; background:var(--bg-secondary); z-index:1; }
+  .tk-name { font-size:13px; font-weight:700; color:var(--text-primary); }
+  .tk-price { font-size:10px; color:var(--text-secondary); font-family:var(--font-mono); margin-top:1px; }
+  .tk-exp { font-size:10px; font-family:var(--font-mono); color:var(--text-secondary); margin-top:2px; }
+  .tk-shares { font-size:9px; color:var(--text-muted); margin-top:2px; }
+  .tk-cc { display:inline-flex; align-items:center; gap:2px; background:var(--cc-bg); border:1px solid var(--cc-border); color:var(--orange-text); padding:1px 5px; border-radius:3px; font-size:8px; font-weight:500; margin-top:3px; }
+
+  .pc { border-radius:var(--radius-sm); padding:7px 10px; cursor:pointer; transition:border-color var(--transition-fast),transform var(--transition-fast); }
+  .pc:hover { transform:translateY(-1px); }
+  .pc--csp { background:var(--csp-bg); border:1px solid var(--csp-border); }
+  .pc--csp:hover { border-color:rgba(99,102,241,0.5); }
+  .pc--cc { background:var(--cc-bg); border:1px solid var(--cc-border); }
+  .pc--cc:hover { border-color:rgba(249,115,22,0.5); }
+  .pc__r { display:flex; justify-content:space-between; align-items:center; }
+  .pc__r + .pc__r { margin-top:3px; }
+  .pc__s { font-weight:600; font-family:var(--font-mono); font-size:11px; }
+  .pc__s--csp { color:var(--indigo-text); }
+  .pc__s--cc { color:var(--orange-text); }
+  .pc__o { color:var(--text-muted); font-size:9px; }
+  .pc__p { font-family:var(--font-mono); font-size:10px; }
+  .pc__p--pos { color:var(--success-text); }
+  .pc__p--neg { color:var(--danger-text); }
+
+  .es { display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:var(--radius-sm); padding:12px; cursor:pointer; color:var(--text-muted); font-size:16px; transition:border-color var(--transition-fast),color var(--transition-fast); }
+  .es:hover { border-color:rgba(99,102,241,0.3); color:var(--indigo-text); }
+  .cs { display:flex; align-items:center; justify-content:center; border:1px dashed rgba(249,115,22,0.15); border-radius:var(--radius-sm); padding:12px; cursor:pointer; color:rgba(249,115,22,0.4); font-size:10px; transition:all var(--transition-fast); }
+  .cs:hover { border-color:rgba(249,115,22,0.4); color:var(--orange-text); background:rgba(249,115,22,0.04); }
+  .at { display:flex; align-items:center; justify-content:center; border-top:1px solid var(--border); padding:8px; cursor:pointer; color:var(--text-muted); font-size:11px; flex-shrink:0; transition:color var(--transition-fast); }
+  .at:hover { color:var(--indigo-text); }
+  .ce { background:rgba(248,113,113,0.03); }
+  .lg { display:flex; gap:14px; padding:6px 0; font-size:9px; color:var(--text-muted); flex-shrink:0; }
+  .lg__i { display:flex; align-items:center; gap:4px; }
+  .lg__d { width:7px; height:7px; border-radius:2px; }
+  .lg__d--csp { background:rgba(99,102,241,0.5); }
+  .lg__d--cc { background:rgba(249,115,22,0.5); }
+
+  /* ===== MOBILE ===== */
+  .mobile-frame { width:375px; height:720px; background:var(--bg-primary); border-radius:24px; border:1.5px solid rgba(255,255,255,0.05); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; }
+
+  /* Mobile account dropdown — exact match */
+  .m-acct { display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px 16px 8px; }
+  .m-acct__trigger { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:none; border:none; cursor:pointer; font-family:inherit; }
+  .m-acct__trigger-icon { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; font-size:9px; font-weight:700; line-height:1; background:#1a5c3a; color:#4ade80; }
+  .m-acct__trigger-label { font-size:14px; font-weight:700; color:var(--text-primary); }
+  .m-acct__trigger-chevron { color:var(--text-muted); font-size:10px; }
+  .m-acct__dots { display:flex; align-items:center; gap:6px; }
+  .m-acct__dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.2); cursor:pointer; }
+  .m-acct__dot--active { width:8px; height:8px; background:var(--accent); }
+
+  /* Mobile KPI — 2x2 grid matching dashboard mobile */
+  .m-kpi { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 16px 8px; }
+  .m-kpi__card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-md); padding:10px 12px; }
+  .m-kpi__card--full { grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; padding:8px 12px; }
+  .m-kpi__label { font-size:9px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); font-weight:500; }
+  .m-kpi__value { font-size:16px; font-weight:700; font-family:var(--font-mono); color:var(--text-primary); margin-top:4px; }
+  .m-kpi__value--neg { color:var(--danger-text); }
+  .m-kpi__value--cc { color:var(--orange-text); }
+  .m-kpi__sub { font-size:9px; color:var(--text-muted); font-family:var(--font-mono); margin-top:2px; }
+  .m-kpi__card--full .m-kpi__value { margin-top:0; margin-left:8px; font-size:14px; }
+
+  /* Mobile timeline */
+  .m-tl { display:flex; align-items:center; gap:5px; padding:4px 16px 8px; }
+  .m-tl__btn { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); padding:4px 9px; cursor:pointer; font-size:12px; font-family:inherit; }
+  .m-tl__range { flex:1; text-align:center; font-size:10px; color:var(--text-secondary); letter-spacing:0.3px; }
+  .m-tl__today { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:var(--radius-sm); color:var(--success-text); padding:3px 9px; cursor:pointer; font-size:9px; font-weight:500; font-family:inherit; }
+
+  /* Mobile grid */
+  .m-gw { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-md); margin:0 16px; overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:0; }
+  .m-gs { overflow:auto; flex:1; }
+  .m-gw table thead th { padding:6px 7px; font-size:8px; }
+  .m-gw table th.tc { width:85px; }
+  .m-gw table th.ec { min-width:120px; }
+  .m-gw table tbody td { padding:3px 5px; }
+  .m-gw table td.tkc { padding:6px 8px; }
+  .m-gw .tk-name { font-size:12px; }
+  .m-gw .tk-price { font-size:9px; }
+  .m-gw .tk-exp { font-size:9px; }
+  .m-gw .tk-shares { font-size:8px; }
+  .m-gw .tk-cc { font-size:7px; }
+  .m-gw .pc { padding:5px 7px; }
+  .m-gw .pc__s { font-size:10px; }
+  .m-gw .pc__o { font-size:8px; }
+  .m-gw .pc__p { font-size:9px; }
+  .m-gw .es { padding:9px; font-size:14px; }
+  .m-gw .cs { padding:9px; font-size:9px; }
+  .m-gw .ed { font-size:11px; }
+  .m-gw .dte { font-size:8px; }
+  .m-gw .at { font-size:10px; padding:6px; }
+
+  .m-lg { display:flex; gap:10px; padding:4px 16px; font-size:8px; color:var(--text-muted); flex-shrink:0; }
+  .m-lg__i { display:flex; align-items:center; gap:3px; }
+  .m-lg__d { width:6px; height:6px; border-radius:2px; }
+
+  /* Bottom tabs — exact match */
+  .btabs { display:flex; border-top:1px solid var(--border); background:var(--bg-secondary); padding:8px 0 20px; flex-shrink:0; }
+  .btab { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--text-muted); font-size:9px; cursor:pointer; }
+  .btab--active { color:var(--accent); }
+  .btab__icon { font-size:18px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ===== DESKTOP ===== -->
+  <div>
+    <div class="viewport-label">Desktop (1024+) &mdash; 4 weeks</div>
+    <div class="desktop-frame">
+      <nav class="icon-rail">
+        <div class="ir-logo">P</div>
+        <button class="ir-btn">&#9633;</button>
+        <button class="ir-btn ir-btn--active">&#9678;</button>
+        <button class="ir-btn">&#128279;</button>
+        <div class="ir-spacer"></div>
+        <button class="ir-btn">&#9788;</button>
+        <button class="ir-btn">&#9881;</button>
+        <div class="ir-avatar">S</div>
+      </nav>
+      <div class="desktop-main">
+        <div class="acct-nav">
+          <div class="acct-pills">
+            <button class="acct-pill acct-pill--active">All Accounts</button>
+            <button class="acct-pill"><span class="acct-pill__icon">Q</span><span class="acct-pill__type">LIRA</span><span class="acct-pill__num">••9683</span></button>
+            <button class="acct-pill"><span class="acct-pill__icon">Q</span><span class="acct-pill__type">RRSP</span><span class="acct-pill__num">••8214</span></button>
+            <button class="acct-pill"><span class="acct-pill__icon">Q</span><span class="acct-pill__type">MARGIN</span><span class="acct-pill__num">••4150</span></button>
+            <button class="acct-pill"><span class="acct-pill__icon">Q</span><span class="acct-pill__type">RRSP</span><span class="acct-pill__num">••2736</span></button>
+            <button class="acct-pill"><span class="acct-pill__icon">Q</span><span class="acct-pill__type">TFSA</span><span class="acct-pill__num">••0190</span></button>
+          </div>
+        </div>
+        <div class="desktop-content">
+          <div class="page-header"><h1 class="page-title">Wheel Strategy</h1></div>
+          <div class="kpi-row">
+            <div class="kpi-card"><div class="kpi__header"><span class="kpi__label">Capital Available</span><span class="kpi__icon">&#8599;</span></div><div class="kpi__value">C$ 79,834</div><div class="kpi__divider"></div><div class="kpi__row"><span class="kpi__row-label">C$</span><span class="kpi__row-value">79,833.62</span></div><div class="kpi__row"><span class="kpi__row-label">US$</span><span class="kpi__row-value">33,108.50</span></div></div>
+            <div class="kpi-card"><div class="kpi__header"><span class="kpi__label">Capital Deployed</span><span class="kpi__icon">&#9878;</span></div><div class="kpi__value">US$ 53,250</div><div class="kpi__divider"></div><div class="kpi__row"><span class="kpi__row-label">CSP</span><span class="kpi__row-value">US$ 53,250</span></div><div class="kpi__row"><span class="kpi__row-label">CC</span><span class="kpi__row-value">US$ 4,800</span></div></div>
+            <div class="kpi-card"><div class="kpi__header"><span class="kpi__label">CC Available</span><span class="kpi__icon">&#x25B2;</span></div><div class="kpi__value kpi__value--cc">7 contracts</div><div class="kpi__divider"></div><div class="kpi__row"><span class="kpi__row-label">TQQQ</span><span class="kpi__row-value">1</span></div><div class="kpi__row"><span class="kpi__row-label">QQU.TO</span><span class="kpi__row-value">3</span></div><div class="kpi__row"><span class="kpi__row-label">SPXU.TO</span><span class="kpi__row-value">3</span></div></div>
+            <div class="kpi-card"><div class="kpi__header"><span class="kpi__label">Premium & P&L</span><span class="kpi__icon">$</span></div><div class="kpi__value kpi__value--neg">-US$ 1,386</div><div class="kpi__divider"></div><div class="kpi__row"><span class="kpi__row-label">Premium</span><span class="kpi__row-value" style="color:var(--success-text);">+US$ 2,675</span></div><div class="kpi__row"><span class="kpi__row-label">Unrealized</span><span class="kpi__row-value" style="color:var(--danger-text);">-US$ 1,386</span></div></div>
+            <div class="kpi-card"><div class="kpi__header"><span class="kpi__label">Positions</span><span class="kpi__icon">&#9673;</span></div><div class="kpi__value">7</div><div class="kpi__divider"></div><div class="kpi__row"><span class="kpi__row-label">CSP</span><span class="kpi__row-value">6</span></div><div class="kpi__row"><span class="kpi__row-label">CC</span><span class="kpi__row-value">1</span></div><div class="kpi__row"><span class="kpi__row-label">Expiring</span><span class="kpi__row-value" style="color:var(--danger-text);">2</span></div></div>
+          </div>
+          <div class="tl-nav">
+            <button class="tl-btn">&#8592;</button>
+            <div class="tl-range">May 29 &mdash; Jun 19, 2026</div>
+            <button class="tl-btn">&#8594;</button>
+            <button class="tl-today">Today</button>
+          </div>
+          <div class="gw">
+            <div class="gs">
+              <table>
+                <thead><tr>
+                  <th class="tc">Ticker</th>
+                  <th class="ec" style="background:rgba(248,113,113,0.03);"><div class="ed">May 29</div><div class="em"><span class="dte dte--c">0d</span><span style="font-size:9px;color:var(--text-muted);">Fri</span></div></th>
+                  <th class="ec"><div class="ed">Jun 5</div><div class="em"><span class="dte dte--w">7d</span><span style="font-size:9px;color:var(--text-muted);">Fri</span></div></th>
+                  <th class="ec"><div class="ed">Jun 12</div><div class="em"><span class="dte dte--s">14d</span><span style="font-size:9px;color:var(--text-muted);">Fri</span></div></th>
+                  <th class="ec"><div class="ed">Jun 19 <span class="mb">Monthly</span></div><div class="em"><span class="dte dte--s">21d</span><span style="font-size:9px;color:var(--text-muted);">Fri</span></div></th>
+                </tr></thead>
+                <tbody>
+                  <tr><td class="tkc"><div class="tk-name">SOXL</div><div class="tk-price">$676.00</div><div class="tk-exp">US$ 29,000</div></td><td class="ce"><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$70 Put</span><span class="pc__o">89.6%</span></div><div class="pc__r"><span class="pc__p pc__p--pos">+$289</span></div></div></td><td><div class="es">+</div></td><td><div class="es">+</div></td><td><div style="display:flex;flex-direction:column;gap:4px;"><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$100 Put</span><span class="pc__o">85.2%</span></div><div class="pc__r"><span class="pc__p pc__p--pos">+$382</span></div></div><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$120 Put</span><span class="pc__o">82.2%</span></div><div class="pc__r"><span class="pc__p pc__p--pos">+$743</span></div></div></div></td></tr>
+                  <tr><td class="tkc"><div class="tk-name">TECL</div><div class="tk-price">$256.00</div><div class="tk-exp">US$ 14,000</div></td><td class="ce"><div class="es">+</div></td><td><div class="es">+</div></td><td><div class="es">+</div></td><td><div class="pc pc--cc"><div class="pc__r"><span class="pc__s pc__s--cc">$140 CC</span><span class="pc__o">45.3%</span></div><div class="pc__r"><span class="pc__p pc__p--pos">+$344</span></div></div></td></tr>
+                  <tr><td class="tkc"><div class="tk-name">TQQQ</div><div class="tk-price">$827.00</div><div class="tk-exp">US$ 15,050</div><div class="tk-shares">100 shares</div><div class="tk-cc">&#x25B2; 1 CC</div></td><td class="ce"><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$45 Put</span><span class="pc__o">94.6%</span></div><div class="pc__r"><span class="pc__p pc__p--pos">+$124</span></div></div></td><td><div class="cs">+ Sell CC</div></td><td><div class="cs">+ Sell CC</div></td><td><div style="display:flex;flex-direction:column;gap:4px;"><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$57.50 Put</span><span class="pc__o">93.0%</span></div><div class="pc__r"><span class="pc__p pc__p--pos">+$94</span></div></div><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$48 Put</span><span class="pc__o">94.2%</span></div><div class="pc__r"><span class="pc__p pc__p--neg">-$3,362</span></div></div><div class="cs">+ Sell CC</div></div></td></tr>
+                  <tr><td class="tkc"><div class="tk-name">QQU.TO</div><div class="tk-price">$41.38</div><div class="tk-exp">C$ 12,414</div><div class="tk-shares">300 shares</div><div class="tk-cc">&#x25B2; 3 CC</div></td><td class="ce"><div class="cs">+ Sell CC</div></td><td><div class="cs">+ Sell CC</div></td><td><div class="cs">+ Sell CC</div></td><td><div class="cs">+ Sell CC</div></td></tr>
+                  <tr><td class="tkc"><div class="tk-name">SPXU.TO</div><div class="tk-price">$37.08</div><div class="tk-exp">C$ 11,124</div><div class="tk-shares">300 shares</div><div class="tk-cc">&#x25B2; 3 CC</div></td><td class="ce"><div class="cs">+ Sell CC</div></td><td><div class="cs">+ Sell CC</div></td><td><div class="cs">+ Sell CC</div></td><td><div class="cs">+ Sell CC</div></td></tr>
+                  <tr><td class="tkc"><div class="tk-name">UPRO</div><div class="tk-price">$236.00</div><div class="tk-exp" style="color:var(--text-muted);">US$ 0</div></td><td class="ce"><div class="es">+</div></td><td><div class="es">+</div></td><td><div class="es">+</div></td><td><div class="es">+</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="at">+ Add Ticker</div>
+          </div>
+          <div class="lg"><div class="lg__i"><span class="lg__d lg__d--csp"></span> CSP</div><div class="lg__i"><span class="lg__d lg__d--cc"></span> CC</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MOBILE ===== -->
+  <div>
+    <div class="viewport-label">Mobile (375px) &mdash; 2 weeks</div>
+    <div class="mobile-frame">
+      <div class="m-acct">
+        <button class="m-acct__trigger">
+          <span class="m-acct__trigger-icon">Q</span>
+          <span class="m-acct__trigger-label">TFSA ••0190</span>
+          <span class="m-acct__trigger-chevron">&#9660;</span>
+        </button>
+        <div class="m-acct__dots">
+          <span class="m-acct__dot"></span>
+          <span class="m-acct__dot"></span>
+          <span class="m-acct__dot"></span>
+          <span class="m-acct__dot"></span>
+          <span class="m-acct__dot m-acct__dot--active"></span>
+        </div>
+      </div>
+      <div class="m-kpi">
+        <div class="m-kpi__card"><div class="m-kpi__label">Capital Available</div><div class="m-kpi__value">C$ 79,834</div><div class="m-kpi__sub">US$ 33,109</div></div>
+        <div class="m-kpi__card"><div class="m-kpi__label">Capital Deployed</div><div class="m-kpi__value">US$ 53,250</div><div class="m-kpi__sub">CSP $53,250 · CC $4,800</div></div>
+        <div class="m-kpi__card"><div class="m-kpi__label">Premium & P&L</div><div class="m-kpi__value m-kpi__value--neg">-US$ 1,386</div><div class="m-kpi__sub"><span style="color:var(--success-text);">prem +$2,675</span></div></div>
+        <div class="m-kpi__card"><div class="m-kpi__label">Positions</div><div class="m-kpi__value">7</div><div class="m-kpi__sub">6 CSP · 1 CC · <span style="color:var(--danger-text);">2 exp</span></div></div>
+        <div class="m-kpi__card m-kpi__card--full"><div class="m-kpi__label">CC Available</div><div class="m-kpi__value m-kpi__value--cc">7 contracts</div><div class="m-kpi__sub" style="margin-left:auto;">TQQQ 1 · QQU 3 · SPXU 3</div></div>
+      </div>
+      <div class="m-tl">
+        <button class="m-tl__btn">&#8592;</button>
+        <div class="m-tl__range">May 29 &mdash; Jun 5, 2026</div>
+        <button class="m-tl__btn">&#8594;</button>
+        <button class="m-tl__today">Today</button>
+      </div>
+      <div class="m-gw">
+        <div class="m-gs">
+          <table>
+            <thead><tr>
+              <th class="tc">Ticker</th>
+              <th class="ec" style="background:rgba(248,113,113,0.03);"><div class="ed">May 29</div><div class="em"><span class="dte dte--c">0d</span><span style="font-size:8px;color:var(--text-muted);">Fri</span></div></th>
+              <th class="ec"><div class="ed">Jun 5</div><div class="em"><span class="dte dte--w">7d</span><span style="font-size:8px;color:var(--text-muted);">Fri</span></div></th>
+            </tr></thead>
+            <tbody>
+              <tr><td class="tkc"><div class="tk-name">SOXL</div><div class="tk-price">$676.00</div><div class="tk-exp">US$ 29,000</div></td><td class="ce"><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$70 Put</span><span class="pc__o">89.6%</span></div><div class="pc__r"><span class="pc__p pc__p--pos">+$289</span></div></div></td><td><div class="es">+</div></td></tr>
+              <tr><td class="tkc"><div class="tk-name">TECL</div><div class="tk-price">$256.00</div><div class="tk-exp">US$ 14,000</div></td><td class="ce"><div class="es">+</div></td><td><div class="es">+</div></td></tr>
+              <tr><td class="tkc"><div class="tk-name">TQQQ</div><div class="tk-price">$827.00</div><div class="tk-exp">US$ 15,050</div><div class="tk-shares">100 shr</div><div class="tk-cc">1 CC</div></td><td class="ce"><div class="pc pc--csp"><div class="pc__r"><span class="pc__s pc__s--csp">$45 Put</span><span class="pc__o">94.6%</span></div><div class="pc__r"><span class="pc__p pc__p--pos">+$124</span></div></div></td><td><div class="cs">+ CC</div></td></tr>
+              <tr><td class="tkc"><div class="tk-name">QQU.TO</div><div class="tk-price">$41.38</div><div class="tk-exp">C$ 12,414</div><div class="tk-shares">300 shr</div><div class="tk-cc">3 CC</div></td><td class="ce"><div class="cs">+ CC</div></td><td><div class="cs">+ CC</div></td></tr>
+              <tr><td class="tkc"><div class="tk-name">SPXU.TO</div><div class="tk-price">$37.08</div><div class="tk-exp">C$ 11,124</div><div class="tk-shares">300 shr</div><div class="tk-cc">3 CC</div></td><td class="ce"><div class="cs">+ CC</div></td><td><div class="cs">+ CC</div></td></tr>
+              <tr><td class="tkc"><div class="tk-name">UPRO</div><div class="tk-price">$236.00</div><div class="tk-exp" style="color:var(--text-muted);">US$ 0</div></td><td class="ce"><div class="es">+</div></td><td><div class="es">+</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="at">+ Add Ticker</div>
+      </div>
+      <div class="m-lg"><div class="m-lg__i"><span class="m-lg__d lg__d--csp"></span> CSP</div><div class="m-lg__i"><span class="m-lg__d lg__d--cc"></span> CC</div></div>
+      <div class="btabs">
+        <div class="btab"><span class="btab__icon">&#9633;</span>Portfolio</div>
+        <div class="btab btab--active"><span class="btab__icon">&#9678;</span>Wheel</div>
+        <div class="btab"><span class="btab__icon">&#128279;</span>Connections</div>
+        <div class="btab"><span class="btab__icon">&#8943;</span>More</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

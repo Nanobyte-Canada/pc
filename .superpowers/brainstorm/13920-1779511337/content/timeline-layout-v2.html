@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Options Wheel - Timeline Layout Options</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    min-height: 100vh;
+  }
+
+  /* Tab Navigation */
+  .tab-nav {
+    display: flex;
+    background: #1a1d27;
+    border-bottom: 1px solid #2a2d3a;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .tab-btn {
+    padding: 14px 24px;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: #ccc; }
+  .tab-btn.active {
+    color: #7b9bf4;
+    border-bottom-color: #7b9bf4;
+  }
+  .tab-content { display: none; padding: 24px; min-height: calc(100vh - 49px); }
+  .tab-content.active { display: block; }
+
+  /* Page header */
+  .page-header {
+    margin-bottom: 24px;
+  }
+  .page-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .page-header p {
+    color: #888;
+    font-size: 13px;
+  }
+
+  /* ============ OPTION A: Horizontal Timeline Grid (Transposed) ============ */
+  .timeline-grid {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .timeline-grid th {
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    background: #1a1d27;
+    border-bottom: 1px solid #2a2d3a;
+    position: sticky;
+    top: 49px;
+    z-index: 10;
+  }
+  .timeline-grid th.expiry-header {
+    text-align: left;
+    width: 140px;
+    min-width: 140px;
+  }
+  .timeline-grid th.ticker-header {
+    min-width: 160px;
+  }
+  .timeline-grid th .ticker-price {
+    font-size: 10px;
+    color: #888;
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .timeline-grid td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #1e2130;
+    vertical-align: top;
+    height: 72px;
+  }
+  .timeline-grid tr:hover td {
+    background: rgba(123, 155, 244, 0.03);
+  }
+
+  /* DTE badge */
+  .dte-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    margin-left: 6px;
+  }
+  .dte-critical { background: #e74c3c; }
+  .dte-warning { background: #e67e22; }
+  .dte-normal { background: #f1c40f; color: #111; }
+  .dte-safe { background: #2ecc71; }
+  .dte-far { background: #3498db; }
+
+  /* Expiry row label */
+  .expiry-label {
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .expiry-label .date-sub {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    font-weight: 400;
+    margin-top: 2px;
+  }
+
+  /* Position card */
+  .position-card {
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+  }
+  .position-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .position-card.csp {
+    background: linear-gradient(135deg, #1e2460, #2d2d6b);
+    border: 1px solid rgba(123, 155, 244, 0.3);
+  }
+  .position-card.cc {
+    background: linear-gradient(135deg, #4a1e3a, #6b2d4a);
+    border: 1px solid rgba(244, 155, 206, 0.3);
+  }
+  .position-card .card-type {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .position-card.csp .card-type { color: #7b9bf4; }
+  .position-card.cc .card-type { color: #f49bce; }
+  .position-card .card-strike {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+  .position-card .card-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: #aaa;
+  }
+  .position-card .card-pnl {
+    font-weight: 600;
+  }
+  .pnl-positive { color: #2ecc71; }
+  .pnl-negative { color: #e74c3c; }
+
+  /* Multiple cards in same cell */
+  .position-card + .position-card {
+    margin-top: 4px;
+  }
+
+  /* Empty slot */
+  .empty-slot {
+    height: 100%;
+    min-height: 56px;
+    border: 1px dashed #333;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .empty-slot:hover {
+    border-color: #7b9bf4;
+    color: #7b9bf4;
+    background: rgba(123, 155, 244, 0.05);
+  }
+
+  /* Summary row */
+  .timeline-grid tr.summary-row td {
+    background: #1a1d27;
+    border-top: 2px solid #2a2d3a;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 10px 12px;
+    height: auto;
+  }
+  .summary-label { color: #888; font-size: 10px; display: block; margin-bottom: 2px; }
+
+  /* Account tabs */
+  .account-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    background: #1a1d27;
+    padding: 4px;
+    border-radius: 8px;
+    width: fit-content;
+  }
+  .account-tab {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    color: #888;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .account-tab:hover { color: #ccc; }
+  .account-tab.active {
+    background: #2a2d3a;
+    color: #fff;
+  }
+
+  /* Capital summary bar */
+  .capital-bar {
+    display: flex;
+    gap: 24px;
+    padding: 12px 16px;
+    background: #1a1d27;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 12px;
+  }
+  .capital-item .capital-label {
+    color: #888;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .capital-item .capital-value {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  /* ============ OPTION B: Expiry-Grouped Card List ============ */
+  .expiry-group {
+    margin-bottom: 16px;
+  }
+  .expiry-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-radius: 8px 8px 0 0;
+    border-left: 3px solid;
+  }
+  .expiry-group-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .expiry-group-header .group-summary {
+    font-size: 11px;
+    color: #aaa;
+  }
+  .expiry-group-body {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(0,0,0,0.15);
+    border-radius: 0 0 8px 8px;
+    flex-wrap: wrap;
+  }
+  .group-card {
+    flex: 1;
+    min-width: 180px;
+    max-width: 260px;
+    padding: 12px;
+    border-radius: 6px;
+  }
+  .group-card.csp {
+    background: rgba(45,45,107,0.3);
+    border: 1px solid rgba(45,45,107,0.5);
+  }
+  .group-card.cc {
+    background: rgba(107,45,74,0.3);
+    border: 1px solid rgba(107,45,74,0.5);
+  }
+  .group-card .gc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .group-card .gc-ticker { font-weight: 700; font-size: 14px; }
+  .group-card .gc-type { font-size: 10px; font-weight: 600; }
+  .group-card .gc-type.csp-label { color: #7b9bf4; }
+  .group-card .gc-type.cc-label { color: #f49bce; }
+  .group-card .gc-detail { font-size: 12px; color: #bbb; margin-bottom: 4px; }
+  .group-card .gc-pnl { font-size: 12px; font-weight: 600; }
+  .group-card-empty {
+    flex: 1;
+    min-width: 180px;
+    max-width: 260px;
+    padding: 12px;
+    border: 1px dashed #444;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .group-card-empty:hover {
+    border-color: #7b9bf4;
+    color: #7b9bf4;
+  }
+
+  /* DTE color borders */
+  .dte-border-critical { border-left-color: #e74c3c; background: rgba(231,76,60,0.08); }
+  .dte-border-warning { border-left-color: #e67e22; background: rgba(230,126,34,0.08); }
+  .dte-border-normal { border-left-color: #f1c40f; background: rgba(241,196,15,0.08); }
+  .dte-border-safe { border-left-color: #2ecc71; background: rgba(46,204,113,0.08); }
+  .dte-border-far { border-left-color: #3498db; background: rgba(52,152,219,0.08); }
+
+  /* ============ OPTION C: Hybrid ============ */
+  .timeline-overview {
+    padding: 16px 20px;
+    background: #1a1d27;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  .timeline-overview .overview-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+  .timeline-track {
+    position: relative;
+    height: 80px;
+    margin: 0 40px;
+  }
+  .timeline-axis {
+    position: absolute;
+    top: 36px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #333;
+  }
+  .timeline-marker {
+    position: absolute;
+    top: 42px;
+    font-size: 9px;
+    color: #888;
+    transform: translateX(-50%);
+  }
+  .timeline-dot-group {
+    position: absolute;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+  .timeline-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin: 0 2px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .timeline-dot:hover { transform: scale(1.3); }
+  .timeline-dot.csp-dot { background: #2d2d6b; border: 2px solid #7b9bf4; }
+  .timeline-dot.cc-dot { background: #6b2d4a; border: 2px solid #f49bce; }
+  .timeline-dot-label {
+    font-size: 8px;
+    margin-top: 3px;
+    color: #888;
+  }
+
+  /* Compact detail rows for Option C */
+  .compact-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-radius: 6px;
+    border-left: 3px solid;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .compact-row:hover { filter: brightness(1.2); }
+  .compact-row .cr-left { display: flex; align-items: center; gap: 12px; }
+  .compact-row .cr-date { font-weight: 600; font-size: 13px; min-width: 80px; }
+  .compact-row .cr-positions { font-size: 12px; color: #bbb; }
+  .compact-row .cr-right { font-size: 12px; font-weight: 600; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    font-size: 11px;
+    color: #888;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+  .legend-swatch.csp-swatch { background: #2d2d6b; border: 1px solid #7b9bf4; }
+  .legend-swatch.cc-swatch { background: #6b2d4a; border: 1px solid #f49bce; }
+
+  /* Pros/Cons */
+  .pros-cons-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+    padding: 16px;
+    background: #1a1d27;
+    border-radius: 8px;
+  }
+  .pros-cons-row > div { flex: 1; }
+  .pros-cons-row h4 { font-size: 12px; margin-bottom: 8px; }
+  .pros-cons-row .pros h4 { color: #2ecc71; }
+  .pros-cons-row .cons h4 { color: #e74c3c; }
+  .pros-cons-row ul { list-style: none; padding: 0; }
+  .pros-cons-row li { font-size: 12px; color: #aaa; padding: 3px 0; padding-left: 14px; position: relative; }
+  .pros-cons-row .pros li::before { content: "+"; position: absolute; left: 0; color: #2ecc71; font-weight: bold; }
+  .pros-cons-row .cons li::before { content: "-"; position: absolute; left: 0; color: #e74c3c; font-weight: bold; }
+
+  /* Scrollable table wrapper */
+  .table-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #2a2d3a;
+  }
+</style>
+</head>
+<body>
+
+<!-- Tab Navigation -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('a')">A: Timeline Grid</button>
+  <button class="tab-btn" onclick="switchTab('b')">B: Expiry-Grouped Cards</button>
+  <button class="tab-btn" onclick="switchTab('c')">C: Hybrid</button>
+</div>
+
+<!-- ==================== TAB A: Timeline Grid (Transposed) ==================== -->
+<div class="tab-content active" id="tab-a">
+  <div class="page-header">
+    <h2>Option A: Horizontal Timeline Grid</h2>
+    <p>Expiry dates on Y-axis, tickers on X-axis. Empty cells are clickable gaps for opening new positions.</p>
+  </div>
+
+  <!-- Account Tabs -->
+  <div class="account-tabs">
+    <button class="account-tab active">All Accounts</button>
+    <button class="account-tab">IBKR Margin</button>
+    <button class="account-tab">IBKR TFSA</button>
+    <button class="account-tab">Questrade</button>
+  </div>
+
+  <!-- Capital Summary -->
+  <div class="capital-bar">
+    <div class="capital-item">
+      <div class="capital-label">Available Cash</div>
+      <div class="capital-value">$124,500</div>
+    </div>
+    <div class="capital-item">
+      <div class="capital-label">Deployed (CSPs)</div>
+      <div class="capital-value">$89,200</div>
+    </div>
+    <div class="capital-item">
+      <div class="capital-label">Shares Held</div>
+      <div class="capital-value">$67,800</div>
+    </div>
+    <div class="capital-item">
+      <div class="capital-label">CCs Written</div>
+      <div class="capital-value">$45,300</div>
+    </div>
+    <div class="capital-item">
+      <div class="capital-label">Total Premium (Open)</div>
+      <div class="capital-value pnl-positive">+$3,240</div>
+    </div>
+    <div class="capital-item">
+      <div class="capital-label">Unrealized P&L</div>
+      <div class="capital-value pnl-positive">+$1,870</div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch csp-swatch"></div> Cash-Secured Put (CSP)</div>
+    <div class="legend-item"><div class="legend-swatch cc-swatch"></div> Covered Call (CC)</div>
+    <div class="legend-item"><span style="color: #555; font-size: 16px;">- - -</span> Open slot (click to add)</div>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="timeline-grid">
+      <thead>
+        <tr>
+          <th class="expiry-header">Expiry</th>
+          <th class="ticker-header">
+            SOXL
+            <div class="ticker-price">$22.45</div>
+          </th>
+          <th class="ticker-header">
+            TECL
+            <div class="ticker-price">$78.30</div>
+          </th>
+          <th class="ticker-header">
+            TQQQ
+            <div class="ticker-price">$62.15</div>
+          </th>
+          <th class="ticker-header">
+            UPRO
+            <div class="ticker-price">$84.90</div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- May 30 - 7 DTE -->
+        <tr>
+          <td>
+            <div class="expiry-label">
+              May 30
+              <span class="dte-badge dte-critical">7 DTE</span>
+              <span class="date-sub">Friday</span>
+            </div>
+          </td>
+          <td>
+            <div class="position-card csp">
+              <div class="card-type">CSP</div>
+              <div class="card-strike">$20.00</div>
+              <div class="card-details">
+                <span>+$0.85</span>
+                <span class="card-pnl pnl-positive">+$62</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="empty-slot">+</div>
+          </td>
+          <td>
+            <div class="position-card csp">
+              <div class="card-type">CSP</div>
+              <div class="card-strike">$58.00</div>
+              <div class="card-details">
+                <span>+$1.45</span>
+                <span class="card-pnl pnl-negative">-$89</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="position-card cc">
+              <div class="card-type">CC</div>
+              <div class="card-strike">$88.00</div>
+              <div class="card-details">
+                <span>+$1.20</span>
+                <span class="card-pnl pnl-positive">+$95</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Jun 6 - 14 DTE -->
+        <tr>
+          <td>
+            <div class="expiry-label">
+              Jun 6
+              <span class="dte-badge dte-warning">14 DTE</span>
+              <span class="date-sub">Friday</span>
+            </div>
+          </td>
+          <td>
+            <div class="empty-slot">+</div>
+          </td>
+          <td>
+            <div class="position-card csp">
+              <div class="card-type">CSP</div>
+              <div class="card-strike">$72.00</div>
+              <div class="card-details">
+                <span>+$2.30</span>
+                <span class="card-pnl pnl-positive">+$145</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="position-card csp">
+              <div class="card-type">CSP</div>
+              <div class="card-strike">$56.00</div>
+              <div class="card-details">
+                <span>+$1.80</span>
+                <span class="card-pnl pnl-positive">+$78</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="empty-slot">+</div>
+          </td>
+        </tr>
+
+        <!-- Jun 20 - 28 DTE -->
+        <tr>
+          <td>
+            <div class="expiry-label">
+              Jun 20
+              <span class="dte-badge dte-normal">28 DTE</span>
+              <span class="date-sub">Friday (Monthly)</span>
+            </div>
+          </td>
+          <td>
+            <div class="position-card csp">
+              <div class="card-type">CSP</div>
+              <div class="card-strike">$19.00</div>
+              <div class="card-details">
+                <span>+$1.10</span>
+                <span class="card-pnl pnl-positive">+$38</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="position-card cc">
+              <div class="card-type">CC</div>
+              <div class="card-strike">$85.00</div>
+              <div class="card-details">
+                <span>+$3.40</span>
+                <span class="card-pnl pnl-positive">+$210</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="empty-slot">+</div>
+          </td>
+          <td>
+            <div class="position-card cc">
+              <div class="card-type">CC</div>
+              <div class="card-strike">$90.00</div>
+              <div class="card-details">
+                <span>+$2.60</span>
+                <span class="card-pnl pnl-positive">+$185</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Jul 18 - 56 DTE -->
+        <tr>
+          <td>
+            <div class="expiry-label">
+              Jul 18
+              <span class="dte-badge dte-safe">56 DTE</span>
+              <span class="date-sub">Friday (Monthly)</span>
+            </div>
+          </td>
+          <td>
+            <div class="position-card cc">
+              <div class="card-type">CC</div>
+              <div class="card-strike">$26.00</div>
+              <div class="card-details">
+                <span>+$1.75</span>
+                <span class="card-pnl pnl-positive">+$120</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="empty-slot">+</div>
+          </td>
+          <td>
+            <div class="position-card csp">
+              <div class="card-type">CSP</div>
+              <div class="card-strike">$54.00</div>
+              <div class="card-details">
+                <span>+$3.20</span>
+                <span class="card-pnl pnl-positive">+$95</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="empty-slot">+</div>
+          </td>
+        </tr>
+
+        <!-- Aug 15 - 84 DTE -->
+        <tr>
+          <td>
+            <div class="expiry-label">
+              Aug 15
+              <span class="dte-badge dte-far">84 DTE</span>
+              <span class="date-sub">Friday (Monthly)</span>
+            </div>
+          </td>
+          <td>
+            <div class="empty-slot">+</div>
+          </td>
+          <td>
+            <div class="position-card csp">
+              <div class="card-type">CSP</div>
+              <div class="card-strike">$70.00</div>
+              <div class="card-details">
+                <span>+$4.10</span>
+                <span class="card-pnl pnl-positive">+$310</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="empty-slot">+</div>
+          </td>
+          <td>
+            <div class="position-card csp">
+              <div class="card-type">CSP</div>
+              <div class="card-strike">$78.00</div>
+              <div class="card-details">
+                <span>+$3.50</span>
+                <span class="card-pnl pnl-positive">+$220</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Summary Row -->
+        <tr class="summary-row">
+          <td>
+            <span class="summary-label">Totals</span>
+            <strong>5 expiries</strong>
+          </td>
+          <td>
+            <span class="summary-label">SOXL</span>
+            <span>3 positions</span><br>
+            <span class="pnl-positive" style="font-size: 12px;">+$220</span>
+          </td>
+          <td>
+            <span class="summary-label">TECL</span>
+            <span>3 positions</span><br>
+            <span class="pnl-positive" style="font-size: 12px;">+$665</span>
+          </td>
+          <td>
+            <span class="summary-label">TQQQ</span>
+            <span>3 positions</span><br>
+            <span class="pnl-positive" style="font-size: 12px;">+$84</span>
+          </td>
+          <td>
+            <span class="summary-label">UPRO</span>
+            <span>3 positions</span><br>
+            <span class="pnl-positive" style="font-size: 12px;">+$500</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pros-cons-row">
+    <div class="pros">
+      <h4>Pros</h4>
+      <ul>
+        <li>Gaps immediately visible as empty cells</li>
+        <li>Expiry-first Y-axis matches your mental model</li>
+        <li>Click empty cell to open position at specific ticker + expiry</li>
+        <li>Easy to scan columns for per-ticker coverage</li>
+        <li>DTE urgency visible top-to-bottom (nearest first)</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Cons</h4>
+      <ul>
+        <li>Gets wide with many tickers</li>
+        <li>Limited card space for detailed data</li>
+        <li>Multiple positions at same cell need stacking</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB B: Expiry-Grouped Card List ==================== -->
+<div class="tab-content" id="tab-b">
+  <div class="page-header">
+    <h2>Option B: Expiry-Grouped Card List</h2>
+    <p>Vertical list grouped by expiry date (nearest first). Each group shows positions as cards with an "Add position" slot.</p>
+  </div>
+
+  <!-- Account Tabs -->
+  <div class="account-tabs">
+    <button class="account-tab active">All Accounts</button>
+    <button class="account-tab">IBKR Margin</button>
+    <button class="account-tab">IBKR TFSA</button>
+    <button class="account-tab">Questrade</button>
+  </div>
+
+  <!-- Capital Summary -->
+  <div class="capital-bar">
+    <div class="capital-item">
+      <div class="capital-label">Available Cash</div>
+      <div class="capital-value">$124,500</div>
+    </div>
+    <div class="capital-item">
+      <div class="capital-label">Total Premium (Open)</div>
+      <div class="capital-value pnl-positive">+$3,240</div>
+    </div>
+    <div class="capital-item">
+      <div class="capital-label">Unrealized P&L</div>
+      <div class="capital-value pnl-positive">+$1,870</div>
+    </div>
+  </div>
+
+  <!-- May 30 Group -->
+  <div class="expiry-group">
+    <div class="expiry-group-header dte-border-critical">
+      <div>
+        <h3>May 30, 2026 <span class="dte-badge dte-critical">7 DTE</span></h3>
+      </div>
+      <div class="group-summary">3 positions &middot; Premium: $3.50 &middot; P&L: <span class="pnl-positive">+$68</span></div>
+    </div>
+    <div class="expiry-group-body">
+      <div class="group-card csp">
+        <div class="gc-header"><span class="gc-ticker">SOXL</span><span class="gc-type csp-label">CSP</span></div>
+        <div class="gc-detail">Strike: $20.00 &middot; Premium: +$0.85</div>
+        <div class="gc-pnl pnl-positive">P&L: +$62</div>
+      </div>
+      <div class="group-card csp">
+        <div class="gc-header"><span class="gc-ticker">TQQQ</span><span class="gc-type csp-label">CSP</span></div>
+        <div class="gc-detail">Strike: $58.00 &middot; Premium: +$1.45</div>
+        <div class="gc-pnl pnl-negative">P&L: -$89</div>
+      </div>
+      <div class="group-card cc">
+        <div class="gc-header"><span class="gc-ticker">UPRO</span><span class="gc-type cc-label">CC</span></div>
+        <div class="gc-detail">Strike: $88.00 &middot; Premium: +$1.20</div>
+        <div class="gc-pnl pnl-positive">P&L: +$95</div>
+      </div>
+      <div class="group-card-empty">+ Add position</div>
+    </div>
+  </div>
+
+  <!-- Jun 6 Group -->
+  <div class="expiry-group">
+    <div class="expiry-group-header dte-border-warning">
+      <div>
+        <h3>Jun 6, 2026 <span class="dte-badge dte-warning">14 DTE</span></h3>
+      </div>
+      <div class="group-summary">2 positions &middot; Premium: $4.10 &middot; P&L: <span class="pnl-positive">+$223</span></div>
+    </div>
+    <div class="expiry-group-body">
+      <div class="group-card csp">
+        <div class="gc-header"><span class="gc-ticker">TECL</span><span class="gc-type csp-label">CSP</span></div>
+        <div class="gc-detail">Strike: $72.00 &middot; Premium: +$2.30</div>
+        <div class="gc-pnl pnl-positive">P&L: +$145</div>
+      </div>
+      <div class="group-card csp">
+        <div class="gc-header"><span class="gc-ticker">TQQQ</span><span class="gc-type csp-label">CSP</span></div>
+        <div class="gc-detail">Strike: $56.00 &middot; Premium: +$1.80</div>
+        <div class="gc-pnl pnl-positive">P&L: +$78</div>
+      </div>
+      <div class="group-card-empty">+ Add position</div>
+    </div>
+  </div>
+
+  <!-- Jun 20 Group -->
+  <div class="expiry-group">
+    <div class="expiry-group-header dte-border-normal">
+      <div>
+        <h3>Jun 20, 2026 <span class="dte-badge dte-normal">28 DTE</span></h3>
+      </div>
+      <div class="group-summary">3 positions &middot; Premium: $7.10 &middot; P&L: <span class="pnl-positive">+$433</span></div>
+    </div>
+    <div class="expiry-group-body">
+      <div class="group-card csp">
+        <div class="gc-header"><span class="gc-ticker">SOXL</span><span class="gc-type csp-label">CSP</span></div>
+        <div class="gc-detail">Strike: $19.00 &middot; Premium: +$1.10</div>
+        <div class="gc-pnl pnl-positive">P&L: +$38</div>
+      </div>
+      <div class="group-card cc">
+        <div class="gc-header"><span class="gc-ticker">TECL</span><span class="gc-type cc-label">CC</span></div>
+        <div class="gc-detail">Strike: $85.00 &middot; Premium: +$3.40</div>
+        <div class="gc-pnl pnl-positive">P&L: +$210</div>
+      </div>
+      <div class="group-card cc">
+        <div class="gc-header"><span class="gc-ticker">UPRO</span><span class="gc-type cc-label">CC</span></div>
+        <div class="gc-detail">Strike: $90.00 &middot; Premium: +$2.60</div>
+        <div class="gc-pnl pnl-positive">P&L: +$185</div>
+      </div>
+      <div class="group-card-empty">+ Add position</div>
+    </div>
+  </div>
+
+  <!-- Jul 18 Group -->
+  <div class="expiry-group">
+    <div class="expiry-group-header dte-border-safe">
+      <div>
+        <h3>Jul 18, 2026 <span class="dte-badge dte-safe">56 DTE</span></h3>
+      </div>
+      <div class="group-summary">2 positions &middot; Premium: $4.95 &middot; P&L: <span class="pnl-positive">+$215</span></div>
+    </div>
+    <div class="expiry-group-body">
+      <div class="group-card cc">
+        <div class="gc-header"><span class="gc-ticker">SOXL</span><span class="gc-type cc-label">CC</span></div>
+        <div class="gc-detail">Strike: $26.00 &middot; Premium: +$1.75</div>
+        <div class="gc-pnl pnl-positive">P&L: +$120</div>
+      </div>
+      <div class="group-card csp">
+        <div class="gc-header"><span class="gc-ticker">TQQQ</span><span class="gc-type csp-label">CSP</span></div>
+        <div class="gc-detail">Strike: $54.00 &middot; Premium: +$3.20</div>
+        <div class="gc-pnl pnl-positive">P&L: +$95</div>
+      </div>
+      <div class="group-card-empty">+ Add position</div>
+    </div>
+  </div>
+
+  <!-- Aug 15 Group -->
+  <div class="expiry-group">
+    <div class="expiry-group-header dte-border-far">
+      <div>
+        <h3>Aug 15, 2026 <span class="dte-badge dte-far">84 DTE</span></h3>
+      </div>
+      <div class="group-summary">2 positions &middot; Premium: $7.60 &middot; P&L: <span class="pnl-positive">+$530</span></div>
+    </div>
+    <div class="expiry-group-body">
+      <div class="group-card csp">
+        <div class="gc-header"><span class="gc-ticker">TECL</span><span class="gc-type csp-label">CSP</span></div>
+        <div class="gc-detail">Strike: $70.00 &middot; Premium: +$4.10</div>
+        <div class="gc-pnl pnl-positive">P&L: +$310</div>
+      </div>
+      <div class="group-card csp">
+        <div class="gc-header"><span class="gc-ticker">UPRO</span><span class="gc-type csp-label">CSP</span></div>
+        <div class="gc-detail">Strike: $78.00 &middot; Premium: +$3.50</div>
+        <div class="gc-pnl pnl-positive">P&L: +$220</div>
+      </div>
+      <div class="group-card-empty">+ Add position</div>
+    </div>
+  </div>
+
+  <div class="pros-cons-row">
+    <div class="pros">
+      <h4>Pros</h4>
+      <ul>
+        <li>Natural grouping by expiry-first ordering</li>
+        <li>DTE urgency color-coding at a glance</li>
+        <li>Flexible card sizing with room for data</li>
+        <li>Easy to scan what needs attention soon</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Cons</h4>
+      <ul>
+        <li>Harder to see per-ticker coverage gaps across time</li>
+        <li>Vertical scrolling with many expiries</li>
+        <li>"Add position" less intuitive (which ticker?)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB C: Hybrid ==================== -->
+<div class="tab-content" id="tab-c">
+  <div class="page-header">
+    <h2>Option C: Hybrid — Timeline Header + Grouped Detail</h2>
+    <p>Compact timeline overview at top for the 90-day coverage view, detailed expiry-grouped list below for the data. Click a position in either view to highlight in both.</p>
+  </div>
+
+  <!-- Account Tabs -->
+  <div class="account-tabs">
+    <button class="account-tab active">All Accounts</button>
+    <button class="account-tab">IBKR Margin</button>
+    <button class="account-tab">IBKR TFSA</button>
+    <button class="account-tab">Questrade</button>
+  </div>
+
+  <!-- Capital Summary -->
+  <div class="capital-bar">
+    <div class="capital-item">
+      <div class="capital-label">Available Cash</div>
+      <div class="capital-value">$124,500</div>
+    </div>
+    <div class="capital-item">
+      <div class="capital-label">Total Premium (Open)</div>
+      <div class="capital-value pnl-positive">+$3,240</div>
+    </div>
+    <div class="capital-item">
+      <div class="capital-label">Unrealized P&L</div>
+      <div class="capital-value pnl-positive">+$1,870</div>
+    </div>
+  </div>
+
+  <!-- Timeline Overview -->
+  <div class="timeline-overview">
+    <div class="overview-label">90-Day Coverage Timeline</div>
+    <div class="legend" style="margin-bottom: 12px;">
+      <div class="legend-item"><div class="legend-swatch csp-swatch"></div> CSP</div>
+      <div class="legend-item"><div class="legend-swatch cc-swatch"></div> CC</div>
+    </div>
+    <div class="timeline-track">
+      <!-- Axis -->
+      <div class="timeline-axis"></div>
+      <!-- Date markers -->
+      <div class="timeline-marker" style="left: 0%;">Today</div>
+      <div class="timeline-marker" style="left: 8%; color: #e74c3c;">May 30</div>
+      <div class="timeline-marker" style="left: 16%; color: #e67e22;">Jun 6</div>
+      <div class="timeline-marker" style="left: 31%; color: #f1c40f;">Jun 20</div>
+      <div class="timeline-marker" style="left: 62%; color: #2ecc71;">Jul 18</div>
+      <div class="timeline-marker" style="left: 93%; color: #3498db;">Aug 15</div>
+
+      <!-- May 30 dots -->
+      <div class="timeline-dot-group" style="left: 7%; top: 0;">
+        <div class="timeline-dot csp-dot" title="SOXL CSP $20"></div>
+        <div class="timeline-dot-label">SOXL</div>
+      </div>
+      <div class="timeline-dot-group" style="left: 10%; top: 0;">
+        <div class="timeline-dot csp-dot" title="TQQQ CSP $58"></div>
+        <div class="timeline-dot-label">TQQQ</div>
+      </div>
+      <div class="timeline-dot-group" style="left: 13%; top: 0;">
+        <div class="timeline-dot cc-dot" title="UPRO CC $88"></div>
+        <div class="timeline-dot-label">UPRO</div>
+      </div>
+
+      <!-- Jun 6 dots -->
+      <div class="timeline-dot-group" style="left: 16%; top: 0;">
+        <div class="timeline-dot csp-dot" title="TECL CSP $72"></div>
+        <div class="timeline-dot-label">TECL</div>
+      </div>
+      <div class="timeline-dot-group" style="left: 19%; top: 0;">
+        <div class="timeline-dot csp-dot" title="TQQQ CSP $56"></div>
+        <div class="timeline-dot-label">TQQQ</div>
+      </div>
+
+      <!-- Jun 20 dots -->
+      <div class="timeline-dot-group" style="left: 29%; top: 0;">
+        <div class="timeline-dot csp-dot" title="SOXL CSP $19"></div>
+        <div class="timeline-dot-label">SOXL</div>
+      </div>
+      <div class="timeline-dot-group" style="left: 32%; top: 0;">
+        <div class="timeline-dot cc-dot" title="TECL CC $85"></div>
+        <div class="timeline-dot-label">TECL</div>
+      </div>
+      <div class="timeline-dot-group" style="left: 35%; top: 0;">
+        <div class="timeline-dot cc-dot" title="UPRO CC $90"></div>
+        <div class="timeline-dot-label">UPRO</div>
+      </div>
+
+      <!-- Jul 18 dots -->
+      <div class="timeline-dot-group" style="left: 61%; top: 0;">
+        <div class="timeline-dot cc-dot" title="SOXL CC $26"></div>
+        <div class="timeline-dot-label">SOXL</div>
+      </div>
+      <div class="timeline-dot-group" style="left: 64%; top: 0;">
+        <div class="timeline-dot csp-dot" title="TQQQ CSP $54"></div>
+        <div class="timeline-dot-label">TQQQ</div>
+      </div>
+
+      <!-- Aug 15 dots -->
+      <div class="timeline-dot-group" style="left: 91%; top: 0;">
+        <div class="timeline-dot csp-dot" title="TECL CSP $70"></div>
+        <div class="timeline-dot-label">TECL</div>
+      </div>
+      <div class="timeline-dot-group" style="left: 94%; top: 0;">
+        <div class="timeline-dot csp-dot" title="UPRO CSP $78"></div>
+        <div class="timeline-dot-label">UPRO</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compact detail rows -->
+  <div class="compact-row dte-border-critical">
+    <div class="cr-left">
+      <span class="cr-date">May 30 <span class="dte-badge dte-critical">7 DTE</span></span>
+      <span class="cr-positions">SOXL CSP $20 &middot; TQQQ CSP $58 &middot; UPRO CC $88</span>
+    </div>
+    <div class="cr-right pnl-positive">+$68</div>
+  </div>
+  <div class="compact-row dte-border-warning">
+    <div class="cr-left">
+      <span class="cr-date">Jun 6 <span class="dte-badge dte-warning">14 DTE</span></span>
+      <span class="cr-positions">TECL CSP $72 &middot; TQQQ CSP $56</span>
+    </div>
+    <div class="cr-right pnl-positive">+$223</div>
+  </div>
+  <div class="compact-row dte-border-normal">
+    <div class="cr-left">
+      <span class="cr-date">Jun 20 <span class="dte-badge dte-normal">28 DTE</span></span>
+      <span class="cr-positions">SOXL CSP $19 &middot; TECL CC $85 &middot; UPRO CC $90</span>
+    </div>
+    <div class="cr-right pnl-positive">+$433</div>
+  </div>
+  <div class="compact-row dte-border-safe">
+    <div class="cr-left">
+      <span class="cr-date">Jul 18 <span class="dte-badge dte-safe">56 DTE</span></span>
+      <span class="cr-positions">SOXL CC $26 &middot; TQQQ CSP $54</span>
+    </div>
+    <div class="cr-right pnl-positive">+$215</div>
+  </div>
+  <div class="compact-row dte-border-far">
+    <div class="cr-left">
+      <span class="cr-date">Aug 15 <span class="dte-badge dte-far">84 DTE</span></span>
+      <span class="cr-positions">TECL CSP $70 &middot; UPRO CSP $78</span>
+    </div>
+    <div class="cr-right pnl-positive">+$530</div>
+  </div>
+
+  <div class="pros-cons-row">
+    <div class="pros">
+      <h4>Pros</h4>
+      <ul>
+        <li>Best of both: spatial overview + detailed data</li>
+        <li>Timeline shows coverage density and gaps visually</li>
+        <li>Color-coded dots distinguish CSP vs CC</li>
+        <li>Compact detail rows expandable on click</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Cons</h4>
+      <ul>
+        <li>More complex to build and maintain</li>
+        <li>Timeline gets crowded with many positions</li>
+        <li>Two synchronized views to keep in sync</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    if (btn.textContent.toLowerCase().startsWith(tabId + ':') || btn.textContent.toLowerCase().includes(tabId + ':')) {
+      btn.classList.add('active');
+    }
+  });
+  // Better tab matching
+  const tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(btn => {
+    const text = btn.textContent.trim();
+    if ((tabId === 'a' && text.startsWith('A:')) ||
+        (tabId === 'b' && text.startsWith('B:')) ||
+        (tabId === 'c' && text.startsWith('C:'))) {
+      btn.classList.add('active');
+    }
+  });
+}
+</script>
+</body>
+</html>

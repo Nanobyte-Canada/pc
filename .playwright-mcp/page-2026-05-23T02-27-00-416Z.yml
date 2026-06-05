@@ -1,0 +1,645 @@
+- generic [ref=e6]:
+  - complementary [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: P
+        - generic [ref=e11]: Portfolio Builder
+        - button "Collapse sidebar" [ref=e12] [cursor=pointer]:
+          - img [ref=e13]
+      - navigation [ref=e17]:
+        - generic [ref=e18]:
+          - paragraph [ref=e19]: Main
+          - generic [ref=e20]:
+            - link "Dashboard" [ref=e21] [cursor=pointer]:
+              - /url: /
+              - img [ref=e22]
+              - generic [ref=e27]: Dashboard
+            - link "Individual LIRA" [ref=e28] [cursor=pointer]:
+              - /url: /brokers/accounts/90
+              - img [ref=e29]
+              - generic [ref=e31]: Individual LIRA
+            - link "Individual Locked-In RRSP" [ref=e32] [cursor=pointer]:
+              - /url: /brokers/accounts/91
+              - img [ref=e33]
+              - generic [ref=e35]: Individual Locked-In RRSP
+            - link "Individual Margin" [ref=e36] [cursor=pointer]:
+              - /url: /brokers/accounts/89
+              - img [ref=e37]
+              - generic [ref=e39]: Individual Margin
+            - link "Individual RRSP" [ref=e40] [cursor=pointer]:
+              - /url: /brokers/accounts/92
+              - img [ref=e41]
+              - generic [ref=e43]: Individual RRSP
+            - link "Individual TFSA" [ref=e44] [cursor=pointer]:
+              - /url: /brokers/accounts/88
+              - img [ref=e45]
+              - generic [ref=e47]: Individual TFSA
+            - link "Analytics" [ref=e48] [cursor=pointer]:
+              - /url: /analytics
+              - img [ref=e49]
+              - generic [ref=e51]: Analytics
+        - generic [ref=e52]:
+          - paragraph [ref=e53]: Portfolios
+          - link "Portfolio" [ref=e55] [cursor=pointer]:
+            - /url: /portfolios
+            - img [ref=e56]
+            - generic [ref=e59]: Portfolio
+        - generic [ref=e60]:
+          - paragraph [ref=e61]: Screeners
+          - generic [ref=e62]:
+            - link "Stocks 21,664" [ref=e63] [cursor=pointer]:
+              - /url: /screener/stocks
+              - img [ref=e64]
+              - generic [ref=e67]: Stocks
+              - generic [ref=e68]: 21,664
+            - link "ETFs 7,180" [ref=e69] [cursor=pointer]:
+              - /url: /screener/etfs
+              - img [ref=e70]
+              - generic [ref=e73]: ETFs
+              - generic [ref=e74]: 7,180
+            - link "Mutual Funds 26,832" [ref=e75] [cursor=pointer]:
+              - /url: /screener/mutual-funds
+              - img [ref=e76]
+              - generic [ref=e80]: Mutual Funds
+              - generic [ref=e81]: 26,832
+            - link "Preferred Stocks 735" [ref=e82] [cursor=pointer]:
+              - /url: /screener/preferred-stocks
+              - img [ref=e83]
+              - generic [ref=e85]: Preferred Stocks
+              - generic [ref=e86]: "735"
+            - link "Indices 1,666" [ref=e87] [cursor=pointer]:
+              - /url: /screener/indices
+              - img [ref=e88]
+              - generic [ref=e90]: Indices
+              - generic [ref=e91]: 1,666
+            - link "Bonds 129" [ref=e92] [cursor=pointer]:
+              - /url: /screener/bonds
+              - img [ref=e93]
+              - generic [ref=e96]: Bonds
+              - generic [ref=e97]: "129"
+        - generic [ref=e98]:
+          - paragraph [ref=e99]: Brokers
+          - generic [ref=e100]:
+            - link "Connections" [ref=e101] [cursor=pointer]:
+              - /url: /brokers/connections
+              - img [ref=e102]
+              - generic [ref=e105]: Connections
+            - link "Positions" [ref=e106] [cursor=pointer]:
+              - /url: /brokers/positions
+              - img [ref=e107]
+              - generic [ref=e110]: Positions
+            - link "Reporting" [ref=e111] [cursor=pointer]:
+              - /url: /brokers/reporting
+              - img [ref=e112]
+              - generic [ref=e115]: Reporting
+        - generic [ref=e116]:
+          - paragraph [ref=e117]: Options
+          - link "Options Trading" [ref=e119] [cursor=pointer]:
+            - /url: /options
+            - img [ref=e120]
+            - generic [ref=e123]: Options Trading
+        - generic [ref=e124]:
+          - paragraph [ref=e125]: Admin
+          - link "Admin Panel" [ref=e126] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e127]
+            - generic [ref=e129]: Admin Panel
+      - generic [ref=e130]:
+        - generic [ref=e131]:
+          - button "Refresh Data" [ref=e133] [cursor=pointer]:
+            - img [ref=e134]
+          - button "Switch to light mode" [ref=e139] [cursor=pointer]:
+            - img [ref=e140]
+          - button [ref=e147] [cursor=pointer]:
+            - img [ref=e148]
+        - paragraph [ref=e151]: "Last refreshed: 08:55 p.m."
+        - generic [ref=e153]:
+          - generic [ref=e154]: S
+          - generic [ref=e155]:
+            - paragraph [ref=e156]: Saurabh
+            - paragraph [ref=e157]: saurabh.bilakhia@gmail.com
+          - generic [ref=e158]:
+            - link "Profile" [ref=e159] [cursor=pointer]:
+              - /url: /profile
+              - img [ref=e160]
+            - button "Logout" [ref=e163] [cursor=pointer]:
+              - img [ref=e164]
+  - main [ref=e168]:
+    - generic [ref=e169]:
+      - heading "Options Trading" [level=1] [ref=e171]
+      - generic [ref=e172]:
+        - generic [ref=e173]:
+          - generic [ref=e174]:
+            - textbox "Enter symbol (e.g. SPY)" [ref=e175]: AAPL
+            - button "Load Chain" [ref=e176] [cursor=pointer]
+            - generic [ref=e182]: "Active: AAPL"
+          - generic [ref=e177]: Live
+        - generic [ref=e183]:
+          - button "BULL_CALL_SPREAD" [ref=e184] [cursor=pointer]
+          - button "BEAR_PUT_SPREAD" [ref=e185] [cursor=pointer]
+          - button "BULL_PUT_SPREAD" [ref=e186] [cursor=pointer]
+          - button "BEAR_CALL_SPREAD" [ref=e187] [cursor=pointer]
+          - button "IRON_CONDOR" [ref=e188] [cursor=pointer]
+          - button "COVERED_CALL" [ref=e189] [cursor=pointer]
+          - button "PROTECTIVE_PUT" [ref=e190] [cursor=pointer]
+      - generic [ref=e191]:
+        - generic [ref=e192]: AAPL
+        - generic [ref=e193]: $185.00
+        - generic [ref=e194]:
+          - generic [ref=e195]: Bid
+          - generic [ref=e196]: $185.00
+        - generic [ref=e197]:
+          - generic [ref=e198]: Ask
+          - generic [ref=e199]: $185.00
+        - generic [ref=e200]:
+          - generic [ref=e201]: Spread
+          - generic [ref=e202]: $0.00
+        - generic [ref=e203]:
+          - generic [ref=e204]: Volume
+          - generic [ref=e205]: 50,000,000
+      - generic [ref=e206]:
+        - generic [ref=e208]:
+          - generic [ref=e209]:
+            - button "2026-06-19" [ref=e210] [cursor=pointer]
+            - button "2026-07-17" [ref=e211] [cursor=pointer]
+            - button "2026-08-21" [ref=e212] [cursor=pointer]
+            - button "2026-09-18" [ref=e213] [cursor=pointer]
+          - table [ref=e214]:
+            - rowgroup [ref=e215]:
+              - row "Bid Ask Last Delta Vol Strike Bid Ask Last Delta Vol" [ref=e216]:
+                - columnheader "Bid" [ref=e217]
+                - columnheader "Ask" [ref=e218]
+                - columnheader "Last" [ref=e219]
+                - columnheader "Delta" [ref=e220]
+                - columnheader "Vol" [ref=e221]
+                - columnheader "Strike" [ref=e222]
+                - columnheader "Bid" [ref=e223]
+                - columnheader "Ask" [ref=e224]
+                - columnheader "Last" [ref=e225]
+                - columnheader "Delta" [ref=e226]
+                - columnheader "Vol" [ref=e227]
+              - row "CALLS PUTS" [ref=e228]:
+                - columnheader "CALLS" [ref=e229]
+                - columnheader [ref=e230]
+                - columnheader "PUTS" [ref=e231]
+            - rowgroup [ref=e232]:
+              - row "453.63 445.29 445.27 0.982 6,550 166 454.05 454.10 454.10 -0.018 7,010" [ref=e233]:
+                - cell "453.63" [ref=e234] [cursor=pointer]
+                - cell "445.29" [ref=e235] [cursor=pointer]
+                - cell "445.27" [ref=e236]
+                - cell "0.982" [ref=e237]
+                - cell "6,550" [ref=e238]
+                - cell "166" [ref=e239]
+                - cell "454.05" [ref=e240] [cursor=pointer]
+                - cell "454.10" [ref=e241] [cursor=pointer]
+                - cell "454.10" [ref=e242]
+                - cell "-0.018" [ref=e243]
+                - cell "7,010" [ref=e244]
+              - row "496.66 496.86 496.76 0.959 19,245 167 465.04 465.16 465.10 -0.262 31,252" [ref=e245]:
+                - cell "496.66" [ref=e246] [cursor=pointer]
+                - cell "496.86" [ref=e247] [cursor=pointer]
+                - cell "496.76" [ref=e248]
+                - cell "0.959" [ref=e249]
+                - cell "19,245" [ref=e250]
+                - cell "167" [ref=e251]
+                - cell "465.04" [ref=e252] [cursor=pointer]
+                - cell "465.16" [ref=e253] [cursor=pointer]
+                - cell "465.10" [ref=e254]
+                - cell "-0.262" [ref=e255]
+                - cell "31,252" [ref=e256]
+              - row "466.28 466.55 466.42 -0.592 26,990 168 456.98 457.16 457.07 0.748 45,831" [ref=e257]:
+                - cell "466.28" [ref=e258] [cursor=pointer]
+                - cell "466.55" [ref=e259] [cursor=pointer]
+                - cell "466.42" [ref=e260]
+                - cell "-0.592" [ref=e261]
+                - cell "26,990" [ref=e262]
+                - cell "168" [ref=e263]
+                - cell "456.98" [ref=e264] [cursor=pointer]
+                - cell "457.16" [ref=e265] [cursor=pointer]
+                - cell "457.07" [ref=e266]
+                - cell "0.748" [ref=e267]
+                - cell "45,831" [ref=e268]
+              - row "487.69 487.81 487.75 -0.366 31,941 169 480.16 480.30 480.23 -0.927 34,837" [ref=e269]:
+                - cell "487.69" [ref=e270] [cursor=pointer]
+                - cell "487.81" [ref=e271] [cursor=pointer]
+                - cell "487.75" [ref=e272]
+                - cell "-0.366" [ref=e273]
+                - cell "31,941" [ref=e274]
+                - cell "169" [ref=e275]
+                - cell "480.16" [ref=e276] [cursor=pointer]
+                - cell "480.30" [ref=e277] [cursor=pointer]
+                - cell "480.23" [ref=e278]
+                - cell "-0.927" [ref=e279]
+                - cell "34,837" [ref=e280]
+              - row "497.89 498.00 497.95 0.224 22,512 170 488.92 489.22 489.07 -0.388 9,112" [ref=e281]:
+                - cell "497.89" [ref=e282] [cursor=pointer]
+                - cell "498.00" [ref=e283] [cursor=pointer]
+                - cell "497.95" [ref=e284]
+                - cell "0.224" [ref=e285]
+                - cell "22,512" [ref=e286]
+                - cell "170" [ref=e287]
+                - cell "488.92" [ref=e288] [cursor=pointer]
+                - cell "489.22" [ref=e289] [cursor=pointer]
+                - cell "489.07" [ref=e290]
+                - cell "-0.388" [ref=e291]
+                - cell "9,112" [ref=e292]
+              - row "455.05 455.29 455.17 0.511 36,078 171 427.30 427.58 427.44 -0.999 16,201" [ref=e293]:
+                - cell "455.05" [ref=e294] [cursor=pointer]
+                - cell "455.29" [ref=e295] [cursor=pointer]
+                - cell "455.17" [ref=e296]
+                - cell "0.511" [ref=e297]
+                - cell "36,078" [ref=e298]
+                - cell "171" [ref=e299]
+                - cell "427.30" [ref=e300] [cursor=pointer]
+                - cell "427.58" [ref=e301] [cursor=pointer]
+                - cell "427.44" [ref=e302]
+                - cell "-0.999" [ref=e303]
+                - cell "16,201" [ref=e304]
+              - row "457.73 458.00 457.87 0.440 9,720 172 437.85 438.07 437.96 0.309 11,756" [ref=e305]:
+                - cell "457.73" [ref=e306] [cursor=pointer]
+                - cell "458.00" [ref=e307] [cursor=pointer]
+                - cell "457.87" [ref=e308]
+                - cell "0.440" [ref=e309]
+                - cell "9,720" [ref=e310]
+                - cell "172" [ref=e311]
+                - cell "437.85" [ref=e312] [cursor=pointer]
+                - cell "438.07" [ref=e313] [cursor=pointer]
+                - cell "437.96" [ref=e314]
+                - cell "0.309" [ref=e315]
+                - cell "11,756" [ref=e316]
+              - row "451.76 451.81 451.78 0.908 631 173 401.12 401.17 401.14 0.993 17,501" [ref=e317]:
+                - cell "451.76" [ref=e318] [cursor=pointer]
+                - cell "451.81" [ref=e319] [cursor=pointer]
+                - cell "451.78" [ref=e320]
+                - cell "0.908" [ref=e321]
+                - cell "631" [ref=e322]
+                - cell "173" [ref=e323]
+                - cell "401.12" [ref=e324] [cursor=pointer]
+                - cell "401.17" [ref=e325] [cursor=pointer]
+                - cell "401.14" [ref=e326]
+                - cell "0.993" [ref=e327]
+                - cell "17,501" [ref=e328]
+              - row "453.15 453.20 453.19 0.889 4,617 174 489.98 490.04 490.01 0.742 39,156" [ref=e329]:
+                - cell "453.15" [ref=e330] [cursor=pointer]
+                - cell "453.20" [ref=e331] [cursor=pointer]
+                - cell "453.19" [ref=e332]
+                - cell "0.889" [ref=e333]
+                - cell "4,617" [ref=e334]
+                - cell "174" [ref=e335]
+                - cell "489.98" [ref=e336] [cursor=pointer]
+                - cell "490.04" [ref=e337] [cursor=pointer]
+                - cell "490.01" [ref=e338]
+                - cell "0.742" [ref=e339]
+                - cell "39,156" [ref=e340]
+              - row "465.66 465.76 465.71 0.261 34,307 175 481.46 481.65 481.55 -0.565 7,006" [ref=e341]:
+                - cell "465.66" [ref=e342] [cursor=pointer]
+                - cell "465.76" [ref=e343] [cursor=pointer]
+                - cell "465.71" [ref=e344]
+                - cell "0.261" [ref=e345]
+                - cell "34,307" [ref=e346]
+                - cell "175" [ref=e347]
+                - cell "481.46" [ref=e348] [cursor=pointer]
+                - cell "481.65" [ref=e349] [cursor=pointer]
+                - cell "481.55" [ref=e350]
+                - cell "-0.565" [ref=e351]
+                - cell "7,006" [ref=e352]
+              - row "447.28 447.33 447.28 0.844 2,314 176 449.10 449.15 449.15 -0.156 7,103" [ref=e353]:
+                - cell "447.28" [ref=e354] [cursor=pointer]
+                - cell "447.33" [ref=e355] [cursor=pointer]
+                - cell "447.28" [ref=e356]
+                - cell "0.844" [ref=e357]
+                - cell "2,314" [ref=e358]
+                - cell "176" [ref=e359]
+                - cell "449.10" [ref=e360] [cursor=pointer]
+                - cell "449.15" [ref=e361] [cursor=pointer]
+                - cell "449.15" [ref=e362]
+                - cell "-0.156" [ref=e363]
+                - cell "7,103" [ref=e364]
+              - row "429.99 430.22 430.11 0.851 2,902 177 450.82 450.87 450.82 -0.182 6,727" [ref=e365]:
+                - cell "429.99" [ref=e366] [cursor=pointer]
+                - cell "430.22" [ref=e367] [cursor=pointer]
+                - cell "430.11" [ref=e368]
+                - cell "0.851" [ref=e369]
+                - cell "2,902" [ref=e370]
+                - cell "177" [ref=e371]
+                - cell "450.82" [ref=e372] [cursor=pointer]
+                - cell "450.87" [ref=e373] [cursor=pointer]
+                - cell "450.82" [ref=e374]
+                - cell "-0.182" [ref=e375]
+                - cell "6,727" [ref=e376]
+              - row "446.63 446.68 446.67 0.789 1,013 178 429.22 429.31 429.27 0.743 40,205" [ref=e377]:
+                - cell "446.63" [ref=e378] [cursor=pointer]
+                - cell "446.68" [ref=e379] [cursor=pointer]
+                - cell "446.67" [ref=e380]
+                - cell "0.789" [ref=e381]
+                - cell "1,013" [ref=e382]
+                - cell "178" [ref=e383]
+                - cell "429.22" [ref=e384] [cursor=pointer]
+                - cell "429.31" [ref=e385] [cursor=pointer]
+                - cell "429.27" [ref=e386]
+                - cell "0.743" [ref=e387]
+                - cell "40,205" [ref=e388]
+              - row "409.85 410.02 409.93 -0.962 32,928 179 478.81 478.86 478.83 0.693 3,231" [ref=e389]:
+                - cell "409.85" [ref=e390] [cursor=pointer]
+                - cell "410.02" [ref=e391] [cursor=pointer]
+                - cell "409.93" [ref=e392]
+                - cell "-0.962" [ref=e393]
+                - cell "32,928" [ref=e394]
+                - cell "179" [ref=e395]
+                - cell "478.81" [ref=e396] [cursor=pointer]
+                - cell "478.86" [ref=e397] [cursor=pointer]
+                - cell "478.83" [ref=e398]
+                - cell "0.693" [ref=e399]
+                - cell "3,231" [ref=e400]
+              - row "455.71 455.85 455.78 -0.663 40,862 180 406.84 407.12 406.98 -0.974 24,280" [ref=e401]:
+                - cell "455.71" [ref=e402] [cursor=pointer]
+                - cell "455.85" [ref=e403] [cursor=pointer]
+                - cell "455.78" [ref=e404]
+                - cell "-0.663" [ref=e405]
+                - cell "40,862" [ref=e406]
+                - cell "180" [ref=e407]
+                - cell "406.84" [ref=e408] [cursor=pointer]
+                - cell "407.12" [ref=e409] [cursor=pointer]
+                - cell "406.98" [ref=e410]
+                - cell "-0.974" [ref=e411]
+                - cell "24,280" [ref=e412]
+              - row "402.34 402.60 402.47 0.091 34,786 181 458.48 458.62 458.55 -0.692 3,889" [ref=e413]:
+                - cell "402.34" [ref=e414] [cursor=pointer]
+                - cell "402.60" [ref=e415] [cursor=pointer]
+                - cell "402.47" [ref=e416]
+                - cell "0.091" [ref=e417]
+                - cell "34,786" [ref=e418]
+                - cell "181" [ref=e419]
+                - cell "458.48" [ref=e420] [cursor=pointer]
+                - cell "458.62" [ref=e421] [cursor=pointer]
+                - cell "458.55" [ref=e422]
+                - cell "-0.692" [ref=e423]
+                - cell "3,889" [ref=e424]
+              - row "445.08 445.13 445.11 -0.220 9,345 182 439.25 439.45 439.35 -0.548 36,046" [ref=e425]:
+                - cell "445.08" [ref=e426] [cursor=pointer]
+                - cell "445.13" [ref=e427] [cursor=pointer]
+                - cell "445.11" [ref=e428]
+                - cell "-0.220" [ref=e429]
+                - cell "9,345" [ref=e430]
+                - cell "182" [ref=e431]
+                - cell "439.25" [ref=e432] [cursor=pointer]
+                - cell "439.45" [ref=e433] [cursor=pointer]
+                - cell "439.35" [ref=e434]
+                - cell "-0.548" [ref=e435]
+                - cell "36,046" [ref=e436]
+              - row "414.15 414.36 414.25 -0.046 26,625 183 454.74 454.79 454.74 -0.384 8,970" [ref=e437]:
+                - cell "414.15" [ref=e438] [cursor=pointer]
+                - cell "414.36" [ref=e439] [cursor=pointer]
+                - cell "414.25" [ref=e440]
+                - cell "-0.046" [ref=e441]
+                - cell "26,625" [ref=e442]
+                - cell "183" [ref=e443]
+                - cell "454.74" [ref=e444] [cursor=pointer]
+                - cell "454.79" [ref=e445] [cursor=pointer]
+                - cell "454.74" [ref=e446]
+                - cell "-0.384" [ref=e447]
+                - cell "8,970" [ref=e448]
+              - row "444.92 445.10 445.01 0.387 48,707 184 464.03 464.26 464.15 0.678 43,584" [ref=e449]:
+                - cell "444.92" [ref=e450] [cursor=pointer]
+                - cell "445.10" [ref=e451] [cursor=pointer]
+                - cell "445.01" [ref=e452]
+                - cell "0.387" [ref=e453]
+                - cell "48,707" [ref=e454]
+                - cell "184" [ref=e455]
+                - cell "464.03" [ref=e456] [cursor=pointer]
+                - cell "464.26" [ref=e457] [cursor=pointer]
+                - cell "464.15" [ref=e458]
+                - cell "0.678" [ref=e459]
+                - cell "43,584" [ref=e460]
+              - row "470.82 471.05 470.93 0.773 45,584 185 468.47 468.68 468.57 0.816 24,181" [ref=e461]:
+                - cell "470.82" [ref=e462] [cursor=pointer]
+                - cell "471.05" [ref=e463] [cursor=pointer]
+                - cell "470.93" [ref=e464]
+                - cell "0.773" [ref=e465]
+                - cell "45,584" [ref=e466]
+                - cell "185" [ref=e467]
+                - cell "468.47" [ref=e468] [cursor=pointer]
+                - cell "468.68" [ref=e469] [cursor=pointer]
+                - cell "468.57" [ref=e470]
+                - cell "0.816" [ref=e471]
+                - cell "24,181" [ref=e472]
+              - row "440.71 440.90 440.80 0.193 3,423 186 428.35 428.47 428.41 0.616 3,094" [ref=e473]:
+                - cell "440.71" [ref=e474] [cursor=pointer]
+                - cell "440.90" [ref=e475] [cursor=pointer]
+                - cell "440.80" [ref=e476]
+                - cell "0.193" [ref=e477]
+                - cell "3,423" [ref=e478]
+                - cell "186" [ref=e479]
+                - cell "428.35" [ref=e480] [cursor=pointer]
+                - cell "428.47" [ref=e481] [cursor=pointer]
+                - cell "428.41" [ref=e482]
+                - cell "0.616" [ref=e483]
+                - cell "3,094" [ref=e484]
+              - row "415.37 415.51 415.44 0.615 20,323 187 413.74 413.80 413.77 -0.282 3,454" [ref=e485]:
+                - cell "415.37" [ref=e486] [cursor=pointer]
+                - cell "415.51" [ref=e487] [cursor=pointer]
+                - cell "415.44" [ref=e488]
+                - cell "0.615" [ref=e489]
+                - cell "20,323" [ref=e490]
+                - cell "187" [ref=e491]
+                - cell "413.74" [ref=e492] [cursor=pointer]
+                - cell "413.80" [ref=e493] [cursor=pointer]
+                - cell "413.77" [ref=e494]
+                - cell "-0.282" [ref=e495]
+                - cell "3,454" [ref=e496]
+              - row "406.62 406.92 406.77 0.748 9,684 188 447.15 447.20 447.15 -0.579 9,633" [ref=e497]:
+                - cell "406.62" [ref=e498] [cursor=pointer]
+                - cell "406.92" [ref=e499] [cursor=pointer]
+                - cell "406.77" [ref=e500]
+                - cell "0.748" [ref=e501]
+                - cell "9,684" [ref=e502]
+                - cell "188" [ref=e503]
+                - cell "447.15" [ref=e504] [cursor=pointer]
+                - cell "447.20" [ref=e505] [cursor=pointer]
+                - cell "447.15" [ref=e506]
+                - cell "-0.579" [ref=e507]
+                - cell "9,633" [ref=e508]
+              - row "448.87 450.14 450.08 0.383 2,475 189 447.52 447.57 447.53 -0.617 7,960" [ref=e509]:
+                - cell "448.87" [ref=e510] [cursor=pointer]
+                - cell "450.14" [ref=e511] [cursor=pointer]
+                - cell "450.08" [ref=e512]
+                - cell "0.383" [ref=e513]
+                - cell "2,475" [ref=e514]
+                - cell "189" [ref=e515]
+                - cell "447.52" [ref=e516] [cursor=pointer]
+                - cell "447.57" [ref=e517] [cursor=pointer]
+                - cell "447.53" [ref=e518]
+                - cell "-0.617" [ref=e519]
+                - cell "7,960" [ref=e520]
+              - row "452.02 452.07 451.99 0.346 3,549 190 442.04 442.15 442.09 -0.993 9,549" [ref=e521]:
+                - cell "452.02" [ref=e522] [cursor=pointer]
+                - cell "452.07" [ref=e523] [cursor=pointer]
+                - cell "451.99" [ref=e524]
+                - cell "0.346" [ref=e525]
+                - cell "3,549" [ref=e526]
+                - cell "190" [ref=e527]
+                - cell "442.04" [ref=e528] [cursor=pointer]
+                - cell "442.15" [ref=e529] [cursor=pointer]
+                - cell "442.09" [ref=e530]
+                - cell "-0.993" [ref=e531]
+                - cell "9,549" [ref=e532]
+              - row "462.67 462.79 462.73 0.805 31,115 191 493.47 493.64 493.55 0.998 27,502" [ref=e533]:
+                - cell "462.67" [ref=e534] [cursor=pointer]
+                - cell "462.79" [ref=e535] [cursor=pointer]
+                - cell "462.73" [ref=e536]
+                - cell "0.805" [ref=e537]
+                - cell "31,115" [ref=e538]
+                - cell "191" [ref=e539]
+                - cell "493.47" [ref=e540] [cursor=pointer]
+                - cell "493.64" [ref=e541] [cursor=pointer]
+                - cell "493.55" [ref=e542]
+                - cell "0.998" [ref=e543]
+                - cell "27,502" [ref=e544]
+              - row "451.99 452.19 452.09 0.326 17,968 192 472.02 472.15 472.08 -0.760 4,283" [ref=e545]:
+                - cell "451.99" [ref=e546] [cursor=pointer]
+                - cell "452.19" [ref=e547] [cursor=pointer]
+                - cell "452.09" [ref=e548]
+                - cell "0.326" [ref=e549]
+                - cell "17,968" [ref=e550]
+                - cell "192" [ref=e551]
+                - cell "472.02" [ref=e552] [cursor=pointer]
+                - cell "472.15" [ref=e553] [cursor=pointer]
+                - cell "472.08" [ref=e554]
+                - cell "-0.760" [ref=e555]
+                - cell "4,283" [ref=e556]
+              - row "436.24 436.51 436.37 -0.458 20,644 193 450.84 450.99 450.91 -0.393 37,481" [ref=e557]:
+                - cell "436.24" [ref=e558] [cursor=pointer]
+                - cell "436.51" [ref=e559] [cursor=pointer]
+                - cell "436.37" [ref=e560]
+                - cell "-0.458" [ref=e561]
+                - cell "20,644" [ref=e562]
+                - cell "193" [ref=e563]
+                - cell "450.84" [ref=e564] [cursor=pointer]
+                - cell "450.99" [ref=e565] [cursor=pointer]
+                - cell "450.91" [ref=e566]
+                - cell "-0.393" [ref=e567]
+                - cell "37,481" [ref=e568]
+              - row "447.69 447.84 447.77 0.248 3,698 194 450.91 451.03 450.97 0.791 39,572" [ref=e569]:
+                - cell "447.69" [ref=e570] [cursor=pointer]
+                - cell "447.84" [ref=e571] [cursor=pointer]
+                - cell "447.77" [ref=e572]
+                - cell "0.248" [ref=e573]
+                - cell "3,698" [ref=e574]
+                - cell "194" [ref=e575]
+                - cell "450.91" [ref=e576] [cursor=pointer]
+                - cell "451.03" [ref=e577] [cursor=pointer]
+                - cell "450.97" [ref=e578]
+                - cell "0.791" [ref=e579]
+                - cell "39,572" [ref=e580]
+              - row "492.07 492.14 492.10 -0.859 5,526 195 464.47 464.60 464.53 -0.966 42,194" [ref=e581]:
+                - cell "492.07" [ref=e582] [cursor=pointer]
+                - cell "492.14" [ref=e583] [cursor=pointer]
+                - cell "492.10" [ref=e584]
+                - cell "-0.859" [ref=e585]
+                - cell "5,526" [ref=e586]
+                - cell "195" [ref=e587]
+                - cell "464.47" [ref=e588] [cursor=pointer]
+                - cell "464.60" [ref=e589] [cursor=pointer]
+                - cell "464.53" [ref=e590]
+                - cell "-0.966" [ref=e591]
+                - cell "42,194" [ref=e592]
+              - row "491.65 491.78 491.72 -0.237 16,436 196 413.70 413.85 413.77 -0.978 49,483" [ref=e593]:
+                - cell "491.65" [ref=e594] [cursor=pointer]
+                - cell "491.78" [ref=e595] [cursor=pointer]
+                - cell "491.72" [ref=e596]
+                - cell "-0.237" [ref=e597]
+                - cell "16,436" [ref=e598]
+                - cell "196" [ref=e599]
+                - cell "413.70" [ref=e600] [cursor=pointer]
+                - cell "413.85" [ref=e601] [cursor=pointer]
+                - cell "413.77" [ref=e602]
+                - cell "-0.978" [ref=e603]
+                - cell "49,483" [ref=e604]
+              - row "448.41 448.46 448.42 0.145 1,384 197 448.69 448.74 448.69 -0.855 4,074" [ref=e605]:
+                - cell "448.41" [ref=e606] [cursor=pointer]
+                - cell "448.46" [ref=e607] [cursor=pointer]
+                - cell "448.42" [ref=e608]
+                - cell "0.145" [ref=e609]
+                - cell "1,384" [ref=e610]
+                - cell "197" [ref=e611]
+                - cell "448.69" [ref=e612] [cursor=pointer]
+                - cell "448.74" [ref=e613] [cursor=pointer]
+                - cell "448.69" [ref=e614]
+                - cell "-0.855" [ref=e615]
+                - cell "4,074" [ref=e616]
+              - row "449.39 449.46 449.42 0.320 7,584 198 432.19 432.46 432.33 -0.356 13,912" [ref=e617]:
+                - cell "449.39" [ref=e618] [cursor=pointer]
+                - cell "449.46" [ref=e619] [cursor=pointer]
+                - cell "449.42" [ref=e620]
+                - cell "0.320" [ref=e621]
+                - cell "7,584" [ref=e622]
+                - cell "198" [ref=e623]
+                - cell "432.19" [ref=e624] [cursor=pointer]
+                - cell "432.46" [ref=e625] [cursor=pointer]
+                - cell "432.33" [ref=e626]
+                - cell "-0.356" [ref=e627]
+                - cell "13,912" [ref=e628]
+              - row "414.41 414.60 414.51 0.703 23,039 199 403.37 403.44 403.40 -0.629 44,489" [ref=e629]:
+                - cell "414.41" [ref=e630] [cursor=pointer]
+                - cell "414.60" [ref=e631] [cursor=pointer]
+                - cell "414.51" [ref=e632]
+                - cell "0.703" [ref=e633]
+                - cell "23,039" [ref=e634]
+                - cell "199" [ref=e635]
+                - cell "403.37" [ref=e636] [cursor=pointer]
+                - cell "403.44" [ref=e637] [cursor=pointer]
+                - cell "403.40" [ref=e638]
+                - cell "-0.629" [ref=e639]
+                - cell "44,489" [ref=e640]
+              - row "474.60 474.69 474.64 0.741 47,088 200 429.71 429.80 429.76 -0.654 48,686" [ref=e641]:
+                - cell "474.60" [ref=e642] [cursor=pointer]
+                - cell "474.69" [ref=e643] [cursor=pointer]
+                - cell "474.64" [ref=e644]
+                - cell "0.741" [ref=e645]
+                - cell "47,088" [ref=e646]
+                - cell "200" [ref=e647]
+                - cell "429.71" [ref=e648] [cursor=pointer]
+                - cell "429.80" [ref=e649] [cursor=pointer]
+                - cell "429.76" [ref=e650]
+                - cell "-0.654" [ref=e651]
+                - cell "48,686" [ref=e652]
+              - row "498.94 499.22 499.08 0.323 17,617 201 494.69 494.86 494.77 -0.584 21,515" [ref=e653]:
+                - cell "498.94" [ref=e654] [cursor=pointer]
+                - cell "499.22" [ref=e655] [cursor=pointer]
+                - cell "499.08" [ref=e656]
+                - cell "0.323" [ref=e657]
+                - cell "17,617" [ref=e658]
+                - cell "201" [ref=e659]
+                - cell "494.69" [ref=e660] [cursor=pointer]
+                - cell "494.86" [ref=e661] [cursor=pointer]
+                - cell "494.77" [ref=e662]
+                - cell "-0.584" [ref=e663]
+                - cell "21,515" [ref=e664]
+              - row "442.79 442.88 442.84 -0.631 17,857 202 488.42 488.66 488.54 -0.902 29,659" [ref=e665]:
+                - cell "442.79" [ref=e666] [cursor=pointer]
+                - cell "442.88" [ref=e667] [cursor=pointer]
+                - cell "442.84" [ref=e668]
+                - cell "-0.631" [ref=e669]
+                - cell "17,857" [ref=e670]
+                - cell "202" [ref=e671]
+                - cell "488.42" [ref=e672] [cursor=pointer]
+                - cell "488.66" [ref=e673] [cursor=pointer]
+                - cell "488.54" [ref=e674]
+                - cell "-0.902" [ref=e675]
+                - cell "29,659" [ref=e676]
+              - row "432.29 432.41 432.35 0.313 4,755 203 455.64 455.90 455.77 0.510 48,227" [ref=e677]:
+                - cell "432.29" [ref=e678] [cursor=pointer]
+                - cell "432.41" [ref=e679] [cursor=pointer]
+                - cell "432.35" [ref=e680]
+                - cell "0.313" [ref=e681]
+                - cell "4,755" [ref=e682]
+                - cell "203" [ref=e683]
+                - cell "455.64" [ref=e684] [cursor=pointer]
+                - cell "455.90" [ref=e685] [cursor=pointer]
+                - cell "455.77" [ref=e686]
+                - cell "0.510" [ref=e687]
+                - cell "48,227" [ref=e688]
+        - generic [ref=e690]:
+          - generic [ref=e692]: Legs (0)
+          - generic [ref=e693]: Click on bid/ask in the options chain to add legs
+          - button "Calculate P&L" [disabled] [ref=e694]

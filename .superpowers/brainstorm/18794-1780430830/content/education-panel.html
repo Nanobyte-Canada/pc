@@ -1,0 +1,213 @@
+<h2>Section 2b: Strategy Education — Progressive Disclosure</h2>
+<p class="subtitle">After clicking a strategy card, the user sees a brief inline summary with expandable "Learn more" content before proceeding to the chain.</p>
+
+<div class="section">
+  <h3>Desktop Layout — Education Panel (Bull Call Spread selected)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Desktop — Strategy Education</div>
+    <div class="mockup-body" style="background: #0f1117; color: #e4e4e7; font-family: 'DM Sans', sans-serif; padding: 0;">
+
+      <!-- Breadcrumb + Back -->
+      <div style="padding: 16px 24px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="font-size: 13px; color: #3b82f6; cursor: pointer;">← Strategies</div>
+        <span style="font-size: 13px; color: #52525b;">/</span>
+        <span style="font-size: 13px; color: #a1a1aa;">Bull Call Spread</span>
+      </div>
+
+      <!-- Strategy Header -->
+      <div style="padding: 16px 24px; display: flex; align-items: flex-start; gap: 20px;">
+        <!-- P&L Shape -->
+        <div style="flex-shrink: 0; width: 80px; height: 56px; background: #18181b; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+          <svg viewBox="0 0 70 40" style="width: 70px; height: 40px;">
+            <line x1="0" y1="20" x2="70" y2="20" stroke="#27272a" stroke-width="1"/>
+            <polyline points="5,32 25,32 45,8 65,8" fill="none" stroke="#4ade80" stroke-width="2.5"/>
+          </svg>
+        </div>
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+            <h1 style="font-family: Inter, sans-serif; font-size: 20px; font-weight: 700; margin: 0; color: #f4f4f5;">Bull Call Spread</h1>
+            <span style="font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(34,197,94,0.15); color: #4ade80; text-transform: uppercase; letter-spacing: 0.5px;">Bullish</span>
+          </div>
+          <div style="font-size: 13px; color: #a1a1aa; line-height: 1.6;">Buy a lower-strike call and sell a higher-strike call with the same expiration. You profit when the underlying rises, with both risk and reward capped by the spread width.</div>
+        </div>
+      </div>
+
+      <!-- Quick Stats Row -->
+      <div style="padding: 0 24px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 12px;">
+          <div style="font-size: 10px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Legs</div>
+          <div style="font-size: 16px; font-weight: 600; color: #f4f4f5; font-family: 'JetBrains Mono', monospace;">2</div>
+        </div>
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 12px;">
+          <div style="font-size: 10px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Type</div>
+          <div style="font-size: 16px; font-weight: 600; color: #f4f4f5; font-family: 'JetBrains Mono', monospace;">Debit</div>
+        </div>
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 12px;">
+          <div style="font-size: 10px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Max Risk</div>
+          <div style="font-size: 16px; font-weight: 600; color: #f87171; font-family: 'JetBrains Mono', monospace;">Limited</div>
+        </div>
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 12px;">
+          <div style="font-size: 10px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Max Reward</div>
+          <div style="font-size: 16px; font-weight: 600; color: #4ade80; font-family: 'JetBrains Mono', monospace;">Limited</div>
+        </div>
+      </div>
+
+      <!-- Expandable Learn More Section (shown expanded) -->
+      <div style="margin: 0 24px 16px; background: #18181b; border: 1px solid #27272a; border-radius: 12px; overflow: hidden;">
+        <!-- Toggle Header -->
+        <div style="padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #27272a;">
+          <span style="font-size: 14px; font-weight: 600; color: #f4f4f5;">Learn More</span>
+          <span style="font-size: 12px; color: #3b82f6;">▼ Expanded</span>
+        </div>
+
+        <!-- When to Use -->
+        <div style="padding: 16px; border-bottom: 1px solid #1f1f23;">
+          <div style="font-size: 12px; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">When to Use</div>
+          <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #a1a1aa; line-height: 1.7;">
+            <li>You expect the underlying to rise <strong style="color: #e4e4e7;">moderately</strong> — not a moonshot</li>
+            <li>You want defined risk instead of buying a naked call</li>
+            <li>Implied volatility is relatively <strong style="color: #e4e4e7;">high</strong> — the sold call offsets IV cost</li>
+            <li>You have a specific price target for the underlying by expiration</li>
+          </ul>
+        </div>
+
+        <!-- How It Works -->
+        <div style="padding: 16px; border-bottom: 1px solid #1f1f23;">
+          <div style="font-size: 12px; font-weight: 600; color: #4ade80; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">How It Works</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="background: #0f1117; border-radius: 8px; padding: 12px;">
+              <div style="font-size: 11px; color: #71717a; margin-bottom: 6px;">LEG 1 — BUY</div>
+              <div style="font-size: 13px; color: #4ade80; font-weight: 600;">Buy Call @ Lower Strike</div>
+              <div style="font-size: 11px; color: #a1a1aa; margin-top: 4px;">This gives you the right to buy shares at the lower strike price</div>
+            </div>
+            <div style="background: #0f1117; border-radius: 8px; padding: 12px;">
+              <div style="font-size: 11px; color: #71717a; margin-bottom: 6px;">LEG 2 — SELL</div>
+              <div style="font-size: 13px; color: #f87171; font-weight: 600;">Sell Call @ Higher Strike</div>
+              <div style="font-size: 11px; color: #a1a1aa; margin-top: 4px;">This caps your upside but reduces the cost of the long call</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Key Characteristics -->
+        <div style="padding: 16px;">
+          <div style="font-size: 12px; font-weight: 600; color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Key Characteristics</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: #0f1117; border-radius: 6px;">
+              <span style="color: #71717a;">Max Profit</span>
+              <span style="color: #4ade80; font-family: 'JetBrains Mono', monospace;">Spread Width − Debit</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: #0f1117; border-radius: 6px;">
+              <span style="color: #71717a;">Max Loss</span>
+              <span style="color: #f87171; font-family: 'JetBrains Mono', monospace;">Net Debit Paid</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: #0f1117; border-radius: 6px;">
+              <span style="color: #71717a;">Break-even</span>
+              <span style="color: #e4e4e7; font-family: 'JetBrains Mono', monospace;">Lower Strike + Debit</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: #0f1117; border-radius: 6px;">
+              <span style="color: #71717a;">Ideal DTE</span>
+              <span style="color: #e4e4e7; font-family: 'JetBrains Mono', monospace;">30–60 days</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Underlying Search + Build CTA -->
+      <div style="padding: 0 24px 24px; display: flex; align-items: center; gap: 12px;">
+        <div style="flex: 1; max-width: 360px; display: flex; align-items: center; background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 10px 14px; gap: 8px;">
+          <span style="color: #52525b; font-size: 14px;">🔍</span>
+          <span style="color: #52525b; font-size: 13px;">Search underlying (e.g., SPY, AAPL)</span>
+        </div>
+        <div style="padding: 10px 24px; border-radius: 8px; background: #3b82f6; font-size: 14px; font-weight: 600; color: white; cursor: pointer;">Build Strategy →</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 32px;">
+  <h3>Mobile Layout — Education Panel</h3>
+  <div class="mockup">
+    <div class="mockup-header">Mobile — Strategy Education</div>
+    <div class="mockup-body" style="background: #0f1117; color: #e4e4e7; font-family: 'DM Sans', sans-serif; padding: 0; max-width: 390px; margin: 0 auto;">
+
+      <!-- Back nav -->
+      <div style="padding: 14px 16px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="font-size: 13px; color: #3b82f6; cursor: pointer;">← Strategies</div>
+      </div>
+
+      <!-- Strategy Header -->
+      <div style="padding: 14px 16px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+          <div style="width: 48px; height: 34px; background: #18181b; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+            <svg viewBox="0 0 48 30" style="width: 44px; height: 28px;">
+              <line x1="0" y1="15" x2="48" y2="15" stroke="#27272a" stroke-width="1"/>
+              <polyline points="4,24 16,24 32,6 44,6" fill="none" stroke="#4ade80" stroke-width="2"/>
+            </svg>
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-family: Inter, sans-serif; font-size: 17px; font-weight: 700; color: #f4f4f5;">Bull Call Spread</span>
+              <span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(34,197,94,0.15); color: #4ade80; text-transform: uppercase;">Bullish</span>
+            </div>
+          </div>
+        </div>
+        <div style="font-size: 12px; color: #a1a1aa; line-height: 1.5;">Buy a lower-strike call and sell a higher-strike call. Profit when underlying rises, with capped risk and reward.</div>
+      </div>
+
+      <!-- Quick Stats (2 col) -->
+      <div style="padding: 0 16px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 10px;">
+          <div style="font-size: 9px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Legs</div>
+          <div style="font-size: 15px; font-weight: 600; color: #f4f4f5; font-family: 'JetBrains Mono', monospace;">2</div>
+        </div>
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 10px;">
+          <div style="font-size: 9px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Type</div>
+          <div style="font-size: 15px; font-weight: 600; color: #f4f4f5; font-family: 'JetBrains Mono', monospace;">Debit</div>
+        </div>
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 10px;">
+          <div style="font-size: 9px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Max Risk</div>
+          <div style="font-size: 15px; font-weight: 600; color: #f87171; font-family: 'JetBrains Mono', monospace;">Limited</div>
+        </div>
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 10px;">
+          <div style="font-size: 9px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Max Reward</div>
+          <div style="font-size: 15px; font-weight: 600; color: #4ade80; font-family: 'JetBrains Mono', monospace;">Limited</div>
+        </div>
+      </div>
+
+      <!-- Learn More (collapsed on mobile by default) -->
+      <div style="margin: 0 16px 12px; background: #18181b; border: 1px solid #27272a; border-radius: 10px;">
+        <div style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+          <span style="font-size: 13px; font-weight: 600; color: #f4f4f5;">Learn More</span>
+          <span style="font-size: 12px; color: #3b82f6;">▶ Tap to expand</span>
+        </div>
+      </div>
+
+      <!-- Search + CTA -->
+      <div style="padding: 0 16px 80px;">
+        <div style="display: flex; align-items: center; background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 10px 14px; gap: 8px; margin-bottom: 12px;">
+          <span style="color: #52525b; font-size: 14px;">🔍</span>
+          <span style="color: #52525b; font-size: 12px;">Search underlying (e.g., SPY)</span>
+        </div>
+        <div style="padding: 12px; border-radius: 8px; background: #3b82f6; font-size: 14px; font-weight: 600; color: white; cursor: pointer; text-align: center;">Build Strategy →</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px; padding: 16px; background: rgba(59,130,246,0.08); border-radius: 10px; border: 1px solid rgba(59,130,246,0.2);">
+  <h3 style="margin-top: 0;">Education Content Structure (Standardized for All 7 Strategies)</h3>
+  <ul style="font-size: 14px; line-height: 1.8; margin: 0;">
+    <li><strong>Always visible:</strong> Strategy name, outlook tag, one-line description, quick stats (legs, type, max risk, max reward)</li>
+    <li><strong>Learn More (expandable):</strong>
+      <ul style="margin: 4px 0;">
+        <li><span style="color: #3b82f6; font-weight: 600;">When to Use</span> — Market outlook scenarios (bullish, bearish, IV high/low, etc.)</li>
+        <li><span style="color: #4ade80; font-weight: 600;">How It Works</span> — Leg-by-leg explanation with BUY/SELL labels</li>
+        <li><span style="color: #facc15; font-weight: 600;">Key Characteristics</span> — Max profit/loss formulas, break-even, ideal DTE</li>
+      </ul>
+    </li>
+    <li><strong>Contextual tips (during leg building):</strong> Dynamic warnings from existing EducationEngine (short DTE, wide spreads, deep ITM, etc.)</li>
+    <li><strong>Mobile:</strong> Learn More collapsed by default to save vertical space; same content when expanded</li>
+  </ul>
+</div>

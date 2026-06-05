@@ -1,0 +1,113 @@
+- generic [ref=e24]:
+  - complementary [ref=e25]:
+    - navigation "Main navigation" [ref=e26]:
+      - generic [ref=e27]: P
+      - button "Dashboard" [ref=e28] [cursor=pointer]:
+        - img [ref=e29]
+      - button "Accounts" [ref=e34] [cursor=pointer]:
+        - img [ref=e35]
+      - button "Screener" [ref=e39] [cursor=pointer]:
+        - img [ref=e40]
+      - button "Options" [ref=e43] [cursor=pointer]:
+        - img [ref=e44]
+      - button "Toggle theme" [ref=e47] [cursor=pointer]:
+        - img [ref=e48]
+      - button "Admin settings" [ref=e54] [cursor=pointer]:
+        - img [ref=e55]
+      - button "User profile" [ref=e58] [cursor=pointer]: S
+  - main [ref=e60]:
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - heading "Connected Accounts" [level=3] [ref=e66]
+        - generic [ref=e68]:
+          - generic [ref=e69] [cursor=pointer]:
+            - generic [ref=e71]: $∑
+            - generic [ref=e72]:
+              - generic [ref=e74]: All Accounts
+              - generic [ref=e75]:
+                - generic [ref=e76]: C$ 240,269
+                - generic [ref=e77]: +$153,847
+                - generic [ref=e78]: +178.02%
+          - generic [ref=e79] [cursor=pointer]:
+            - generic [ref=e80]: Q
+            - generic [ref=e81]:
+              - generic [ref=e83]: LIRA
+              - generic [ref=e84]:
+                - generic [ref=e85]: C$ 45,831
+                - generic [ref=e86]: +$46,089
+                - generic [ref=e87]: "-17881.78%"
+          - generic [ref=e88] [cursor=pointer]:
+            - generic [ref=e89]: Q
+            - generic [ref=e90]:
+              - generic [ref=e92]: RRSP
+              - generic [ref=e93]:
+                - generic [ref=e94]: C$ 40,066
+                - generic [ref=e95]: +$16,553
+                - generic [ref=e96]: +70.40%
+          - generic [ref=e97] [cursor=pointer]:
+            - generic [ref=e98]: Q
+            - generic [ref=e99]:
+              - generic [ref=e101]: MARGIN
+              - generic [ref=e102]:
+                - generic [ref=e103]: C$ 85
+                - generic [ref=e104]: +$85
+                - generic [ref=e105]: "-423500.00%"
+          - generic [ref=e106] [cursor=pointer]:
+            - generic [ref=e107]: Q
+            - generic [ref=e108]:
+              - generic [ref=e110]: RRSP
+              - generic [ref=e111]:
+                - generic [ref=e112]: C$ 27,725
+                - generic [ref=e113]: +$5,424
+                - generic [ref=e114]: +24.32%
+          - generic [ref=e115] [cursor=pointer]:
+            - generic [ref=e116]: Q
+            - generic [ref=e117]:
+              - generic [ref=e119]: TFSA
+              - generic [ref=e120]:
+                - generic [ref=e121]: C$ 126,562
+                - generic [ref=e122]: +$85,697
+                - generic [ref=e123]: +209.70%
+      - generic [ref=e124]:
+        - heading "Portfolio Summary" [level=3] [ref=e126]
+        - generic [ref=e129]:
+          - generic [ref=e130]:
+            - generic [ref=e131]: Investment
+            - generic [ref=e132]: C$ 0
+            - generic [ref=e135]:
+              - generic [ref=e136]: C$
+              - generic [ref=e137]: "0"
+          - generic [ref=e138]:
+            - generic [ref=e139]: Cash
+            - generic [ref=e140]: C$ 0
+            - generic [ref=e143]:
+              - generic [ref=e144]: C$
+              - generic [ref=e145]: "0"
+          - generic [ref=e146]:
+            - generic [ref=e147]: Buying Power
+            - generic [ref=e148]: C$ 0
+            - generic [ref=e151]:
+              - generic [ref=e152]: C$
+              - generic [ref=e153]: "0"
+      - generic [ref=e154]:
+        - heading "Returns (IRR)" [level=3] [ref=e156]
+        - generic [ref=e158]: No return data available yet
+      - generic [ref=e159]:
+        - heading "Sector & Industry Exposure" [level=3] [ref=e161]
+        - generic [ref=e165]:
+          - generic [ref=e166]: Unknown
+          - generic [ref=e167]: 100%
+      - generic [ref=e170]:
+        - heading "Positions & Holdings" [level=3] [ref=e172]
+        - generic [ref=e176]:
+          - img [ref=e177]
+          - generic [ref=e179]: No positions
+      - generic [ref=e180]:
+        - heading "Orders" [level=3] [ref=e182]
+        - generic [ref=e184]:
+          - generic [ref=e185]:
+            - button "Open" [ref=e186] [cursor=pointer]
+            - button "Pending" [disabled] [ref=e187]
+          - generic [ref=e189]:
+            - img [ref=e190]
+            - generic [ref=e193]: No open orders

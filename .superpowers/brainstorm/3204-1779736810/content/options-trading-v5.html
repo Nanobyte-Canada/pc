@@ -1,0 +1,129 @@
+<h2>Options Trading (v5)</h2>
+<p class="subtitle">Mobile: no horizontal scroll — strategy as dropdown, expiry pills wrap</p>
+
+<!-- Desktop unchanged -->
+<div class="section">
+  <h3>Desktop — unchanged from v3</h3>
+  <p style="font-size:13px;color:#94a3b8;">Desktop layout with larger fonts remains the same. See v3 for full desktop mockup.</p>
+</div>
+
+<!-- Mobile -->
+<div class="section">
+  <h3>Mobile (&lt; 768px)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Options Trading — Mobile (no horizontal scroll)</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:680px;display:flex;flex-direction:column;font-family:'DM Sans',sans-serif;max-width:320px;margin:0 auto;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+        <div style="height:44px;background:#0a0f1a;display:flex;align-items:center;justify-content:space-between;padding:0 20px;">
+          <span style="font-size:12px;color:#e2e8f0;font-weight:600;">9:41</span>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+            <span style="font-size:10px;color:#6ee7b7;">Live</span>
+          </div>
+        </div>
+
+        <div style="flex:1;padding:0 16px 16px;display:flex;flex-direction:column;gap:10px;">
+          <!-- Search bar -->
+          <div style="display:flex;gap:0;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
+            <input style="background:rgba(255,255,255,0.04);border:none;padding:10px 14px;font-size:14px;color:#e2e8f0;flex:1;outline:none;font-family:'DM Sans',sans-serif;" placeholder="Symbol" value="SPY"/>
+            <div style="padding:10px 16px;background:#10b981;font-size:14px;color:white;font-weight:600;">Load</div>
+          </div>
+
+          <!-- Compact Quote -->
+          <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px 14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">SPY</span>
+                <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'JetBrains Mono',monospace;margin-left:8px;">$587.42</span>
+              </div>
+              <span style="font-size:12px;color:#6ee7b7;font-weight:600;">+0.54%</span>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:6px;">
+              <span style="font-size:11px;color:#64748b;">Bid <span style="color:#94a3b8;font-family:'JetBrains Mono',monospace;">587.38</span></span>
+              <span style="font-size:11px;color:#64748b;">Ask <span style="color:#94a3b8;font-family:'JetBrains Mono',monospace;">587.46</span></span>
+              <span style="font-size:11px;color:#64748b;">Vol <span style="color:#94a3b8;font-family:'JetBrains Mono',monospace;">42.3M</span></span>
+            </div>
+          </div>
+
+          <!-- Strategy dropdown + Expiry row -->
+          <div style="display:flex;gap:8px;align-items:center;">
+            <!-- Strategy dropdown -->
+            <div style="padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);font-size:13px;color:#e2e8f0;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <span style="font-weight:500;">Custom</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <!-- Expiry pills (wrapping) -->
+            <div style="display:flex;gap:4px;flex-wrap:wrap;flex:1;">
+              <span style="padding:6px 10px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-size:11px;font-weight:500;">Jun 6</span>
+              <span style="padding:6px 10px;border-radius:6px;color:#64748b;font-size:11px;">Jun 13</span>
+              <span style="padding:6px 10px;border-radius:6px;color:#64748b;font-size:11px;">Jun 20</span>
+              <span style="padding:6px 10px;border-radius:6px;color:#64748b;font-size:11px;">Jul 18</span>
+            </div>
+          </div>
+
+          <!-- Call/Put toggle -->
+          <div style="display:flex;gap:0;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
+            <div style="flex:1;padding:8px;text-align:center;background:rgba(16,185,129,0.1);font-size:13px;color:#6ee7b7;font-weight:600;">Calls</div>
+            <div style="flex:1;padding:8px;text-align:center;background:rgba(255,255,255,0.03);font-size:13px;color:#64748b;">Puts</div>
+          </div>
+
+          <!-- Chain -->
+          <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;overflow:hidden;flex:1;">
+            <div style="display:grid;grid-template-columns:60px 1fr 1fr 1fr;padding:8px 12px;background:rgba(255,255,255,0.02);font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;font-weight:600;">
+              <span>Strike</span><span style="text-align:right;">Bid</span><span style="text-align:right;">Ask</span><span style="text-align:right;">Delta</span>
+            </div>
+            <!-- ATM -->
+            <div style="display:grid;grid-template-columns:60px 1fr 1fr 1fr;padding:10px 12px;background:rgba(16,185,129,0.06);border-left:2px solid #10b981;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px;font-family:'JetBrains Mono',monospace;">
+              <span style="color:#e2e8f0;font-weight:700;">587</span>
+              <span style="color:#6ee7b7;text-align:right;">5.20</span>
+              <span style="color:#f87171;text-align:right;">5.35</span>
+              <span style="color:#94a3b8;text-align:right;font-size:12px;">0.52</span>
+            </div>
+            <div style="display:grid;grid-template-columns:60px 1fr 1fr 1fr;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px;font-family:'JetBrains Mono',monospace;">
+              <span style="color:#e2e8f0;font-weight:600;">590</span>
+              <span style="color:#6ee7b7;text-align:right;">2.85</span>
+              <span style="color:#f87171;text-align:right;">2.95</span>
+              <span style="color:#94a3b8;text-align:right;font-size:12px;">0.32</span>
+            </div>
+            <div style="display:grid;grid-template-columns:60px 1fr 1fr 1fr;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px;font-family:'JetBrains Mono',monospace;">
+              <span style="color:#e2e8f0;font-weight:600;">595</span>
+              <span style="color:#6ee7b7;text-align:right;">1.42</span>
+              <span style="color:#f87171;text-align:right;">1.50</span>
+              <span style="color:#94a3b8;text-align:right;font-size:12px;">0.18</span>
+            </div>
+            <div style="display:grid;grid-template-columns:60px 1fr 1fr 1fr;padding:10px 12px;font-size:14px;font-family:'JetBrains Mono',monospace;">
+              <span style="color:#e2e8f0;font-weight:600;">600</span>
+              <span style="color:#6ee7b7;text-align:right;">0.65</span>
+              <span style="color:#f87171;text-align:right;">0.72</span>
+              <span style="color:#94a3b8;text-align:right;font-size:12px;">0.09</span>
+            </div>
+          </div>
+
+          <!-- Floating bottom bar -->
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1;padding:12px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);text-align:center;font-size:13px;color:#e2e8f0;font-weight:500;">2 Legs Selected</div>
+            <div style="padding:12px 24px;border-radius:8px;background:#10b981;font-size:13px;color:white;font-weight:600;">Calculate</div>
+          </div>
+        </div>
+
+        <!-- Bottom Tab Bar -->
+        <div style="height:64px;background:#0f1520;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-around;padding:0 8px;flex-shrink:0;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span style="font-size:9px;color:#64748b;">Home</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span style="font-size:9px;color:#64748b;">Accounts</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><span style="font-size:9px;color:#64748b;">Screener</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span style="font-size:9px;color:#10b981;font-weight:600;">Options</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg><span style="font-size:9px;color:#64748b;">More</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.1);border-radius:10px;padding:16px;">
+  <p style="font-size:13px;color:#6ee7b7;margin:0 0 6px 0;"><strong>v5 — No horizontal scroll:</strong></p>
+  <ul style="font-size:13px;color:#cbd5e1;margin:0;padding-left:20px;line-height:1.8;">
+    <li><strong>Strategy selector</strong> changed from scrollable pills to a <strong>dropdown</strong> — shows current selection ("Custom") with a chevron. Tapping opens a native select or bottom sheet with all strategies.</li>
+    <li><strong>Expiry pills</strong> use <code style="color:#6ee7b7;">flex-wrap: wrap</code> — pills flow to a second row if they don't fit. No scrolling needed.</li>
+    <li><strong>Strategy + Expiry on same row</strong> — dropdown on the left, wrapping expiry pills on the right. Saves vertical space.</li>
+  </ul>
+</div>
