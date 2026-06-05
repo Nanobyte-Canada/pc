@@ -473,8 +473,10 @@ export function InstrumentDetailPage() {
   }, []);
 
   const updatedAt = useMemo(() => {
-    if (!detail?.general?.UpdatedAt) return null;
-    return fmtDate(detail.general.UpdatedAt);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!detail || !(detail.general as any)?.UpdatedAt) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return fmtDate((detail.general as any).UpdatedAt);
   }, [detail]);
 
   // Loading state
