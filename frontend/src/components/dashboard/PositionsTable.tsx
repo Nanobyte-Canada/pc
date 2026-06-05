@@ -130,6 +130,8 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
     },
   ], [positionsData])
 
+  const holdingsData = useMemo(() => positionsData?.positions ?? [], [positionsData])
+
   /* Orders columns */
   const ordersColumns: ColDef[] = useMemo(() => [
     { field: 'symbol', headerName: 'Symbol', width: 100 },
@@ -152,7 +154,6 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
     { field: 'accountName', headerName: 'Account', flex: 1, minWidth: 100 },
   ], [])
 
-  const holdingsData = positionsData?.positions ?? []
   const orders = ordersData?.orders ?? []
 
   const filteredHoldings = useMemo(() => {

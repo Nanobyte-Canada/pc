@@ -1,0 +1,410 @@
+- generic [ref=e6]:
+  - complementary [ref=e7]:
+    - navigation "Main navigation" [ref=e8]:
+      - generic [ref=e9]: P
+      - button "Portfolio" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+      - button "Wheel" [ref=e16] [cursor=pointer]:
+        - img [ref=e17]
+      - button "Connections" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - button "Toggle theme" [ref=e25] [cursor=pointer]:
+        - img [ref=e26]
+      - button "Admin settings" [ref=e32] [cursor=pointer]:
+        - img [ref=e33]
+      - button "User profile" [ref=e36] [cursor=pointer]: S
+  - main [ref=e38]:
+    - generic [ref=e39]:
+      - generic [ref=e41]:
+        - button "All Accounts" [ref=e42] [cursor=pointer]
+        - button "Q LIRA ••9683" [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]: Q
+          - generic [ref=e45]: LIRA
+          - generic [ref=e46]: ••9683
+        - button "Q RRSP ••8214" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: Q
+          - generic [ref=e49]: RRSP
+          - generic [ref=e50]: ••8214
+        - button "Q MARGIN ••4150" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: Q
+          - generic [ref=e53]: MARGIN
+          - generic [ref=e54]: ••4150
+        - button "Q RRSP ••2736" [ref=e55] [cursor=pointer]:
+          - generic [ref=e56]: Q
+          - generic [ref=e57]: RRSP
+          - generic [ref=e58]: ••2736
+        - button "Q TFSA ••0190" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]: Q
+          - generic [ref=e61]: TFSA
+          - generic [ref=e62]: ••0190
+      - generic [ref=e63]:
+        - heading "Wheel Strategy" [level=1] [ref=e65]
+        - generic [ref=e67]:
+          - generic [ref=e68]: Cash-Secured Put
+          - generic [ref=e70]: Covered Call
+          - generic [ref=e72]: Open Slot
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - generic [ref=e76]: Available Cash
+          - generic [ref=e77]:
+            - generic [ref=e78]: C$
+            - generic [ref=e79]: $108,117.92
+            - generic [ref=e81]: US$
+            - generic [ref=e82]: US$33,108.50
+        - generic [ref=e84]:
+          - generic [ref=e85]: CSP Deployed
+          - generic [ref=e86]: US$53,250.00
+          - generic [ref=e87]: $73,532.93
+        - generic [ref=e89]:
+          - generic [ref=e90]: CCs Written
+          - generic [ref=e91]: US$4,800.00
+          - generic [ref=e92]: $6,628.32
+        - generic [ref=e94]:
+          - generic [ref=e95]: Premium
+          - generic [ref=e96]: +US$2,675.00
+          - generic [ref=e97]: +$3,693.91
+        - generic [ref=e99]:
+          - generic [ref=e100]: Unrealized P&L
+          - generic [ref=e101]: "-US$1,386.00"
+          - generic [ref=e102]: "-$1,913.93"
+      - generic [ref=e103]:
+        - table [ref=e107]:
+          - rowgroup [ref=e108]:
+            - row "Expiry SOXL US$676.00 TECL US$256.00 TQQQ US$827.00 UPRO US$236.00" [ref=e109]:
+              - columnheader "Expiry" [ref=e110]
+              - columnheader "SOXL US$676.00" [ref=e111]:
+                - generic [ref=e112]: SOXL
+                - generic [ref=e113]: US$676.00
+              - columnheader "TECL US$256.00" [ref=e114]:
+                - generic [ref=e115]: TECL
+                - generic [ref=e116]: US$256.00
+              - columnheader "TQQQ US$827.00" [ref=e117]:
+                - generic [ref=e118]: TQQQ
+                - generic [ref=e119]: US$827.00
+              - columnheader "UPRO US$236.00" [ref=e120]:
+                - generic [ref=e121]: UPRO
+                - generic [ref=e122]: US$236.00
+          - rowgroup [ref=e123]:
+            - row "May 29 0d Friday US$70.00 89.6% OTM +US$290.00 +US$289.00 Add another position for SOXL expiring 2026-05-29 Add position for TECL expiring 2026-05-29 US$45.00 94.6% OTM +US$125.00 +US$124.00 Add another position for TQQQ expiring 2026-05-29 Add position for UPRO expiring 2026-05-29" [ref=e124]:
+              - cell "May 29 0d Friday" [ref=e125]:
+                - generic [ref=e126]:
+                  - text: May 29
+                  - generic [ref=e127]: 0d
+                - generic [ref=e128]: Friday
+              - cell "US$70.00 89.6% OTM +US$290.00 +US$289.00 Add another position for SOXL expiring 2026-05-29" [ref=e129]:
+                - generic [ref=e130]:
+                  - button "US$70.00 89.6% OTM +US$290.00 +US$289.00" [ref=e131] [cursor=pointer]:
+                    - generic:
+                      - img
+                    - generic [ref=e132]:
+                      - generic [ref=e133]: US$70.00
+                      - generic [ref=e134]: 89.6% OTM
+                    - generic [ref=e135]:
+                      - generic [ref=e136]: +US$290.00
+                      - generic [ref=e137]: +US$289.00
+                  - button "Add another position for SOXL expiring 2026-05-29" [ref=e138] [cursor=pointer]:
+                    - img [ref=e139]
+              - cell "Add position for TECL expiring 2026-05-29" [ref=e140]:
+                - button "Add position for TECL expiring 2026-05-29" [ref=e142] [cursor=pointer]:
+                  - img [ref=e143]
+              - cell "US$45.00 94.6% OTM +US$125.00 +US$124.00 Add another position for TQQQ expiring 2026-05-29" [ref=e144]:
+                - generic [ref=e145]:
+                  - button "US$45.00 94.6% OTM +US$125.00 +US$124.00" [ref=e146] [cursor=pointer]:
+                    - generic:
+                      - img
+                    - generic [ref=e147]:
+                      - generic [ref=e148]: US$45.00
+                      - generic [ref=e149]: 94.6% OTM
+                    - generic [ref=e150]:
+                      - generic [ref=e151]: +US$125.00
+                      - generic [ref=e152]: +US$124.00
+                  - button "Add another position for TQQQ expiring 2026-05-29" [ref=e153] [cursor=pointer]:
+                    - img [ref=e154]
+              - cell "Add position for UPRO expiring 2026-05-29" [ref=e155]:
+                - button "Add position for UPRO expiring 2026-05-29" [ref=e157] [cursor=pointer]:
+                  - img [ref=e158]
+            - row "Jun 18 20d Thursday US$100.00 85.2% OTM +US$500.00 +US$382.00 US$120.00 82.2% OTM +US$960.00 +US$743.00 Add another position for SOXL expiring 2026-06-18 US$140.00 45.3% OTM +US$440.00 +US$344.00 Add another position for TECL expiring 2026-06-18 US$57.50 93.0% OTM +US$130.00 +US$94.00 US$48.00 94.2% OTM +US$230.00 -US$3,362.00 Add another position for TQQQ expiring 2026-06-18 Add position for UPRO expiring 2026-06-18" [ref=e159]:
+              - cell "Jun 18 20d Thursday" [ref=e160]:
+                - generic [ref=e161]:
+                  - text: Jun 18
+                  - generic [ref=e162]: 20d
+                - generic [ref=e163]: Thursday
+              - cell "US$100.00 85.2% OTM +US$500.00 +US$382.00 US$120.00 82.2% OTM +US$960.00 +US$743.00 Add another position for SOXL expiring 2026-06-18" [ref=e164]:
+                - generic [ref=e165]:
+                  - button "US$100.00 85.2% OTM +US$500.00 +US$382.00" [active] [ref=e166] [cursor=pointer]:
+                    - generic:
+                      - img
+                    - generic [ref=e167]:
+                      - generic [ref=e168]: US$100.00
+                      - generic [ref=e169]: 85.2% OTM
+                    - generic [ref=e170]:
+                      - generic [ref=e171]: +US$500.00
+                      - generic [ref=e172]: +US$382.00
+                  - button "US$120.00 82.2% OTM +US$960.00 +US$743.00" [ref=e173] [cursor=pointer]:
+                    - generic:
+                      - img
+                    - generic [ref=e174]:
+                      - generic [ref=e175]: US$120.00
+                      - generic [ref=e176]: 82.2% OTM
+                    - generic [ref=e177]:
+                      - generic [ref=e178]: +US$960.00
+                      - generic [ref=e179]: +US$743.00
+                  - button "Add another position for SOXL expiring 2026-06-18" [ref=e180] [cursor=pointer]:
+                    - img [ref=e181]
+              - cell "US$140.00 45.3% OTM +US$440.00 +US$344.00 Add another position for TECL expiring 2026-06-18" [ref=e182]:
+                - generic [ref=e183]:
+                  - button "US$140.00 45.3% OTM +US$440.00 +US$344.00" [ref=e184] [cursor=pointer]:
+                    - generic:
+                      - img
+                    - generic [ref=e185]:
+                      - generic [ref=e186]: US$140.00
+                      - generic [ref=e187]: 45.3% OTM
+                    - generic [ref=e188]:
+                      - generic [ref=e189]: +US$440.00
+                      - generic [ref=e190]: +US$344.00
+                  - button "Add another position for TECL expiring 2026-06-18" [ref=e191] [cursor=pointer]:
+                    - img [ref=e192]
+              - cell "US$57.50 93.0% OTM +US$130.00 +US$94.00 US$48.00 94.2% OTM +US$230.00 -US$3,362.00 Add another position for TQQQ expiring 2026-06-18" [ref=e193]:
+                - generic [ref=e194]:
+                  - button "US$57.50 93.0% OTM +US$130.00 +US$94.00" [ref=e195] [cursor=pointer]:
+                    - generic:
+                      - img
+                    - generic [ref=e196]:
+                      - generic [ref=e197]: US$57.50
+                      - generic [ref=e198]: 93.0% OTM
+                    - generic [ref=e199]:
+                      - generic [ref=e200]: +US$130.00
+                      - generic [ref=e201]: +US$94.00
+                  - button "US$48.00 94.2% OTM +US$230.00 -US$3,362.00" [ref=e202] [cursor=pointer]:
+                    - generic:
+                      - img
+                    - generic [ref=e203]:
+                      - generic [ref=e204]: US$48.00
+                      - generic [ref=e205]: 94.2% OTM
+                    - generic [ref=e206]:
+                      - generic [ref=e207]: +US$230.00
+                      - generic [ref=e208]: "-US$3,362.00"
+                  - button "Add another position for TQQQ expiring 2026-06-18" [ref=e209] [cursor=pointer]:
+                    - img [ref=e210]
+              - cell "Add position for UPRO expiring 2026-06-18" [ref=e211]:
+                - button "Add position for UPRO expiring 2026-06-18" [ref=e213] [cursor=pointer]:
+                  - img [ref=e214]
+          - rowgroup [ref=e215]:
+            - row "Totals Positions 3 CSP Exposure US$29,000.00 $40,046.10 P&L +US$1,414.00 +$1,952.59 Positions 1 CSP Exposure US$14,000.00 $19,332.60 P&L +US$344.00 +$475.03 Positions 3 CSP Exposure US$10,250.00 $14,154.23 P&L -US$3,144.00 -$4,341.55 Positions 0 CSP Exposure US$0.00 $0.00 P&L +US$0.00 +$0.00" [ref=e216]:
+              - cell "Totals" [ref=e217]
+              - cell "Positions 3 CSP Exposure US$29,000.00 $40,046.10 P&L +US$1,414.00 +$1,952.59" [ref=e218]:
+                - generic [ref=e219]:
+                  - generic [ref=e220]:
+                    - generic [ref=e221]: Positions
+                    - generic [ref=e222]: "3"
+                  - generic [ref=e223]:
+                    - generic [ref=e224]: CSP Exposure
+                    - generic [ref=e225]:
+                      - text: US$29,000.00
+                      - generic [ref=e226]: $40,046.10
+                  - generic [ref=e227]:
+                    - generic [ref=e228]: P&L
+                    - generic [ref=e229]:
+                      - generic [ref=e230]: +US$1,414.00
+                      - generic [ref=e231]: +$1,952.59
+              - cell "Positions 1 CSP Exposure US$14,000.00 $19,332.60 P&L +US$344.00 +$475.03" [ref=e232]:
+                - generic [ref=e233]:
+                  - generic [ref=e234]:
+                    - generic [ref=e235]: Positions
+                    - generic [ref=e236]: "1"
+                  - generic [ref=e237]:
+                    - generic [ref=e238]: CSP Exposure
+                    - generic [ref=e239]:
+                      - text: US$14,000.00
+                      - generic [ref=e240]: $19,332.60
+                  - generic [ref=e241]:
+                    - generic [ref=e242]: P&L
+                    - generic [ref=e243]:
+                      - generic [ref=e244]: +US$344.00
+                      - generic [ref=e245]: +$475.03
+              - cell "Positions 3 CSP Exposure US$10,250.00 $14,154.23 P&L -US$3,144.00 -$4,341.55" [ref=e246]:
+                - generic [ref=e247]:
+                  - generic [ref=e248]:
+                    - generic [ref=e249]: Positions
+                    - generic [ref=e250]: "3"
+                  - generic [ref=e251]:
+                    - generic [ref=e252]: CSP Exposure
+                    - generic [ref=e253]:
+                      - text: US$10,250.00
+                      - generic [ref=e254]: $14,154.23
+                  - generic [ref=e255]:
+                    - generic [ref=e256]: P&L
+                    - generic [ref=e257]:
+                      - text: "-US$3,144.00"
+                      - generic [ref=e258]: "-$4,341.55"
+              - cell "Positions 0 CSP Exposure US$0.00 $0.00 P&L +US$0.00 +$0.00" [ref=e259]:
+                - generic [ref=e260]:
+                  - generic [ref=e261]:
+                    - generic [ref=e262]: Positions
+                    - generic [ref=e263]: "0"
+                  - generic [ref=e264]:
+                    - generic [ref=e265]: CSP Exposure
+                    - generic [ref=e266]:
+                      - text: US$0.00
+                      - generic [ref=e267]: $0.00
+                  - generic [ref=e268]:
+                    - generic [ref=e269]: P&L
+                    - generic [ref=e270]:
+                      - generic [ref=e271]: +US$0.00
+                      - generic [ref=e272]: +$0.00
+        - generic [ref=e275]:
+          - generic [ref=e276]:
+            - generic [ref=e277]:
+              - generic [ref=e278]: SOXL
+              - generic [ref=e279]: Cash-Secured Put
+            - button "Close order panel" [ref=e280] [cursor=pointer]:
+              - img [ref=e281]
+          - generic [ref=e284]:
+            - generic [ref=e285]:
+              - generic [ref=e286]: US$676.00
+              - generic [ref=e287]: +US$382.00
+            - generic [ref=e288]:
+              - generic [ref=e289]:
+                - generic [ref=e290]: Bid
+                - generic [ref=e291]: "--"
+              - generic [ref=e292]:
+                - generic [ref=e293]: Mid
+                - generic [ref=e294]: "--"
+              - generic [ref=e295]:
+                - generic [ref=e296]: Ask
+                - generic [ref=e297]: "--"
+          - generic [ref=e298]:
+            - generic [ref=e299]: SOXL --- 100 Put
+            - generic [ref=e300]: "Last: US$500.00"
+            - generic [ref=e301]:
+              - generic [ref=e302]:
+                - generic [ref=e303]: Option Type
+                - generic [ref=e304]:
+                  - combobox [ref=e305] [cursor=pointer]:
+                    - option "Put" [selected]
+                    - option "Call"
+                  - img
+              - generic [ref=e306]:
+                - generic [ref=e307]: Expiration
+                - generic [ref=e308]:
+                  - combobox [ref=e309] [cursor=pointer]:
+                    - option "Select..." [selected]
+                    - option "Jun 5, 2026"
+                    - option "Jun 12, 2026"
+                    - option "Jun 19, 2026"
+                    - option "Jun 26, 2026"
+                    - option "Jul 3, 2026"
+                    - option "Jul 10, 2026"
+                    - option "Jul 17, 2026"
+                    - option "Jul 24, 2026"
+                    - option "Jul 31, 2026"
+                    - option "Aug 7, 2026"
+                    - option "Aug 14, 2026"
+                    - option "Aug 21, 2026"
+                    - option "Aug 28, 2026"
+                    - option "Sep 4, 2026"
+                    - option "Sep 11, 2026"
+                    - option "Sep 18, 2026"
+                    - option "Sep 25, 2026"
+                    - option "Oct 2, 2026"
+                    - option "Oct 9, 2026"
+                    - option "Oct 16, 2026"
+                    - option "Oct 23, 2026"
+                    - option "Oct 30, 2026"
+                    - option "Nov 6, 2026"
+                    - option "Nov 13, 2026"
+                    - option "Nov 20, 2026"
+                    - option "Nov 27, 2026"
+                  - img
+              - generic [ref=e310]:
+                - generic [ref=e311]: Strike
+                - generic [ref=e312]:
+                  - combobox [ref=e313] [cursor=pointer]:
+                    - option "Select..." [selected]
+                    - option "576.00"
+                    - option "581.00"
+                    - option "586.00"
+                    - option "591.00"
+                    - option "596.00"
+                    - option "601.00"
+                    - option "606.00"
+                    - option "611.00"
+                    - option "616.00"
+                    - option "621.00"
+                    - option "626.00"
+                    - option "631.00"
+                    - option "636.00"
+                    - option "641.00"
+                    - option "646.00"
+                    - option "651.00"
+                    - option "656.00"
+                    - option "661.00"
+                    - option "666.00"
+                    - option "671.00"
+                    - option "676.00"
+                    - option "681.00"
+                    - option "686.00"
+                    - option "691.00"
+                    - option "696.00"
+                    - option "701.00"
+                    - option "706.00"
+                    - option "711.00"
+                    - option "716.00"
+                    - option "721.00"
+                    - option "726.00"
+                    - option "731.00"
+                    - option "736.00"
+                    - option "741.00"
+                    - option "746.00"
+                    - option "751.00"
+                    - option "756.00"
+                    - option "761.00"
+                    - option "766.00"
+                    - option "771.00"
+                    - option "776.00"
+                  - img
+              - generic [ref=e314]:
+                - generic [ref=e315]: Order Type
+                - generic [ref=e316]:
+                  - combobox [ref=e317] [cursor=pointer]:
+                    - option "Limit" [selected]
+                    - option "Market"
+                  - img
+          - generic [ref=e318]:
+            - generic [ref=e319]: Quantity
+            - generic [ref=e320]:
+              - button "Decrease quantity" [ref=e321] [cursor=pointer]:
+                - img [ref=e322]
+              - generic [ref=e323]: "1"
+              - button "Increase quantity" [ref=e324] [cursor=pointer]:
+                - img [ref=e325]
+          - generic [ref=e326]:
+            - generic [ref=e327]: Limit Price
+            - generic [ref=e328]:
+              - generic [ref=e329]: US$
+              - textbox "0.00" [ref=e330]
+          - generic [ref=e331]:
+            - generic [ref=e332]: Duration
+            - generic [ref=e333]:
+              - combobox [ref=e334] [cursor=pointer]:
+                - option "Day" [selected]
+                - option "GTC"
+              - img
+          - generic [ref=e335]:
+            - generic [ref=e336]: Account
+            - generic [ref=e337]:
+              - generic [ref=e339]:
+                - combobox [ref=e340] [cursor=pointer]:
+                  - option "QUESTRADE LIRA ••9683" [selected]
+                  - option "QUESTRADE RRSP ••8214"
+                  - option "QUESTRADE MARGIN ••4150"
+                  - option "QUESTRADE RRSP ••2736"
+                  - option "QUESTRADE TFSA ••0190"
+                - img
+              - generic [ref=e342]: "--"
+          - generic [ref=e343]:
+            - generic [ref=e344]: Estimated Total
+            - generic [ref=e345]: "--"
+          - generic [ref=e346]:
+            - button "Buy" [ref=e347] [cursor=pointer]
+            - button "Sell" [ref=e348] [cursor=pointer]

@@ -1,0 +1,286 @@
+<h2>Choose a Design Direction</h2>
+<p class="subtitle">Three approaches for your portfolio construction app. Each uses teal/emerald on dark, mobile-first. Click to select.</p>
+
+<div class="cards" style="display:grid;grid-template-columns:1fr;gap:24px;margin-top:24px;">
+
+  <!-- Approach A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)" style="border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;cursor:pointer;">
+    <div class="card-image" style="padding:0;">
+      <div style="background:linear-gradient(135deg, #0a0f1a 0%, #0d1520 50%, #0f1a2a 100%);padding:32px;min-height:320px;">
+        <!-- Mockup: Verdant Dark -->
+        <div style="display:flex;gap:12px;height:100%;">
+          <!-- Sidebar -->
+          <div style="width:48px;background:rgba(16,185,129,0.06);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;">P</div>
+            <div style="width:24px;height:2px;background:rgba(255,255,255,0.1);border-radius:1px;"></div>
+            <div style="width:20px;height:20px;border-radius:6px;background:rgba(16,185,129,0.2);"></div>
+            <div style="width:20px;height:20px;border-radius:6px;background:rgba(255,255,255,0.05);"></div>
+            <div style="width:20px;height:20px;border-radius:6px;background:rgba(255,255,255,0.05);"></div>
+            <div style="width:20px;height:20px;border-radius:6px;background:rgba(255,255,255,0.05);"></div>
+          </div>
+          <!-- Main Content -->
+          <div style="flex:1;display:flex;flex-direction:column;gap:12px;">
+            <!-- Header -->
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:18px;font-weight:600;color:#e2e8f0;font-family:'DM Sans',sans-serif;">Dashboard</div>
+                <div style="font-size:11px;color:rgba(148,163,184,0.7);margin-top:2px;">Portfolio Overview</div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.05);"></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);"></div>
+              </div>
+            </div>
+            <!-- Summary Cards -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+              <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:12px;">
+                <div style="font-size:9px;color:#6ee7b7;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Total Value</div>
+                <div style="font-size:16px;font-weight:700;color:#e2e8f0;margin-top:4px;font-family:'DM Sans',sans-serif;">$847,230</div>
+                <div style="font-size:9px;color:#34d399;margin-top:2px;">+2.4%</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;">
+                <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Day P&L</div>
+                <div style="font-size:16px;font-weight:700;color:#e2e8f0;margin-top:4px;font-family:'DM Sans',sans-serif;">+$3,120</div>
+                <div style="font-size:9px;color:#34d399;margin-top:2px;">+0.37%</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;">
+                <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Cash</div>
+                <div style="font-size:16px;font-weight:700;color:#e2e8f0;margin-top:4px;font-family:'DM Sans',sans-serif;">$42,850</div>
+                <div style="font-size:9px;color:#94a3b8;margin-top:2px;">4.8%</div>
+              </div>
+            </div>
+            <!-- Chart Area -->
+            <div style="flex:1;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:12px;min-height:80px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div style="font-size:10px;color:#94a3b8;font-weight:500;">Performance</div>
+                <div style="display:flex;gap:4px;">
+                  <span style="font-size:8px;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.15);color:#34d399;">1Y</span>
+                  <span style="font-size:8px;padding:2px 6px;border-radius:4px;color:#64748b;">3Y</span>
+                </div>
+              </div>
+              <svg viewBox="0 0 200 50" style="width:100%;height:50px;">
+                <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10b981" stop-opacity="0.3"/><stop offset="1" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
+                <path d="M0,40 C20,38 40,35 60,30 C80,25 100,20 120,22 C140,24 160,15 180,10 L200,8 L200,50 L0,50Z" fill="url(#g1)"/>
+                <path d="M0,40 C20,38 40,35 60,30 C80,25 100,20 120,22 C140,24 160,15 180,10 L200,8" fill="none" stroke="#10b981" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <!-- Holdings Table -->
+            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:10px;">
+              <div style="font-size:10px;color:#94a3b8;font-weight:500;margin-bottom:8px;">Holdings</div>
+              <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <span style="font-size:10px;color:#e2e8f0;font-weight:500;">VFV.TO</span>
+                <span style="font-size:10px;color:#34d399;">+12.3%</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <span style="font-size:10px;color:#e2e8f0;font-weight:500;">XQQ.TO</span>
+                <span style="font-size:10px;color:#34d399;">+8.7%</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:4px 0;">
+                <span style="font-size:10px;color:#e2e8f0;font-weight:500;">ZAG.TO</span>
+                <span style="font-size:10px;color:#f87171;">-1.2%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Verdant Dark</h3>
+      <p><strong>Font:</strong> DM Sans — geometric, modern<br>
+      <strong>Palette:</strong> Near-black (#0a0f1a) with emerald (#10b981) accents. Minimal color, maximum data clarity.<br>
+      <strong>Nav:</strong> Slim icon rail (48px) + flyout panels on desktop. Bottom tabs on mobile.<br>
+      <strong>Vibe:</strong> Clean, spacious, Wealthsimple-meets-Linear. Generous whitespace, soft borders, subtle glass effects. Cards with emerald-tinted backgrounds for key metrics.</p>
+    </div>
+  </div>
+
+  <!-- Approach B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)" style="border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;cursor:pointer;">
+    <div class="card-image" style="padding:0;">
+      <div style="background:linear-gradient(160deg, #0c1222 0%, #0f1729 50%, #111d32 100%);padding:32px;min-height:320px;">
+        <!-- Mockup: Obsidian Teal -->
+        <div style="display:flex;gap:12px;height:100%;">
+          <!-- Sidebar -->
+          <div style="width:52px;background:linear-gradient(180deg,rgba(20,184,166,0.1),rgba(6,182,212,0.05));border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:14px;border:1px solid rgba(20,184,166,0.1);">
+            <div style="width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#14b8a6,#0d9488);display:flex;align-items:center;justify-content:center;font-size:13px;color:white;font-weight:800;box-shadow:0 0 20px rgba(20,184,166,0.3);">P</div>
+            <div style="width:24px;height:1px;background:rgba(20,184,166,0.15);"></div>
+            <div style="width:22px;height:22px;border-radius:7px;background:rgba(20,184,166,0.2);border:1px solid rgba(20,184,166,0.15);"></div>
+            <div style="width:22px;height:22px;border-radius:7px;background:rgba(255,255,255,0.04);"></div>
+            <div style="width:22px;height:22px;border-radius:7px;background:rgba(255,255,255,0.04);"></div>
+          </div>
+          <!-- Main -->
+          <div style="flex:1;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:18px;font-weight:700;color:#f1f5f9;font-family:'Outfit',sans-serif;">Good morning</div>
+                <div style="font-size:11px;color:rgba(148,163,184,0.6);margin-top:2px;">Here's your portfolio at a glance</div>
+              </div>
+            </div>
+            <!-- Hero Metric -->
+            <div style="background:linear-gradient(135deg,rgba(20,184,166,0.12),rgba(6,182,212,0.06));border:1px solid rgba(20,184,166,0.15);border-radius:14px;padding:16px;position:relative;overflow:hidden;">
+              <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(20,184,166,0.15),transparent);"></div>
+              <div style="font-size:10px;color:#5eead4;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Net Worth</div>
+              <div style="font-size:28px;font-weight:800;color:#f1f5f9;margin-top:4px;font-family:'Outfit',sans-serif;">$847,230</div>
+              <div style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:3px 8px;border-radius:6px;background:rgba(20,184,166,0.15);">
+                <span style="font-size:10px;color:#5eead4;">▲ $18,420 (2.22%)</span>
+              </div>
+            </div>
+            <!-- Quick Stats -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;">
+                <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Invested</div>
+                <div style="font-size:14px;font-weight:700;color:#e2e8f0;margin-top:4px;">$780,500</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;">
+                <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Returns</div>
+                <div style="font-size:14px;font-weight:700;color:#5eead4;margin-top:4px;">+$66,730</div>
+              </div>
+            </div>
+            <!-- Mini chart -->
+            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:10px;">
+              <svg viewBox="0 0 200 40" style="width:100%;height:40px;">
+                <defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14b8a6" stop-opacity="0.25"/><stop offset="1" stop-color="#14b8a6" stop-opacity="0"/></linearGradient></defs>
+                <path d="M0,35 C15,33 30,30 50,28 C70,26 85,22 100,18 C115,14 130,16 150,12 C170,8 185,5 200,3 L200,40 L0,40Z" fill="url(#g2)"/>
+                <path d="M0,35 C15,33 30,30 50,28 C70,26 85,22 100,18 C115,14 130,16 150,12 C170,8 185,5 200,3" fill="none" stroke="#14b8a6" stroke-width="2"/>
+                <circle cx="200" cy="3" r="3" fill="#14b8a6"/>
+              </svg>
+            </div>
+            <!-- Accounts -->
+            <div style="display:flex;gap:6px;">
+              <div style="flex:1;background:rgba(20,184,166,0.06);border:1px solid rgba(20,184,166,0.1);border-radius:8px;padding:8px;">
+                <div style="font-size:8px;color:#5eead4;font-weight:600;">TFSA</div>
+                <div style="font-size:11px;color:#e2e8f0;font-weight:600;margin-top:2px;">$312,400</div>
+              </div>
+              <div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px;">
+                <div style="font-size:8px;color:#94a3b8;font-weight:600;">RRSP</div>
+                <div style="font-size:11px;color:#e2e8f0;font-weight:600;margin-top:2px;">$289,100</div>
+              </div>
+              <div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px;">
+                <div style="font-size:8px;color:#94a3b8;font-weight:600;">Margin</div>
+                <div style="font-size:11px;color:#e2e8f0;font-weight:600;margin-top:2px;">$245,730</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Obsidian Teal</h3>
+      <p><strong>Font:</strong> Outfit — rounded, warm geometric sans<br>
+      <strong>Palette:</strong> Deep navy-black (#0c1222) with teal (#14b8a6) as the hero color. Gradient glow effects for emphasis.<br>
+      <strong>Nav:</strong> Slim icon rail with teal glow indicators + bottom tabs on mobile.<br>
+      <strong>Vibe:</strong> Premium fintech with personality. Teal gradients on key surfaces, ambient glow effects, welcoming greeting-based header. Robinhood's approachability + Stripe's polish.</p>
+    </div>
+  </div>
+
+  <!-- Approach C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)" style="border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;cursor:pointer;">
+    <div class="card-image" style="padding:0;">
+      <div style="background:linear-gradient(145deg, #0e1117 0%, #161b22 50%, #0e1117 100%);padding:32px;min-height:320px;">
+        <!-- Mockup: Carbon Mint -->
+        <div style="display:flex;gap:12px;height:100%;">
+          <!-- Sidebar -->
+          <div style="width:50px;background:#161b22;border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:14px;border:1px solid rgba(255,255,255,0.06);">
+            <div style="width:28px;height:28px;border-radius:8px;background:#21262d;display:flex;align-items:center;justify-content:center;font-size:12px;color:#7ee8c7;font-weight:700;border:1px solid rgba(126,232,199,0.2);">P</div>
+            <div style="width:24px;height:1px;background:rgba(255,255,255,0.06);"></div>
+            <div style="width:20px;height:20px;border-radius:6px;background:rgba(126,232,199,0.1);border:1px solid rgba(126,232,199,0.15);"></div>
+            <div style="width:20px;height:20px;border-radius:6px;background:#21262d;"></div>
+            <div style="width:20px;height:20px;border-radius:6px;background:#21262d;"></div>
+          </div>
+          <!-- Main -->
+          <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:16px;font-weight:600;color:#e6edf3;font-family:'Geist',sans-serif;letter-spacing:-0.3px;">Overview</div>
+              <div style="display:flex;gap:6px;">
+                <div style="padding:4px 10px;border-radius:6px;background:#21262d;border:1px solid rgba(255,255,255,0.06);font-size:9px;color:#7ee8c7;font-weight:500;">Today</div>
+                <div style="padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);font-size:9px;color:#8b949e;">1W</div>
+              </div>
+            </div>
+            <!-- Value row -->
+            <div style="display:flex;align-items:baseline;gap:10px;">
+              <span style="font-size:26px;font-weight:700;color:#e6edf3;font-family:'Geist',sans-serif;letter-spacing:-0.5px;">$847,230</span>
+              <span style="font-size:11px;color:#7ee8c7;font-weight:500;">+$3,120 (0.37%)</span>
+            </div>
+            <!-- Chart -->
+            <div style="flex:1;min-height:70px;position:relative;">
+              <svg viewBox="0 0 200 60" style="width:100%;height:60px;">
+                <defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ee8c7" stop-opacity="0.15"/><stop offset="1" stop-color="#7ee8c7" stop-opacity="0"/></linearGradient></defs>
+                <path d="M0,50 C10,48 25,45 40,40 C55,35 70,32 85,28 C100,24 115,20 130,22 C145,24 155,18 170,14 C185,10 195,6 200,4 L200,60 L0,60Z" fill="url(#g3)"/>
+                <path d="M0,50 C10,48 25,45 40,40 C55,35 70,32 85,28 C100,24 115,20 130,22 C145,24 155,18 170,14 C185,10 195,6 200,4" fill="none" stroke="#7ee8c7" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <!-- Positions Grid -->
+            <div style="background:#161b22;border:1px solid rgba(255,255,255,0.06);border-radius:10px;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:6px 10px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.04);">
+                <span style="font-size:8px;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Symbol</span>
+                <span style="font-size:8px;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;text-align:right;">Price</span>
+                <span style="font-size:8px;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;text-align:right;">Change</span>
+                <span style="font-size:8px;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;text-align:right;">Weight</span>
+              </div>
+              <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.03);">
+                <span style="font-size:10px;color:#e6edf3;font-weight:600;font-family:'Geist Mono',monospace;">VFV.TO</span>
+                <span style="font-size:10px;color:#e6edf3;text-align:right;font-family:'Geist Mono',monospace;">$112.40</span>
+                <span style="font-size:10px;color:#7ee8c7;text-align:right;font-family:'Geist Mono',monospace;">+2.1%</span>
+                <span style="font-size:10px;color:#8b949e;text-align:right;">32%</span>
+              </div>
+              <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.03);">
+                <span style="font-size:10px;color:#e6edf3;font-weight:600;font-family:'Geist Mono',monospace;">XQQ.TO</span>
+                <span style="font-size:10px;color:#e6edf3;text-align:right;font-family:'Geist Mono',monospace;">$38.92</span>
+                <span style="font-size:10px;color:#7ee8c7;text-align:right;font-family:'Geist Mono',monospace;">+1.8%</span>
+                <span style="font-size:10px;color:#8b949e;text-align:right;">24%</span>
+              </div>
+              <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:7px 10px;">
+                <span style="font-size:10px;color:#e6edf3;font-weight:600;font-family:'Geist Mono',monospace;">ZAG.TO</span>
+                <span style="font-size:10px;color:#e6edf3;text-align:right;font-family:'Geist Mono',monospace;">$14.55</span>
+                <span style="font-size:10px;color:#f87171;text-align:right;font-family:'Geist Mono',monospace;">-0.4%</span>
+                <span style="font-size:10px;color:#8b949e;text-align:right;">18%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Carbon Mint</h3>
+      <p><strong>Font:</strong> Geist + Geist Mono — Vercel's typeface, crisp and developer-grade<br>
+      <strong>Palette:</strong> GitHub-dark carbon (#0e1117) with mint green (#7ee8c7) accents. Monochrome surfaces, data-forward.<br>
+      <strong>Nav:</strong> Carbon sidebar rail with subtle mint active states + bottom tabs on mobile.<br>
+      <strong>Vibe:</strong> Developer-grade precision. Monospace numbers, tight data grids, minimal ornamentation. Linear meets Bloomberg. Best data density of the three, still modern.</p>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);">
+  <h3 style="margin:0 0 8px 0;font-size:14px;">Comparison Summary</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+      <td style="padding:6px 8px;color:#94a3b8;font-weight:600;">Trait</td>
+      <td style="padding:6px 8px;color:#10b981;font-weight:600;">A. Verdant Dark</td>
+      <td style="padding:6px 8px;color:#14b8a6;font-weight:600;">B. Obsidian Teal</td>
+      <td style="padding:6px 8px;color:#7ee8c7;font-weight:600;">C. Carbon Mint</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 8px;color:#94a3b8;">Data density</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">Medium</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">Low-Medium</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">High</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 8px;color:#94a3b8;">Approachability</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">High</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">Highest</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">Medium</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 8px;color:#94a3b8;">Uniqueness</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">Medium</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">High</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">High</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 8px;color:#94a3b8;">Best for</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">Clean + balanced</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">Premium feel</td>
+      <td style="padding:6px 8px;color:#cbd5e1;">Power users</td>
+    </tr>
+  </table>
+</div>

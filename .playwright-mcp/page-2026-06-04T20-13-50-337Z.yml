@@ -1,0 +1,106 @@
+- generic [ref=e23]:
+  - complementary [ref=e24]:
+    - navigation "Main navigation" [ref=e25]:
+      - generic [ref=e26]: P
+      - button "Portfolio" [ref=e27] [cursor=pointer]:
+        - img [ref=e28]
+      - button "Wheel" [ref=e33] [cursor=pointer]:
+        - img [ref=e34]
+      - button "Connections" [ref=e38] [cursor=pointer]:
+        - img [ref=e39]
+      - 'generic "IBKR Gateway: connecting" [ref=e42]':
+        - generic [ref=e44]: IBKR...
+      - button "Toggle theme" [ref=e45] [cursor=pointer]:
+        - img [ref=e46]
+      - button "Admin settings" [ref=e52] [cursor=pointer]:
+        - img [ref=e53]
+      - button "User profile" [ref=e56] [cursor=pointer]: S
+  - main [ref=e58]:
+    - generic [ref=e59]:
+      - generic [ref=e61]:
+        - button "All Accounts" [ref=e62] [cursor=pointer]
+        - button "Q LIRA ••9683" [ref=e63] [cursor=pointer]:
+          - generic [ref=e64]: Q
+          - generic [ref=e65]: LIRA
+          - generic [ref=e66]: ••9683
+        - button "Q RRSP ••8214" [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]: Q
+          - generic [ref=e69]: RRSP
+          - generic [ref=e70]: ••8214
+        - button "Q MARGIN ••4150" [ref=e71] [cursor=pointer]:
+          - generic [ref=e72]: Q
+          - generic [ref=e73]: MARGIN
+          - generic [ref=e74]: ••4150
+        - button "Q RRSP ••2736" [ref=e75] [cursor=pointer]:
+          - generic [ref=e76]: Q
+          - generic [ref=e77]: RRSP
+          - generic [ref=e78]: ••2736
+        - button "Q TFSA ••0190" [ref=e79] [cursor=pointer]:
+          - generic [ref=e80]: Q
+          - generic [ref=e81]: TFSA
+          - generic [ref=e82]: ••0190
+      - heading "Wheel Strategy" [level=1] [ref=e84]
+      - generic [ref=e86]:
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]: Capital Available
+              - img [ref=e91]
+            - generic [ref=e94]: C$ 95,889
+            - generic [ref=e96]:
+              - generic [ref=e97]: C$
+              - generic [ref=e98]: 95,889.00
+            - generic [ref=e99]:
+              - generic [ref=e100]: US$
+              - generic [ref=e101]: "0.00"
+          - generic [ref=e102]:
+            - generic [ref=e103]:
+              - generic [ref=e104]: Capital Deployed
+              - img [ref=e105]
+            - generic [ref=e107]: US$41,750.00
+            - generic [ref=e109]:
+              - generic [ref=e110]: CSP
+              - generic [ref=e111]: US$41,750.00
+            - generic [ref=e112]:
+              - generic [ref=e113]: CC
+              - generic [ref=e114]: US$4,800.00
+          - generic [ref=e115]:
+            - generic [ref=e116]:
+              - generic [ref=e117]: CC Available
+              - img [ref=e118]
+            - generic [ref=e120]: 18 contracts
+            - generic [ref=e122]:
+              - generic [ref=e123]: QQU.TO
+              - generic [ref=e124]: "6"
+            - generic [ref=e125]:
+              - generic [ref=e126]: SPXU.TO
+              - generic [ref=e127]: "5"
+            - generic [ref=e128]:
+              - generic [ref=e129]: TQQQ
+              - generic [ref=e130]: "1"
+          - generic [ref=e131]:
+            - generic [ref=e132]:
+              - generic [ref=e133]: Premium & P&L
+              - img [ref=e134]
+            - generic [ref=e136]: "-US$1,952.00"
+            - generic [ref=e138]:
+              - generic [ref=e139]: Premium
+              - generic [ref=e140]: +US$630.00
+            - generic [ref=e141]:
+              - generic [ref=e142]: Unrealized
+              - generic [ref=e143]: "-US$1,952.00"
+          - generic [ref=e144]:
+            - generic [ref=e145]:
+              - generic [ref=e146]: Positions
+              - img [ref=e147]
+            - generic [ref=e151]: "5"
+            - generic [ref=e153]:
+              - generic [ref=e154]: CSP
+              - generic [ref=e155]: "4"
+            - generic [ref=e156]:
+              - generic [ref=e157]: CC
+              - generic [ref=e158]: "1"
+            - generic [ref=e159]:
+              - generic [ref=e160]: Expiring
+              - generic [ref=e161]: "0"
+        - generic [ref=e162]: Loading positions...

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wheel Strategy — Screen 1 Design</title>
+<style>
+  :root {
+    --bg-primary: #0c1220;
+    --bg-secondary: #111a2e;
+    --border: rgba(255,255,255,0.06);
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #10b981;
+    --accent-subtle: rgba(16,185,129,0.08);
+    --accent-border: rgba(16,185,129,0.2);
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius-md: 10px;
+    --transition-fast: 0.15s;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg-primary); color:var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+  .page { display:flex; height:100vh; }
+
+  /* Icon rail (simplified) */
+  .icon-rail { width:48px; background:var(--bg-secondary); border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; padding:12px 0; gap:4px; flex-shrink:0; }
+  .icon-rail__logo { width:28px; height:28px; border-radius:8px; background:rgba(16,185,129,0.15); color:#10b981; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; margin-bottom:12px; }
+  .icon-rail__btn { width:36px; height:36px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .icon-rail__btn--active { background:rgba(16,185,129,0.12); color:#10b981; }
+  .icon-rail__spacer { flex:1; }
+  .icon-rail__avatar { width:28px; height:28px; border-radius:50%; background:rgba(16,185,129,0.15); color:#10b981; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; }
+
+  /* Main content */
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* Account nav bar (exact match) */
+  .account-nav { display:flex; gap:6px; padding:10px 24px 0; flex-wrap:wrap; }
+  .account-pill { padding:5px 14px; border-radius:16px; border:1px solid var(--border); background:rgba(255,255,255,0.03); color:var(--text-secondary); font-size:11px; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:500; }
+  .account-pill--active { background:rgba(16,185,129,0.12); border-color:rgba(16,185,129,0.25); color:#6ee7b7; }
+  .account-pill__icon { width:16px; height:16px; border-radius:4px; background:#1a5c3a; color:#4ade80; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:700; }
+
+  /* Page content */
+  .content { padding:0 24px; flex:1; overflow-y:auto; }
+
+  /* Header */
+  .page-header { display:flex; align-items:center; justify-content:space-between; padding:8px 0 16px; }
+  .page-title { font-size:22px; font-weight:700; color:var(--text-primary); }
+
+  /* KPI row — matching dashboard exactly */
+  .kpi-row { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:16px; }
+  .kpi-card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .kpi-card__header { display:flex; align-items:center; justify-content:space-between; }
+  .kpi-card__label { font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); font-weight:500; }
+  .kpi-card__icon { color:var(--text-secondary); font-size:14px; }
+  .kpi-card__value { font-size:18px; font-weight:700; font-family:var(--font-mono); color:var(--text-primary); margin-top:8px; }
+  .kpi-card__value--positive { color:#6ee7b7; }
+  .kpi-card__value--negative { color:#f87171; }
+  .kpi-card__divider { height:1px; background:var(--border); margin:8px 0; }
+  .kpi-card__breakdown { display:flex; justify-content:space-between; padding:2px 0; }
+  .kpi-card__breakdown-label { font-size:10px; color:var(--text-muted); }
+  .kpi-card__breakdown-value { font-size:11px; font-family:var(--font-mono); color:var(--text-secondary); }
+
+  /* Timeline navigation */
+  .timeline-nav { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .timeline-btn { background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; color:var(--text-primary); padding:5px 12px; cursor:pointer; font-size:14px; transition: border-color var(--transition-fast); }
+  .timeline-btn:hover { border-color:rgba(255,255,255,0.15); }
+  .timeline-range { flex:1; text-align:center; font-size:11px; color:var(--text-secondary); letter-spacing:0.5px; text-transform:uppercase; }
+  .timeline-today { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:6px; color:#6ee7b7; padding:4px 12px; cursor:pointer; font-size:11px; font-weight:500; }
+
+  /* Grid */
+  .grid-wrapper { background:var(--bg-secondary); border:1px solid var(--border); border-radius:10px; overflow:hidden; flex:1; display:flex; flex-direction:column; }
+  .grid-table { width:100%; border-collapse:collapse; }
+  .grid-table thead th { padding:10px 12px; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); font-weight:500; border-bottom:1px solid var(--border); }
+  .grid-table thead th.expiry-col { text-align:center; min-width:170px; }
+  .grid-table thead th.ticker-col { text-align:left; width:140px; position:sticky; left:0; background:var(--bg-secondary); z-index:1; }
+  .grid-table thead .expiry-date { font-size:13px; font-weight:600; color:var(--text-primary); text-transform:none; letter-spacing:0; }
+  .grid-table thead .expiry-meta { display:flex; align-items:center; justify-content:center; gap:4px; margin-top:2px; }
+  .grid-table thead .monthly-badge { background:rgba(99,102,241,0.2); color:#a78bfa; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:500; }
+
+  .grid-table tbody td { padding:6px 8px; vertical-align:top; border-bottom:1px solid rgba(255,255,255,0.03); }
+  .grid-table tbody td.ticker-cell { padding:10px 14px; position:sticky; left:0; background:var(--bg-secondary); z-index:1; }
+  .ticker-name { font-size:15px; font-weight:700; color:var(--text-primary); }
+  .ticker-price { font-size:10px; color:var(--text-secondary); font-family:var(--font-mono); }
+  .ticker-summary { font-size:10px; margin-top:2px; }
+  .ticker-summary--positive { color:#6ee7b7; }
+  .ticker-summary--negative { color:#f87171; }
+  .ticker-summary--neutral { color:var(--text-muted); }
+
+  /* DTE badges */
+  .dte-badge { padding:1px 6px; border-radius:3px; font-size:10px; font-weight:600; }
+  .dte-badge--critical { background:rgba(239,68,68,0.25); color:#f87171; }
+  .dte-badge--warning { background:rgba(234,179,8,0.2); color:#eab308; }
+  .dte-badge--safe { background:rgba(34,197,94,0.2); color:#22c55e; }
+
+  /* Expiring column tint */
+  .col-expiring { background:rgba(239,68,68,0.03); }
+
+  /* Position cards */
+  .pos-card { border-radius:6px; padding:8px 10px; cursor:pointer; transition: border-color var(--transition-fast), transform var(--transition-fast); }
+  .pos-card:hover { transform:translateY(-1px); }
+  .pos-card--csp { background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.18); }
+  .pos-card--csp:hover { border-color:rgba(99,102,241,0.35); }
+  .pos-card--cc { background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.18); }
+  .pos-card--cc:hover { border-color:rgba(249,115,22,0.35); }
+  .pos-card__row { display:flex; justify-content:space-between; align-items:center; }
+  .pos-card__row + .pos-card__row { margin-top:4px; }
+  .pos-card__strike { font-weight:600; font-family:var(--font-mono); font-size:12px; }
+  .pos-card__strike--csp { color:#a78bfa; }
+  .pos-card__strike--cc { color:#fb923c; }
+  .pos-card__otm { color:var(--text-muted); font-size:10px; }
+  .pos-card__prem { color:var(--text-muted); font-size:10px; }
+  .pos-card__pnl { font-family:var(--font-mono); font-size:11px; }
+  .pos-card__pnl--positive { color:#6ee7b7; }
+  .pos-card__pnl--negative { color:#f87171; }
+
+  /* Empty slot */
+  .empty-slot { display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px; transition: border-color var(--transition-fast), color var(--transition-fast); }
+  .empty-slot:hover { border-color:rgba(99,102,241,0.3); color:#a78bfa; }
+
+  /* Add ticker row */
+  .add-ticker { display:flex; align-items:center; justify-content:center; border-top:1px solid var(--border); padding:10px; cursor:pointer; color:var(--text-muted); font-size:12px; transition: color var(--transition-fast); }
+  .add-ticker:hover { color:#a78bfa; }
+
+  /* Legend */
+  .legend { display:flex; gap:16px; padding:8px 0; font-size:10px; color:var(--text-muted); }
+  .legend__item { display:flex; align-items:center; gap:4px; }
+  .legend__dot { width:8px; height:8px; border-radius:2px; }
+  .legend__dot--csp { background:rgba(99,102,241,0.4); }
+  .legend__dot--cc { background:rgba(249,115,22,0.4); }
+  .legend__dot--expiring { background:rgba(239,68,68,0.4); }
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Icon Rail -->
+  <nav class="icon-rail">
+    <div class="icon-rail__logo">P</div>
+    <button class="icon-rail__btn" title="Portfolio">&#9633;</button>
+    <button class="icon-rail__btn icon-rail__btn--active" title="Wheel">&#9678;</button>
+    <button class="icon-rail__btn" title="Connections">&#128279;</button>
+    <div class="icon-rail__spacer"></div>
+    <button class="icon-rail__btn" title="Theme">&#9788;</button>
+    <button class="icon-rail__btn" title="Admin">&#9881;</button>
+    <div class="icon-rail__avatar">S</div>
+  </nav>
+
+  <div class="main">
+    <!-- Account NavBar (kept as-is) -->
+    <div class="account-nav">
+      <div class="account-pill account-pill--active">All Accounts</div>
+      <div class="account-pill"><span class="account-pill__icon">Q</span> LIRA ••9683</div>
+      <div class="account-pill"><span class="account-pill__icon">Q</span> RRSP ••8214</div>
+      <div class="account-pill"><span class="account-pill__icon">Q</span> MARGIN ••4150</div>
+      <div class="account-pill"><span class="account-pill__icon">Q</span> RRSP ••2736</div>
+      <div class="account-pill"><span class="account-pill__icon">Q</span> TFSA ••0190</div>
+    </div>
+
+    <div class="content">
+      <!-- Page header -->
+      <div class="page-header">
+        <h1 class="page-title">Wheel Strategy</h1>
+      </div>
+
+      <!-- KPI Cards — same 4-column grid as Dashboard -->
+      <div class="kpi-row">
+        <!-- Card 1: Capital Deployed -->
+        <div class="kpi-card">
+          <div class="kpi-card__header">
+            <span class="kpi-card__label">Capital Deployed</span>
+            <span class="kpi-card__icon">&#128176;</span>
+          </div>
+          <div class="kpi-card__value">US$ 53,250</div>
+          <div class="kpi-card__divider"></div>
+          <div class="kpi-card__breakdown">
+            <span class="kpi-card__breakdown-label">CSP</span>
+            <span class="kpi-card__breakdown-value">US$ 53,250</span>
+          </div>
+          <div class="kpi-card__breakdown">
+            <span class="kpi-card__breakdown-label">CC</span>
+            <span class="kpi-card__breakdown-value">US$ 4,800</span>
+          </div>
+        </div>
+
+        <!-- Card 2: Buying Power -->
+        <div class="kpi-card">
+          <div class="kpi-card__header">
+            <span class="kpi-card__label">Buying Power</span>
+            <span class="kpi-card__icon">&#128722;</span>
+          </div>
+          <div class="kpi-card__value">C$ 79,834</div>
+          <div class="kpi-card__divider"></div>
+          <div class="kpi-card__breakdown">
+            <span class="kpi-card__breakdown-label">C$</span>
+            <span class="kpi-card__breakdown-value">79,833.62</span>
+          </div>
+          <div class="kpi-card__breakdown">
+            <span class="kpi-card__breakdown-label">US$</span>
+            <span class="kpi-card__breakdown-value">33,108.50</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Premium & P&L -->
+        <div class="kpi-card">
+          <div class="kpi-card__header">
+            <span class="kpi-card__label">Premium & P&L</span>
+            <span class="kpi-card__icon">$</span>
+          </div>
+          <div class="kpi-card__value kpi-card__value--negative">-US$ 1,386</div>
+          <div class="kpi-card__divider"></div>
+          <div class="kpi-card__breakdown">
+            <span class="kpi-card__breakdown-label">Premium Collected</span>
+            <span class="kpi-card__breakdown-value" style="color:#6ee7b7;">+US$ 2,675</span>
+          </div>
+          <div class="kpi-card__breakdown">
+            <span class="kpi-card__breakdown-label">Unrealized P&L</span>
+            <span class="kpi-card__breakdown-value" style="color:#f87171;">-US$ 1,386</span>
+          </div>
+        </div>
+
+        <!-- Card 4: Positions Summary -->
+        <div class="kpi-card">
+          <div class="kpi-card__header">
+            <span class="kpi-card__label">Positions</span>
+            <span class="kpi-card__icon">&#9673;</span>
+          </div>
+          <div class="kpi-card__value">7</div>
+          <div class="kpi-card__divider"></div>
+          <div class="kpi-card__breakdown">
+            <span class="kpi-card__breakdown-label">Cash-Secured Puts</span>
+            <span class="kpi-card__breakdown-value">6</span>
+          </div>
+          <div class="kpi-card__breakdown">
+            <span class="kpi-card__breakdown-label">Covered Calls</span>
+            <span class="kpi-card__breakdown-value">1</span>
+          </div>
+          <div class="kpi-card__breakdown">
+            <span class="kpi-card__breakdown-label">Expiring This Week</span>
+            <span class="kpi-card__breakdown-value" style="color:#f87171;">2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Navigation -->
+      <div class="timeline-nav">
+        <button class="timeline-btn">&#8592;</button>
+        <div class="timeline-range">May 29 — Jun 19, 2026</div>
+        <button class="timeline-btn">&#8594;</button>
+        <button class="timeline-today">Today</button>
+      </div>
+
+      <!-- Grid -->
+      <div class="grid-wrapper">
+        <table class="grid-table">
+          <thead>
+            <tr>
+              <th class="ticker-col">Ticker</th>
+              <th class="expiry-col" style="background:rgba(239,68,68,0.04);">
+                <div class="expiry-date">May 29</div>
+                <div class="expiry-meta">
+                  <span class="dte-badge dte-badge--critical">0d</span>
+                  <span style="font-size:10px; color:#64748b;">Fri</span>
+                </div>
+              </th>
+              <th class="expiry-col">
+                <div class="expiry-date">Jun 5</div>
+                <div class="expiry-meta">
+                  <span class="dte-badge dte-badge--warning">7d</span>
+                  <span style="font-size:10px; color:#64748b;">Fri</span>
+                </div>
+              </th>
+              <th class="expiry-col">
+                <div class="expiry-date">Jun 12</div>
+                <div class="expiry-meta">
+                  <span class="dte-badge dte-badge--safe">14d</span>
+                  <span style="font-size:10px; color:#64748b;">Fri</span>
+                </div>
+              </th>
+              <th class="expiry-col">
+                <div class="expiry-date">Jun 19 <span class="monthly-badge">Monthly</span></div>
+                <div class="expiry-meta">
+                  <span class="dte-badge dte-badge--safe">21d</span>
+                  <span style="font-size:10px; color:#64748b;">Fri</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- SOXL -->
+            <tr>
+              <td class="ticker-cell">
+                <div class="ticker-name">SOXL</div>
+                <div class="ticker-price">$676.00</div>
+                <div class="ticker-summary ticker-summary--positive">3 pos · +$1,414</div>
+              </td>
+              <td class="col-expiring">
+                <div class="pos-card pos-card--csp">
+                  <div class="pos-card__row">
+                    <span class="pos-card__strike pos-card__strike--csp">$70 Put</span>
+                    <span class="pos-card__otm">89.6%</span>
+                  </div>
+                  <div class="pos-card__row">
+                    <span class="pos-card__prem">prem $290</span>
+                    <span class="pos-card__pnl pos-card__pnl--positive">+$289</span>
+                  </div>
+                </div>
+              </td>
+              <td><div class="empty-slot">+</div></td>
+              <td><div class="empty-slot">+</div></td>
+              <td>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <div class="pos-card pos-card--csp">
+                    <div class="pos-card__row">
+                      <span class="pos-card__strike pos-card__strike--csp">$100 Put</span>
+                      <span class="pos-card__otm">85.2%</span>
+                    </div>
+                    <div class="pos-card__row">
+                      <span class="pos-card__prem">prem $500</span>
+                      <span class="pos-card__pnl pos-card__pnl--positive">+$382</span>
+                    </div>
+                  </div>
+                  <div class="pos-card pos-card--csp">
+                    <div class="pos-card__row">
+                      <span class="pos-card__strike pos-card__strike--csp">$120 Put</span>
+                      <span class="pos-card__otm">82.2%</span>
+                    </div>
+                    <div class="pos-card__row">
+                      <span class="pos-card__prem">prem $960</span>
+                      <span class="pos-card__pnl pos-card__pnl--positive">+$743</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <!-- TECL -->
+            <tr>
+              <td class="ticker-cell">
+                <div class="ticker-name">TECL</div>
+                <div class="ticker-price">$256.00</div>
+                <div class="ticker-summary ticker-summary--positive">1 pos · +$344</div>
+              </td>
+              <td class="col-expiring"><div class="empty-slot">+</div></td>
+              <td><div class="empty-slot">+</div></td>
+              <td><div class="empty-slot">+</div></td>
+              <td>
+                <div class="pos-card pos-card--cc">
+                  <div class="pos-card__row">
+                    <span class="pos-card__strike pos-card__strike--cc">$140 CC</span>
+                    <span class="pos-card__otm">45.3%</span>
+                  </div>
+                  <div class="pos-card__row">
+                    <span class="pos-card__prem">prem $440</span>
+                    <span class="pos-card__pnl pos-card__pnl--positive">+$344</span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <!-- TQQQ -->
+            <tr>
+              <td class="ticker-cell">
+                <div class="ticker-name">TQQQ</div>
+                <div class="ticker-price">$827.00</div>
+                <div class="ticker-summary ticker-summary--negative">3 pos · -$3,144</div>
+              </td>
+              <td class="col-expiring">
+                <div class="pos-card pos-card--csp">
+                  <div class="pos-card__row">
+                    <span class="pos-card__strike pos-card__strike--csp">$45 Put</span>
+                    <span class="pos-card__otm">94.6%</span>
+                  </div>
+                  <div class="pos-card__row">
+                    <span class="pos-card__prem">prem $125</span>
+                    <span class="pos-card__pnl pos-card__pnl--positive">+$124</span>
+                  </div>
+                </div>
+              </td>
+              <td><div class="empty-slot">+</div></td>
+              <td><div class="empty-slot">+</div></td>
+              <td>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <div class="pos-card pos-card--csp">
+                    <div class="pos-card__row">
+                      <span class="pos-card__strike pos-card__strike--csp">$57.50 Put</span>
+                      <span class="pos-card__otm">93.0%</span>
+                    </div>
+                    <div class="pos-card__row">
+                      <span class="pos-card__prem">prem $130</span>
+                      <span class="pos-card__pnl pos-card__pnl--positive">+$94</span>
+                    </div>
+                  </div>
+                  <div class="pos-card pos-card--cc">
+                    <div class="pos-card__row">
+                      <span class="pos-card__strike pos-card__strike--cc">$48 CC</span>
+                      <span class="pos-card__otm">94.2%</span>
+                    </div>
+                    <div class="pos-card__row">
+                      <span class="pos-card__prem">prem $230</span>
+                      <span class="pos-card__pnl pos-card__pnl--negative">-$3,362</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <!-- UPRO -->
+            <tr>
+              <td class="ticker-cell">
+                <div class="ticker-name">UPRO</div>
+                <div class="ticker-price">$236.00</div>
+                <div class="ticker-summary ticker-summary--neutral">0 pos</div>
+              </td>
+              <td class="col-expiring"><div class="empty-slot">+</div></td>
+              <td><div class="empty-slot">+</div></td>
+              <td><div class="empty-slot">+</div></td>
+              <td><div class="empty-slot">+</div></td>
+            </tr>
+          </tbody>
+        </table>
+        <!-- Add Ticker -->
+        <div class="add-ticker">+ Add Ticker</div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <div class="legend__item"><span class="legend__dot legend__dot--csp"></span> Cash-Secured Put</div>
+        <div class="legend__item"><span class="legend__dot legend__dot--cc"></span> Covered Call</div>
+        <div class="legend__item"><span class="legend__dot legend__dot--expiring"></span> Expiring today</div>
+        <div class="legend__item"><span class="monthly-badge" style="font-size:9px;">Monthly</span> 3rd Friday</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

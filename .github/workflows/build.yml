@@ -27,24 +27,24 @@ jobs:
           cache-read-only: false
 
       - name: Test portfolio service
-        run: ./gradlew :portfolio:test
-        working-directory: backend
+        run: ./gradlew test
+        working-directory: backend/portfolio
 
       - name: Test ingestion service
-        run: ./gradlew :ingestion:test
-        working-directory: backend
+        run: ./gradlew test
+        working-directory: backend/ingestion
 
       - name: Test market-data service
-        run: ./gradlew :market-data:test
-        working-directory: backend
+        run: ./gradlew test
+        working-directory: backend/market-data
 
       - name: Test strategy service
-        run: ./gradlew :strategy:test
-        working-directory: backend
+        run: ./gradlew test
+        working-directory: backend/strategy
 
       - name: Test broker-gateway service
-        run: ./gradlew :broker-gateway:test
-        working-directory: backend
+        run: ./gradlew test
+        working-directory: backend/broker-gateway
 
   test-frontend:
     name: Frontend Tests

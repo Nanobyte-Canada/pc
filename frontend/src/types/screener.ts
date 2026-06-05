@@ -40,17 +40,17 @@ export interface InstrumentDetail {
   isin: string | null;
   currency: string | null;
   country: string | null;
-  general: Record<string, any> | null;
-  highlights: Record<string, any> | null;
-  valuation: Record<string, any> | null;
-  technicals: Record<string, any> | null;
-  financials: Record<string, any> | null;
-  earnings: Record<string, any> | null;
-  splitsDividends: Record<string, any> | null;
-  sharesStats: Record<string, any> | null;
-  analystRatings: Record<string, any> | null;
-  etfData: Record<string, any> | null;
-  mutualFundData: Record<string, any> | null;
+  general: Record<string, unknown> | null;
+  highlights: Record<string, unknown> | null;
+  valuation: Record<string, unknown> | null;
+  technicals: Record<string, unknown> | null;
+  financials: Record<string, unknown> | null;
+  earnings: Record<string, unknown> | null;
+  splitsDividends: Record<string, unknown> | null;
+  sharesStats: Record<string, unknown> | null;
+  analystRatings: Record<string, unknown> | null;
+  etfData: Record<string, unknown> | null;
+  mutualFundData: Record<string, unknown> | null;
 }
 
 export interface ScreenerFilter {

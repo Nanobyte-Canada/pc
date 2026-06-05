@@ -1,0 +1,54 @@
+- generic [ref=e7]:
+  - main [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - heading "Wheel Strategy" [level=1] [ref=e12]
+          - generic [ref=e13]:
+            - generic [ref=e14]: CSP
+            - generic [ref=e16]: CC
+            - generic [ref=e18]: Open
+        - button "Add position" [ref=e21] [cursor=pointer]:
+          - img [ref=e22]
+      - combobox [ref=e24] [cursor=pointer]:
+        - option "All Accounts" [selected]
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]: Available Cash
+          - generic [ref=e28]:
+            - generic [ref=e29]: C$
+            - generic [ref=e30]: $0.00
+            - generic [ref=e32]: US$
+            - generic [ref=e33]: US$0.00
+        - generic [ref=e34]:
+          - generic [ref=e35]: CSP Deployed
+          - generic [ref=e36]: US$0.00
+          - generic [ref=e37]: $0.00
+        - generic [ref=e38]:
+          - generic [ref=e39]: CCs Written
+          - generic [ref=e40]: US$0.00
+          - generic [ref=e41]: $0.00
+        - generic [ref=e42]:
+          - generic [ref=e43]: Premium
+          - generic [ref=e44]: +US$0.00
+          - generic [ref=e45]: +$0.00
+        - generic [ref=e46]:
+          - generic [ref=e47]: Unrealized P&L
+          - generic [ref=e48]: +US$0.00
+          - generic [ref=e49]: +$0.00
+  - navigation "Tab navigation" [ref=e50]:
+    - button "Home" [ref=e51] [cursor=pointer]:
+      - img [ref=e52]
+      - generic [ref=e57]: Home
+    - button "Accounts" [ref=e58] [cursor=pointer]:
+      - img [ref=e59]
+      - generic [ref=e63]: Accounts
+    - button "Screener" [ref=e64] [cursor=pointer]:
+      - img [ref=e65]
+      - generic [ref=e68]: Screener
+    - button "Options" [ref=e69] [cursor=pointer]:
+      - img [ref=e70]
+      - generic [ref=e73]: Options
+    - button "More" [ref=e74] [cursor=pointer]:
+      - img [ref=e75]
+      - generic [ref=e76]: More

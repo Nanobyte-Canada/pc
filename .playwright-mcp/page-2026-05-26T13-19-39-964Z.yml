@@ -1,0 +1,117 @@
+- generic [ref=e7]:
+  - main [ref=e8]:
+    - generic [ref=e9]:
+      - heading "Broker Connections" [level=1] [ref=e11]
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - heading "Available Brokers" [level=2] [ref=e14]
+          - generic [ref=e15]:
+            - button "Card view" [ref=e16] [cursor=pointer]:
+              - img [ref=e17]
+            - button "Matrix view" [ref=e22] [cursor=pointer]:
+              - img [ref=e23]
+        - generic [ref=e25]:
+          - button "IB IBKR" [ref=e26] [cursor=pointer]:
+            - generic [ref=e27]: IB
+            - generic [ref=e28]: IBKR
+          - button "Q QUESTRADE Reconnect" [ref=e29] [cursor=pointer]:
+            - generic [ref=e30]: Q
+            - generic [ref=e31]: QUESTRADE
+            - generic [ref=e32]: Reconnect
+          - button "W WEALTHSIMPLE" [ref=e33] [cursor=pointer]:
+            - generic [ref=e34]: W
+            - generic [ref=e35]: WEALTHSIMPLE
+      - generic [ref=e36]:
+        - heading "Connected Accounts" [level=2] [ref=e38]
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - generic [ref=e42]: Q
+              - generic [ref=e43]:
+                - generic [ref=e45]: LIRA
+                - generic [ref=e46]:
+                  - generic [ref=e47]: ••9683
+                  - generic [ref=e50]: 10 hours ago
+                  - generic [ref=e52]: 2 positions
+                - generic [ref=e53]: Connection validation failed
+            - generic [ref=e55]: $45,762.70
+            - generic [ref=e56]:
+              - button "Reconnect" [ref=e57] [cursor=pointer]
+              - button "More actions" [ref=e59] [cursor=pointer]:
+                - img [ref=e60]
+          - generic [ref=e64]:
+            - generic [ref=e65]:
+              - generic [ref=e66]: Q
+              - generic [ref=e67]:
+                - generic [ref=e69]: RRSP
+                - generic [ref=e70]:
+                  - generic [ref=e71]: ••8214
+                  - generic [ref=e74]: 10 hours ago
+                  - generic [ref=e76]: 3 positions
+                - generic [ref=e77]: Connection validation failed
+            - generic [ref=e79]: $40,276.60
+            - generic [ref=e80]:
+              - button "Reconnect" [ref=e81] [cursor=pointer]
+              - button "More actions" [ref=e83] [cursor=pointer]:
+                - img [ref=e84]
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]: Q
+              - generic [ref=e91]:
+                - generic [ref=e93]: MARGIN
+                - generic [ref=e94]:
+                  - generic [ref=e95]: ••4150
+                  - generic [ref=e98]: 10 hours ago
+                  - generic [ref=e100]: 1 position
+                - generic [ref=e101]: Connection validation failed
+            - generic [ref=e103]: $84.73
+            - generic [ref=e104]:
+              - button "Reconnect" [ref=e105] [cursor=pointer]
+              - button "More actions" [ref=e107] [cursor=pointer]:
+                - img [ref=e108]
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - generic [ref=e114]: Q
+              - generic [ref=e115]:
+                - generic [ref=e117]: RRSP
+                - generic [ref=e118]:
+                  - generic [ref=e119]: ••2736
+                  - generic [ref=e122]: 10 hours ago
+                  - generic [ref=e124]: 8 positions
+                - generic [ref=e125]: Connection validation failed
+            - generic [ref=e127]: $27,378.36
+            - generic [ref=e128]:
+              - button "Reconnect" [ref=e129] [cursor=pointer]
+              - button "More actions" [ref=e131] [cursor=pointer]:
+                - img [ref=e132]
+          - generic [ref=e136]:
+            - generic [ref=e137]:
+              - generic [ref=e138]: Q
+              - generic [ref=e139]:
+                - generic [ref=e141]: TFSA
+                - generic [ref=e142]:
+                  - generic [ref=e143]: ••0190
+                  - generic [ref=e146]: 10 hours ago
+                  - generic [ref=e148]: 8 positions
+                - generic [ref=e149]: Connection validation failed
+            - generic [ref=e151]: $126,419.40
+            - generic [ref=e152]:
+              - button "Reconnect" [ref=e153] [cursor=pointer]
+              - button "More actions" [ref=e155] [cursor=pointer]:
+                - img [ref=e156]
+  - navigation "Tab navigation" [ref=e160]:
+    - button "Home" [ref=e161] [cursor=pointer]:
+      - img [ref=e162]
+      - generic [ref=e167]: Home
+    - button "Accounts" [ref=e168] [cursor=pointer]:
+      - img [ref=e169]
+      - generic [ref=e173]: Accounts
+    - button "Screener" [ref=e174] [cursor=pointer]:
+      - img [ref=e175]
+      - generic [ref=e178]: Screener
+    - button "Options" [ref=e179] [cursor=pointer]:
+      - img [ref=e180]
+      - generic [ref=e183]: Options
+    - button "More" [ref=e184] [cursor=pointer]:
+      - img [ref=e185]
+      - generic [ref=e186]: More

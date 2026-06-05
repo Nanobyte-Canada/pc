@@ -21,7 +21,7 @@ export function CumulativeReturnChart({ portfolioReturns, benchmarkComparison }:
     }
   })
 
-  const series: any[] = [
+  const series = [
     {
       type: 'line' as const,
       xKey: 'date',

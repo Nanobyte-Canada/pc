@@ -1,0 +1,320 @@
+<h2>Admin Panel Screen</h2>
+<p class="subtitle">Ingestion stats, instrument types, workflows, and recent runs</p>
+
+<!-- Desktop -->
+<div class="section">
+  <h3>Desktop (1024px+)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Admin Panel — Desktop</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:580px;display:flex;font-family:'DM Sans',sans-serif;">
+        <!-- Rail -->
+        <div style="width:56px;background:#0f1520;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:4px;flex-shrink:0;">
+          <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;font-weight:700;margin-bottom:16px;">P</div>
+          <div style="width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+          <div style="width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+          <div style="flex:1;"></div>
+          <div style="width:40px;height:40px;border-radius:8px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;position:relative;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <div style="position:absolute;left:0;top:10px;bottom:10px;width:2px;border-radius:0 2px 2px 0;background:#10b981;"></div>
+          </div>
+          <div style="width:28px;height:28px;border-radius:9999px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:10px;color:white;font-weight:600;">SB</div>
+        </div>
+
+        <!-- Main -->
+        <div style="flex:1;padding:24px 28px;overflow:hidden;display:flex;flex-direction:column;gap:16px;">
+          <!-- Header -->
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:22px;font-weight:700;color:#e2e8f0;letter-spacing:-0.3px;">Admin Panel</div>
+              <div style="font-size:13px;color:#64748b;margin-top:2px;">Data ingestion and instrument management</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#64748b;">
+                <div style="width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+                Auto-refresh 10s
+              </div>
+              <div style="padding:7px 14px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);font-size:13px;color:#94a3b8;display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Refresh
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Stats (6 cards) -->
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;">
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Total Instruments</div>
+              <div style="font-size:22px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">12,847</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Enriched</div>
+              <div style="font-size:22px;font-weight:700;color:#6ee7b7;margin-top:6px;font-family:'JetBrains Mono',monospace;">11,203</div>
+              <div style="font-size:11px;color:#6ee7b7;margin-top:2px;">87.2% coverage</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Pending</div>
+              <div style="font-size:22px;font-weight:700;color:#fbbf24;margin-top:6px;font-family:'JetBrains Mono',monospace;">1,644</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Daily Quota</div>
+              <div style="font-size:22px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">342</div>
+              <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px;"><div style="height:100%;width:68%;background:#10b981;border-radius:2px;"></div></div>
+              <div style="font-size:10px;color:#64748b;margin-top:3px;">342 / 500 remaining</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Exchanges</div>
+              <div style="font-size:22px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">4</div>
+              <div style="font-size:10px;color:#64748b;margin-top:2px;">TSX, NYSE, NASDAQ, CBOE</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Last Run</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+                <div style="width:8px;height:8px;border-radius:50%;background:#10b981;"></div>
+                <span style="font-size:14px;color:#6ee7b7;font-weight:600;">Completed</span>
+              </div>
+              <div style="font-size:10px;color:#64748b;margin-top:2px;">23 min ago</div>
+            </div>
+          </div>
+
+          <!-- Instrument Types (6 columns) -->
+          <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;">
+            <div style="font-size:14px;color:#e2e8f0;font-weight:600;margin-bottom:12px;">By Instrument Type</div>
+            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;">
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:12px;color:#94a3b8;font-weight:500;">Stock</div>
+                <div style="font-size:16px;color:#e2e8f0;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:4px;">8,420</div>
+                <div style="font-size:10px;color:#6ee7b7;margin-top:2px;">7,892 enriched</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:12px;color:#94a3b8;font-weight:500;">ETF</div>
+                <div style="font-size:16px;color:#e2e8f0;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:4px;">2,156</div>
+                <div style="font-size:10px;color:#6ee7b7;margin-top:2px;">2,044 enriched</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:12px;color:#94a3b8;font-weight:500;">Mutual Fund</div>
+                <div style="font-size:16px;color:#e2e8f0;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:4px;">1,230</div>
+                <div style="font-size:10px;color:#6ee7b7;margin-top:2px;">890 enriched</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:12px;color:#94a3b8;font-weight:500;">Preferred</div>
+                <div style="font-size:16px;color:#e2e8f0;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:4px;">542</div>
+                <div style="font-size:10px;color:#6ee7b7;margin-top:2px;">310 enriched</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:12px;color:#94a3b8;font-weight:500;">Index</div>
+                <div style="font-size:16px;color:#e2e8f0;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:4px;">89</div>
+                <div style="font-size:10px;color:#6ee7b7;margin-top:2px;">67 enriched</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:12px;color:#94a3b8;font-weight:500;">Bond</div>
+                <div style="font-size:16px;color:#e2e8f0;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:4px;">410</div>
+                <div style="font-size:10px;color:#fbbf24;margin-top:2px;">0 enriched</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Workflows + Recent Runs -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <!-- Workflows -->
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;">
+              <div style="font-size:14px;color:#e2e8f0;font-weight:600;margin-bottom:12px;">Workflows</div>
+              <!-- Exchange Sync -->
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:14px;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div>
+                    <div style="font-size:13px;color:#e2e8f0;font-weight:600;">Exchange Sync</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px;">Sync instrument lists from exchanges</div>
+                  </div>
+                  <div style="padding:7px 14px;border-radius:6px;background:#10b981;font-size:12px;color:white;font-weight:600;cursor:pointer;">Run</div>
+                </div>
+              </div>
+              <!-- Full Ingestion -->
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div>
+                    <div style="font-size:13px;color:#e2e8f0;font-weight:600;">Full Ingestion</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px;">Enrich all pending instruments</div>
+                  </div>
+                  <div style="padding:7px 14px;border-radius:6px;background:#10b981;font-size:12px;color:white;font-weight:600;cursor:pointer;">Run</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Runs -->
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;">
+              <div style="font-size:14px;color:#e2e8f0;font-weight:600;margin-bottom:12px;">Recent Runs</div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.02);border-radius:6px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+                    <span style="font-size:12px;color:#e2e8f0;">Full Ingestion</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:11px;color:#64748b;">23 min ago</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.02);border-radius:6px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+                    <span style="font-size:12px;color:#e2e8f0;">Exchange Sync</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:11px;color:#64748b;">2 hrs ago</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.02);border-radius:6px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#f87171;"></div>
+                    <span style="font-size:12px;color:#e2e8f0;">Full Ingestion</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:11px;color:#f87171;">Failed</span>
+                    <span style="font-size:11px;color:#64748b;">Yesterday</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile -->
+<div class="section">
+  <h3>Mobile (&lt; 768px)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Admin Panel — Mobile</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:700px;display:flex;flex-direction:column;font-family:'DM Sans',sans-serif;max-width:320px;margin:0 auto;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+        <div style="height:44px;background:#0a0f1a;display:flex;align-items:center;justify-content:space-between;padding:0 20px;">
+          <span style="font-size:12px;color:#e2e8f0;font-weight:600;">9:41</span>
+          <div style="width:18px;height:9px;border-radius:2px;border:1px solid #e2e8f0;position:relative;"><div style="position:absolute;inset:1px;right:4px;background:#6ee7b7;border-radius:1px;"></div></div>
+        </div>
+
+        <div style="flex:1;padding:0 16px 16px;display:flex;flex-direction:column;gap:12px;">
+          <!-- Header -->
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:20px;font-weight:700;color:#e2e8f0;">Admin Panel</div>
+              <div style="display:flex;align-items:center;gap:4px;margin-top:2px;">
+                <div style="width:5px;height:5px;border-radius:50%;background:#10b981;"></div>
+                <span style="font-size:10px;color:#64748b;">Auto-refresh 10s</span>
+              </div>
+            </div>
+            <div style="padding:7px 12px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Refresh
+            </div>
+          </div>
+
+          <!-- Summary Stats 2x2 -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;">
+              <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;">Instruments</div>
+              <div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-top:3px;font-family:'JetBrains Mono',monospace;">12,847</div>
+              <div style="font-size:10px;color:#6ee7b7;margin-top:2px;">11,203 enriched (87%)</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;">
+              <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;">Pending</div>
+              <div style="font-size:18px;font-weight:700;color:#fbbf24;margin-top:3px;font-family:'JetBrains Mono',monospace;">1,644</div>
+              <div style="font-size:10px;color:#64748b;margin-top:2px;">Awaiting enrichment</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;">
+              <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;">Daily Quota</div>
+              <div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-top:3px;font-family:'JetBrains Mono',monospace;">342 / 500</div>
+              <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:4px;"><div style="height:100%;width:68%;background:#10b981;border-radius:2px;"></div></div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;">
+              <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;">Last Run</div>
+              <div style="display:flex;align-items:center;gap:4px;margin-top:5px;">
+                <div style="width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+                <span style="font-size:14px;color:#6ee7b7;font-weight:600;">Completed</span>
+              </div>
+              <div style="font-size:10px;color:#64748b;margin-top:2px;">23 min ago</div>
+            </div>
+          </div>
+
+          <!-- Workflows -->
+          <div style="font-size:14px;font-weight:600;color:#e2e8f0;">Workflows</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:13px;color:#e2e8f0;font-weight:600;">Exchange Sync</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px;">Sync from exchanges</div>
+              </div>
+              <div style="padding:7px 14px;border-radius:6px;background:#10b981;font-size:12px;color:white;font-weight:600;">Run</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:13px;color:#e2e8f0;font-weight:600;">Full Ingestion</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px;">Enrich pending instruments</div>
+              </div>
+              <div style="padding:7px 14px;border-radius:6px;background:#10b981;font-size:12px;color:white;font-weight:600;">Run</div>
+            </div>
+          </div>
+
+          <!-- Recent Runs -->
+          <div style="font-size:14px;font-weight:600;color:#e2e8f0;">Recent Runs</div>
+          <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;overflow:hidden;">
+            <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+                <div>
+                  <div style="font-size:12px;color:#e2e8f0;font-weight:500;">Full Ingestion</div>
+                  <div style="font-size:10px;color:#64748b;">23 min ago</div>
+                </div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+                <div>
+                  <div style="font-size:12px;color:#e2e8f0;font-weight:500;">Exchange Sync</div>
+                  <div style="font-size:10px;color:#64748b;">2 hrs ago</div>
+                </div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:6px;height:6px;border-radius:50%;background:#f87171;"></div>
+                <div>
+                  <div style="font-size:12px;color:#e2e8f0;font-weight:500;">Full Ingestion</div>
+                  <div style="font-size:10px;color:#f87171;">Failed · Yesterday</div>
+                </div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Tab Bar -->
+        <div style="height:64px;background:#0f1520;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-around;padding:0 8px;flex-shrink:0;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span style="font-size:9px;color:#64748b;">Home</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span style="font-size:9px;color:#64748b;">Accounts</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><span style="font-size:9px;color:#64748b;">Screener</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span style="font-size:9px;color:#64748b;">Options</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg><span style="font-size:9px;color:#64748b;">More</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;">
+  <h3 style="margin-top:0;font-size:14px;">Design Decisions</h3>
+  <ul style="font-size:13px;color:#cbd5e1;margin:0;padding-left:20px;line-height:1.8;">
+    <li><strong>Desktop:</strong> 6-column summary stats row (Total, Enriched, Pending, Quota with progress bar, Exchanges, Last Run). Instrument type breakdown in 6-column grid below. Workflows + Recent Runs side by side. Expandable run rows with chevron.</li>
+    <li><strong>Mobile:</strong> Summary condensed to 2x2 grid (merged Total + Enriched into one card). Workflows as stacked cards with Run buttons. Recent Runs as expandable list.</li>
+    <li><strong>Auto-refresh indicator:</strong> Green dot + "Auto-refresh 10s" in header. Manual Refresh button always visible.</li>
+    <li><strong>Run states:</strong> Green dot = completed, red dot = failed, amber spinning = in progress. Failed runs show "Failed" label in red.</li>
+    <li><strong>Admin accessed via "More" tab on mobile</strong> — only visible to ADMIN role users.</li>
+  </ul>
+</div>

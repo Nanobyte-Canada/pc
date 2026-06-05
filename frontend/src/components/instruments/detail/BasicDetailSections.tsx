@@ -23,7 +23,7 @@ export function BasicDetailSections({ data }: Props) {
                 <div className="detail-info-full">
                   <span className="detail-info-label">Officers</span>
                   <ul className="detail-officers-list">
-                    {data.general.Officers.map((officer: any, idx: number) => (
+                    {data.general.Officers.map((officer: { Name?: string; Title?: string }, idx: number) => (
                       <li key={idx}>
                         <strong>{officer.Name}</strong> - {officer.Title}
                       </li>

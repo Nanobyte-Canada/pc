@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Screen 2 — Options Quotes</title>
+<style>
+  :root {
+    --bg-primary: #0a0f1a;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #10b981;
+    --success-text: #6ee7b7;
+    --danger-text: #f87171;
+    --warning-text: #fbbf24;
+    --border: rgba(255,255,255,0.06);
+    --border-hover: rgba(255,255,255,0.1);
+    --csp: #6366f1;
+    --csp-bg: rgba(99,102,241,0.08);
+    --csp-border: rgba(99,102,241,0.3);
+    --cc: #f97316;
+    --cc-bg: rgba(249,115,22,0.08);
+    --cc-border: rgba(249,115,22,0.3);
+    --indigo-text: #818cf8;
+    --orange-text: #fb923c;
+    --font-mono: 'JetBrains Mono', 'source-code-pro', Menlo, Monaco, Consolas, monospace;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --transition-fast: 150ms ease-out;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#060a14; color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:16px; }
+  .layout { display:flex; gap:20px; align-items:flex-start; }
+  .viewport-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); text-align:center; margin-bottom:8px; font-weight:500; }
+
+  /* ===== DESKTOP ===== */
+  .desktop-frame { flex:1; max-width:1100px; background:var(--bg-primary); border-radius:12px; border:1.5px solid rgba(255,255,255,0.05); overflow:hidden; display:flex; height:720px; }
+  .icon-rail { width:48px; background:var(--bg-secondary); border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; padding:12px 0; gap:4px; flex-shrink:0; }
+  .ir-logo { width:28px; height:28px; border-radius:8px; background:rgba(16,185,129,0.15); color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; margin-bottom:12px; }
+  .ir-btn { width:36px; height:36px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .ir-btn--active { background:rgba(16,185,129,0.12); color:var(--accent); }
+  .ir-spacer { flex:1; }
+  .ir-avatar { width:28px; height:28px; border-radius:50%; background:rgba(16,185,129,0.15); color:var(--success-text); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; }
+  .desktop-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .desktop-content { padding:0 24px; flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* Header bar */
+  .quote-header { display:flex; align-items:center; gap:16px; padding:12px 0 16px; flex-shrink:0; }
+  .quote-back { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); padding:6px 12px; cursor:pointer; font-size:13px; font-family:inherit; display:flex; align-items:center; gap:6px; transition:border-color var(--transition-fast); }
+  .quote-back:hover { border-color:var(--border-hover); }
+  .quote-ticker { font-size:22px; font-weight:700; color:var(--text-primary); }
+  .quote-type-pill { padding:3px 10px; border-radius:4px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+  .quote-type-pill--csp { background:var(--csp-bg); border:1px solid var(--csp-border); color:var(--indigo-text); }
+  .quote-type-pill--cc { background:var(--cc-bg); border:1px solid var(--cc-border); color:var(--orange-text); }
+  .quote-spot { font-size:18px; font-weight:600; font-family:var(--font-mono); color:var(--text-primary); margin-left:auto; }
+  .quote-spot-change { font-size:12px; font-family:var(--font-mono); margin-left:6px; }
+  .quote-live { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--success-text); margin-left:12px; }
+  .quote-live__dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  /* Expiry tabs */
+  .expiry-tabs { display:flex; gap:2px; padding:0 0 12px; flex-shrink:0; align-items:center; }
+  .expiry-tab { padding:6px 14px; border:none; background:transparent; color:var(--text-muted); font-family:inherit; font-size:12px; font-weight:500; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap; transition:all var(--transition-fast); }
+  .expiry-tab:hover { color:var(--text-secondary); background:rgba(255,255,255,0.03); }
+  .expiry-tab--active { background:var(--bg-tertiary); color:var(--text-primary); }
+  .expiry-dte { font-size:10px; color:var(--text-muted); font-family:var(--font-mono); margin-left:4px; }
+  .expiry-tab--active .expiry-dte { color:var(--text-secondary); }
+
+  /* Chain table */
+  .chain-wrap { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:0; }
+  .chain-cols { display:flex; padding:8px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .chain-col { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); font-weight:500; }
+  .chain-col-sub { font-size:8px; color:var(--text-muted); text-transform:none; letter-spacing:0; margin-top:1px; }
+  .col-strike { flex:1.2; }
+  .col-bid { flex:1; text-align:right; }
+  .col-ask { flex:1; text-align:right; }
+  .chain-scroll { overflow-y:auto; flex:1; }
+  .chain-table { width:100%; border-collapse:collapse; }
+
+  .chain-row { cursor:pointer; transition:background var(--transition-fast); border-bottom:1px solid rgba(255,255,255,0.025); }
+  .chain-row:hover { background:rgba(99,102,241,0.06); }
+  .chain-row--atm { background:rgba(16,185,129,0.06); border-left:3px solid var(--accent); }
+  .chain-row--atm:hover { background:rgba(16,185,129,0.1); }
+  .chain-row--itm { opacity:0.4; }
+  .chain-row td { padding:10px 16px; vertical-align:top; }
+  .chain-row td.col-strike { width:35%; }
+  .chain-row td.col-bid { width:32.5%; text-align:right; }
+  .chain-row td.col-ask { width:32.5%; text-align:right; }
+
+  .strike-val { font-family:var(--font-mono); font-size:14px; font-weight:600; color:var(--text-primary); }
+  .strike-delta { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .price-val { font-family:var(--font-mono); font-size:14px; font-weight:600; color:var(--text-primary); }
+  .price-metrics { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .price-yield { color:var(--success-text); }
+  .price-discount { color:var(--text-secondary); }
+
+  .chain-footer { padding:8px 16px; text-align:center; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); flex-shrink:0; }
+
+  /* ===== MOBILE ===== */
+  .mobile-frame { width:375px; height:720px; background:var(--bg-primary); border-radius:24px; border:1.5px solid rgba(255,255,255,0.05); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; }
+
+  .m-quote-header { display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .m-back { background:none; border:none; color:var(--text-muted); font-size:18px; cursor:pointer; padding:4px; }
+  .m-ticker { font-size:18px; font-weight:700; color:var(--text-primary); }
+  .m-type-pill { padding:2px 8px; border-radius:4px; font-size:9px; font-weight:600; text-transform:uppercase; }
+  .m-type-pill--csp { background:var(--csp-bg); border:1px solid var(--csp-border); color:var(--indigo-text); }
+  .m-spot { font-family:var(--font-mono); font-size:16px; font-weight:600; color:var(--text-primary); margin-left:auto; }
+  .m-spot-change { font-size:10px; font-family:var(--font-mono); color:var(--success-text); }
+  .m-live { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; margin-left:6px; flex-shrink:0; }
+
+  .m-expiry-tabs { display:flex; gap:2px; padding:8px 16px; overflow-x:auto; flex-shrink:0; }
+  .m-expiry-tabs::-webkit-scrollbar { display:none; }
+  .m-expiry-tab { padding:5px 12px; border:none; background:transparent; color:var(--text-muted); font-family:inherit; font-size:11px; font-weight:500; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap; }
+  .m-expiry-tab--active { background:var(--bg-tertiary); color:var(--text-primary); }
+
+  .m-chain-wrap { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-md); margin:0 16px; overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:0; }
+  .m-chain-cols { display:flex; padding:6px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .m-chain-col { font-size:9px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); font-weight:500; }
+  .m-chain-col-sub { font-size:7px; color:var(--text-muted); text-transform:none; letter-spacing:0; }
+  .m-chain-scroll { overflow-y:auto; flex:1; }
+  .m-chain-table { width:100%; border-collapse:collapse; }
+  .m-chain-row { cursor:pointer; transition:background var(--transition-fast); border-bottom:1px solid rgba(255,255,255,0.025); }
+  .m-chain-row:hover { background:rgba(99,102,241,0.06); }
+  .m-chain-row--atm { background:rgba(16,185,129,0.06); border-left:3px solid var(--accent); }
+  .m-chain-row--itm { opacity:0.4; }
+  .m-chain-row td { padding:8px 12px; vertical-align:top; }
+  .m-chain-row td.col-strike { width:35%; }
+  .m-chain-row td.col-bid { width:32.5%; text-align:right; }
+  .m-chain-row td.col-ask { width:32.5%; text-align:right; }
+  .m-strike-val { font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--text-primary); }
+  .m-strike-delta { font-family:var(--font-mono); font-size:9px; color:var(--text-muted); margin-top:1px; }
+  .m-price-val { font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--text-primary); }
+  .m-price-metrics { font-family:var(--font-mono); font-size:9px; color:var(--text-muted); margin-top:1px; }
+  .m-chain-footer { padding:6px 12px; text-align:center; font-size:10px; color:var(--text-muted); border-top:1px solid var(--border); flex-shrink:0; }
+
+  .btabs { display:flex; border-top:1px solid var(--border); background:var(--bg-secondary); padding:8px 0 20px; flex-shrink:0; }
+  .btab { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--text-muted); font-size:9px; cursor:pointer; }
+  .btab--active { color:var(--accent); }
+  .btab__icon { font-size:18px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ===== DESKTOP ===== -->
+  <div>
+    <div class="viewport-label">Desktop — Screen 2: Options Quotes (CSP mode)</div>
+    <div class="desktop-frame">
+      <nav class="icon-rail">
+        <div class="ir-logo">P</div>
+        <button class="ir-btn">&#9633;</button>
+        <button class="ir-btn ir-btn--active">&#9678;</button>
+        <button class="ir-btn">&#128279;</button>
+        <div class="ir-spacer"></div>
+        <button class="ir-btn">&#9788;</button>
+        <button class="ir-btn">&#9881;</button>
+        <div class="ir-avatar">S</div>
+      </nav>
+      <div class="desktop-main">
+        <div class="desktop-content">
+          <!-- Header -->
+          <div class="quote-header">
+            <button class="quote-back">&#8592; Back</button>
+            <span class="quote-ticker">SOXL</span>
+            <span class="quote-type-pill quote-type-pill--csp">Cash-Secured Put</span>
+            <span class="quote-spot">$676.00</span>
+            <span class="quote-spot-change" style="color:var(--success-text);">+$15.20 (+2.3%)</span>
+            <span class="quote-live"><span class="quote-live__dot"></span> Live</span>
+          </div>
+
+          <!-- Expiry tabs -->
+          <div class="expiry-tabs">
+            <button class="expiry-tab expiry-tab--active">Jun 5 <span class="expiry-dte">7d</span></button>
+            <button class="expiry-tab">Jun 12 <span class="expiry-dte">14d</span></button>
+            <button class="expiry-tab">Jun 19 <span class="expiry-dte">21d</span></button>
+            <button class="expiry-tab">Jun 26 <span class="expiry-dte">28d</span></button>
+            <button class="expiry-tab">Jul 3 <span class="expiry-dte">35d</span></button>
+            <button class="expiry-tab">Jul 17 <span class="expiry-dte">49d</span></button>
+            <button class="expiry-tab">Aug 15 <span class="expiry-dte">78d</span></button>
+          </div>
+
+          <!-- Chain table -->
+          <div class="chain-wrap">
+            <div class="chain-cols">
+              <div class="chain-col col-strike">Strike<div class="chain-col-sub">Delta</div></div>
+              <div class="chain-col col-bid">Bid<div class="chain-col-sub">Discount · Yield</div></div>
+              <div class="chain-col col-ask">Ask<div class="chain-col-sub">Discount · Yield</div></div>
+            </div>
+            <div class="chain-scroll">
+              <table class="chain-table">
+                <tbody>
+                  <tr class="chain-row chain-row--itm"><td class="col-strike"><div class="strike-val">$700.00</div><div class="strike-delta">&#948; -0.82</div></td><td class="col-bid"><div class="price-val">$38.50</div><div class="price-metrics"><span class="price-discount">+8.9%</span> · <span class="price-yield">955.4%</span></div></td><td class="col-ask"><div class="price-val">$39.20</div><div class="price-metrics"><span class="price-discount">+9.0%</span> · <span class="price-yield">974.3%</span></div></td></tr>
+                  <tr class="chain-row chain-row--itm"><td class="col-strike"><div class="strike-val">$690.00</div><div class="strike-delta">&#948; -0.71</div></td><td class="col-bid"><div class="price-val">$29.80</div><div class="price-metrics"><span class="price-discount">+6.4%</span> · <span class="price-yield">751.5%</span></div></td><td class="col-ask"><div class="price-val">$30.40</div><div class="price-metrics"><span class="price-discount">+6.5%</span> · <span class="price-yield">766.6%</span></div></td></tr>
+                  <tr class="chain-row chain-row--atm"><td class="col-strike"><div class="strike-val">$680.00</div><div class="strike-delta">&#948; -0.52</div></td><td class="col-bid"><div class="price-val">$22.10</div><div class="price-metrics"><span class="price-discount">+3.9%</span> · <span class="price-yield">565.5%</span></div></td><td class="col-ask"><div class="price-val">$22.80</div><div class="price-metrics"><span class="price-discount">+4.0%</span> · <span class="price-yield">583.4%</span></div></td></tr>
+                  <tr class="chain-row"><td class="col-strike"><div class="strike-val">$670.00</div><div class="strike-delta">&#948; -0.41</div></td><td class="col-bid"><div class="price-val">$15.90</div><div class="price-metrics"><span class="price-discount">+1.5%</span> · <span class="price-yield">413.0%</span></div></td><td class="col-ask"><div class="price-val">$16.50</div><div class="price-metrics"><span class="price-discount">+1.5%</span> · <span class="price-yield">428.6%</span></div></td></tr>
+                  <tr class="chain-row"><td class="col-strike"><div class="strike-val">$660.00</div><div class="strike-delta">&#948; -0.33</div></td><td class="col-bid"><div class="price-val">$11.20</div><div class="price-metrics"><span class="price-discount">-0.7%</span> · <span class="price-yield">295.5%</span></div></td><td class="col-ask"><div class="price-val">$11.80</div><div class="price-metrics"><span class="price-discount">-0.6%</span> · <span class="price-yield">311.3%</span></div></td></tr>
+                  <tr class="chain-row"><td class="col-strike"><div class="strike-val">$650.00</div><div class="strike-delta">&#948; -0.25</div></td><td class="col-bid"><div class="price-val">$7.60</div><div class="price-metrics"><span class="price-discount">-2.7%</span> · <span class="price-yield">203.5%</span></div></td><td class="col-ask"><div class="price-val">$8.10</div><div class="price-metrics"><span class="price-discount">-2.6%</span> · <span class="price-yield">216.9%</span></div></td></tr>
+                  <tr class="chain-row"><td class="col-strike"><div class="strike-val">$640.00</div><div class="strike-delta">&#948; -0.19</div></td><td class="col-bid"><div class="price-val">$4.90</div><div class="price-metrics"><span class="price-discount">-4.6%</span> · <span class="price-yield">133.3%</span></div></td><td class="col-ask"><div class="price-val">$5.30</div><div class="price-metrics"><span class="price-discount">-4.5%</span> · <span class="price-yield">144.1%</span></div></td></tr>
+                  <tr class="chain-row"><td class="col-strike"><div class="strike-val">$630.00</div><div class="strike-delta">&#948; -0.14</div></td><td class="col-bid"><div class="price-val">$3.10</div><div class="price-metrics"><span class="price-discount">-6.3%</span> · <span class="price-yield">85.7%</span></div></td><td class="col-ask"><div class="price-val">$3.50</div><div class="price-metrics"><span class="price-discount">-6.2%</span> · <span class="price-yield">96.7%</span></div></td></tr>
+                  <tr class="chain-row"><td class="col-strike"><div class="strike-val">$620.00</div><div class="strike-delta">&#948; -0.10</div></td><td class="col-bid"><div class="price-val">$1.90</div><div class="price-metrics"><span class="price-discount">-8.0%</span> · <span class="price-yield">53.4%</span></div></td><td class="col-ask"><div class="price-val">$2.20</div><div class="price-metrics"><span class="price-discount">-7.9%</span> · <span class="price-yield">61.8%</span></div></td></tr>
+                  <tr class="chain-row"><td class="col-strike"><div class="strike-val">$610.00</div><div class="strike-delta">&#948; -0.07</div></td><td class="col-bid"><div class="price-val">$1.10</div><div class="price-metrics"><span class="price-discount">-9.6%</span> · <span class="price-yield">31.4%</span></div></td><td class="col-ask"><div class="price-val">$1.40</div><div class="price-metrics"><span class="price-discount">-9.5%</span> · <span class="price-yield">39.9%</span></div></td></tr>
+                  <tr class="chain-row"><td class="col-strike"><div class="strike-val">$600.00</div><div class="strike-delta">&#948; -0.04</div></td><td class="col-bid"><div class="price-val">$0.65</div><div class="price-metrics"><span class="price-discount">-11.1%</span> · <span class="price-yield">18.9%</span></div></td><td class="col-ask"><div class="price-val">$0.85</div><div class="price-metrics"><span class="price-discount">-11.1%</span> · <span class="price-yield">24.7%</span></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="chain-footer">Tap a strike to open order · Discount = (spot − strike + prem) / spot · Yield = annualized (prem / strike × 365 / DTE)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MOBILE ===== -->
+  <div>
+    <div class="viewport-label">Mobile — Screen 2: Options Quotes (CSP mode)</div>
+    <div class="mobile-frame">
+      <div class="m-quote-header">
+        <button class="m-back">&#8592;</button>
+        <span class="m-ticker">SOXL</span>
+        <span class="m-type-pill m-type-pill--csp">CSP</span>
+        <span class="m-spot">$676.00</span>
+        <span class="m-spot-change">+2.3%</span>
+        <span class="m-live"></span>
+      </div>
+      <div class="m-expiry-tabs">
+        <button class="m-expiry-tab m-expiry-tab--active">Jun 5 <span class="expiry-dte">7d</span></button>
+        <button class="m-expiry-tab">Jun 12 <span class="expiry-dte">14d</span></button>
+        <button class="m-expiry-tab">Jun 19 <span class="expiry-dte">21d</span></button>
+        <button class="m-expiry-tab">Jun 26 <span class="expiry-dte">28d</span></button>
+        <button class="m-expiry-tab">Jul 3 <span class="expiry-dte">35d</span></button>
+      </div>
+      <div class="m-chain-wrap">
+        <div class="m-chain-cols">
+          <div class="m-chain-col col-strike">Strike<div class="m-chain-col-sub">Delta</div></div>
+          <div class="m-chain-col col-bid">Bid<div class="m-chain-col-sub">Disc · Yield</div></div>
+          <div class="m-chain-col col-ask">Ask<div class="m-chain-col-sub">Disc · Yield</div></div>
+        </div>
+        <div class="m-chain-scroll">
+          <table class="m-chain-table">
+            <tbody>
+              <tr class="m-chain-row m-chain-row--itm"><td class="col-strike"><div class="m-strike-val">$700.00</div><div class="m-strike-delta">&#948; -0.82</div></td><td class="col-bid"><div class="m-price-val">$38.50</div><div class="m-price-metrics"><span class="price-discount">+8.9%</span> · <span class="price-yield">955%</span></div></td><td class="col-ask"><div class="m-price-val">$39.20</div><div class="m-price-metrics"><span class="price-discount">+9.0%</span> · <span class="price-yield">974%</span></div></td></tr>
+              <tr class="m-chain-row m-chain-row--itm"><td class="col-strike"><div class="m-strike-val">$690.00</div><div class="m-strike-delta">&#948; -0.71</div></td><td class="col-bid"><div class="m-price-val">$29.80</div><div class="m-price-metrics"><span class="price-discount">+6.4%</span> · <span class="price-yield">752%</span></div></td><td class="col-ask"><div class="m-price-val">$30.40</div><div class="m-price-metrics"><span class="price-discount">+6.5%</span> · <span class="price-yield">767%</span></div></td></tr>
+              <tr class="m-chain-row m-chain-row--atm"><td class="col-strike"><div class="m-strike-val">$680.00</div><div class="m-strike-delta">&#948; -0.52</div></td><td class="col-bid"><div class="m-price-val">$22.10</div><div class="m-price-metrics"><span class="price-discount">+3.9%</span> · <span class="price-yield">566%</span></div></td><td class="col-ask"><div class="m-price-val">$22.80</div><div class="m-price-metrics"><span class="price-discount">+4.0%</span> · <span class="price-yield">583%</span></div></td></tr>
+              <tr class="m-chain-row"><td class="col-strike"><div class="m-strike-val">$670.00</div><div class="m-strike-delta">&#948; -0.41</div></td><td class="col-bid"><div class="m-price-val">$15.90</div><div class="m-price-metrics"><span class="price-discount">+1.5%</span> · <span class="price-yield">413%</span></div></td><td class="col-ask"><div class="m-price-val">$16.50</div><div class="m-price-metrics"><span class="price-discount">+1.5%</span> · <span class="price-yield">429%</span></div></td></tr>
+              <tr class="m-chain-row"><td class="col-strike"><div class="m-strike-val">$660.00</div><div class="m-strike-delta">&#948; -0.33</div></td><td class="col-bid"><div class="m-price-val">$11.20</div><div class="m-price-metrics"><span class="price-discount">-0.7%</span> · <span class="price-yield">296%</span></div></td><td class="col-ask"><div class="m-price-val">$11.80</div><div class="m-price-metrics"><span class="price-discount">-0.6%</span> · <span class="price-yield">311%</span></div></td></tr>
+              <tr class="m-chain-row"><td class="col-strike"><div class="m-strike-val">$650.00</div><div class="m-strike-delta">&#948; -0.25</div></td><td class="col-bid"><div class="m-price-val">$7.60</div><div class="m-price-metrics"><span class="price-discount">-2.7%</span> · <span class="price-yield">204%</span></div></td><td class="col-ask"><div class="m-price-val">$8.10</div><div class="m-price-metrics"><span class="price-discount">-2.6%</span> · <span class="price-yield">217%</span></div></td></tr>
+              <tr class="m-chain-row"><td class="col-strike"><div class="m-strike-val">$640.00</div><div class="m-strike-delta">&#948; -0.19</div></td><td class="col-bid"><div class="m-price-val">$4.90</div><div class="m-price-metrics"><span class="price-discount">-4.6%</span> · <span class="price-yield">133%</span></div></td><td class="col-ask"><div class="m-price-val">$5.30</div><div class="m-price-metrics"><span class="price-discount">-4.5%</span> · <span class="price-yield">144%</span></div></td></tr>
+              <tr class="m-chain-row"><td class="col-strike"><div class="m-strike-val">$630.00</div><div class="m-strike-delta">&#948; -0.14</div></td><td class="col-bid"><div class="m-price-val">$3.10</div><div class="m-price-metrics"><span class="price-discount">-6.3%</span> · <span class="price-yield">86%</span></div></td><td class="col-ask"><div class="m-price-val">$3.50</div><div class="m-price-metrics"><span class="price-discount">-6.2%</span> · <span class="price-yield">97%</span></div></td></tr>
+              <tr class="m-chain-row"><td class="col-strike"><div class="m-strike-val">$620.00</div><div class="m-strike-delta">&#948; -0.10</div></td><td class="col-bid"><div class="m-price-val">$1.90</div><div class="m-price-metrics"><span class="price-discount">-8.0%</span> · <span class="price-yield">53%</span></div></td><td class="col-ask"><div class="m-price-val">$2.20</div><div class="m-price-metrics"><span class="price-discount">-7.9%</span> · <span class="price-yield">62%</span></div></td></tr>
+              <tr class="m-chain-row"><td class="col-strike"><div class="m-strike-val">$610.00</div><div class="m-strike-delta">&#948; -0.07</div></td><td class="col-bid"><div class="m-price-val">$1.10</div><div class="m-price-metrics"><span class="price-discount">-9.6%</span> · <span class="price-yield">31%</span></div></td><td class="col-ask"><div class="m-price-val">$1.40</div><div class="m-price-metrics"><span class="price-discount">-9.5%</span> · <span class="price-yield">40%</span></div></td></tr>
+              <tr class="m-chain-row"><td class="col-strike"><div class="m-strike-val">$600.00</div><div class="m-strike-delta">&#948; -0.04</div></td><td class="col-bid"><div class="m-price-val">$0.65</div><div class="m-price-metrics"><span class="price-discount">-11.1%</span> · <span class="price-yield">19%</span></div></td><td class="col-ask"><div class="m-price-val">$0.85</div><div class="m-price-metrics"><span class="price-discount">-11.1%</span> · <span class="price-yield">25%</span></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="m-chain-footer">Tap strike to open order</div>
+      </div>
+      <div class="btabs">
+        <div class="btab"><span class="btab__icon">&#9633;</span>Portfolio</div>
+        <div class="btab btab--active"><span class="btab__icon">&#9678;</span>Wheel</div>
+        <div class="btab"><span class="btab__icon">&#128279;</span>Connections</div>
+        <div class="btab"><span class="btab__icon">&#8943;</span>More</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

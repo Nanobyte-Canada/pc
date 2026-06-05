@@ -1,0 +1,301 @@
+<h2>Navigation & Accounts Flow Redesign</h2>
+<p class="subtitle">Cleaner navigation between Dashboard, Accounts, and Connections. Rename "Accounts" to "Connections". Add Wheel Strategy to nav. Remove Screener and Options.</p>
+
+<!-- Current vs Proposed Navigation -->
+<div class="section">
+  <h3>Navigation Changes</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div style="background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);border-radius:10px;padding:16px;">
+      <div style="font-size:13px;color:#f87171;font-weight:600;margin-bottom:10px;">Current (remove)</div>
+      <div style="font-size:12px;color:#cbd5e1;line-height:1.8;">
+        1. Dashboard (grid icon)<br>
+        2. Accounts (layers) → goes to Broker Connections<br>
+        3. <span style="color:#f87171;text-decoration:line-through;">Screener (clipboard)</span><br>
+        4. <span style="color:#f87171;text-decoration:line-through;">Options (clock)</span><br>
+        — bottom: Theme, Admin, Profile
+      </div>
+    </div>
+    <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:16px;">
+      <div style="font-size:13px;color:#6ee7b7;font-weight:600;margin-bottom:10px;">Proposed</div>
+      <div style="font-size:12px;color:#cbd5e1;line-height:1.8;">
+        1. Dashboard (grid icon) — portfolio overview<br>
+        2. <span style="color:#6ee7b7;">Accounts (layers)</span> — list of all accounts, click to view detail<br>
+        3. <span style="color:#6ee7b7;">Wheel (target icon)</span> — wheel strategy<br>
+        4. <span style="color:#6ee7b7;">Connections (link icon)</span> — broker connections management<br>
+        — bottom: Theme, Admin, Profile
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Desktop: Icon Rail -->
+<div class="section">
+  <h3>Desktop Icon Rail</h3>
+  <div class="mockup">
+    <div class="mockup-header">Updated Icon Rail — Desktop</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;display:flex;font-family:'DM Sans',sans-serif;min-height:500px;">
+        <!-- Icon Rail -->
+        <div style="width:56px;background:#0f1520;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:4px;flex-shrink:0;">
+          <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;font-weight:700;margin-bottom:16px;">P</div>
+
+          <!-- Dashboard -->
+          <div style="width:40px;height:40px;border-radius:6px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;position:relative;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <div style="position:absolute;left:0;top:10px;bottom:10px;width:2px;border-radius:0 2px 2px 0;background:#10b981;"></div>
+          </div>
+
+          <!-- Accounts (NEW — list of accounts) -->
+          <div style="width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;" title="Accounts">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+
+          <!-- Wheel Strategy (NEW) -->
+          <div style="width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;" title="Wheel Strategy">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+
+          <!-- Connections (was "Accounts", now renamed) -->
+          <div style="width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;" title="Connections">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+
+          <div style="flex:1;"></div>
+
+          <!-- Theme -->
+          <div style="width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </div>
+          <!-- Admin -->
+          <div style="width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <!-- Avatar -->
+          <div style="width:28px;height:28px;border-radius:9999px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:10px;color:white;font-weight:600;">SB</div>
+        </div>
+
+        <!-- Labels for context -->
+        <div style="padding:24px;flex:1;">
+          <div style="font-size:22px;font-weight:700;color:#e2e8f0;margin-bottom:24px;">Navigation Structure</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:32px;height:32px;border-radius:6px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              </div>
+              <div>
+                <div style="font-size:14px;color:#e2e8f0;font-weight:600;">Dashboard</div>
+                <div style="font-size:11px;color:#64748b;">Portfolio overview, all accounts strip, KPIs, positions</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:32px;height:32px;border-radius:6px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+              <div>
+                <div style="font-size:14px;color:#e2e8f0;font-weight:600;">Accounts</div>
+                <div style="font-size:11px;color:#64748b;">List of all broker accounts — click any to view positions, activities, dividends</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:32px;height:32px;border-radius:6px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              </div>
+              <div>
+                <div style="font-size:14px;color:#e2e8f0;font-weight:600;">Wheel</div>
+                <div style="font-size:11px;color:#64748b;">Wheel strategy — CSP/CC positions grid</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:32px;height:32px;border-radius:6px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </div>
+              <div>
+                <div style="font-size:14px;color:#e2e8f0;font-weight:600;">Connections</div>
+                <div style="font-size:11px;color:#64748b;">Manage broker connections — connect/disconnect/reconnect brokerages</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:1px;background:rgba(255,255,255,0.06);margin:20px 0;"></div>
+          <div style="font-size:13px;color:#94a3b8;font-weight:600;margin-bottom:10px;">REMOVED FROM NAV</div>
+          <div style="display:flex;gap:16px;">
+            <div style="font-size:12px;color:#f87171;text-decoration:line-through;">Screener</div>
+            <div style="font-size:12px;color:#f87171;text-decoration:line-through;">Options</div>
+          </div>
+          <div style="font-size:11px;color:#64748b;margin-top:6px;">Accessible via "More" on mobile, or direct URL. Not primary nav items.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Accounts List Page (NEW) -->
+<div class="section">
+  <h3>Accounts List Page (NEW)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Accounts — List of all broker accounts</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:450px;display:flex;font-family:'DM Sans',sans-serif;">
+        <!-- Rail stub -->
+        <div style="width:56px;background:#0f1520;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:4px;flex-shrink:0;">
+          <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;font-weight:700;margin-bottom:16px;">P</div>
+          <div style="width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+          <div style="width:40px;height:40px;border-radius:6px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;position:relative;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            <div style="position:absolute;left:0;top:10px;bottom:10px;width:2px;border-radius:0 2px 2px 0;background:#10b981;"></div>
+          </div>
+          <div style="flex:1;"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div style="flex:1;padding:24px 28px;">
+          <div style="font-size:22px;font-weight:700;color:#e2e8f0;margin-bottom:20px;">Accounts</div>
+
+          <!-- Account cards in a grid -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <!-- LIRA -->
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px;cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4ade80;font-weight:800;">Q</div>
+                <div>
+                  <div style="font-size:14px;color:#e2e8f0;font-weight:600;">LIRA</div>
+                  <div style="font-size:11px;color:#64748b;font-family:'JetBrains Mono',monospace;">••9683</div>
+                </div>
+                <div style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+              </div>
+              <div style="font-size:20px;font-weight:700;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 45,846</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span style="font-size:11px;color:#6ee7b7;">+C$ 46,089</span>
+                <span style="font-size:10px;color:#6ee7b7;padding:1px 6px;border-radius:4px;background:rgba(16,185,129,0.1);">+100.5%</span>
+              </div>
+              <div style="font-size:10px;color:#64748b;margin-top:8px;">2 positions · Synced 12 min ago</div>
+            </div>
+            <!-- RRSP -->
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px;cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4ade80;font-weight:800;">Q</div>
+                <div>
+                  <div style="font-size:14px;color:#e2e8f0;font-weight:600;">RRSP</div>
+                  <div style="font-size:11px;color:#64748b;font-family:'JetBrains Mono',monospace;">••8214</div>
+                </div>
+                <div style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+              </div>
+              <div style="font-size:20px;font-weight:700;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 40,162</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span style="font-size:11px;color:#6ee7b7;">+C$ 16,553</span>
+                <span style="font-size:10px;color:#6ee7b7;padding:1px 6px;border-radius:4px;background:rgba(16,185,129,0.1);">+70.1%</span>
+              </div>
+              <div style="font-size:10px;color:#64748b;margin-top:8px;">3 positions · Synced 12 min ago</div>
+            </div>
+            <!-- MARGIN -->
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px;cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4ade80;font-weight:800;">Q</div>
+                <div>
+                  <div style="font-size:14px;color:#e2e8f0;font-weight:600;">Margin</div>
+                  <div style="font-size:11px;color:#64748b;font-family:'JetBrains Mono',monospace;">••4150</div>
+                </div>
+                <div style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+              </div>
+              <div style="font-size:20px;font-weight:700;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 85</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span style="font-size:11px;color:#6ee7b7;">+C$ 85</span>
+              </div>
+              <div style="font-size:10px;color:#64748b;margin-top:8px;">1 position · Synced 12 min ago</div>
+            </div>
+            <!-- RRSP 2 -->
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px;cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4ade80;font-weight:800;">Q</div>
+                <div>
+                  <div style="font-size:14px;color:#e2e8f0;font-weight:600;">RRSP</div>
+                  <div style="font-size:11px;color:#64748b;font-family:'JetBrains Mono',monospace;">••2736</div>
+                </div>
+                <div style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+              </div>
+              <div style="font-size:20px;font-weight:700;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 27,855</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span style="font-size:11px;color:#6ee7b7;">+C$ 5,424</span>
+                <span style="font-size:10px;color:#6ee7b7;padding:1px 6px;border-radius:4px;background:rgba(16,185,129,0.1);">+24.2%</span>
+              </div>
+              <div style="font-size:10px;color:#64748b;margin-top:8px;">8 positions · Synced 12 min ago</div>
+            </div>
+            <!-- TFSA -->
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px;cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4ade80;font-weight:800;">Q</div>
+                <div>
+                  <div style="font-size:14px;color:#e2e8f0;font-weight:600;">TFSA</div>
+                  <div style="font-size:11px;color:#64748b;font-family:'JetBrains Mono',monospace;">••0190</div>
+                </div>
+                <div style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+              </div>
+              <div style="font-size:20px;font-weight:700;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 126,949</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span style="font-size:11px;color:#6ee7b7;">+C$ 85,697</span>
+                <span style="font-size:10px;color:#6ee7b7;padding:1px 6px;border-radius:4px;background:rgba(16,185,129,0.1);">+207.7%</span>
+              </div>
+              <div style="font-size:10px;color:#64748b;margin-top:8px;">8 positions · Synced 12 min ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:13px;color:#94a3b8;margin-top:8px;">Clicking any account card navigates to the Account Detail page (positions, activities, dividends). The breadcrumb on Account Detail page goes back to this Accounts list, not to Connections.</p>
+</div>
+
+<!-- Navigation Flow Diagram -->
+<div class="section">
+  <h3>Navigation Flow</h3>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:24px;font-size:13px;color:#cbd5e1;line-height:2;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;">
+      <span style="color:#10b981;">Dashboard</span> → click account card → <span style="color:#10b981;">Account Detail</span> (breadcrumb: "Dashboard > TFSA")<br>
+      <span style="color:#10b981;">Accounts</span> (nav) → <span style="color:#10b981;">Accounts List</span> → click account → <span style="color:#10b981;">Account Detail</span> (breadcrumb: "Accounts > TFSA")<br>
+      <span style="color:#10b981;">Connections</span> (nav) → <span style="color:#10b981;">Broker Connections</span> page (connect/disconnect brokers)<br>
+      <span style="color:#10b981;">Wheel</span> (nav) → <span style="color:#10b981;">Wheel Strategy</span> page
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);">
+      <div style="font-size:12px;color:#94a3b8;font-weight:600;margin-bottom:6px;">MOBILE BOTTOM TAB BAR</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;">
+        Home | Accounts | Wheel | Connections | More<br>
+        <span style="color:#64748b;">"More" sheet: Options, Screener, Reporting, Admin, Profile</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Bottom Tab Bar -->
+<div class="section">
+  <h3>Mobile Bottom Tab Bar</h3>
+  <div class="mockup">
+    <div class="mockup-header">Updated Mobile Tab Bar</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;font-family:'DM Sans',sans-serif;max-width:375px;margin:0 auto;border-radius:0 0 20px 20px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+        <div style="height:64px;background:#0f1520;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-around;padding:0 8px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span style="font-size:9px;color:#10b981;font-weight:600;">Home</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            <span style="font-size:9px;color:#64748b;">Accounts</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            <span style="font-size:9px;color:#64748b;">Wheel</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span style="font-size:9px;color:#64748b;">Connections</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+            <span style="font-size:9px;color:#64748b;">More</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:13px;color:#94a3b8;margin-top:8px;">"More" sheet contains: Options Trading, Screener, Reporting, Admin, Profile. These are secondary screens accessible but not in the primary nav.</p>
+</div>

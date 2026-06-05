@@ -1,0 +1,231 @@
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - navigation "Main navigation" [ref=e6]:
+      - generic [ref=e7]: P
+      - button "Dashboard" [ref=e8] [cursor=pointer]:
+        - img [ref=e9]
+      - button "Accounts" [ref=e14] [cursor=pointer]:
+        - img [ref=e15]
+      - button "Screener" [ref=e19] [cursor=pointer]:
+        - img [ref=e20]
+      - button "Options" [ref=e23] [cursor=pointer]:
+        - img [ref=e24]
+      - button "Toggle theme" [ref=e27] [cursor=pointer]:
+        - img [ref=e28]
+      - button "Admin settings" [ref=e34] [cursor=pointer]:
+        - img [ref=e35]
+      - button "User profile" [ref=e38] [cursor=pointer]: S
+  - main [ref=e40]:
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - heading "Admin Panel" [level=1] [ref=e44]
+          - generic [ref=e45]: Data ingestion and instrument management
+        - generic [ref=e46]:
+          - generic [ref=e47]: Auto-refresh 10s
+          - button "Refresh" [ref=e49] [cursor=pointer]:
+            - img [ref=e50]
+            - text: Refresh
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - generic [ref=e57]: Total Instruments
+          - generic [ref=e58]: 58,231
+        - generic [ref=e59]:
+          - generic [ref=e60]: Enriched
+          - generic [ref=e61]: 54,037
+          - generic [ref=e62]: 93% coverage
+        - generic [ref=e63]:
+          - generic [ref=e64]: Pending
+          - generic [ref=e65]: 4,194
+        - generic [ref=e66]:
+          - generic [ref=e67]: Daily Quota
+          - generic [ref=e68]:
+            - text: 100,000
+            - generic [ref=e69]: / 100,000
+        - generic [ref=e71]:
+          - generic [ref=e72]: Exchanges
+          - generic [ref=e73]: "74"
+          - generic [ref=e74]: US, TO, V, INDX, GBOND
+        - generic [ref=e75]:
+          - generic [ref=e76]: Last Run
+          - generic [ref=e77]: PARTIAL
+          - generic [ref=e79]: 11h ago
+      - generic [ref=e80]:
+        - generic [ref=e81]: Instruments by Type
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - generic [ref=e84]: Stocks
+            - generic [ref=e85]: 21,682
+            - generic [ref=e86]: 20,676 enriched
+          - generic [ref=e87]:
+            - generic [ref=e88]: ETFs
+            - generic [ref=e89]: 7,181
+            - generic [ref=e90]: 6,270 enriched
+          - generic [ref=e91]:
+            - generic [ref=e92]: Mutual Funds
+            - generic [ref=e93]: 26,838
+            - generic [ref=e94]: 26,535 enriched
+          - generic [ref=e95]:
+            - generic [ref=e96]: Preferred
+            - generic [ref=e97]: "735"
+            - generic [ref=e98]: 481 enriched
+          - generic [ref=e99]:
+            - generic [ref=e100]: Indices
+            - generic [ref=e101]: 1,666
+            - generic [ref=e102]: 73 enriched
+          - generic [ref=e103]:
+            - generic [ref=e104]: Bonds
+            - generic [ref=e105]: "129"
+            - generic [ref=e106]: 2 enriched
+      - generic [ref=e107]:
+        - generic [ref=e108]:
+          - generic [ref=e109]: Workflows
+          - generic [ref=e110]:
+            - generic [ref=e111]:
+              - generic [ref=e112]: Exchange Sync
+              - generic [ref=e113]: Idle
+            - generic [ref=e114]: Fetch and update the list of supported exchanges from EODHD. One-time setup, re-run when adding new exchanges.
+            - button "Run Exchange Sync" [ref=e115] [cursor=pointer]:
+              - img [ref=e116]
+              - text: Run Exchange Sync
+          - generic [ref=e118]:
+            - generic [ref=e119]:
+              - generic [ref=e120]: Full Ingestion
+              - generic [ref=e121]: Idle
+            - generic [ref=e122]: Universe discovery + fundamentals fetch for all target exchanges. Processes instruments by staleness, then type priority.
+            - button "Run Full Ingestion" [ref=e123] [cursor=pointer]:
+              - img [ref=e124]
+              - text: Run Full Ingestion
+        - generic [ref=e126]:
+          - generic [ref=e128]: Recent Runs
+          - table [ref=e129]:
+            - rowgroup [ref=e130]:
+              - row "ID Type Status Trigger Started Duration" [ref=e131]:
+                - columnheader "ID" [ref=e132]
+                - columnheader "Type" [ref=e133]
+                - columnheader "Status" [ref=e134]
+                - columnheader "Trigger" [ref=e135]
+                - columnheader "Started" [ref=e136]
+                - columnheader "Duration" [ref=e137]
+                - columnheader [ref=e138]
+            - rowgroup [ref=e139]:
+              - row "#22 SCHEDULED PARTIAL scheduler 5/25/2026, 8:23:41 PM 66m 20s" [ref=e140] [cursor=pointer]:
+                - cell "#22" [ref=e141]:
+                  - generic [ref=e142]: "#22"
+                - cell "SCHEDULED" [ref=e143]:
+                  - generic [ref=e144]: SCHEDULED
+                - cell "PARTIAL" [ref=e145]:
+                  - generic [ref=e146]: PARTIAL
+                - cell "scheduler" [ref=e147]
+                - cell "5/25/2026, 8:23:41 PM" [ref=e148]
+                - cell "66m 20s" [ref=e149]
+                - cell [ref=e150]:
+                  - img [ref=e152]
+              - row "#21 SCHEDULED PARTIAL scheduler 5/24/2026, 5:59:59 PM 41m 47s" [ref=e154] [cursor=pointer]:
+                - cell "#21" [ref=e155]:
+                  - generic [ref=e156]: "#21"
+                - cell "SCHEDULED" [ref=e157]:
+                  - generic [ref=e158]: SCHEDULED
+                - cell "PARTIAL" [ref=e159]:
+                  - generic [ref=e160]: PARTIAL
+                - cell "scheduler" [ref=e161]
+                - cell "5/24/2026, 5:59:59 PM" [ref=e162]
+                - cell "41m 47s" [ref=e163]
+                - cell [ref=e164]:
+                  - img [ref=e166]
+              - row "#20 SCHEDULED PARTIAL scheduler 5/23/2026, 11:14:22 PM 46m 43s" [ref=e168] [cursor=pointer]:
+                - cell "#20" [ref=e169]:
+                  - generic [ref=e170]: "#20"
+                - cell "SCHEDULED" [ref=e171]:
+                  - generic [ref=e172]: SCHEDULED
+                - cell "PARTIAL" [ref=e173]:
+                  - generic [ref=e174]: PARTIAL
+                - cell "scheduler" [ref=e175]
+                - cell "5/23/2026, 11:14:22 PM" [ref=e176]
+                - cell "46m 43s" [ref=e177]
+                - cell [ref=e178]:
+                  - img [ref=e180]
+              - row "#19 SCHEDULED PARTIAL api:/admin/ingestion/run 5/23/2026, 2:46:03 AM 88m 02s" [ref=e182] [cursor=pointer]:
+                - cell "#19" [ref=e183]:
+                  - generic [ref=e184]: "#19"
+                - cell "SCHEDULED" [ref=e185]:
+                  - generic [ref=e186]: SCHEDULED
+                - cell "PARTIAL" [ref=e187]:
+                  - generic [ref=e188]: PARTIAL
+                - cell "api:/admin/ingestion/run" [ref=e189]
+                - cell "5/23/2026, 2:46:03 AM" [ref=e190]
+                - cell "88m 02s" [ref=e191]
+                - cell [ref=e192]:
+                  - img [ref=e194]
+              - row "#18 SCHEDULED PARTIAL scheduler 5/22/2026, 7:04:59 PM 41m 48s" [ref=e196] [cursor=pointer]:
+                - cell "#18" [ref=e197]:
+                  - generic [ref=e198]: "#18"
+                - cell "SCHEDULED" [ref=e199]:
+                  - generic [ref=e200]: SCHEDULED
+                - cell "PARTIAL" [ref=e201]:
+                  - generic [ref=e202]: PARTIAL
+                - cell "scheduler" [ref=e203]
+                - cell "5/22/2026, 7:04:59 PM" [ref=e204]
+                - cell "41m 48s" [ref=e205]
+                - cell [ref=e206]:
+                  - img [ref=e208]
+              - row "#17 SCHEDULED PARTIAL api:/admin/ingestion/run 5/22/2026, 10:54:50 AM 52m 37s" [ref=e210] [cursor=pointer]:
+                - cell "#17" [ref=e211]:
+                  - generic [ref=e212]: "#17"
+                - cell "SCHEDULED" [ref=e213]:
+                  - generic [ref=e214]: SCHEDULED
+                - cell "PARTIAL" [ref=e215]:
+                  - generic [ref=e216]: PARTIAL
+                - cell "api:/admin/ingestion/run" [ref=e217]
+                - cell "5/22/2026, 10:54:50 AM" [ref=e218]
+                - cell "52m 37s" [ref=e219]
+                - cell [ref=e220]:
+                  - img [ref=e222]
+              - row "#16 SCHEDULED PARTIAL scheduler 4/24/2026, 5:59:48 PM 42m 13s" [ref=e224] [cursor=pointer]:
+                - cell "#16" [ref=e225]:
+                  - generic [ref=e226]: "#16"
+                - cell "SCHEDULED" [ref=e227]:
+                  - generic [ref=e228]: SCHEDULED
+                - cell "PARTIAL" [ref=e229]:
+                  - generic [ref=e230]: PARTIAL
+                - cell "scheduler" [ref=e231]
+                - cell "4/24/2026, 5:59:48 PM" [ref=e232]
+                - cell "42m 13s" [ref=e233]
+                - cell [ref=e234]:
+                  - img [ref=e236]
+              - row "#15 SCHEDULED PARTIAL scheduler 4/23/2026, 9:21:05 PM 50m 30s" [ref=e238] [cursor=pointer]:
+                - cell "#15" [ref=e239]:
+                  - generic [ref=e240]: "#15"
+                - cell "SCHEDULED" [ref=e241]:
+                  - generic [ref=e242]: SCHEDULED
+                - cell "PARTIAL" [ref=e243]:
+                  - generic [ref=e244]: PARTIAL
+                - cell "scheduler" [ref=e245]
+                - cell "4/23/2026, 9:21:05 PM" [ref=e246]
+                - cell "50m 30s" [ref=e247]
+                - cell [ref=e248]:
+                  - img [ref=e250]
+              - row "#14 SCHEDULED PARTIAL scheduler 4/23/2026, 7:27:12 AM 116m 43s" [ref=e252] [cursor=pointer]:
+                - cell "#14" [ref=e253]:
+                  - generic [ref=e254]: "#14"
+                - cell "SCHEDULED" [ref=e255]:
+                  - generic [ref=e256]: SCHEDULED
+                - cell "PARTIAL" [ref=e257]:
+                  - generic [ref=e258]: PARTIAL
+                - cell "scheduler" [ref=e259]
+                - cell "4/23/2026, 7:27:12 AM" [ref=e260]
+                - cell "116m 43s" [ref=e261]
+                - cell [ref=e262]:
+                  - img [ref=e264]
+              - row "#13 SCHEDULED PARTIAL api:/admin/ingestion/run 4/22/2026, 12:57:21 AM 522m 04s" [ref=e266] [cursor=pointer]:
+                - cell "#13" [ref=e267]:
+                  - generic [ref=e268]: "#13"
+                - cell "SCHEDULED" [ref=e269]:
+                  - generic [ref=e270]: SCHEDULED
+                - cell "PARTIAL" [ref=e271]:
+                  - generic [ref=e272]: PARTIAL
+                - cell "api:/admin/ingestion/run" [ref=e273]
+                - cell "4/22/2026, 12:57:21 AM" [ref=e274]
+                - cell "522m 04s" [ref=e275]
+                - cell [ref=e276]:
+                  - img [ref=e278]

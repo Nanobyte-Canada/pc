@@ -1,0 +1,21 @@
+- generic [ref=e7]:
+  - heading "Sign In" [level=1] [ref=e8]
+  - paragraph [ref=e9]: Welcome back! Please sign in to continue.
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - generic [ref=e12]: Email
+      - textbox "Email" [ref=e13]:
+        - /placeholder: you@example.com
+        - text: saurabh.bilakhia@gmail.com
+    - generic [ref=e14]:
+      - generic [ref=e15]: Password
+      - textbox "Password" [ref=e16]:
+        - /placeholder: Enter your password
+        - text: PnSjR_16031991
+    - link "Forgot password?" [ref=e18] [cursor=pointer]:
+      - /url: /forgot-password
+    - button "Signing in..." [disabled] [ref=e23]
+  - paragraph [ref=e21]:
+    - text: Don't have an account?
+    - link "Sign up" [ref=e22] [cursor=pointer]:
+      - /url: /signup
