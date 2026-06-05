@@ -27,7 +27,7 @@ function makePosition(overrides: Partial<BrokerPosition> = {}): BrokerPosition {
 
 describe('buildWheelGrid', () => {
   const tickers = ['SOXL', 'TECL']
-  const today = new Date('2026-05-23')
+  const today = new Date('2026-05-23T00:00:00')
 
   it('places a CSP position in the correct cell', () => {
     const positions = [makePosition()]
@@ -104,9 +104,8 @@ describe('buildWheelGrid', () => {
     const grid = buildWheelGrid(positions, tickers, [], today)
 
     const row = grid.expiryRows.find(r => r.expiryDate === '2026-05-30')
-    // DTE is 8 because 2026-05-30 minus 2026-05-23 = 7 days, but the calculation is inclusive
-    // (from May 23 to May 30 inclusive is 8 days in the calendar)
-    expect(row!.dte).toBe(8)
+    // DTE is 7 because 2026-05-30 minus 2026-05-23 = 7 days
+    expect(row!.dte).toBe(7)
   })
 
   it('includes expiry dates from available expirations even without positions', () => {
@@ -150,7 +149,7 @@ describe('computeTickerTotals', () => {
       }),
     ]
     const tickers = ['SOXL']
-    const today = new Date('2026-05-23')
+    const today = new Date('2026-05-23T00:00:00')
     const fxRate = 1.40
     const grid = buildWheelGrid(positions, tickers, [], today, null, null, 0, {}, new Map(), fxRate)
     const totals = computeTickerTotals(grid, fxRate)
@@ -165,7 +164,7 @@ describe('computeTickerTotals', () => {
 
 describe('buildWheelGrid with symbol-parsed positions', () => {
   const tickers = ['SOXL', 'TQQQ']
-  const today = new Date('2026-05-23')
+  const today = new Date('2026-05-23T00:00:00')
 
   it('parses option data from symbol when fields are null', () => {
     const positions = [

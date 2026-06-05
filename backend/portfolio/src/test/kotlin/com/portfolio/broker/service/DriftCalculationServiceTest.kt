@@ -24,6 +24,7 @@ class DriftCalculationServiceTest {
     private lateinit var excludedAssetRepository: PortfolioExcludedAssetRepository
     private lateinit var positionRepository: BrokerPositionRepository
     private lateinit var balanceRepository: BrokerBalanceRepository
+    private lateinit var exchangeRateService: ExchangeRateService
     private val objectMapper = ObjectMapper()
 
     @BeforeEach
@@ -34,6 +35,7 @@ class DriftCalculationServiceTest {
         excludedAssetRepository = mockk()
         positionRepository = mockk()
         balanceRepository = mockk()
+        exchangeRateService = mockk()
 
         service = DriftCalculationService(
             groupRepository = groupRepository,
@@ -42,6 +44,7 @@ class DriftCalculationServiceTest {
             excludedAssetRepository = excludedAssetRepository,
             positionRepository = positionRepository,
             balanceRepository = balanceRepository,
+            exchangeRateService = exchangeRateService,
             objectMapper = objectMapper
         )
     }

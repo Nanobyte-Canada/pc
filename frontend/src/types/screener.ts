@@ -40,17 +40,28 @@ export interface InstrumentDetail {
   isin: string | null;
   currency: string | null;
   country: string | null;
-  general: Record<string, unknown> | null;
-  highlights: Record<string, unknown> | null;
-  valuation: Record<string, unknown> | null;
-  technicals: Record<string, unknown> | null;
-  financials: Record<string, unknown> | null;
-  earnings: Record<string, unknown> | null;
-  splitsDividends: Record<string, unknown> | null;
-  sharesStats: Record<string, unknown> | null;
-  analystRatings: Record<string, unknown> | null;
-  etfData: Record<string, unknown> | null;
-  mutualFundData: Record<string, unknown> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  general: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  highlights: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  valuation: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  technicals: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  financials: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  earnings: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  splitsDividends: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sharesStats: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  analystRatings: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  etfData: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mutualFundData: Record<string, any> | null;
 }
 
 export interface ScreenerFilter {

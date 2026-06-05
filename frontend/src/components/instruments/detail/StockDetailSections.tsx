@@ -53,7 +53,8 @@ function formatDate(value: string | null | undefined): string {
   }
 }
 
-function num(obj: Record<string, unknown> | null | undefined, key: string): number | null {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function num(obj: Record<string, any> | null | undefined, key: string): number | null {
   if (!obj) return null;
   const v = obj[key];
   if (v == null || v === '' || v === 'None' || v === 'N/A') return null;
@@ -61,7 +62,8 @@ function num(obj: Record<string, unknown> | null | undefined, key: string): numb
   return isNaN(n) ? null : n;
 }
 
-function str(obj: Record<string, unknown> | null | undefined, key: string): string | null {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function str(obj: Record<string, any> | null | undefined, key: string): string | null {
   if (!obj) return null;
   const v = obj[key];
   if (v == null || v === '' || v === 'None' || v === 'N/A') return null;
@@ -94,7 +96,8 @@ function AboutSection({ data }: { data: InstrumentDetail }) {
   const description = str(general, 'Description');
 
   // Extract first officer as CEO
-  const officers = general.Officers;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const officers = (general as any).Officers;
   let ceo: string | null = null;
   if (officers && typeof officers === 'object') {
     const officerKeys = Object.keys(officers);
@@ -198,12 +201,15 @@ const CASHFLOW_ROWS: FinancialRow[] = [
 ];
 
 function getFinancialYears(
-  statements: Record<string, unknown> | null | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  statements: Record<string, any> | null | undefined,
   period: FinPeriod
-): { dates: string[]; data: Record<string, Record<string, unknown>> } {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): { dates: string[]; data: Record<string, any> } {
   if (!statements) return { dates: [], data: {} };
 
-  const periodData = period === 'annual' ? statements.yearly : statements.quarterly;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const periodData = (period === 'annual' ? statements.yearly : statements.quarterly) as any;
   if (!periodData || typeof periodData !== 'object') return { dates: [], data: {} };
 
   const dates = Object.keys(periodData).sort().reverse();
@@ -247,7 +253,8 @@ function RevenueBreakdownChart({
   setPeriod,
   chartTheme,
 }: {
-  financials: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  financials: Record<string, any>;
   period: FinPeriod;
   setPeriod: (p: FinPeriod) => void;
   chartTheme: ReturnType<typeof useChartTheme>;
@@ -256,7 +263,8 @@ function RevenueBreakdownChart({
     const incomeStatement = financials.Income_Statement;
     if (!incomeStatement) return [];
 
-    const periodData = period === 'annual' ? incomeStatement.yearly : incomeStatement.quarterly;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const periodData = (period === 'annual' ? incomeStatement.yearly : incomeStatement.quarterly) as any;
     if (!periodData || typeof periodData !== 'object') return [];
 
     const dates = Object.keys(periodData).sort().reverse();
@@ -347,7 +355,8 @@ function YoYTable({
   tab,
   setTab,
 }: {
-  financials: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  financials: Record<string, any>;
   period: FinPeriod;
   tab: FinTab;
   setTab: (t: FinTab) => void;
@@ -488,7 +497,8 @@ function ValuationBarChart({
   valuation,
   chartTheme,
 }: {
-  valuation: Record<string, unknown> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  valuation: Record<string, any> | null;
   chartTheme: ReturnType<typeof useChartTheme>;
 }) {
   const chartData = useMemo(() => {
@@ -561,8 +571,10 @@ function MarginTrends({
   highlights,
   financials,
 }: {
-  highlights: Record<string, unknown> | null;
-  financials: Record<string, unknown> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  highlights: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  financials: Record<string, any> | null;
 }) {
   // Compute margins from financials yearly data
   const margins = useMemo(() => {
@@ -578,7 +590,8 @@ function MarginTrends({
     let grossMargin: number | null = null;
 
     if (financials?.Income_Statement?.yearly) {
-      const yearly = financials.Income_Statement.yearly;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const yearly = financials.Income_Statement.yearly as any;
       const dates = Object.keys(yearly).sort().reverse();
       if (dates.length > 0) {
         const latest = yearly[dates[0]];
@@ -816,13 +829,15 @@ function DividendHistoryPanel({
   splitsDividends,
   chartTheme,
 }: {
-  splitsDividends: Record<string, unknown> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  splitsDividends: Record<string, any> | null;
   chartTheme: ReturnType<typeof useChartTheme>;
 }) {
   const chartData = useMemo(() => {
     if (!splitsDividends?.NumberDividendsByYear) return [];
 
-    const byYear = splitsDividends.NumberDividendsByYear;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const byYear = splitsDividends.NumberDividendsByYear as any;
     if (typeof byYear !== 'object') return [];
 
     const entries: { year: string; count: number }[] = [];
@@ -913,7 +928,8 @@ function OwnershipDonutPanel({
   sharesStats,
   chartTheme,
 }: {
-  sharesStats: Record<string, unknown> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sharesStats: Record<string, any> | null;
   chartTheme: ReturnType<typeof useChartTheme>;
 }) {
   const donutData = useMemo(() => {

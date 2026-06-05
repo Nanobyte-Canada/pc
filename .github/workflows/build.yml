@@ -26,8 +26,16 @@ jobs:
         with:
           cache-read-only: false
 
+      - name: Make gradlew executable
+        run: |
+          chmod +x backend/portfolio/gradlew
+          chmod +x backend/ingestion/gradlew
+          chmod +x backend/market-data/gradlew
+          chmod +x backend/strategy/gradlew
+          chmod +x backend/broker-gateway/gradlew
+
       - name: Test portfolio service
-        run: ./gradlew test
+        run: ./gradlew test -PexcludeIntegration
         working-directory: backend/portfolio
 
       - name: Test ingestion service

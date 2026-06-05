@@ -22,17 +22,20 @@ class PerformanceCalculationServiceTest {
     private lateinit var snapshotRepository: PortfolioSnapshotRepository
     private lateinit var cashFlowRepository: PortfolioCashFlowRepository
     private lateinit var benchmarkReturnRepository: BenchmarkReturnRepository
+    private lateinit var benchmarkService: BenchmarkService
 
     @BeforeEach
     fun setup() {
         snapshotRepository = mockk()
         cashFlowRepository = mockk()
         benchmarkReturnRepository = mockk()
+        benchmarkService = mockk()
 
         service = PerformanceCalculationService(
             snapshotRepository = snapshotRepository,
             cashFlowRepository = cashFlowRepository,
-            benchmarkReturnRepository = benchmarkReturnRepository
+            benchmarkReturnRepository = benchmarkReturnRepository,
+            benchmarkService = benchmarkService
         )
     }
 
