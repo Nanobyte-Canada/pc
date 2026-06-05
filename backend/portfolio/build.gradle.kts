@@ -92,7 +92,7 @@ kotlin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-    if (System.getProperty("exclude.integration") == "true") {
+    if (project.hasProperty("excludeIntegration")) {
         exclude("**/integration/**")
         exclude("**/ApplicationTest*")
     }
