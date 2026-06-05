@@ -1,112 +1,9 @@
 # Infrastructure Reference
 
-Complete infrastructure reference for the Portfolio Construction App. Covers architecture, Docker, CI/CD, Terraform, Nginx, scripts, and environment files.
+Complete infrastructure reference for the Portfolio Construction App. Covers architecture, Docker, CI/CD, Cloudflare Tunnel, scripts, and environment files.
 
 ---
 
-## Architecture Overview
-
-### System Components (GCP Production)
-
-```
-                                    +-----------------------------------+
-                                    |    HTTPS Load Balancer            |
-                                    |    (Global, TLS termination)      |
-                                    +----------------+------------------+
-                                                     |
-                            +------------------------+------------------------+
-                            |                                                 |
-                            v                                                 v
-                +------------------------+                       +------------------------+
-                |   Cloud Storage        |                       |     Cloud Run          |
-                |   (Static Frontend)    |                       |   (Backend API)        |
-                |                        |                       |                        |
-                |   - React SPA build    |                       | +------------------+   |
-                |   - index.html         |                       | |  Spring Boot     |   |
-                |   - JS/CSS assets      |                       | |  Application     |   |
-                |   - Cloud CDN          |                       | +--------+---------+   |
-                +------------------------+                       |          |           |
-                                                                 | +--------v---------+   |
-                                                                 | | Cloud SQL Auth   |   |
-                                                                 | | Proxy (sidecar)  |   |
-                                                                 | +--------+---------+   |
-                                                                 +-----------+-------------+
-                                                                             |
-                                                                             v
-                                                                 +------------------------+
-                                                                 |     Cloud SQL          |
-                                                                 |    (PostgreSQL 16)     |
-                                                                 |                        |
-                                                                 |   - Private IP only    |
-                                                                 |   - Auto backups       |
-                                                                 |   - Point-in-time      |
-                                                                 +------------------------+
-```
-
-### Request Flow
-
-**Frontend requests:**
-1. User accesses `https://portfolio.example.com`
-2. HTTPS Load Balancer terminates TLS
-3. Request routed to Cloud Storage backend bucket
-4. Cloud CDN serves cached content (or fetches from bucket)
-5. React SPA loads in browser
-
-**API requests:**
-1. Frontend makes request to `/api/v1/...`
-2. HTTPS Load Balancer routes to Cloud Run backend service
-3. Cloud Run container handles request
-4. If database access needed, Cloud SQL Auth Proxy sidecar connects to Cloud SQL
-5. Response returned through load balancer
-
-### GCP Resources
-
-| Resource | Purpose | Configuration |
-|----------|---------|---------------|
-| **Cloud Run** | Backend API hosting | Autoscaling 0-10 instances, 1 vCPU, 512MB |
-| **Cloud SQL** | PostgreSQL database | Private IP, automated backups |
-| **Cloud Storage** | Static frontend hosting | Standard class, public access |
-| **HTTPS Load Balancer** | Traffic routing + TLS | Global, managed SSL certificate |
-| **Cloud CDN** | Frontend caching | Automatic with load balancer |
-| **Secret Manager** | Credential storage | Database passwords, API keys |
-| **Artifact Registry** | Docker images | Container registry |
-| **Workload Identity Pool** | CI/CD authentication | GitHub Actions to GCP |
-| **VPC Network** | Private networking | For Cloud SQL private IP |
-| **VPC Connector** | Cloud Run to VPC | Serverless VPC access |
-
-### Environment Separation
-
-Separate GCP Projects strategy:
-
-```
-portfolio-dev (GCP Project)
-  Cloud Run: portfolio-backend
-  Cloud SQL: portfolio-db-dev (db-f1-micro)
-  Cloud Storage: portfolio-frontend-dev
-  Artifact Registry: portfolio
-
-portfolio-prod (GCP Project)
-  Cloud Run: portfolio-backend
-  Cloud SQL: portfolio-db-prod (db-custom-2-4096)
-  Cloud Storage: portfolio-frontend-prod
-  Artifact Registry: portfolio
-```
-
-Benefits: blast radius isolation, environment-specific IAM, separate billing, clear security boundaries.
-
-### Network Security
-- Cloud SQL accessible only via private IP
-- Cloud Run uses VPC Connector for database access
-- Cloud SQL Auth Proxy handles authentication and encryption
-- GitHub Actions uses Workload Identity Federation (no long-lived keys)
-- HTTPS Load Balancer with managed SSL certificates
-
-### Scalability
-- **Cloud Run:** Autoscaling 0-10 instances, concurrency-based, cold start mitigated by min instance in prod
-- **Cloud SQL:** Vertical scaling, read replicas available, HikariCP connection pooling
-- **Cloud Storage + CDN:** Effectively unlimited scale, global edge caching
-
----
 
 ## Docker
 
@@ -226,373 +123,50 @@ To use IBKR integration locally:
 5. Set `IBKR_HOST=host.docker.internal` in your `.env` file
 6. Market-data-service uses client ID `1` (`IBKR_CLIENT_ID`), broker-gateway uses client ID `2` (`IBKR_GATEWAY_CLIENT_ID`)
 
-### docker-compose.vps.yml -- VPS Production-Like
-
-Production-like setup for Hostinger VPS (devpc.nanobyte.ca). No Redis service.
-
-| Service | Image | Ports | Notes |
-|---------|-------|-------|-------|
-| postgres | `postgres:16-alpine` | None exposed | `restart: unless-stopped`, `POSTGRES_PASSWORD` required (no default) |
-| backend | Build from `./backend/portfolio/Dockerfile` | 127.0.0.1:8080:8080 | Loopback-only binding, 60s start period |
-| frontend | Build from `./frontend/Dockerfile` | 127.0.0.1:3000:80 | Loopback-only binding, Nginx serves on port 80 |
-
-**Key differences from local:**
-- All ports bound to `127.0.0.1` (Nginx reverse proxy handles external traffic)
-- `restart: unless-stopped` on all services
-- Profile: `SPRING_PROFILES_ACTIVE=dev`
-- No Redis (caching disabled in dev profile)
-- `POSTGRES_PASSWORD` has no default (must be provided via `.env`)
-- Backend health check uses `curl` instead of `wget`
-
----
 
 ## CI/CD Workflows
 
-### .github/workflows/ci.yml -- Continuous Integration
+### .github/workflows/build.yml -- Build & Push Images
 
 **Triggers:**
-- Pull request to `main` or `development`
-- Push to `main`
-- Callable via `workflow_call` (used by deploy workflows)
-
-**Inputs (workflow_call):**
-- `skip-docker-builds` (boolean, default false) -- skip Docker image build jobs
-- `vite-api-url` (string, default '') -- override VITE_API_URL for frontend build
+- Push to `main` branch (test + build + push)
+- Pull request to `main` (test only, no image builds)
 
 **Jobs:**
 
-| Job | Runner | Steps |
-|-----|--------|-------|
-| `backend-test` | ubuntu-latest | Checkout, JDK 21 (temurin), Gradle setup with GHA cache, `./gradlew test`, upload test results, `./gradlew build -x test`, upload `app.jar` |
-| `backend-docker` | ubuntu-latest | Docker Buildx, build image `portfolio-backend:test` (no push), GHA cache. Skipped if `skip-docker-builds=true`. Needs `backend-test` |
-| `frontend-test` | ubuntu-latest | Checkout, Node 20, `npm ci`, `npm run lint`, `npm run test:run`, `npm run build`, upload `dist/` |
-| `frontend-docker` | ubuntu-latest | Docker Buildx, build image `portfolio-frontend:test` target=production (no push), GHA cache. Skipped if `skip-docker-builds=true`. Needs `frontend-test` |
-
-**Artifacts uploaded:**
-- `backend-test-results` -- test reports (always, even on failure)
-- `backend-jar` -- `backend/portfolio/build/libs/app.jar`
-- `frontend-build` -- `frontend/dist/`
-
-### .github/workflows/deploy.yml -- GCP Cloud Run Deployment
-
-**Triggers:**
-- Push to `main`
-- Manual dispatch with environment choice (`dev` or `prod`)
-
-**Permissions:** `id-token: write`, `contents: read`
-
-**Environment variables:**
-- `PROJECT_ID_DEV=portfolio-dev`, `PROJECT_ID_PROD=portfolio-prod`
-- `REGION=us-central1`
-- `BACKEND_SERVICE_NAME=portfolio-backend`
-- `ARTIFACT_REGISTRY=us-central1-docker.pkg.dev`
-
-**Jobs:**
-
-| Job | Dependencies | Steps |
-|-----|-------------|-------|
-| `test` | None | Calls `ci.yml` via `workflow_call` |
-| `deploy-backend` | `test` | Auth via Workload Identity Federation, configure Docker for Artifact Registry, build+push image (tagged with `sha` and `latest`), deploy to Cloud Run with `APP_VERSION` and `APP_ENVIRONMENT` env vars |
-| `deploy-frontend` | `test`, `deploy-backend` | Auth via WIF, Node 20, `npm ci && npm run build` with `VITE_API_URL`, upload to Cloud Storage bucket, invalidate CDN cache |
-
-**Secrets required:**
-- `GCP_PROJECT_NUMBER` -- for Workload Identity Provider path
-
-**Workload Identity Provider path:**
-```
-projects/<GCP_PROJECT_NUMBER>/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-```
-
-### .github/workflows/deploy-vps.yml -- VPS Deployment
-
-**Triggers:**
-- Push to `development` branch
-- Manual dispatch
-
-**Jobs:**
-
-| Job | Dependencies | Steps |
-|-----|-------------|-------|
-| `test` | None | Calls `ci.yml` with `skip-docker-builds: true`, `vite-api-url: https://devpc.nanobyte.ca` |
-| `deploy` | `test` | Download artifacts, create tarball with prebuilt Dockerfiles, SCP to VPS, SSH deploy, rollback on failure |
-
-**Deployment process (SSH script):**
-1. Verify `deploy.tar.gz` exists on VPS
-2. Backup current deployment to `previous/`
-3. Extract tarball to `current/`
-4. Verify critical files: `docker-compose.vps.yml`, `backend/portfolio/app.jar`, `frontend/dist/`
-5. Create `.env` file from GitHub Secrets
-6. `docker compose -f docker-compose.vps.yml down`
-7. `docker compose -f docker-compose.vps.yml build`
-8. `docker compose -f docker-compose.vps.yml up -d`
-9. Wait up to 30s for backend health check
-10. Clean up old Docker images
-
-**Rollback on failure:**
-- If `previous/` directory exists, restore it and run `docker compose up -d`
-
-**Secrets required:**
-- `VPS_HOST` -- VPS hostname/IP
-- `VPS_USER` -- SSH username
-- `VPS_SSH_PRIVATE_KEY` -- SSH private key
-- `POSTGRES_PASSWORD` -- database password
-- `JWT_SIGNING_KEY` -- JWT signing key
-- `EODHD_API_KEY` -- EODHD API key
-- `ALPHA_VANTAGE_API_KEY` -- AlphaVantage API key
-- `BROKER_ENCRYPTION_KEY` -- AES-256 encryption key
-- `SNAPTRADE_CLIENT_ID` -- SnapTrade client ID
-- `SNAPTRADE_CONSUMER_KEY` -- SnapTrade consumer key
-- `GOOGLE_CLIENT_ID` -- Google OAuth client ID
-- `GOOGLE_CLIENT_SECRET` -- Google OAuth client secret
-
----
-
-## Terraform
-
-All modules use `hashicorp/google ~> 5.0`. Located in `infra/terraform/`.
-
-### modules/cloud-sql/ -- PostgreSQL on Cloud SQL
-
-Provisions a Cloud SQL PostgreSQL 16 instance with private networking.
-
-| Resource | Details |
-|----------|---------|
-| `google_sql_database_instance.postgres` | PostgreSQL 16, private IP only (`ipv4_enabled = false`), deletion protection in prod |
-| `google_sql_database.database` | Default name: `portfolio` |
-| `google_sql_user.user` | Default name: `portfolio`, random 32-char password |
-| `random_password.db_password` | 32 chars with special characters |
-| `google_secret_manager_secret` | Stores DB password in Secret Manager |
-
-**Backup configuration:**
-- Enabled, starts at 03:00 UTC
-- Point-in-time recovery: prod only
-- Retention: 30 days (prod), 7 days (dev)
-- Maintenance window: Sunday 4 AM UTC
-
-**Query Insights:** Enabled, 1024 char query length, application tags recorded.
-
-**Variables:** `project_id`, `region` (default `us-central1`), `instance_name`, `database_name`, `database_user`, `tier` (default `db-f1-micro`), `vpc_network_id`, `environment`
-
-**Outputs:** `connection_name`, `private_ip_address`, `database_name`, `database_user`, `password_secret_id`
-
-### modules/cloud-storage/ -- Frontend Static Hosting
-
-Provisions a GCS bucket for SPA hosting.
-
-| Resource | Details |
-|----------|---------|
-| `google_storage_bucket.frontend` | SPA routing via `not_found_page = "index.html"`, CORS for GET/HEAD, uniform bucket-level access |
-| `google_storage_bucket_iam_member.public_access` | `roles/storage.objectViewer` for `allUsers` |
-
-**Configuration:**
-- Versioning: prod only
-- Lifecycle: delete archived objects after 30 days
-- CORS: `origin = ["*"]`, methods GET/HEAD, max age 3600s
-
-**Variables:** `project_id`, `bucket_name`, `location` (default `US`), `environment`
-
-**Outputs:** `bucket_name`, `bucket_url`, `website_url`
-
-### modules/cloud-run/ -- Backend Service
-
-Deploys Spring Boot backend as a Cloud Run v2 service with Cloud SQL Auth Proxy sidecar.
-
-| Resource | Details |
-|----------|---------|
-| `google_cloud_run_v2_service.backend` | Main backend container + Cloud SQL Auth Proxy sidecar (`gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0`) |
-| `google_service_account.cloud_run_sa` | Dedicated service account |
-| `google_project_iam_member.cloud_sql_client` | `roles/cloudsql.client` |
-| `google_secret_manager_secret_iam_member` | `roles/secretmanager.secretAccessor` for DB password |
-
-**Container configuration:**
-- Port: 8080
-- Resources: 1 CPU, 512Mi memory
-- Startup probe: `/health` (10s initial delay, 10s period, 3 failures)
-- Liveness probe: `/health` (30s period, 3 failures)
-- VPC access: private ranges only via VPC connector
-- Scaling: configurable min (default 0) and max (default 10) instances
-- Traffic: 100% to latest revision
-
-**Environment variables injected:**
-- `SPRING_PROFILES_ACTIVE`, `APP_ENVIRONMENT`, `DATABASE_URL`, `DATABASE_USERNAME`
-- `DATABASE_PASSWORD` from Secret Manager
-
-### modules/load-balancer/ -- Global HTTPS Load Balancer
-
-Routes traffic to Cloud Storage (frontend) and Cloud Run (backend).
-
-| Resource | Details |
-|----------|---------|
-| `google_compute_global_address` | Reserved global external IP |
-| `google_compute_managed_ssl_certificate` | Google-managed SSL for domain |
-| `google_compute_backend_bucket` | Frontend bucket with Cloud CDN enabled |
-| `google_compute_backend_service` | Backend Cloud Run NEG, HTTPS protocol, 30s timeout, full logging |
-| `google_compute_url_map` | Routes `/api/*` and `/health` to Cloud Run, everything else to bucket |
-| `google_compute_target_https_proxy` | HTTPS proxy with SSL certificate |
-| `google_compute_global_forwarding_rule` (HTTPS) | Port 443 forwarding |
-| `google_compute_url_map` (redirect) | HTTP-to-HTTPS 301 redirect |
-| `google_compute_target_http_proxy` (redirect) | HTTP proxy for redirect |
-| `google_compute_global_forwarding_rule` (HTTP) | Port 80 forwarding for redirect |
-
-**CDN policy:**
-- Cache mode: `CACHE_ALL_STATIC`
-- Default TTL: 3600s, Max TTL: 86400s
-- Negative caching enabled
-- Serve while stale: 86400s
-
-### modules/workload-identity/ -- GitHub Actions OIDC Auth
-
-Enables keyless authentication from GitHub Actions to GCP via OIDC.
-
-| Resource | Details |
-|----------|---------|
-| `google_service_account.github_actions` | Service account for CI/CD |
-| `google_iam_workload_identity_pool.github` | Pool ID: `github-pool` |
-| `google_iam_workload_identity_pool_provider.github` | Provider ID: `github-provider`, OIDC issuer: `https://token.actions.githubusercontent.com` |
-| `google_service_account_iam_member` | `roles/iam.workloadIdentityUser` for repo principal |
-
-**Attribute mapping:**
-- `google.subject` = `assertion.sub`
-- `attribute.actor`, `attribute.repository`, `attribute.repository_owner`, `attribute.repository_id`
-- Condition: `assertion.repository_owner == '<github_org>'`
-
-**Granted roles:**
-- `roles/run.admin` -- Cloud Run management
-- `roles/storage.admin` -- Cloud Storage management
-- `roles/artifactregistry.writer` -- Docker image push
-- `roles/iam.serviceAccountUser` -- Service account impersonation
-
-### environments/dev/main.tf -- Dev Environment
-
-- Terraform >= 1.5.0
-- VPC: `portfolio-vpc` with subnet `10.0.0.0/24`, private Google access
-- VPC connector: `portfolio-connector` at `10.8.0.0/28`
-- Cloud SQL: `portfolio-db-dev`, tier `db-f1-micro`
-- Cloud Storage: `portfolio-frontend-dev-${project_id}`
-- Workload Identity: configured
-- Cloud Run: commented out (requires initial image push first)
-- State backend: GCS commented out (`portfolio-terraform-state-dev`)
-
-### environments/prod/main.tf -- Prod Environment
-
-Same structure as dev with production adjustments:
-- Cloud SQL: `portfolio-db-prod`, tier `db-custom-2-4096` (2 vCPU, 4GB RAM)
-- Cloud Storage: `portfolio-frontend-prod-${project_id}`
-- Cloud Run and Load Balancer modules: commented out (require domain verification)
-- Additional variable: `domain` for the application domain name
-- State backend: GCS commented out (`portfolio-terraform-state-prod`)
-
----
-
-## GCP Deployment Setup
-
-### Prerequisites
-
-1. **GCP Projects**: Create `portfolio-dev` and `portfolio-prod` projects
-2. **Enable APIs** in each project:
-   ```bash
-   gcloud services enable \
-       run.googleapis.com \
-       sqladmin.googleapis.com \
-       compute.googleapis.com \
-       artifactregistry.googleapis.com \
-       secretmanager.googleapis.com \
-       iam.googleapis.com \
-       cloudresourcemanager.googleapis.com \
-       vpcaccess.googleapis.com
-   ```
-3. **Create Artifact Registry**:
-   ```bash
-   gcloud artifacts repositories create portfolio \
-       --repository-format=docker \
-       --location=us-central1 \
-       --description="Portfolio application images"
-   ```
-
-### Initial Terraform Setup
-
-```bash
-cd infra/terraform/environments/dev
-cp terraform.tfvars.example terraform.tfvars
-terraform init
-terraform plan
-terraform apply
-```
-
-Get the Workload Identity Provider name after apply:
-```bash
-terraform output workload_identity_provider
-```
-
-### Monitoring
-
-- **Cloud Run:** Logs in Cloud Console, metrics for CPU/memory/request count/latency, automatic error reporting
-- **Cloud SQL:** Query insights enabled, performance metrics in Cloud Console
-
-**Recommended alerts:**
-1. Cloud Run error rate > 1%
-2. Cloud Run latency p99 > 5s
-3. Cloud SQL CPU > 80%
-4. Cloud SQL connections > 80% of max
-
-### Rollback Procedures
-
-**Cloud Run:**
-```bash
-gcloud run revisions list --service portfolio-backend
-gcloud run services update-traffic portfolio-backend --to-revisions REVISION_NAME=100
-```
-
-**Frontend:**
-```bash
-gcloud storage cp -r gs://portfolio-frontend-backup/* gs://portfolio-frontend/
-```
-
-### Troubleshooting
-
-| Issue | Steps |
-|-------|-------|
-| Cloud Run not starting | Check logs: `gcloud run logs read portfolio-backend`, verify env vars, check Secret Manager access |
-| Database connection failed | Verify Cloud SQL Auth Proxy sidecar running, check VPC Connector status, verify `roles/cloudsql.client` on service account |
-| Frontend 404 errors | Verify index.html in bucket, check nginx.conf SPA routing, verify bucket permissions |
+| Job | Runs On | Steps |
+|-----|---------|-------|
+| `test-backend` | PR + push | JDK 21, Gradle test for all 5 services (portfolio, ingestion, market-data, strategy, broker-gateway) |
+| `test-frontend` | PR + push | Node 20, `npm ci`, lint, test, build |
+| `build-and-push` | push only | Docker Buildx, build 7 images, push to GHCR with `main-<sha>` + `latest` tags, Slack notification |
+
+**Images built (7):**
+- `portfolio-backend`, `portfolio-ingestion`, `portfolio-market-data`, `portfolio-strategy`, `portfolio-broker-gateway`
+- `portfolio-frontend` (prod, `VITE_API_URL=https://portfolio.nanobyte.ca`)
+- `portfolio-frontend-uat` (UAT, `VITE_API_URL=https://uatportfolio.nanobyte.ca`)
+
+### .github/workflows/deploy.yml -- Deploy to Home Server
+
+**Triggers:** Manual workflow dispatch via GitHub UI
+
+**Inputs:**
+- `environment` (required): `prod` or `uat`
+- `tag` (required): Docker image tag (e.g., `main-abc1234`)
+
+**Steps:**
+1. Validate tag format (`main-<short-sha>`)
+2. Fetch secrets from Vault (`vault.nanobyte.ca`) via AppRole authentication
+3. Generate `.env` file from Vault response, append `IMAGE_TAG`, validate key count
+4. Install cloudflared and configure SSH via Cloudflare Tunnel (pinned host key)
+5. SCP generated `.env` to server at `/opt/portfolio/{env}/.env`
+6. SSH to server: `docker compose pull && docker compose up -d`, wait for health checks
+7. Cleanup, post-deploy summary, Slack notification
+
+**Rollback:** Re-run workflow with previous tag.
 
 ---
 
 ## Nginx
-
-### infra/nginx/devpc.nanobyte.ca.conf -- VPS Reverse Proxy
-
-Full Nginx configuration for the VPS deployment at `devpc.nanobyte.ca`.
-
-**HTTP server (port 80):** 301 redirect to HTTPS.
-
-**HTTPS server (port 443):**
-- SSL: Let's Encrypt certificates at `/etc/letsencrypt/live/devpc.nanobyte.ca/`
-- HTTP/2 enabled
-
-**Security headers:**
-- `X-Frame-Options: SAMEORIGIN`
-- `X-Content-Type-Options: nosniff`
-- `X-XSS-Protection: 1; mode=block`
-- `Strict-Transport-Security: max-age=31536000; includeSubDomains`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-
-**Gzip:** Enabled for text, CSS, XML, JavaScript, JSON. Min length 1024.
-
-**Client body size:** 10M max.
-
-**Proxy locations:**
-
-| Location | Upstream | Notes |
-|----------|----------|-------|
-| `/api/` | `http://127.0.0.1:8080/api/` | 60s connect/send/read timeout |
-| `/auth/` | `http://127.0.0.1:8080/auth/` | 60s timeouts |
-| `/admin/` | `http://127.0.0.1:8080/admin/` | 60s timeouts |
-| `/health` | `http://127.0.0.1:8080/health` | Minimal headers |
-| `/actuator/` | `http://127.0.0.1:8080/actuator/` | Monitoring |
-| `/` | `http://127.0.0.1:3000/` | Frontend SPA, WebSocket upgrade support |
-
-All proxy locations set `Host`, `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto` headers.
 
 ### frontend/nginx.conf -- Frontend Container
 
@@ -609,71 +183,20 @@ Serves static files inside the frontend Docker container.
 
 ## Scripts
 
-All scripts located in `scripts/`.
+All scripts located in `scripts/` and `deploy/scripts/`.
 
-### setup-vps.sh -- Idempotent VPS Preparation
+### integration-test.sh -- Integration Test Suite
 
-**Usage:** `./setup-vps.sh` (run as non-root user with sudo privileges)
+**Usage:** `bash scripts/integration-test.sh`
 
-**Steps:**
-1. Updates system packages (`apt-get update && upgrade`)
-2. Creates `/opt/portfolio` deployment directory
-3. Installs Docker (if not present) via `get.docker.com`, adds user to docker group
-4. Installs Docker Compose plugin (if not present)
-5. Installs Nginx (if not present)
-6. Installs Certbot with Nginx plugin (if not present)
-7. Installs curl (for health checks)
-8. Configures UFW firewall: allows ports 22 (SSH), 80 (HTTP), 443 (HTTPS)
+**Prerequisites:** All services must be running via `docker compose up -d`
 
-**Post-run instructions printed:**
-- Copy Nginx config to `/etc/nginx/sites-available/`
-- Enable site with symlink to `sites-enabled/`
-- Obtain SSL certificate via `certbot --nginx`
-- Test and reload Nginx
-
-### setup-nginx-ssl.sh -- Automated Nginx + Let's Encrypt SSL
-
-**Usage:** `sudo bash /tmp/setup-nginx-ssl.sh your-email@example.com`
-
-**Prerequisites:** Domain must point to VPS IP, Docker containers must be running.
-
-**Steps:**
-1. Install nginx, certbot, python3-certbot-nginx, curl
-2. Configure UFW (ports 80, 443)
-3. Create initial HTTP-only nginx config for Certbot verification
-4. Enable site, remove default, reload nginx
-5. Obtain SSL certificate via `certbot --nginx --non-interactive`
-6. Replace nginx config with full SSL version (security headers, gzip, proxy locations)
-7. Test and reload nginx
-8. Verify auto-renewal with `certbot renew --dry-run`
-9. Run health checks against `https://devpc.nanobyte.ca`
-
-### vps-diagnose.sh -- Diagnostic Tool
-
-**Usage:** `ssh user@vps 'bash -s' < scripts/vps-diagnose.sh`
-
-**Checks performed:**
-1. Directory structure (`/opt/portfolio`, `/opt/portfolio/current`)
-2. Docker compose files found
-3. Tarball presence and contents
-4. Docker and Docker Compose installation
-5. Running containers (names, status, ports)
-6. Docker compose project status
-7. `.env` file existence and keys defined
-8. Backend health check (`http://localhost:8080/health`)
-9. Frontend health check (`http://localhost:3000`)
-
-### vps-fix-deployment.sh -- Manual Deployment Recovery
-
-**Usage:** `ssh user@vps 'bash -s' < scripts/vps-fix-deployment.sh`
-
-**Steps:**
-1. Extract tarball if present (backs up current to previous)
-2. Verify required files exist
-3. Check `.env` file (prints template if missing)
-4. Stop existing containers, rebuild with `--no-cache`, start
-5. Wait 30 seconds, run health check
-6. Print backend logs on failure
+**Tests performed:**
+- Health checks for all backend services
+- API endpoint validation
+- Database connectivity
+- WebSocket streaming
+- Frontend build verification
 
 ---
 
@@ -699,12 +222,12 @@ Reference template with all configurable variables and placeholder values. Locat
 
 ### Environment Files (Consolidated)
 
-Previously `.env.local`, `.env.dev`, and `.env.prod` were at the repository root. These have been consolidated into `config/.env.example` which serves as the single template. Per-environment values are now configured via deployment pipelines (GitHub Secrets for VPS, GCP Secret Manager for production).
+Previously `.env.local`, `.env.dev`, and `.env.prod` were at the repository root. These have been consolidated into `config/.env.example` which serves as the single template. Per-environment values are now configured via HashiCorp Vault (fetched at deploy time).
 
 Key environment differences:
-- **Local**: Default `portfolio` password for database, SnapTrade test credentials
-- **VPS (devpc.nanobyte.ca)**: `VITE_API_URL=https://devpc.nanobyte.ca`, secrets from GitHub Secrets
-- **Production (GCP)**: `VITE_API_URL=https://api.portfolio.example.com`, `SPRING_PROFILES_ACTIVE=prod`, secrets from GCP Secret Manager
+- **Local**: Default `portfolio` password for database, `SPRING_PROFILES_ACTIVE=local`
+- **UAT (uatportfolio.nanobyte.ca)**: `VITE_API_URL=https://uatportfolio.nanobyte.ca`, secrets from Vault
+- **Production (portfolio.nanobyte.ca)**: `VITE_API_URL=https://portfolio.nanobyte.ca`, `SPRING_PROFILES_ACTIVE=prod`, secrets from Vault
 
 ---
 
@@ -991,6 +514,23 @@ Zero-trust architecture with defense in depth.
 - **Secret rotation:** Database passwords and JWT keys rotated quarterly via Ansible playbook
 - **HTTPS only:** All external endpoints use TLS 1.3 (terminated at Cloudflare)
 
+### Cloudflare Tunnel Setup
+
+Cloudflare Tunnel runs as a systemd service (not a Docker container) to avoid circular dependency with Docker.
+
+**Setup script:** `deploy/scripts/setup-cloudflared-tunnel.sh`
+
+The script:
+1. Authenticates to Cloudflare (manual browser step)
+2. Creates the tunnel
+3. Writes config to `/etc/cloudflared/config.yml`
+4. Adds DNS routes for all hostnames
+5. Installs as systemd service
+
+**Config location:** `/etc/cloudflared/config.yml`
+
+**SSH access:** `ssh.nanobyte.ca` routes to `localhost:22` via the tunnel. GitHub Actions uses `cloudflared access ssh` as a ProxyCommand with pinned host key verification.
+
 ### IBKR Gateway Integration
 
 Both production and UAT stacks include an IBKR Gateway container for live Interactive Brokers connectivity.
@@ -1120,13 +660,14 @@ Complete port allocation across all three stacks.
 
 ### GitHub Secrets Required
 
-| Secret | Purpose | Example |
-|--------|---------|---------|
-| `VAULT_ROLE_ID` | Vault AppRole role ID for secret fetching | UUID |
-| `VAULT_SECRET_ID` | Vault AppRole secret ID for secret fetching | UUID |
-| `DEPLOY_SSH_KEY` | SSH private key for server access | RSA 4096 private key |
-| `SERVER_HOSTNAME` | Home server hostname via Cloudflare Tunnel | `ssh.nanobyte.ca` |
-| `SLACK_WEBHOOK_URL` | Deployment notifications | `https://hooks.slack.com/services/...` |
+| Secret | Purpose |
+|--------|---------|
+| `DEPLOY_SSH_KEY` | Ed25519 SSH private key for `deploy` user |
+| `SERVER_HOSTNAME` | `ssh.nanobyte.ca` (Cloudflare Tunnel SSH hostname) |
+| `SSH_KNOWN_HOSTS` | Server SSH host key fingerprint for MITM prevention |
+| `VAULT_ROLE_ID` | Vault AppRole role ID for secret fetching |
+| `VAULT_SECRET_ID` | Vault AppRole secret ID for secret fetching |
+| `SLACK_WEBHOOK_URL` | Slack channel webhook for deploy notifications |
 
 ### Server Setup
 

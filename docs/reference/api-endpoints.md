@@ -12,8 +12,8 @@
 | Environment | URL |
 |-------------|-----|
 | Local | `http://localhost:8080` |
-| Development | `https://devpc.nanobyte.ca` |
-| Production | `https://api.portfolio.example.com` |
+| UAT | `https://uatportfolio.nanobyte.ca` |
+| Production | `https://portfolio.nanobyte.ca` |
 
 ## Error Response Format
 
@@ -455,7 +455,8 @@ Additional param: `benchmark: String?` -- Benchmark symbol (e.g., `SPY`, `XIU`) 
 ### CORS
 - Configurable via `CORS_ALLOWED_ORIGINS` environment variable
 - Local development: `http://localhost:3000`
-- VPS: `https://devpc.nanobyte.ca`
+- UAT: `https://uatportfolio.nanobyte.ca`
+- Production: `https://portfolio.nanobyte.ca`
 - Credentials allowed
 
 ### Rate Limiting

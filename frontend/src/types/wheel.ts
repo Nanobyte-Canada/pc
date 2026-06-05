@@ -73,8 +73,7 @@ export interface WheelChainStrike {
   bid: number | null
   ask: number | null
   delta: number | null
-  bidDiscount: number | null
-  askDiscount: number | null
+  discount: number | null
   bidYield: number | null
   askYield: number | null
   isATM: boolean

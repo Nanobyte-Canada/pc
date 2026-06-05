@@ -14,6 +14,10 @@ export const WheelChainRow = memo(function WheelChainRow({ strike, onClick }: Wh
       ? 'wcp-row wcp-row-itm'
       : 'wcp-row'
 
+  const discountClass = strike.discount != null
+    ? strike.discount > 0 ? 'wcp-discount--green' : strike.discount < 0 ? 'wcp-discount--red' : ''
+    : ''
+
   return (
     <tr className={rowClass} onClick={() => onClick(strike)} role="button" tabIndex={0}>
       <td className="wcp-cell wcp-cell-strike">
@@ -24,8 +28,8 @@ export const WheelChainRow = memo(function WheelChainRow({ strike, onClick }: Wh
       </td>
       <td className="wcp-cell wcp-cell-bid">
         <div className="wcp-primary">{strike.bid != null ? formatCurrency(strike.bid, 'USD') : '—'}</div>
-        <div className="wcp-secondary">
-          {strike.bidDiscount != null ? `${strike.bidDiscount >= 0 ? '+' : ''}${(strike.bidDiscount * 100).toFixed(1)}%` : ''}
+        <div className={`wcp-secondary ${discountClass}`}>
+          {strike.discount != null ? `${(strike.discount * 100).toFixed(1)}%` : ''}
         </div>
         <div className="wcp-secondary wcp-yield">
           {strike.bidYield != null ? `${(strike.bidYield * 100).toFixed(1)}%` : ''}
@@ -33,8 +37,8 @@ export const WheelChainRow = memo(function WheelChainRow({ strike, onClick }: Wh
       </td>
       <td className="wcp-cell wcp-cell-ask">
         <div className="wcp-primary">{strike.ask != null ? formatCurrency(strike.ask, 'USD') : '—'}</div>
-        <div className="wcp-secondary">
-          {strike.askDiscount != null ? `${strike.askDiscount >= 0 ? '+' : ''}${(strike.askDiscount * 100).toFixed(1)}%` : ''}
+        <div className={`wcp-secondary ${discountClass}`}>
+          {strike.discount != null ? `${(strike.discount * 100).toFixed(1)}%` : ''}
         </div>
         <div className="wcp-secondary wcp-yield">
           {strike.askYield != null ? `${(strike.askYield * 100).toFixed(1)}%` : ''}

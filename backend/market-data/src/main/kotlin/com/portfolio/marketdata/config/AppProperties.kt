@@ -8,5 +8,6 @@ data class AppProperties(
     val port: Int = 4002,
     val clientId: Int = 1,
     val maxConnections: Int = 2,
-    val reconnectDelayMs: Long = 5000
+    val reconnectDelayMs: Long = 5000,
+    val maxChainExpirations: Int = 12
 )

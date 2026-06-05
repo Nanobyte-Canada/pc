@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useQuoteStore } from '@/stores/quoteStore'
 import { useStrategyStore } from '@/stores/strategyStore'
 import { useMarketDataWebSocket } from '@/hooks/useMarketDataWebSocket'
-import { getQuote, getOptionsChainWithGreeks } from '@/services/marketDataService'
+import { getQuote, getOptionExpirations, getOptionsChainForExpiry } from '@/services/marketDataService'
 import { getStrategies, calculateStrategy } from '@/services/optionsStrategyService'
 import { UnderlyingSearch } from '@/components/options/UnderlyingSearch'
 import { QuoteBar } from '@/components/options/QuoteBar'
@@ -17,7 +17,7 @@ import './OptionsPage.css'
 export function OptionsPage() {
   const { selectedUnderlying, setSelectedUnderlying, setQuote, setChain, quotes, chains } = useQuoteStore()
   const { legs, setIsCalculating, isCalculating, setStrategies, strategies, selectedStrategy } = useStrategyStore()
-  const { isConnected, subscribe, subscribeChain, unsubscribeChain } = useMarketDataWebSocket()
+  const { isConnected, subscribe, subscribeChainExpiry, unsubscribeChain, switchChainExpiry } = useMarketDataWebSocket()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [isLoadingChain, setIsLoadingChain] = useState(false)
@@ -39,18 +39,23 @@ export function OptionsPage() {
     setIsLoadingChain(true)
     setSelectedUnderlying(symbol)
     try {
-      const [quoteData, chainData] = await Promise.all([
-        getQuote(symbol),
-        getOptionsChainWithGreeks(symbol),
-      ])
-      setQuote(symbol, quoteData)
-      setChain(symbol, chainData)
-      subscribe(symbol)
-
       if (selectedUnderlying && selectedUnderlying !== symbol) {
         unsubscribeChain(selectedUnderlying)
       }
-      subscribeChain(symbol)
+
+      const [quoteData, expData] = await Promise.all([
+        getQuote(symbol),
+        getOptionExpirations(symbol),
+      ])
+      setQuote(symbol, quoteData)
+      subscribe(symbol)
+
+      const firstExpiry = expData.expirations[0]
+      if (firstExpiry) {
+        const chainData = await getOptionsChainForExpiry(symbol, firstExpiry)
+        setChain(symbol, { ...chainData, expirations: { ...Object.fromEntries(expData.expirations.map(e => [e, {}])), ...chainData.expirations } })
+        subscribeChainExpiry(symbol, firstExpiry)
+      }
 
       if (!strategiesLoaded) {
         const strats = await getStrategies()
@@ -62,7 +67,22 @@ export function OptionsPage() {
     } finally {
       setIsLoadingChain(false)
     }
-  }, [setSelectedUnderlying, setQuote, setChain, subscribe, subscribeChain, unsubscribeChain, selectedUnderlying, setStrategies, strategiesLoaded])
+  }, [setSelectedUnderlying, setQuote, setChain, subscribe, subscribeChainExpiry, unsubscribeChain, selectedUnderlying, setStrategies, strategiesLoaded])
+
+  const handleExpiryChange = useCallback(async (expiry: string) => {
+    if (!selectedUnderlying) return
+    try {
+      const expiryData = await getOptionsChainForExpiry(selectedUnderlying, expiry)
+      const existingChain = chains[selectedUnderlying]
+      if (existingChain && expiryData.expirations) {
+        const merged = { ...existingChain, expirations: { ...existingChain.expirations, ...expiryData.expirations } }
+        setChain(selectedUnderlying, merged)
+      }
+      switchChainExpiry(selectedUnderlying, expiry)
+    } catch (err) {
+      console.error('Failed to load expiry data:', err)
+    }
+  }, [selectedUnderlying, chains, setChain, switchChainExpiry])
 
   const handleCalculate = useCallback(async () => {
     if (!selectedUnderlying || legs.length === 0) return
@@ -131,7 +151,7 @@ export function OptionsPage() {
       {chain && !isLoadingChain && (
         <div className="options-page__content">
           <div className="options-page__chain-section">
-            <OptionsChainTable chain={chain} />
+            <OptionsChainTable chain={chain} onExpiryChange={handleExpiryChange} />
           </div>
           <div className="options-page__sidebar">
             <LegBuilder

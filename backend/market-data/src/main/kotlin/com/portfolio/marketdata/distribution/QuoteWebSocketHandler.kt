@@ -80,6 +80,20 @@ class QuoteWebSocketHandler(
                     val underlying = tree.get("underlying")?.asText() ?: return
                     unsubscribeChain(session.id, underlying)
                 }
+                "subscribe_chain_expiry" -> {
+                    val underlying = tree.get("underlying")?.asText() ?: return
+                    val expiry = tree.get("expiry")?.asText() ?: return
+                    chainSubscriptions.computeIfAbsent(session.id) { ConcurrentHashMap.newKeySet() }.add(underlying)
+                    chainToSessions.computeIfAbsent(underlying) { ConcurrentHashMap.newKeySet() }.add(session.id)
+                    optionStreamingService.startStreamingChainForExpiryPublic(underlying, LocalDate.parse(expiry))
+                    logger.info("Session {} subscribed to chain {} expiry {}", session.id, underlying, expiry)
+                }
+                "switch_chain_expiry" -> {
+                    val underlying = tree.get("underlying")?.asText() ?: return
+                    val expiry = tree.get("expiry")?.asText() ?: return
+                    optionStreamingService.switchChainExpiry(underlying, LocalDate.parse(expiry))
+                    logger.info("Session {} switched chain {} to expiry {}", session.id, underlying, expiry)
+                }
             }
         } catch (e: Exception) {
             logger.error("Error processing WebSocket message from {}", session.id, e)

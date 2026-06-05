@@ -18,6 +18,7 @@ interface IbkrClient {
         right: String? = null
     ): List<OptionContractDetails>
     fun requestMarketDataSnapshot(conId: Int): MarketDataSnapshot?
+    fun requestOptionExpirations(underlying: String): List<LocalDate>
 }
 
 data class OptionContractDetails(
@@ -27,7 +28,17 @@ data class OptionContractDetails(
     val exchange: String,
     val expiry: LocalDate?,
     val strike: BigDecimal?,
-    val right: String?
+    val right: String?,
+    val tradingClass: String? = null,
+    val multiplier: String? = null
+)
+
+data class OptionChainParams(
+    val exchange: String,
+    val underlyingConId: Int,
+    val tradingClass: String?,
+    val multiplier: String?,
+    val expirations: Set<LocalDate>
 )
 
 data class MarketDataSnapshot(

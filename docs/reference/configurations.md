@@ -32,11 +32,11 @@ File: `backend/portfolio/src/main/resources/application-local.yml`
 | `org.hibernate.type.descriptor.sql` | OFF |
 | `org.hibernate.orm.jdbc.bind` | OFF |
 
-### application-dev.yml -- VPS Dev Overrides
+### application-dev.yml -- UAT / Dev Overrides
 
 File: `backend/portfolio/src/main/resources/application-dev.yml`
 
-- `server.forward-headers-strategy: framework` (trust X-Forwarded-* headers from Nginx)
+- `server.forward-headers-strategy: framework` (trust X-Forwarded-* headers from reverse proxy)
 - SQL logging: disabled
 
 **Logging levels:**
@@ -360,15 +360,15 @@ Configured under `ingestion.exchanges.north-america`:
 
 ## Profile Summary
 
-| Property | local | dev | prod |
-|----------|-------|-----|------|
+| Property | local | dev (UAT) | prod |
+|----------|-------|-----------|------|
 | Spring profile | `local` | `dev` | `prod` |
 | Forward headers | Not set | `framework` | Not set |
 | App logging | DEBUG | DEBUG | WARN |
 | Security logging | Not set | DEBUG/TRACE | Not set |
 | Hibernate SQL | OFF | OFF | OFF |
-| Redis | Available (Docker) | Not available | Not configured |
-| CORS origins | `http://localhost:3000` | `https://devpc.nanobyte.ca` | Configured per deployment |
+| Redis | Available (Docker) | Available (Docker) | Available (Docker) |
+| CORS origins | `http://localhost:3000` | `https://uatportfolio.nanobyte.ca` | `https://portfolio.nanobyte.ca` |
 
 ---
 

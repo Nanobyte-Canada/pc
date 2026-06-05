@@ -37,6 +37,12 @@ data class ContractCacheEntity(
     @Column(name = "option_right", length = 4)
     val optionRight: String? = null,
 
+    @Column(name = "trading_class", length = 30)
+    val tradingClass: String? = null,
+
+    @Column(length = 10)
+    val multiplier: String? = null,
+
     @Column(name = "cached_at", nullable = false)
     val cachedAt: Instant
 )
