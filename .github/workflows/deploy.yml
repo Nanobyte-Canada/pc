@@ -86,13 +86,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
           cat >> ~/.ssh/config << EOF
           Host portfolio-server
             HostName ${{ secrets.SERVER_HOSTNAME }}
             User deploy
             IdentityFile ~/.ssh/deploy_key
-            StrictHostKeyChecking no
             ProxyCommand cloudflared access ssh --hostname %h
           EOF
 
