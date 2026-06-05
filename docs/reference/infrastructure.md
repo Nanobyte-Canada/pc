@@ -222,12 +222,12 @@ Reference template with all configurable variables and placeholder values. Locat
 
 ### Environment Files (Consolidated)
 
-Previously `.env.local`, `.env.dev`, and `.env.prod` were at the repository root. These have been consolidated into `config/.env.example` which serves as the single template. Per-environment values are now configured via deployment pipelines (GitHub Secrets for VPS, GCP Secret Manager for production).
+Previously `.env.local`, `.env.dev`, and `.env.prod` were at the repository root. These have been consolidated into `config/.env.example` which serves as the single template. Per-environment values are now configured via HashiCorp Vault (fetched at deploy time).
 
 Key environment differences:
-- **Local**: Default `portfolio` password for database, SnapTrade test credentials
-- **VPS (devpc.nanobyte.ca)**: `VITE_API_URL=https://devpc.nanobyte.ca`, secrets from GitHub Secrets
-- **Production (GCP)**: `VITE_API_URL=https://api.portfolio.example.com`, `SPRING_PROFILES_ACTIVE=prod`, secrets from GCP Secret Manager
+- **Local**: Default `portfolio` password for database, `SPRING_PROFILES_ACTIVE=local`
+- **UAT (uatportfolio.nanobyte.ca)**: `VITE_API_URL=https://uatportfolio.nanobyte.ca`, secrets from Vault
+- **Production (portfolio.nanobyte.ca)**: `VITE_API_URL=https://portfolio.nanobyte.ca`, `SPRING_PROFILES_ACTIVE=prod`, secrets from Vault
 
 ---
 
