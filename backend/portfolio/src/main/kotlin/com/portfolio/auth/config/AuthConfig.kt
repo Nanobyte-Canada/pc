@@ -1,7 +1,9 @@
 package com.portfolio.auth.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 
 @Configuration
@@ -12,6 +14,11 @@ class AuthConfig {
     var email: EmailConfig = EmailConfig()
     var oauth2: OAuth2Config = OAuth2Config()
     var cors: CorsConfig = CorsConfig()
+
+    @Bean
+    fun googleOAuthWebClient(): WebClient {
+        return WebClient.builder().build()
+    }
 }
 
 class JwtConfig {
