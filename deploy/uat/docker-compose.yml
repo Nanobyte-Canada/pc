@@ -266,8 +266,8 @@ services:
       IBKR_HOST: ib-gateway
       IBKR_PORT: "4002"
       IBKR_GATEWAY_CLIENT_ID: ${IBKR_GATEWAY_CLIENT_ID:-2}
-      QUESTRADE_ENABLED: ${QUESTRADE_ENABLED:-false}
-      WEALTHSIMPLE_ENABLED: ${WEALTHSIMPLE_ENABLED:-false}
+      QUESTRADE_ENABLED: "true"
+      WEALTHSIMPLE_ENABLED: "true"
     ports:
       - "20084:8084"
     extra_hosts:
