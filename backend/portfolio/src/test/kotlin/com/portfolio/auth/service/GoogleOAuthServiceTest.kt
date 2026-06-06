@@ -53,14 +53,15 @@ class GoogleOAuthServiceTest {
 
         mockWebServer = MockWebServer()
         mockWebServer.start()
-        webClient = WebClient.builder()
-            .baseUrl(mockWebServer.url("/").toString())
-            .build()
+        webClient = WebClient.builder().build()
 
+        val mockBaseUrl = mockWebServer.url("/").toString().trimEnd('/')
         val googleConfig = GoogleOAuthConfig().apply {
             clientId = "test-client-id"
             clientSecret = "test-client-secret"
             redirectUri = "http://localhost:8080/auth/google/callback"
+            tokenUrl = "$mockBaseUrl/token"
+            userinfoUrl = "$mockBaseUrl/userinfo"
         }
         val oauth2Config = OAuth2Config().apply {
             google = googleConfig

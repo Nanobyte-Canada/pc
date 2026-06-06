@@ -48,8 +48,6 @@ class GoogleOAuthService(
 
     companion object {
         private const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-        private const val GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-        private const val GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
         private const val STATE_EXPIRY_MINUTES = 10L
     }
 
@@ -197,7 +195,7 @@ class GoogleOAuthService(
         redirectUri: String
     ): GoogleTokenResponse {
         val response = webClient.post()
-            .uri(GOOGLE_TOKEN_URL)
+            .uri(authConfig.oauth2.google.tokenUrl)
             .body(BodyInserters.fromFormData("code", code)
                 .with("client_id", clientId)
                 .with("client_secret", clientSecret)
@@ -215,7 +213,7 @@ class GoogleOAuthService(
 
     private fun fetchUserProfile(accessToken: String): GoogleUserProfile {
         val response = webClient.get()
-            .uri(GOOGLE_USERINFO_URL)
+            .uri(authConfig.oauth2.google.userinfoUrl)
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
             .bodyToMono(Map::class.java)
