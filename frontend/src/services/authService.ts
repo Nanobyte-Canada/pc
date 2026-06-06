@@ -2,7 +2,6 @@ import { useAuthStore } from '../stores/authStore';
 import { apiFetch, API_URL } from './api';
 import type {
   AuthResponse,
-  MessageResponse,
   AuthErrorResponse,
 } from '../types/auth';
 
