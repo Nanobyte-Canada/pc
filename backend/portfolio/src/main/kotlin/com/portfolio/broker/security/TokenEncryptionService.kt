@@ -16,7 +16,7 @@ import javax.crypto.spec.SecretKeySpec
  * Uses AES-256-GCM encryption for authenticated encryption.
  *
  * For local development, uses a configured secret key.
- * For production, this should integrate with GCP KMS for key management.
+ * For production, uses HashiCorp Vault for secret key management.
  */
 @Service
 class TokenEncryptionService(
