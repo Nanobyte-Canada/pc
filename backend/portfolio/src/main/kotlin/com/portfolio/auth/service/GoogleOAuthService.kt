@@ -63,9 +63,10 @@ class GoogleOAuthService(
         oauthStateRepository.save(oauthState)
 
         val googleConfig = authConfig.oauth2.google
+        val redirectUri = authConfig.cors.allowedOrigins.split(",").first().trim() + "/auth/google/callback"
         val params = mapOf(
             "client_id" to googleConfig.clientId,
-            "redirect_uri" to googleConfig.redirectUri,
+            "redirect_uri" to redirectUri,
             "response_type" to "code",
             "scope" to "openid email profile",
             "state" to tokenPair.token,
@@ -94,11 +95,12 @@ class GoogleOAuthService(
         oauthStateRepository.save(oauthState)
 
         val googleConfig = authConfig.oauth2.google
+        val redirectUri = authConfig.cors.allowedOrigins.split(",").first().trim() + "/auth/google/callback"
         val tokenResponse = exchangeCodeForTokens(
             code = code,
             clientId = googleConfig.clientId,
             clientSecret = googleConfig.clientSecret,
-            redirectUri = googleConfig.redirectUri
+            redirectUri = redirectUri
         )
 
         return fetchUserProfile(tokenResponse.accessToken)

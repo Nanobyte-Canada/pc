@@ -1,6 +1,7 @@
 package com.portfolio.auth.service
 
 import com.portfolio.auth.config.AuthConfig
+import com.portfolio.auth.config.CorsConfig
 import com.portfolio.auth.config.GoogleOAuthConfig
 import com.portfolio.auth.config.OAuth2Config
 import com.portfolio.auth.entity.OAuthState
@@ -59,14 +60,17 @@ class GoogleOAuthServiceTest {
         val googleConfig = GoogleOAuthConfig().apply {
             clientId = "test-client-id"
             clientSecret = "test-client-secret"
-            redirectUri = "http://localhost:8080/auth/google/callback"
             tokenUrl = "$mockBaseUrl/token"
             userinfoUrl = "$mockBaseUrl/userinfo"
         }
         val oauth2Config = OAuth2Config().apply {
             google = googleConfig
         }
+        val corsConfig = CorsConfig().apply {
+            allowedOrigins = "http://localhost:3000"
+        }
         every { authConfig.oauth2 } returns oauth2Config
+        every { authConfig.cors } returns corsConfig
 
         service = GoogleOAuthService(
             oauthStateRepository = oauthStateRepository,
@@ -96,7 +100,7 @@ class GoogleOAuthServiceTest {
 
         assert(authUrl.contains("https://accounts.google.com/o/oauth2/v2/auth"))
         assert(authUrl.contains("client_id=test-client-id"))
-        assert(authUrl.contains("redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Fgoogle%2Fcallback"))
+        assert(authUrl.contains("redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fgoogle%2Fcallback"))
         assert(authUrl.contains("response_type=code"))
         assert(authUrl.contains("scope=openid+email+profile"))
         assert(authUrl.contains("state=raw-state-token"))

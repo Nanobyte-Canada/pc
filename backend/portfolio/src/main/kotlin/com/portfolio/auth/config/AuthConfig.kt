@@ -48,7 +48,6 @@ class OAuth2Config {
 class GoogleOAuthConfig {
     var clientId: String = ""
     var clientSecret: String = ""
-    var redirectUri: String = "http://localhost:8080/auth/google/callback"
     var tokenUrl: String = "https://oauth2.googleapis.com/token"
     var userinfoUrl: String = "https://www.googleapis.com/oauth2/v3/userinfo"
 }
