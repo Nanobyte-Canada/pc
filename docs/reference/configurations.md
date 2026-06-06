@@ -312,7 +312,7 @@ HikariCP configuration from `spring.datasource.hikari` in `application.yml`:
 | `spring.data.redis.host` | `${REDIS_HOST:localhost}` | Redis server hostname |
 | `spring.data.redis.port` | `${REDIS_PORT:6379}` | Redis server port |
 
-Redis is available in local development (docker-compose.yml provides `redis:7-alpine`) but NOT in the VPS deployment (docker-compose.vps.yml has no Redis service). The dev profile does not configure Redis separately, so Redis caching operations will fail silently or fall back when Redis is unavailable.
+Redis is available in all environments (local development and deployed environments via docker-compose).
 
 ---
 
