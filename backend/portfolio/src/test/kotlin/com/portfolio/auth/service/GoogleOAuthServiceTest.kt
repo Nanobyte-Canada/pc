@@ -61,7 +61,6 @@ class GoogleOAuthServiceTest {
             clientId = "test-client-id"
             clientSecret = "test-client-secret"
             redirectUri = "http://localhost:8080/auth/google/callback"
-            frontendUrl = "http://localhost:3000"
         }
         val oauth2Config = OAuth2Config().apply {
             google = googleConfig

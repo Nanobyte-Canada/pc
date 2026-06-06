@@ -105,7 +105,6 @@ Every environment variable referenced in `application.yml`, organized by categor
 | `GOOGLE_CLIENT_ID` | Google OAuth2 client ID | (empty) | dev, prod |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret | (empty) | dev, prod |
 | `GOOGLE_REDIRECT_URI` | Google OAuth callback URL | `http://localhost:8080/auth/google/callback` | All profiles |
-| `FRONTEND_URL` | Frontend URL for post-login redirect | `http://localhost:3000` | All profiles |
 
 ### Authentication - Email
 

@@ -49,7 +49,6 @@ class GoogleOAuthConfig {
     var clientId: String = ""
     var clientSecret: String = ""
     var redirectUri: String = "http://localhost:8080/auth/google/callback"
-    var frontendUrl: String = "http://localhost:3000"
 }
 
 class CorsConfig {

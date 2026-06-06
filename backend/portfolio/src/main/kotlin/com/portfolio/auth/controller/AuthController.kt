@@ -57,7 +57,7 @@ class AuthController(
         httpRequest: HttpServletRequest,
         httpResponse: HttpServletResponse
     ): ResponseEntity<Void> {
-        val frontendUrl = authConfig.oauth2.google.frontendUrl
+        val frontendUrl = authConfig.cors.allowedOrigins.split(",").first().trim()
 
         if (error != null) {
             logger.warn("Google OAuth error: $error")
