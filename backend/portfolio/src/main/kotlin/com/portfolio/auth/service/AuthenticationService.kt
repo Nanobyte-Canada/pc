@@ -7,6 +7,7 @@ import com.portfolio.auth.exception.*
 import com.portfolio.auth.repository.*
 import com.portfolio.auth.security.JwtTokenProvider
 import com.portfolio.auth.security.SecureTokenGenerator
+import com.portfolio.auth.security.TokenPair
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -371,6 +372,18 @@ class AuthenticationService(
         auditService.logProfileUpdate(user, clientInfo.ipAddress, clientInfo.userAgent)
 
         return savedUser
+    }
+
+    fun generateAccessToken(user: User, roles: List<String>): String {
+        return jwtTokenProvider.generateAccessToken(user, roles)
+    }
+
+    fun createRefreshToken(user: User, clientInfo: ClientInfo): TokenPair {
+        return refreshTokenService.createRefreshToken(
+            user = user,
+            deviceInfo = clientInfo.userAgent,
+            ipAddress = clientInfo.ipAddress
+        )
     }
 
     /**
