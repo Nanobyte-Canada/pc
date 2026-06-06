@@ -102,21 +102,17 @@ Returns application version and environment.
 
 | Method | Path | Auth | Service Method | Request Body | Response |
 |---|---|---|---|---|---|
-| `POST` | `/auth/signup` | Public | `authenticationService.signup()` | `SignupRequest` | `SignupResponse` (201) |
-| `POST` | `/auth/login` | Public | `authenticationService.login()` | `LoginRequest` | `AuthResponse` (sets cookies) |
+| `GET` | `/auth/google` | Public | `googleOAuthService.initiateGoogleLogin()` | -- | Redirects to Google consent screen |
+| `GET` | `/auth/google/callback` | Public | `googleOAuthService.handleCallback()` | `?code=String&state=String` | Redirects to frontend after setting auth cookies |
 | `POST` | `/auth/logout` | Public | `authenticationService.logout()` | (cookie: refresh_token) | `MessageResponse` |
 | `POST` | `/auth/refresh` | Public | `authenticationService.refreshAccessToken()` | (cookie: refresh_token) | `AuthResponse` (sets cookies) |
-| `POST` | `/auth/forgot-password` | Public | `authenticationService.forgotPassword()` | `ForgotPasswordRequest` | `MessageResponse` |
-| `POST` | `/auth/reset-password` | Public | `authenticationService.resetPassword()` | `ResetPasswordRequest` | `MessageResponse` |
-| `GET` | `/auth/verify-email` | Public | `authenticationService.verifyEmail()` | `?token=String` | `MessageResponse` |
-| `POST` | `/auth/resend-verification` | Public | `authenticationService.resendVerificationEmail()` | `ResendVerificationRequest` | `MessageResponse` |
 | `GET` | `/auth/me` | Authenticated | `userRepository.findByIdWithIdentities()` | -- | `UserResponse` |
-| `POST` | `/auth/change-password` | Authenticated | `authenticationService.changePassword()` | `ChangePasswordRequest` | `MessageResponse` (clears cookies) |
 | `PUT` | `/auth/profile` | Authenticated | `authenticationService.updateProfile()` | `UpdateProfileRequest` | `UserResponse` |
 
 ### Notes
-- Login and refresh set `access_token` and `refresh_token` as HttpOnly cookies.
-- Logout and change-password clear auth cookies.
+- Google OAuth callback sets `access_token` and `refresh_token` as HttpOnly cookies after successful authentication.
+- Refresh endpoint rotates tokens and sets new cookies.
+- Logout clears auth cookies.
 - `secure` flag set when `app.environment` is `prod` or `dev`.
 - `SameSite=Lax` on all cookies.
 
@@ -436,8 +432,8 @@ Additional param: `benchmark: String?` -- Benchmark symbol (e.g., `SPY`, `XIU`) 
 ### Public Endpoints (no auth required)
 - `GET /health`
 - `GET /api/v1/version`
-- `POST /auth/login`, `/auth/signup`, `/auth/refresh`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/resend-verification`
-- `GET /auth/verify-email`, `/auth/logout`
+- `GET /auth/google`, `/auth/google/callback`
+- `POST /auth/refresh`, `/auth/logout`
 - `GET /actuator/health`, `/actuator/info`
 
 ### Admin Endpoints (ROLE_ADMIN required)
