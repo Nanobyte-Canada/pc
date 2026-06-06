@@ -10,6 +10,11 @@ services:
       READ_ONLY_API: "no"
       VNC_SERVER_PASSWORD: ${IBKR_VNC_PASSWORD:-}
       TWS_PORT: "4001"
+      AUTO_RESTART_TIME: "11:59 PM"
+      TWOFA_TIMEOUT_ACTION: restart
+      RELOGIN_AFTER_TWOFA_TIMEOUT: "yes"
+      EXISTING_SESSION_DETECTED_ACTION: primary
+      TZ: America/New_York
     ports:
       - "127.0.0.1:15900:5900"
       - "127.0.0.1:14001:4001"
