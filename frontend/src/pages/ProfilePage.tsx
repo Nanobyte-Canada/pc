@@ -1,26 +1,16 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useUser } from '../stores/authStore';
-import { updateProfile, changePassword, AuthError } from '../services/authService';
+import { updateProfile, AuthError } from '../services/authService';
 import './ProfilePage.css';
 
 export function ProfilePage() {
   const user = useUser();
-  const navigate = useNavigate();
 
   // Profile form state
   const [name, setName] = useState(user?.name || '');
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
-
-  // Password form state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const handleProfileSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -39,54 +29,6 @@ export function ProfilePage() {
       }
     } finally {
       setProfileLoading(false);
-    }
-  };
-
-  const handlePasswordSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-    setPasswordSuccess(null);
-
-    // Validation
-    if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match.');
-      return;
-    }
-
-    if (newPassword.length < 12) {
-      setPasswordError('Password must be at least 12 characters.');
-      return;
-    }
-
-    // Check password complexity
-    const hasUppercase = /[A-Z]/.test(newPassword);
-    const hasLowercase = /[a-z]/.test(newPassword);
-    const hasNumber = /[0-9]/.test(newPassword);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
-
-    if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
-      setPasswordError(
-        'Password must contain uppercase, lowercase, number, and special character.'
-      );
-      return;
-    }
-
-    setPasswordLoading(true);
-
-    try {
-      await changePassword({ currentPassword, newPassword });
-      setPasswordSuccess('Password changed successfully! Redirecting to login...');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
-    } catch (error) {
-      if (error instanceof AuthError) {
-        setPasswordError(error.message);
-      } else {
-        setPasswordError('Failed to change password. Please try again.');
-      }
-    } finally {
-      setPasswordLoading(false);
     }
   };
 
@@ -159,55 +101,6 @@ export function ProfilePage() {
         </form>
       </section>
 
-      {/* Change Password Section */}
-      <section className="profile-section">
-        <h2 className="section-title">Change Password</h2>
-        {passwordSuccess && <div className="success-message">{passwordSuccess}</div>}
-        {passwordError && <div className="error-message">{passwordError}</div>}
-        <form onSubmit={handlePasswordSubmit} className="profile-form">
-          <div className="form-group">
-            <label htmlFor="currentPassword">Current Password</label>
-            <input
-              id="currentPassword"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="newPassword">New Password</label>
-            <input
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-              minLength={12}
-            />
-            <span className="form-hint">
-              Min 12 characters with uppercase, lowercase, number, and special character
-            </span>
-          </div>
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm New Password</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            className="submit-button"
-            disabled={passwordLoading}
-          >
-            {passwordLoading ? 'Changing Password...' : 'Change Password'}
-          </button>
-        </form>
-      </section>
     </div>
   );
 }
