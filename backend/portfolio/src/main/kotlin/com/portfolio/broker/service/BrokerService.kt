@@ -177,7 +177,7 @@ class BrokerService(
                     validatedGatewayIds[gwId] = ValidationState(connected, needsReauth)
                 } catch (e: Exception) {
                     log.warn("Failed to validate gateway connection {} for user {}: {}", gwId, userId, e.message)
-                    validatedGatewayIds[gwId] = ValidationState(connected = false, needsReauth = true)
+                    validatedGatewayIds[gwId] = ValidationState(connected = false, needsReauth = false)
                 }
             }
 
