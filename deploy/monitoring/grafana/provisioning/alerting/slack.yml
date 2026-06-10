@@ -8,15 +8,21 @@ contactPoints:
         type: slack
         settings:
           url: "${SLACK_WEBHOOK_URL}"
-          title: |
-            {{ `{{ .Status | toUpper }}` }} - {{ `{{ .CommonLabels.alertname }}` }}
-          text: |
-            {{ `{{ range .Alerts }}` }}
-            *Alert:* {{ `{{ .Labels.alertname }}` }}
-            *Severity:* {{ `{{ .Labels.severity }}` }}
-            *Summary:* {{ `{{ .Annotations.summary }}` }}
-            *Description:* {{ `{{ .Annotations.description }}` }}
-            {{ `{{ end }}` }}
+          title: >-
+            {{ if eq .Status "firing" }}FIRING{{ else }}RESOLVED{{ end }} — {{ .CommonLabels.alertname }}
+          text: >-
+            {{ range .Alerts -}}
+            *Alert:* {{ .Labels.alertname }}
+
+            *Severity:* {{ .Labels.severity }}
+
+            *Summary:* {{ .Annotations.summary }}
+
+            *Description:* {{ .Annotations.description }}
+
+            ---
+
+            {{ end }}
 
 policies:
   - orgId: 1
