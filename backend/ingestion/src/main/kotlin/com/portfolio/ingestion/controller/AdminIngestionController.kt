@@ -54,6 +54,7 @@ class AdminIngestionController(
         if (runId == null) {
             return ResponseEntity.ok(mapOf("isRunning" to false))
         }
+        val run = runRepo.findById(runId).orElse(null)
         val steps = stepRepo.findByRunId(runId).map { step ->
             mapOf(
                 "name" to step.stepName.name,
@@ -67,8 +68,18 @@ class AdminIngestionController(
         return ResponseEntity.ok(mapOf(
             "isRunning" to true,
             "runId" to runId,
+            "startedAt" to run?.startedAt,
             "steps" to steps
         ))
+    }
+
+    @PostMapping("/cancel")
+    fun cancelRun(): ResponseEntity<Map<String, Any>> {
+        if (!orchestrator.isRunning()) {
+            return ResponseEntity.ok(mapOf("status" to "idle", "message" to "No run is currently active"))
+        }
+        orchestrator.cancelRun()
+        return ResponseEntity.ok(mapOf("status" to "cancelled"))
     }
 
     @GetMapping("/stats")

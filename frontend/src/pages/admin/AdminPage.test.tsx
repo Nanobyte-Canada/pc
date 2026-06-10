@@ -13,6 +13,7 @@ vi.mock('../../services/adminService', () => ({
   getRunErrors: vi.fn(),
   triggerExchangeSync: vi.fn(),
   triggerFullIngestion: vi.fn(),
+  cancelIngestion: vi.fn(),
 }))
 
 const mockStats: adminService.IngestionStats = {
