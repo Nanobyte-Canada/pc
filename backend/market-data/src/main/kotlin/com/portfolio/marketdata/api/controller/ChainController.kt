@@ -197,9 +197,9 @@ class ChainController(
         val optionType = if (isCall(contract.right)) OptionType.CALL else OptionType.PUT
         val snapshot = snapshots[contract.conId]
 
-        val bid = snapshot?.bid?.let { BigDecimal.valueOf(it).setScale(4, RoundingMode.HALF_UP) } ?: BigDecimal.ZERO
-        val ask = snapshot?.ask?.let { BigDecimal.valueOf(it).setScale(4, RoundingMode.HALF_UP) } ?: BigDecimal.ZERO
-        val last = snapshot?.last?.let { BigDecimal.valueOf(it).setScale(4, RoundingMode.HALF_UP) }
+        val bid = snapshot?.bid?.takeIf { it >= 0 }?.let { BigDecimal.valueOf(it).setScale(4, RoundingMode.HALF_UP) } ?: BigDecimal.ZERO
+        val ask = snapshot?.ask?.takeIf { it >= 0 }?.let { BigDecimal.valueOf(it).setScale(4, RoundingMode.HALF_UP) } ?: BigDecimal.ZERO
+        val last = snapshot?.last?.takeIf { it > 0 }?.let { BigDecimal.valueOf(it).setScale(4, RoundingMode.HALF_UP) }
             ?: bid.add(ask).divide(BigDecimal.TWO, 4, RoundingMode.HALF_UP)
 
         val greeks = if (snapshot?.delta != null) {
