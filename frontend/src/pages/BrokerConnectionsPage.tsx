@@ -103,10 +103,10 @@ export function BrokerConnectionsPage() {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleReconnect = (_gatewayConnectionId: string) => {
+  const handleReconnect = (gatewayConnectionId: string) => {
     setConnectError(null)
-    setConnectDialogBroker('questrade')
+    const connection = connections?.find(c => c.gatewayConnectionId === gatewayConnectionId)
+    setConnectDialogBroker(connection?.broker?.slug || 'questrade')
   }
 
   const handleSyncAll = (connectionId: number) => {

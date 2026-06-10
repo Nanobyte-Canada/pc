@@ -36,11 +36,17 @@ class TokenRefreshScheduler(
                 val adapter = adapterRegistry.getAdapter(credentials.brokerType)
                 val updated = credentialService.getCredentialsWithRefresh(conn.id, adapter)
 
-                try {
-                    adapter.validateConnection(updated)
-                } catch (authEx: BrokerAuthenticationException) {
+                val validationResult = adapter.validateConnection(updated)
+                if (!validationResult.connected) {
                     log.warn("Token valid by timestamp but rejected by broker for {}, force-refreshing", conn.id)
-                    credentialService.forceRefresh(conn.id, adapter)
+                    val forceRefreshed = credentialService.forceRefresh(conn.id, adapter)
+                    val retryResult = adapter.validateConnection(forceRefreshed)
+                    if (!retryResult.connected) {
+                        throw BrokerAuthenticationException(
+                            "Validation failed after force-refresh: ${retryResult.message}",
+                            credentials.brokerType
+                        )
+                    }
                 }
 
                 refreshed++
@@ -56,7 +62,12 @@ class TokenRefreshScheduler(
                 conn.refreshFailureCount++
                 failed++
 
-                if (conn.refreshFailureCount >= 3 && conn.status != "ERROR") {
+                if (conn.refreshFailureCount >= 10) {
+                    conn.status = "EXPIRED"
+                    conn.errorMessage = "Connection expired — please reconnect your broker"
+                    log.error("Connection {} marked EXPIRED after {} consecutive failures, stopping retries",
+                        conn.id, conn.refreshFailureCount)
+                } else if (conn.refreshFailureCount >= 3 && conn.status != "ERROR") {
                     conn.status = "ERROR"
                     conn.errorMessage = "Token refresh failed after ${conn.refreshFailureCount} attempts: ${e.message}"
                     log.error("Connection {} marked ERROR after {} consecutive failures", conn.id, conn.refreshFailureCount)
