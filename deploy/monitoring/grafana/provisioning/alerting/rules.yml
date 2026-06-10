@@ -35,8 +35,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Service {{ $labels.job }} is down"
-          description: "The service {{ $labels.job }} on instance {{ $labels.instance }} has been down for more than 1 minute."
+          summary: "[{{ $labels.environment }}] Service {{ $labels.job }} is down"
+          description: "The service {{ $labels.job }} ({{ $labels.environment }}) on instance {{ $labels.instance }} has been down for more than 1 minute."
 
       - uid: high-error-rate
         title: High Error Rate
@@ -48,7 +48,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: '(sum by (service) (rate(http_server_requests_seconds_count{status=~"5.."}[5m])) / sum by (service) (rate(http_server_requests_seconds_count[5m]))) * 100 > 5'
+              expr: '(sum by (service, environment) (rate(http_server_requests_seconds_count{status=~"5.."}[5m])) / sum by (service, environment) (rate(http_server_requests_seconds_count[5m]))) * 100 > 5'
               intervalMs: 15000
               maxDataPoints: 43200
           - refId: C
@@ -67,8 +67,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High error rate on service {{ $labels.service }}"
-          description: "Service {{ $labels.service }} has more than 5% of requests returning 5xx errors over the last 5 minutes."
+          summary: "[{{ $labels.environment }}] High error rate on {{ $labels.service }}"
+          description: "Service {{ $labels.service }} ({{ $labels.environment }}) has more than 5% of requests returning 5xx errors over the last 5 minutes."
 
       - uid: jvm-heap-critical
         title: JVM Heap Critical
@@ -99,8 +99,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "JVM heap usage critical on {{ $labels.instance }}"
-          description: "JVM heap usage on instance {{ $labels.instance }} has exceeded 85% for more than 5 minutes. Current usage: {{ $value }}%"
+          summary: "[{{ $labels.environment }}] JVM heap usage critical on {{ $labels.instance }}"
+          description: "JVM heap usage on {{ $labels.instance }} ({{ $labels.environment }}) has exceeded 85% for more than 5 minutes. Current usage: {{ $value }}%"
 
       - uid: disk-usage-high
         title: Disk Usage High
@@ -163,8 +163,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Database connection pool nearly exhausted on {{ $labels.pool }}"
-          description: "HikariCP pool {{ $labels.pool }} has less than 2 idle connections for more than 2 minutes. Current idle: {{ $value }}"
+          summary: "[{{ $labels.environment }}] DB pool nearly exhausted on {{ $labels.pool }}"
+          description: "HikariCP pool {{ $labels.pool }} ({{ $labels.environment }}) has less than 2 idle connections for more than 2 minutes. Current idle: {{ $value }}"
 
       - uid: container-restart-loop
         title: Container Restart Loop
@@ -176,7 +176,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'increase(container_restart_count{name=~"prod-.*"}[5m]) > 3'
+              expr: 'increase(container_restart_count{name=~"(prod|uat)-.*"}[5m]) > 3'
               intervalMs: 15000
               maxDataPoints: 43200
           - refId: C

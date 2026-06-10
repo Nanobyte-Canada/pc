@@ -162,7 +162,8 @@ class BrokerService(
         log.info("Starting connection sync for user {}: validating gateway connections...", userId)
 
         val connections = connectionRepository.findByUserId(userId)
-        val validatedGatewayIds = mutableMapOf<String, Boolean>()
+        data class ValidationState(val connected: Boolean, val needsReauth: Boolean)
+        val validatedGatewayIds = mutableMapOf<String, ValidationState>()
         var validatedCount = 0
 
         for (connection in connections) {
@@ -172,16 +173,20 @@ class BrokerService(
                 try {
                     val validationResult = gatewayClient.validateConnection(gwId)
                     val connected = validationResult.get("connected")?.asBoolean() ?: false
-                    validatedGatewayIds[gwId] = connected
+                    val needsReauth = validationResult.get("needsReauth")?.asBoolean() ?: false
+                    validatedGatewayIds[gwId] = ValidationState(connected, needsReauth)
                 } catch (e: Exception) {
                     log.warn("Failed to validate gateway connection {} for user {}: {}", gwId, userId, e.message)
-                    validatedGatewayIds[gwId] = false
+                    validatedGatewayIds[gwId] = ValidationState(connected = false, needsReauth = true)
                 }
             }
 
-            if (validatedGatewayIds[gwId] == true) {
+            val state = validatedGatewayIds[gwId]!!
+            if (state.connected) {
                 connection.status = ConnectionStatus.ACTIVE
                 connection.clearError()
+            } else if (state.needsReauth) {
+                connection.markAsExpired("Connection expired — please reconnect")
             } else {
                 connection.markAsError("VALIDATION_FAILED", "Connection validation failed")
             }
