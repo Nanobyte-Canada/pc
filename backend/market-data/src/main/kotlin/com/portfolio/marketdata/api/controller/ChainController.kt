@@ -18,6 +18,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDate
+import java.util.concurrent.*
 
 @RestController
 @RequestMapping("/api/v1/chains")
@@ -90,17 +91,13 @@ class ChainController(
         }
         if (contracts.isEmpty()) return null
 
-        val firstExpiry = contracts.filter { it.expiry != null }.minByOrNull { it.expiry!! }?.expiry
-        val snapshotContracts = filterByDelta(contracts, spotPrice, firstExpiry, DEFAULT_MAX_DELTA)
-            .sortedBy { Math.abs(it.strike!!.toDouble() - spotPrice.toDouble()) }
-            .take(30)
-
-        log.info("Fetching snapshots for {} contracts (expiry {}) out of {} total for {}",
-            snapshotContracts.size, firstExpiry, contracts.size, underlying)
-
-        val snapshots = fetchSnapshots(snapshotContracts)
-
         val allDeltaFiltered = filterByDelta(contracts, spotPrice, null, DEFAULT_MAX_DELTA)
+
+        log.info("Fetching snapshots for {} delta-filtered contracts out of {} total for {}",
+            allDeltaFiltered.size, contracts.size, underlying)
+
+        val snapshots = fetchSnapshots(allDeltaFiltered)
+
         val optionQuotes = allDeltaFiltered.mapNotNull { contract ->
             buildOptionQuote(underlying, contract, spotPrice, snapshots)
         }
@@ -123,9 +120,10 @@ class ChainController(
 
         val filtered = filterByStrikeCount(contracts, spotPrice, expiry, strikesPerSide)
 
-        log.info("Building chain: {} contracts ({} per side) for {} expiry {}", filtered.size, strikesPerSide, underlying, expiry)
+        log.info("Fetching snapshots for {} contracts ({} per side) for {} expiry {}",
+            filtered.size, strikesPerSide, underlying, expiry)
 
-        val snapshots = emptyMap<Int, com.portfolio.marketdata.ibkr.MarketDataSnapshot>()
+        val snapshots = fetchSnapshots(filtered)
 
         val optionQuotes = filtered.mapNotNull { contract ->
             buildOptionQuote(underlying, contract, spotPrice, snapshots)
@@ -178,11 +176,38 @@ class ChainController(
         return eligible.filter { "${it.expiry}:${it.strike}" in validStrikes }
     }
 
+    private val snapshotExecutor: ExecutorService = Executors.newFixedThreadPool(12) { r ->
+        Thread(r, "chain-snapshot").apply { isDaemon = true }
+    }
+
     private fun fetchSnapshots(contracts: List<com.portfolio.marketdata.ibkr.OptionContractDetails>): Map<Int, com.portfolio.marketdata.ibkr.MarketDataSnapshot> {
-        return contracts.mapNotNull { contract ->
-            val snapshot = ibkrClient.requestMarketDataSnapshot(contract.conId)
-            if (snapshot != null) contract.conId to snapshot else null
+        if (contracts.isEmpty()) return emptyMap()
+
+        val startTime = System.currentTimeMillis()
+
+        val futures = contracts.map { contract ->
+            CompletableFuture.supplyAsync({
+                try {
+                    ibkrClient.requestMarketDataSnapshot(contract.conId)?.let { contract.conId to it }
+                } catch (e: Exception) {
+                    log.debug("Snapshot failed for conId={}", contract.conId)
+                    null
+                }
+            }, snapshotExecutor)
+        }
+
+        val results = futures.mapNotNull { f ->
+            try {
+                f.get(8, TimeUnit.SECONDS)
+            } catch (_: Exception) {
+                null
+            }
         }.toMap()
+
+        log.info("Fetched {}/{} snapshots in {}ms (parallel)",
+            results.size, contracts.size, System.currentTimeMillis() - startTime)
+
+        return results
     }
 
     private fun isCall(right: String?) = right == "C" || right.equals("Call", ignoreCase = true)
