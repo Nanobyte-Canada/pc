@@ -86,12 +86,13 @@ class ChainController(
         @PathVariable underlying: String,
         @PathVariable expiry: String,
         @RequestParam(defaultValue = "0.45") maxDelta: Double,
-        @RequestParam(defaultValue = "25") strikesPerSide: Int
+        @RequestParam(defaultValue = "25") strikesPerSide: Int,
+        @RequestParam(defaultValue = "both") side: String
     ): ResponseEntity<OptionsChainResponse> {
         val expiryDate = try { LocalDate.parse(expiry) } catch (_: Exception) {
             return ResponseEntity.badRequest().build()
         }
-        val chain = buildChainForExpiry(underlying, expiryDate, maxDelta, strikesPerSide) ?: return ResponseEntity.notFound().build()
+        val chain = buildChainForExpiry(underlying, expiryDate, maxDelta, strikesPerSide, side) ?: return ResponseEntity.notFound().build()
         return ResponseEntity.ok(OptionsChainResponse.fromDomain(chain))
     }
 
@@ -124,7 +125,7 @@ class ChainController(
         return chainBuilder.build(underlying, spotPrice, optionQuotes)
     }
 
-    private fun buildChainForExpiry(underlying: String, expiry: LocalDate, maxDelta: Double, strikesPerSide: Int = 25): OptionsChain? {
+    private fun buildChainForExpiry(underlying: String, expiry: LocalDate, maxDelta: Double, strikesPerSide: Int = 25, side: String = "both"): OptionsChain? {
         val spotPrice = resolveSpotPrice(underlying) ?: return null
 
         val contracts = try {
@@ -137,10 +138,17 @@ class ChainController(
         }
         if (contracts.isEmpty()) return null
 
-        val filtered = filterByStrikeCount(contracts, spotPrice, expiry, strikesPerSide)
+        val sideFiltered = when (side.lowercase()) {
+            "put" -> contracts.filter { it.right?.uppercase() in setOf("P", "PUT") }
+            "call" -> contracts.filter { it.right?.uppercase() in setOf("C", "CALL") }
+            else -> contracts
+        }
+        if (sideFiltered.isEmpty()) return null
 
-        log.info("Fetching snapshots for {} contracts ({} per side) for {} expiry {}",
-            filtered.size, strikesPerSide, underlying, expiry)
+        val filtered = filterByStrikeCount(sideFiltered, spotPrice, expiry, strikesPerSide)
+
+        log.info("Fetching snapshots for {} contracts ({} per side, side={}) for {} expiry {}",
+            filtered.size, strikesPerSide, side, underlying, expiry)
 
         val snapshots = fetchSnapshots(filtered)
 
