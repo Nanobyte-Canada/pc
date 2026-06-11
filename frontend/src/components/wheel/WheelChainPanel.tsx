@@ -77,7 +77,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       unsubscribe(context.ticker)
       unsubscribeChain(context.ticker)
     }
-  }, [context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain])
+  }, [context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain, strikesPerSide, side])
 
   const handleExpiryChange = useCallback(async (newExpiry: string) => {
     setSelectedExpiry(newExpiry)

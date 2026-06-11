@@ -35,7 +35,7 @@ class QuoteCacheServiceTest {
         verify {
             opsForValue.set(
                 "expirations:AAPL",
-                match { it.contains("2026-06-20") && it.contains("2026-07-18") },
+                match { it.contains("[2026,6,20]") && it.contains("[2026,7,18]") },
                 24L,
                 TimeUnit.HOURS
             )

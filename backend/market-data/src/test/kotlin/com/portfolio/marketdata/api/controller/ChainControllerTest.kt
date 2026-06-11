@@ -114,13 +114,13 @@ class ChainControllerTest {
         )
 
         every { quoteCacheService.getQuote("AAPL") } returns mockk { every { last } returns BigDecimal("155.00") }
-        every { ibkrClient.requestContractDetails("AAPL", "OPT", expiry) } returns listOf(putContract, callContract)
+        every { ibkrClient.requestContractDetails("AAPL", "OPT", expiry, any(), any()) } returns listOf(putContract, callContract)
         every { ibkrClient.requestMarketDataSnapshot(1) } returns mockk {
             every { bid } returns 2.50; every { ask } returns 2.80; every { last } returns 2.65
             every { volume } returns 100; every { delta } returns -0.35; every { gamma } returns 0.02
             every { theta } returns -0.05; every { vega } returns 0.15
         }
-        every { chainBuilder.build("AAPL", BigDecimal("155"), any()) } returns chain
+        every { chainBuilder.build("AAPL", any(), any()) } returns chain
 
         val response = controller.getChainForExpiry("AAPL", expiry.toString(), 0.45, 25, "put")
 
@@ -140,9 +140,9 @@ class ChainControllerTest {
         val chain = OptionsChain("SPY", BigDecimal("455"), emptyMap())
 
         every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("455.00") }
-        every { ibkrClient.requestContractDetails("SPY", "OPT", expiry) } returns contracts
+        every { ibkrClient.requestContractDetails("SPY", "OPT", expiry, any(), any()) } returns contracts
         every { ibkrClient.requestMarketDataSnapshot(any()) } returns null
-        every { chainBuilder.build("SPY", BigDecimal("455"), any()) } returns chain
+        every { chainBuilder.build("SPY", any(), any()) } returns chain
 
         val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
 
