@@ -20,6 +20,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   const [expirations, setExpirations] = useState<string[]>([])
   const [selectedExpiry, setSelectedExpiry] = useState(context.expiryDate)
   const [loadingExpiry, setLoadingExpiry] = useState(false)
+  const [strikesPerSide, setStrikesPerSide] = useState(25)
 
   const chain = useQuoteStore(s => s.chains[context.ticker])
   const quote = useQuoteStore(s => s.quotes[context.ticker])
@@ -28,6 +29,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
 
   const spotPrice = quote?.last ?? quote?.mid ?? initialSpotPrice
   const isCsp = context.optionSide === 'put'
+  const side = isCsp ? 'put' as const : 'call' as const
   const typeLabelShort = isCsp ? 'CSP' : 'CC'
 
   const availableExpiries = expirations
@@ -58,12 +60,12 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         const chosenExpiry = bestDiff <= 3 * 86400000 ? bestExpiry : expList[0]
         setSelectedExpiry(chosenExpiry)
 
-        const chainData = await getOptionsChainForExpiry(context.ticker, chosenExpiry)
+        const chainData = await getOptionsChainForExpiry(context.ticker, chosenExpiry, { strikesPerSide, side })
         if (cancelled) return
         setChain(context.ticker, chainData)
         setLoading(false)
 
-        subscribeChainExpiry(context.ticker, chosenExpiry)
+        subscribeChainExpiry(context.ticker, chosenExpiry, side)
       } catch {
         if (!cancelled) setLoading(false)
       }
@@ -75,26 +77,39 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       unsubscribe(context.ticker)
       unsubscribeChain(context.ticker)
     }
-  }, [context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain])
+  }, [context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain, strikesPerSide, side])
 
   const handleExpiryChange = useCallback(async (newExpiry: string) => {
     setSelectedExpiry(newExpiry)
     setLoadingExpiry(true)
     try {
-      const chainData = await getOptionsChainForExpiry(context.ticker, newExpiry)
+      const chainData = await getOptionsChainForExpiry(context.ticker, newExpiry, { strikesPerSide, side })
       const existing = chain
       if (existing && chainData.expirations) {
         setChain(context.ticker, { ...existing, expirations: { ...existing.expirations, ...chainData.expirations } })
       } else {
         setChain(context.ticker, chainData)
       }
-      switchChainExpiry(context.ticker, newExpiry)
+      switchChainExpiry(context.ticker, newExpiry, side)
     } catch (err) {
       console.error('Failed to load expiry:', err)
     } finally {
       setLoadingExpiry(false)
     }
-  }, [context.ticker, chain, setChain, switchChainExpiry])
+  }, [context.ticker, chain, setChain, switchChainExpiry, strikesPerSide, side])
+
+  const handleStrikesChange = useCallback(async (newStrikes: number) => {
+    setStrikesPerSide(newStrikes)
+    setLoadingExpiry(true)
+    try {
+      const chainData = await getOptionsChainForExpiry(context.ticker, selectedExpiry, { strikesPerSide: newStrikes, side })
+      setChain(context.ticker, chainData)
+    } catch (err) {
+      console.error('Failed to reload chain:', err)
+    } finally {
+      setLoadingExpiry(false)
+    }
+  }, [context.ticker, selectedExpiry, side, setChain])
 
   const strikes: WheelChainStrike[] = useMemo(() => {
     if (!chain?.expirations) return []
@@ -189,6 +204,20 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
                 className={`wcp2-expiry__dot ${exp === selectedExpiry ? 'wcp2-expiry__dot--active' : ''}`}
                 onClick={() => handleExpiryChange(exp)}
               />
+            ))}
+          </div>
+        </div>
+        <div className="wcp2-strikes">
+          <span className="wcp2-strikes__label">Strikes</span>
+          <div className="wcp2-strikes__options">
+            {[25, 50, 60].map(n => (
+              <button
+                key={n}
+                className={`wcp2-strikes__btn ${strikesPerSide === n ? 'wcp2-strikes__btn--active' : ''}`}
+                onClick={() => handleStrikesChange(n)}
+              >
+                {n}
+              </button>
             ))}
           </div>
         </div>

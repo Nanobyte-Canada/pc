@@ -111,16 +111,20 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
     }
   }, [])
 
-  const subscribeChainExpiry = useCallback((underlying: string, expiry: string) => {
+  const subscribeChainExpiry = useCallback((underlying: string, expiry: string, side?: 'put' | 'call') => {
     subscribedChainsRef.current.add(underlying)
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ action: 'subscribe_chain_expiry', underlying, expiry }))
+      const msg: Record<string, string> = { action: 'subscribe_chain_expiry', underlying, expiry }
+      if (side) msg.side = side
+      wsRef.current.send(JSON.stringify(msg))
     }
   }, [])
 
-  const switchChainExpiry = useCallback((underlying: string, expiry: string) => {
+  const switchChainExpiry = useCallback((underlying: string, expiry: string, side?: 'put' | 'call') => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ action: 'switch_chain_expiry', underlying, expiry }))
+      const msg: Record<string, string> = { action: 'switch_chain_expiry', underlying, expiry }
+      if (side) msg.side = side
+      wsRef.current.send(JSON.stringify(msg))
     }
   }, [])
 

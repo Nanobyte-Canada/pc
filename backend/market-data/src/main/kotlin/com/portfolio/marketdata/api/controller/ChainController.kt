@@ -3,6 +3,7 @@ package com.portfolio.marketdata.api.controller
 import com.portfolio.common.domain.*
 import com.portfolio.marketdata.api.dto.OptionExpirationsResponse
 import com.portfolio.marketdata.api.dto.OptionsChainResponse
+import com.portfolio.marketdata.config.AppProperties
 import com.portfolio.marketdata.distribution.QuoteCacheService
 import com.portfolio.marketdata.ibkr.IbkrClient
 import com.portfolio.marketdata.processing.GreeksCalculator
@@ -18,6 +19,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.*
 
 @RestController
@@ -26,7 +28,8 @@ class ChainController(
     private val quoteCacheService: QuoteCacheService,
     private val chainBuilder: OptionsChainBuilder,
     private val greeksCalculator: GreeksCalculator,
-    private val ibkrClient: IbkrClient
+    private val ibkrClient: IbkrClient,
+    private val properties: AppProperties
 ) {
 
     @GetMapping("/{underlying}")
@@ -55,11 +58,27 @@ class ChainController(
     }
 
     @GetMapping("/{underlying}/expirations")
-    fun getExpirations(@PathVariable underlying: String): ResponseEntity<OptionExpirationsResponse> {
+    fun getExpirations(
+        @PathVariable underlying: String,
+        @RequestParam(required = false) maxDte: Int?
+    ): ResponseEntity<OptionExpirationsResponse> {
         val spotPrice = resolveSpotPrice(underlying) ?: return ResponseEntity.notFound().build()
-        val expirations = ibkrClient.requestOptionExpirations(underlying)
-        if (expirations.isEmpty()) return ResponseEntity.notFound().build()
-        return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice, expirations))
+
+        val allExpirations = quoteCacheService.getExpirations(underlying)
+            ?: ibkrClient.requestOptionExpirations(underlying).also { exps ->
+                if (exps.isNotEmpty()) quoteCacheService.cacheExpirations(underlying, exps)
+            }
+
+        if (allExpirations.isEmpty()) return ResponseEntity.notFound().build()
+
+        val effectiveMaxDte = maxDte ?: properties.maxDteDefault
+        val today = LocalDate.now()
+        val filtered = allExpirations.filter {
+            ChronoUnit.DAYS.between(today, it) in 0..effectiveMaxDte.toLong()
+        }
+
+        if (filtered.isEmpty()) return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice, filtered))
     }
 
     @GetMapping("/{underlying}/expiry/{expiry}")
@@ -67,12 +86,13 @@ class ChainController(
         @PathVariable underlying: String,
         @PathVariable expiry: String,
         @RequestParam(defaultValue = "0.45") maxDelta: Double,
-        @RequestParam(defaultValue = "25") strikesPerSide: Int
+        @RequestParam(defaultValue = "25") strikesPerSide: Int,
+        @RequestParam(defaultValue = "both") side: String
     ): ResponseEntity<OptionsChainResponse> {
         val expiryDate = try { LocalDate.parse(expiry) } catch (_: Exception) {
             return ResponseEntity.badRequest().build()
         }
-        val chain = buildChainForExpiry(underlying, expiryDate, maxDelta, strikesPerSide) ?: return ResponseEntity.notFound().build()
+        val chain = buildChainForExpiry(underlying, expiryDate, maxDelta, strikesPerSide, side) ?: return ResponseEntity.notFound().build()
         return ResponseEntity.ok(OptionsChainResponse.fromDomain(chain))
     }
 
@@ -105,7 +125,7 @@ class ChainController(
         return chainBuilder.build(underlying, spotPrice, optionQuotes)
     }
 
-    private fun buildChainForExpiry(underlying: String, expiry: LocalDate, maxDelta: Double, strikesPerSide: Int = 25): OptionsChain? {
+    private fun buildChainForExpiry(underlying: String, expiry: LocalDate, maxDelta: Double, strikesPerSide: Int = 25, side: String = "both"): OptionsChain? {
         val spotPrice = resolveSpotPrice(underlying) ?: return null
 
         val contracts = try {
@@ -118,10 +138,17 @@ class ChainController(
         }
         if (contracts.isEmpty()) return null
 
-        val filtered = filterByStrikeCount(contracts, spotPrice, expiry, strikesPerSide)
+        val sideFiltered = when (side.lowercase()) {
+            "put" -> contracts.filter { it.right?.uppercase() in setOf("P", "PUT") }
+            "call" -> contracts.filter { it.right?.uppercase() in setOf("C", "CALL") }
+            else -> contracts
+        }
+        if (sideFiltered.isEmpty()) return null
 
-        log.info("Fetching snapshots for {} contracts ({} per side) for {} expiry {}",
-            filtered.size, strikesPerSide, underlying, expiry)
+        val filtered = filterByStrikeCount(sideFiltered, spotPrice, expiry, strikesPerSide)
+
+        log.info("Fetching snapshots for {} contracts ({} per side, side={}) for {} expiry {}",
+            filtered.size, strikesPerSide, side, underlying, expiry)
 
         val snapshots = fetchSnapshots(filtered)
 
