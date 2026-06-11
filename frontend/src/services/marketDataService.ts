@@ -19,8 +19,17 @@ export async function getOptionsChainWithGreeks(underlying: string): Promise<Opt
   return response.json()
 }
 
-export async function getOptionsChainForExpiry(underlying: string, expiry: string): Promise<OptionsChain> {
-  const response = await proxyFetch(`/market-data-api/api/v1/chains/${encodeURIComponent(underlying)}/expiry/${encodeURIComponent(expiry)}`)
+export async function getOptionsChainForExpiry(
+  underlying: string,
+  expiry: string,
+  opts?: { strikesPerSide?: number; side?: 'put' | 'call' }
+): Promise<OptionsChain> {
+  const params = new URLSearchParams()
+  if (opts?.strikesPerSide) params.set('strikesPerSide', String(opts.strikesPerSide))
+  if (opts?.side) params.set('side', opts.side)
+  const qs = params.toString()
+  const url = `/market-data-api/api/v1/chains/${encodeURIComponent(underlying)}/expiry/${encodeURIComponent(expiry)}${qs ? '?' + qs : ''}`
+  const response = await proxyFetch(url)
   if (!response.ok) throw await parseErrorResponse(response)
   return response.json()
 }
