@@ -6,11 +6,13 @@ import './OptionsChainTable.css'
 interface OptionsChainTableProps {
   chain: OptionsChain
   onExpiryChange?: (expiry: string) => void
+  strikesPerSide: number
+  onStrikesPerSideChange: (n: number) => void
 }
 
 type ChainSide = 'calls' | 'puts'
 
-export function OptionsChainTable({ chain, onExpiryChange }: OptionsChainTableProps) {
+export function OptionsChainTable({ chain, onExpiryChange, strikesPerSide, onStrikesPerSideChange }: OptionsChainTableProps) {
   const expirations = Object.keys(chain.expirations).sort()
   const [selectedExpiry, setSelectedExpiry] = useState(expirations[0] ?? '')
   const [mobileSide, setMobileSide] = useState<ChainSide>('calls')
@@ -60,6 +62,18 @@ export function OptionsChainTable({ chain, onExpiryChange }: OptionsChainTablePr
             {exp}
           </button>
         ))}
+        <div className="chain-table__strikes-selector">
+          <span className="chain-table__strikes-label">Strikes</span>
+          {[25, 50, 60].map(n => (
+            <button
+              key={n}
+              className={`chain-table__strikes-btn ${strikesPerSide === n ? 'chain-table__strikes-btn--active' : ''}`}
+              onClick={() => onStrikesPerSideChange(n)}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Mobile: expiry dropdown + calls/puts toggle */}
@@ -87,6 +101,17 @@ export function OptionsChainTable({ chain, onExpiryChange }: OptionsChainTablePr
           >
             Puts
           </button>
+        </div>
+        <div className="chain-table__strikes-selector chain-table__strikes-selector--mobile">
+          {[25, 50, 60].map(n => (
+            <button
+              key={n}
+              className={`chain-table__strikes-btn ${strikesPerSide === n ? 'chain-table__strikes-btn--active' : ''}`}
+              onClick={() => onStrikesPerSideChange(n)}
+            >
+              {n}
+            </button>
+          ))}
         </div>
       </div>
 

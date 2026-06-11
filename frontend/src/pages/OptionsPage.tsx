@@ -25,6 +25,7 @@ export function OptionsPage() {
   const [calcWarnings, setCalcWarnings] = useState<string[]>([])
   const [strategiesLoaded, setStrategiesLoaded] = useState(false)
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false)
+  const [strikesPerSide, setStrikesPerSide] = useState(50)
 
   useEffect(() => {
     const ticker = searchParams.get('ticker')
@@ -52,7 +53,7 @@ export function OptionsPage() {
 
       const firstExpiry = expData.expirations[0]
       if (firstExpiry) {
-        const chainData = await getOptionsChainForExpiry(symbol, firstExpiry)
+        const chainData = await getOptionsChainForExpiry(symbol, firstExpiry, { strikesPerSide })
         setChain(symbol, { ...chainData, expirations: { ...Object.fromEntries(expData.expirations.map(e => [e, {}])), ...chainData.expirations } })
         subscribeChainExpiry(symbol, firstExpiry)
       }
@@ -72,7 +73,7 @@ export function OptionsPage() {
   const handleExpiryChange = useCallback(async (expiry: string) => {
     if (!selectedUnderlying) return
     try {
-      const expiryData = await getOptionsChainForExpiry(selectedUnderlying, expiry)
+      const expiryData = await getOptionsChainForExpiry(selectedUnderlying, expiry, { strikesPerSide })
       const existingChain = chains[selectedUnderlying]
       if (existingChain && expiryData.expirations) {
         const merged = { ...existingChain, expirations: { ...existingChain.expirations, ...expiryData.expirations } }
@@ -82,7 +83,22 @@ export function OptionsPage() {
     } catch (err) {
       console.error('Failed to load expiry data:', err)
     }
-  }, [selectedUnderlying, chains, setChain, switchChainExpiry])
+  }, [selectedUnderlying, chains, setChain, switchChainExpiry, strikesPerSide])
+
+  const handleStrikesPerSideChange = useCallback(async (newStrikes: number) => {
+    setStrikesPerSide(newStrikes)
+    if (!selectedUnderlying) return
+    const chain = chains[selectedUnderlying]
+    if (!chain) return
+    const currentExpiry = Object.keys(chain.expirations).sort()[0]
+    if (!currentExpiry) return
+    try {
+      const chainData = await getOptionsChainForExpiry(selectedUnderlying, currentExpiry, { strikesPerSide: newStrikes })
+      setChain(selectedUnderlying, { ...chain, expirations: { ...chain.expirations, ...chainData.expirations } })
+    } catch (err) {
+      console.error('Failed to reload chain with new strikes:', err)
+    }
+  }, [selectedUnderlying, chains, setChain])
 
   const handleCalculate = useCallback(async () => {
     if (!selectedUnderlying || legs.length === 0) return
@@ -151,7 +167,12 @@ export function OptionsPage() {
       {chain && !isLoadingChain && (
         <div className="options-page__content">
           <div className="options-page__chain-section">
-            <OptionsChainTable chain={chain} onExpiryChange={handleExpiryChange} />
+            <OptionsChainTable
+              chain={chain}
+              onExpiryChange={handleExpiryChange}
+              strikesPerSide={strikesPerSide}
+              onStrikesPerSideChange={handleStrikesPerSideChange}
+            />
           </div>
           <div className="options-page__sidebar">
             <LegBuilder
