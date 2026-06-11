@@ -3,6 +3,7 @@ package com.portfolio.marketdata.api.controller
 import com.portfolio.common.domain.*
 import com.portfolio.marketdata.api.dto.OptionExpirationsResponse
 import com.portfolio.marketdata.api.dto.OptionsChainResponse
+import com.portfolio.marketdata.config.AppProperties
 import com.portfolio.marketdata.distribution.QuoteCacheService
 import com.portfolio.marketdata.ibkr.IbkrClient
 import com.portfolio.marketdata.processing.GreeksCalculator
@@ -18,6 +19,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.*
 
 @RestController
@@ -26,7 +28,8 @@ class ChainController(
     private val quoteCacheService: QuoteCacheService,
     private val chainBuilder: OptionsChainBuilder,
     private val greeksCalculator: GreeksCalculator,
-    private val ibkrClient: IbkrClient
+    private val ibkrClient: IbkrClient,
+    private val properties: AppProperties
 ) {
 
     @GetMapping("/{underlying}")
@@ -55,11 +58,27 @@ class ChainController(
     }
 
     @GetMapping("/{underlying}/expirations")
-    fun getExpirations(@PathVariable underlying: String): ResponseEntity<OptionExpirationsResponse> {
+    fun getExpirations(
+        @PathVariable underlying: String,
+        @RequestParam(required = false) maxDte: Int?
+    ): ResponseEntity<OptionExpirationsResponse> {
         val spotPrice = resolveSpotPrice(underlying) ?: return ResponseEntity.notFound().build()
-        val expirations = ibkrClient.requestOptionExpirations(underlying)
-        if (expirations.isEmpty()) return ResponseEntity.notFound().build()
-        return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice, expirations))
+
+        val allExpirations = quoteCacheService.getExpirations(underlying)
+            ?: ibkrClient.requestOptionExpirations(underlying).also { exps ->
+                if (exps.isNotEmpty()) quoteCacheService.cacheExpirations(underlying, exps)
+            }
+
+        if (allExpirations.isEmpty()) return ResponseEntity.notFound().build()
+
+        val effectiveMaxDte = maxDte ?: properties.maxDteDefault
+        val today = LocalDate.now()
+        val filtered = allExpirations.filter {
+            ChronoUnit.DAYS.between(today, it) in 0..effectiveMaxDte.toLong()
+        }
+
+        if (filtered.isEmpty()) return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice, filtered))
     }
 
     @GetMapping("/{underlying}/expiry/{expiry}")
