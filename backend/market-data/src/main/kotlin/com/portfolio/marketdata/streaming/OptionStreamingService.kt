@@ -84,16 +84,16 @@ class OptionStreamingService(
         startStreamingChainForExpiry(underlying, null)
     }
 
-    fun startStreamingChainForExpiryPublic(underlying: String, expiry: LocalDate) {
-        startStreamingChainForExpiry(underlying, expiry)
+    fun startStreamingChainForExpiryPublic(underlying: String, expiry: LocalDate, side: String? = null) {
+        startStreamingChainForExpiry(underlying, expiry, side)
     }
 
-    fun switchChainExpiry(underlying: String, expiry: LocalDate) {
+    fun switchChainExpiry(underlying: String, expiry: LocalDate, side: String? = null) {
         stopStreamingChain(underlying)
-        startStreamingChainForExpiry(underlying, expiry)
+        startStreamingChainForExpiry(underlying, expiry, side)
     }
 
-    private fun startStreamingChainForExpiry(underlying: String, targetExpiry: LocalDate?) {
+    private fun startStreamingChainForExpiry(underlying: String, targetExpiry: LocalDate?, side: String? = null) {
         if (activeChainUnderlying.containsKey(underlying)) {
             if (targetExpiry == null) {
                 log.debug("Chain already streaming for {}", underlying)
@@ -128,7 +128,17 @@ class OptionStreamingService(
 
         val expiry = targetExpiry ?: contracts.filter { it.expiry != null }.minByOrNull { it.expiry!! }?.expiry ?: return
 
-        val toSubscribe = contracts.filter { c ->
+        val sideFiltered = if (side != null) {
+            contracts.filter { c ->
+                when (side.lowercase()) {
+                    "put" -> c.right?.uppercase() in setOf("P", "PUT")
+                    "call" -> c.right?.uppercase() in setOf("C", "CALL")
+                    else -> true
+                }
+            }
+        } else contracts
+
+        val toSubscribe = sideFiltered.filter { c ->
             c.conId > 0 && c.expiry == expiry && c.strike != null && c.right != null
         }.filter { c ->
             val optionType = if (isCall(c.right)) OptionType.CALL else OptionType.PUT
@@ -139,8 +149,8 @@ class OptionStreamingService(
         for (contract in toSubscribe) {
             startStreamingSingleForChain(underlying, contract.conId, contract, chainKeys)
         }
-        log.info("Started chain streaming for {} — {} contracts subscribed (delta≤{}, expiry {})",
-            underlying, toSubscribe.size, MAX_DELTA, expiry)
+        log.info("Started chain streaming for {} — {} contracts subscribed (delta≤{}, expiry {}, side={})",
+            underlying, toSubscribe.size, MAX_DELTA, expiry, side ?: "both")
     }
 
     private fun isCall(right: String?) = right == "C" || right.equals("Call", ignoreCase = true)

@@ -83,16 +83,18 @@ class QuoteWebSocketHandler(
                 "subscribe_chain_expiry" -> {
                     val underlying = tree.get("underlying")?.asText() ?: return
                     val expiry = tree.get("expiry")?.asText() ?: return
+                    val side = tree.get("side")?.asText()
                     chainSubscriptions.computeIfAbsent(session.id) { ConcurrentHashMap.newKeySet() }.add(underlying)
                     chainToSessions.computeIfAbsent(underlying) { ConcurrentHashMap.newKeySet() }.add(session.id)
-                    optionStreamingService.startStreamingChainForExpiryPublic(underlying, LocalDate.parse(expiry))
-                    logger.info("Session {} subscribed to chain {} expiry {}", session.id, underlying, expiry)
+                    optionStreamingService.startStreamingChainForExpiryPublic(underlying, LocalDate.parse(expiry), side)
+                    logger.info("Session {} subscribed to chain {} expiry {} side={}", session.id, underlying, expiry, side ?: "both")
                 }
                 "switch_chain_expiry" -> {
                     val underlying = tree.get("underlying")?.asText() ?: return
                     val expiry = tree.get("expiry")?.asText() ?: return
-                    optionStreamingService.switchChainExpiry(underlying, LocalDate.parse(expiry))
-                    logger.info("Session {} switched chain {} to expiry {}", session.id, underlying, expiry)
+                    val side = tree.get("side")?.asText()
+                    optionStreamingService.switchChainExpiry(underlying, LocalDate.parse(expiry), side)
+                    logger.info("Session {} switched chain {} to expiry {} side={}", session.id, underlying, expiry, side ?: "both")
                 }
             }
         } catch (e: Exception) {
