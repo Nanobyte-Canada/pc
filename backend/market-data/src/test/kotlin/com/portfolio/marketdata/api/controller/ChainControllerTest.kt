@@ -27,6 +27,10 @@ class ChainControllerTest {
 
     @BeforeEach
     fun setup() {
+        every { greeksCalculator.calculate(any(), any(), any(), any(), any(), any()) } returns Greeks(
+            delta = BigDecimal.ZERO, gamma = BigDecimal.ZERO, theta = BigDecimal.ZERO,
+            vega = BigDecimal.ZERO, rho = BigDecimal.ZERO, source = GreeksSource.BLACK_SCHOLES
+        )
         controller = ChainController(quoteCacheService, chainBuilder, greeksCalculator, ibkrClient, properties)
     }
 
