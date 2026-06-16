@@ -126,7 +126,7 @@ jobs:
             [ -f "$f" ] && ADDITIONAL_FILES="$ADDITIONAL_FILES --file $f"
           done
 
-          opencode run --model "${{ inputs.model }}" $ADDITIONAL_FILES "Review the attached PR diff for code quality, documentation, and security issues" 2>&1 | tee /tmp/review_output.txt
+          cat /tmp/review_prompt.txt | opencode run --model "${{ inputs.model }}" $ADDITIONAL_FILES 2>&1 | tee /tmp/review_output.txt
 
       - name: Parse results and count findings
         if: steps.context.outputs.skip != 'true'
