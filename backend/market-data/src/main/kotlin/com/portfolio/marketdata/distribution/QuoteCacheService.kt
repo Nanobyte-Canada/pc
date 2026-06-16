@@ -22,8 +22,8 @@ class QuoteCacheService(
     companion object {
         private const val QUOTE_PREFIX = "quote:"
         private const val CHAIN_PREFIX = "chain:"
-        private const val QUOTE_TTL_SECONDS = 5L
-        private const val CHAIN_TTL_SECONDS = 30L
+        private const val QUOTE_TTL_SECONDS = 60L
+        private const val CHAIN_TTL_SECONDS = 300L
     }
 
     fun cacheQuote(quote: Quote) {

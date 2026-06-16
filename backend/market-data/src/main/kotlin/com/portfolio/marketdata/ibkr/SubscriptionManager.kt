@@ -1,5 +1,6 @@
 package com.portfolio.marketdata.ibkr
 
+import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -14,6 +15,11 @@ class SubscriptionManager(
     private val activeSubscriptions = LinkedHashMap<Int, Subscription>(16, 0.75f, true)
     private val subscriptionLock = Any()
     private val pinnedConIds = java.util.concurrent.ConcurrentHashMap.newKeySet<Int>()
+
+    @PostConstruct
+    fun init() {
+        (ibkrClient as? TwsIbkrClient)?.setReconnectHandler(Runnable { resubscribeAll() })
+    }
 
     fun subscribe(conId: Int, callback: (tickType: Int, value: Double) -> Unit) {
         synchronized(subscriptionLock) {
@@ -60,6 +66,21 @@ class SubscriptionManager(
 
     fun getActiveCount(): Int = activeSubscriptions.size
     fun getPinnedCount(): Int = pinnedConIds.size
+
+    fun resubscribeAll() {
+        synchronized(subscriptionLock) {
+            if (activeSubscriptions.isEmpty()) return
+            logger.info("Resubscribing {} active subscriptions after reconnect", activeSubscriptions.size)
+            for ((conId, sub) in activeSubscriptions) {
+                try {
+                    ibkrClient.requestMarketData(conId, sub.callback)
+                } catch (e: Exception) {
+                    logger.error("Failed to resubscribe conId={}", conId, e)
+                }
+            }
+        }
+    }
+
     fun isSubscribed(conId: Int): Boolean = activeSubscriptions.containsKey(conId)
 
     private fun evictLRU() {

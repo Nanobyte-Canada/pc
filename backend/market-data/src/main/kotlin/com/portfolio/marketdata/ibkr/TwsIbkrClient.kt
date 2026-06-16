@@ -45,6 +45,12 @@ class TwsIbkrClient(
     private val requestTimeout = properties.reconnectDelayMs.coerceAtLeast(10000)
     private val chainRequestTimeout = 30000L
 
+    @Volatile private var reconnectHandler: Runnable? = null
+
+    fun setReconnectHandler(handler: Runnable) {
+        this.reconnectHandler = handler
+    }
+
     data class GreeksData(
         val impliedVol: Double = Double.MAX_VALUE,
         val delta: Double = Double.MAX_VALUE,
@@ -341,6 +347,7 @@ class TwsIbkrClient(
         nextReqId.set(orderId.coerceAtLeast(nextReqId.get()))
         connected.set(true)
         connectionReady.countDown()
+        reconnectHandler?.run()
     }
 
     override fun managedAccounts(accountsList: String?) {
@@ -523,5 +530,9 @@ class TwsIbkrClient(
         contractAccumulators.clear()
         optionChainParamAccumulators.clear()
         snapshotAccumulators.clear()
+        tickCallbacks.clear()
+        reqIdToConId.clear()
+        conIdToReqId.clear()
+        greeksStore.clear()
     }
 }

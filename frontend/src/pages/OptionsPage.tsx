@@ -11,6 +11,7 @@ import { StrategySelector } from '@/components/options/StrategySelector'
 import { OptionsChainTable } from '@/components/options/OptionsChainTable'
 import { LegBuilder } from '@/components/options/LegBuilder'
 import { PnlChart } from '@/components/options/PnlChart'
+import { useToast } from '@/stores/toastStore'
 import type { CalculationResult } from '@/types/options'
 import './OptionsPage.css'
 
@@ -21,10 +22,12 @@ export function OptionsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [isLoadingChain, setIsLoadingChain] = useState(false)
+  const [chainError, setChainError] = useState<string | null>(null)
   const [calcResult, setCalcResult] = useState<CalculationResult | null>(null)
   const [calcWarnings, setCalcWarnings] = useState<string[]>([])
   const [strategiesLoaded, setStrategiesLoaded] = useState(false)
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false)
+  const toast = useToast()
 
   useEffect(() => {
     const ticker = searchParams.get('ticker')
@@ -36,6 +39,7 @@ export function OptionsPage() {
   }, [])
 
   const handleSearch = useCallback(async (symbol: string) => {
+    setChainError(null)
     setIsLoadingChain(true)
     setSelectedUnderlying(symbol)
     try {
@@ -64,6 +68,9 @@ export function OptionsPage() {
       }
     } catch (err) {
       console.error('Failed to load options data:', err)
+      toast.error('Failed to load options data. IBKR Gateway may be unavailable.')
+      setChainError('IBKR Gateway is not responding. Options data is currently unavailable. Please try again later.')
+      setSelectedUnderlying(null)
     } finally {
       setIsLoadingChain(false)
     }
@@ -136,8 +143,18 @@ export function OptionsPage() {
       {/* ── Strategy selector ── */}
       {strategies.length > 0 && <StrategySelector strategies={strategies} />}
 
+      {/* ── Error state ── */}
+      {chainError && (
+        <div className="options-page__error">
+          <p className="options-page__error-message">{chainError}</p>
+          <button className="options-page__error-retry" onClick={() => setChainError(null)}>
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* ── Empty state ── */}
-      {!selectedUnderlying && (
+      {!selectedUnderlying && !chainError && (
         <div className="options-page__empty">
           <p>Enter a symbol above to load the options chain</p>
           <p>Try SPY, QQQ, AAPL, MSFT, or NVDA</p>
