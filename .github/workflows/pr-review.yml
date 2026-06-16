@@ -76,12 +76,7 @@ jobs:
         if: steps.context.outputs.skip != 'true'
         timeout-minutes: 15
         run: |
-          ADDITIONAL_FILES=""
-          for f in /tmp/contributing.md /tmp/pr_diff.diff; do
-            [ -f "$f" ] && ADDITIONAL_FILES="$ADDITIONAL_FILES --file $f"
-          done
-
-          REVIEW_PROMPT=$(cat << 'PROMPT_EOF'
+          cat > /tmp/review_prompt.txt << 'PROMPT_EOF'
           You are an expert PR reviewer. Analyze the attached diff (and contributing.md if provided) across three dimensions:
 
           1. CODE QUALITY REVIEW:
@@ -121,9 +116,13 @@ jobs:
           Separate findings with "---"
           End with a summary line: SUMMARY: X HIGH, Y LOW
           PROMPT_EOF
-          )
 
-          opencode run --model "${{ inputs.model }}" $ADDITIONAL_FILES "$REVIEW_PROMPT" 2>&1 | tee /tmp/review_output.txt
+          ADDITIONAL_FILES=""
+          for f in /tmp/contributing.md /tmp/pr_diff.diff /tmp/review_prompt.txt; do
+            [ -f "$f" ] && ADDITIONAL_FILES="$ADDITIONAL_FILES --file $f"
+          done
+
+          opencode run --model "${{ inputs.model }}" $ADDITIONAL_FILES 2>&1 | tee /tmp/review_output.txt
 
       - name: Parse results and count findings
         if: steps.context.outputs.skip != 'true'
