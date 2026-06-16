@@ -1,0 +1,18 @@
+name: PR Review - Code, Docs & Security
+
+on:
+  pull_request:
+    branches: [development, main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    name: OpenCode PR Review
+    uses: ./.github/workflows/pr-review.yml
+    with:
+      model: opencode/deepseek-v4-flash-free
+    secrets:
+      api_key: ${{ secrets.OPENCODE_API_KEY }}
