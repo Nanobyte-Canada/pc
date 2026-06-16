@@ -126,6 +126,11 @@ jobs:
             [ -f "$f" ] && ADDITIONAL_FILES="$ADDITIONAL_FILES --file $f"
           done
 
+          if [ ! -s /tmp/review_prompt.txt ]; then
+            echo "::error::Review prompt file is missing or empty"
+            exit 1
+          fi
+
           cat /tmp/review_prompt.txt | opencode run --model "${{ inputs.model }}" $ADDITIONAL_FILES 2>&1 | tee /tmp/review_output.txt
 
       - name: Parse results and count findings
