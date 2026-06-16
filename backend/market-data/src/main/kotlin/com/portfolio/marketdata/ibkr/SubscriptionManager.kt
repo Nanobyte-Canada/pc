@@ -72,6 +72,8 @@ class SubscriptionManager(
     fun getActiveCount(): Int = activeSubscriptions.size
     fun getPinnedCount(): Int = pinnedConIds.size
 
+    private val resubscribeFailures = java.util.concurrent.ConcurrentHashMap<Int, Int>()
+
     fun resubscribeAll() {
         val snapshot = synchronized(subscriptionLock) {
             if (activeSubscriptions.isEmpty()) return
@@ -81,8 +83,14 @@ class SubscriptionManager(
         for ((conId, callback) in snapshot) {
             try {
                 ibkrClient.requestMarketData(conId, callback)
+                resubscribeFailures.remove(conId)
             } catch (e: Exception) {
-                logger.error("Failed to resubscribe conId={}", conId, e)
+                val failures = resubscribeFailures.merge(conId, 1, Int::plus)!!
+                if (failures >= 3) {
+                    logger.warn("Failed to resubscribe conId={} after {} attempts, will retry on next reconnect", conId, failures)
+                } else {
+                    logger.error("Failed to resubscribe conId={} (attempt {})", conId, failures, e)
+                }
             }
         }
     }

@@ -8,6 +8,8 @@ import com.portfolio.marketdata.ibkr.IbkrClient
 import com.portfolio.marketdata.processing.GreeksCalculator
 import com.portfolio.marketdata.processing.OptionsChainBuilder
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.DisposableBean
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -32,10 +34,16 @@ class ChainController(
     private val quoteCacheService: QuoteCacheService,
     private val chainBuilder: OptionsChainBuilder,
     private val greeksCalculator: GreeksCalculator,
-    private val ibkrClient: IbkrClient
-) {
-    private val chainBuildExecutor: ExecutorService = Executors.newCachedThreadPool { r ->
+    private val ibkrClient: IbkrClient,
+    @Value("\${chain.build-timeout-seconds:15}") private val buildTimeoutSeconds: Long,
+    @Value("\${chain.build-max-threads:4}") private val buildMaxThreads: Int
+) : DisposableBean {
+    private val chainBuildExecutor: ExecutorService = Executors.newFixedThreadPool(buildMaxThreads) { r ->
         Thread(r, "chain-build").apply { isDaemon = true }
+    }
+
+    override fun destroy() {
+        chainBuildExecutor.shutdownNow()
     }
 
     @GetMapping("/{underlying}")
@@ -45,10 +53,7 @@ class ChainController(
             return ResponseEntity.ok(OptionsChainResponse.fromDomain(cachedChain))
         }
 
-        if (!ibkrClient.isConnected()) {
-            log.warn("IBKR not connected, cannot fetch chain for {}", underlying)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        }
+        if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
 
         val chain = try {
             buildChainFromIbkr(underlying) ?: return ResponseEntity.notFound().build()
@@ -67,10 +72,7 @@ class ChainController(
             return ResponseEntity.ok(OptionsChainResponse.fromDomain(computeGreeks(cachedChain)))
         }
 
-        if (!ibkrClient.isConnected()) {
-            log.warn("IBKR not connected, cannot fetch chain for {}", underlying)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        }
+        if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
 
         val chain = try {
             buildChainFromIbkr(underlying) ?: return ResponseEntity.notFound().build()
@@ -85,10 +87,7 @@ class ChainController(
 
     @GetMapping("/{underlying}/expirations")
     fun getExpirations(@PathVariable underlying: String): ResponseEntity<OptionExpirationsResponse> {
-        if (!ibkrClient.isConnected()) {
-            log.warn("IBKR not connected, cannot fetch expirations for {}", underlying)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        }
+        if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
 
         val spotPrice = resolveSpotPrice(underlying) ?: return ResponseEntity.notFound().build()
         val expirations = ibkrClient.requestOptionExpirations(underlying)
@@ -103,10 +102,7 @@ class ChainController(
         @RequestParam(defaultValue = "0.45") maxDelta: Double,
         @RequestParam(defaultValue = "25") strikesPerSide: Int
     ): ResponseEntity<OptionsChainResponse> {
-        if (!ibkrClient.isConnected()) {
-            log.warn("IBKR not connected, cannot fetch chain for {}", underlying)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        }
+        if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
 
         val expiryDate = try { LocalDate.parse(expiry) } catch (_: Exception) {
             return ResponseEntity.badRequest().build()
@@ -121,14 +117,23 @@ class ChainController(
     }
 
     private val log = LoggerFactory.getLogger(javaClass)
+
+    private class ChainBuildTimeoutException(underlying: String, expiry: LocalDate? = null) : RuntimeException(
+        "Chain build timed out for $underlying${expiry?.let { " expiry $it" } ?: ""}"
+    )
+
     companion object {
         private const val DEFAULT_MAX_DELTA = 0.45
         private const val ESTIMATED_IV = 0.30
     }
 
-    private class ChainBuildTimeoutException(underlying: String, expiry: LocalDate? = null) : RuntimeException(
-        "Chain build timed out for $underlying${expiry?.let { " expiry $it" } ?: ""}"
-    )
+    private fun checkConnected(underlying: String): Boolean {
+        if (!ibkrClient.isConnected()) {
+            log.warn("IBKR not connected, cannot fetch chain for {}", underlying)
+            return false
+        }
+        return true
+    }
 
     private fun buildChainFromIbkr(underlying: String): OptionsChain? {
         val future = CompletableFuture.supplyAsync({
@@ -159,12 +164,12 @@ class ChainController(
         }, chainBuildExecutor)
 
         return try {
-            future.get(15, TimeUnit.SECONDS)
+            future.get(buildTimeoutSeconds, TimeUnit.SECONDS)
         } catch (e: TimeoutException) {
-            future.cancel(true)
+            future.cancel(false)
             throw ChainBuildTimeoutException(underlying)
         } catch (e: CancellationException) {
-            log.warn("Chain build cancelled for {}", underlying)
+            log.warn("Chain build cancelled for {}", underlying, e)
             null
         } catch (e: Exception) {
             log.error("Failed to build option chain for {}", underlying, e)
@@ -200,12 +205,12 @@ class ChainController(
         }, chainBuildExecutor)
 
         return try {
-            future.get(15, TimeUnit.SECONDS)
+            future.get(buildTimeoutSeconds, TimeUnit.SECONDS)
         } catch (e: TimeoutException) {
-            future.cancel(true)
+            future.cancel(false)
             throw ChainBuildTimeoutException(underlying, expiry)
         } catch (e: CancellationException) {
-            log.warn("Chain build cancelled for {} expiry {}", underlying, expiry)
+            log.warn("Chain build cancelled for {} expiry {}", underlying, expiry, e)
             null
         } catch (e: Exception) {
             log.error("Failed to build option chain for {} expiry {}", underlying, expiry, e)

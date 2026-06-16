@@ -48,6 +48,10 @@ class TwsIbkrClient(
     private val reconnectHandlers = CopyOnWriteArrayList<Runnable>()
 
     fun addReconnectHandler(handler: Runnable) {
+        if (reconnectHandlers.isNotEmpty()) {
+            log.warn("Reconnect handler already registered; overwriting")
+            reconnectHandlers.clear()
+        }
         reconnectHandlers.add(handler)
     }
 
