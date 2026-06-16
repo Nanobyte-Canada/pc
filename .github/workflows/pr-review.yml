@@ -29,7 +29,7 @@ jobs:
           node-version: "20"
 
       - name: Install opencode
-        run: npm install -g opencode-ai
+        run: npm install -g opencode-ai@1.17.7
 
       - name: Gather PR context
         id: context
