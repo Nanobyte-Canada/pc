@@ -43,12 +43,17 @@ jobs:
             exit 0
           fi
 
-          git diff "$BASE_SHA...$HEAD_SHA" > /tmp/pr_diff.diff
+          git diff "$BASE_SHA...$HEAD_SHA" -- ':!.github' > /tmp/pr_diff.diff
           echo "diff_size=$(wc -c < /tmp/pr_diff.diff)" >> $GITHUB_OUTPUT
           echo "skip=false" >> $GITHUB_OUTPUT
 
-          git diff --name-only "$BASE_SHA...$HEAD_SHA" > /tmp/changed_files.txt
+          git diff --name-only "$BASE_SHA...$HEAD_SHA" -- ':!.github' > /tmp/changed_files.txt
           echo "changed_files=$(wc -l < /tmp/changed_files.txt)" >> $GITHUB_OUTPUT
+
+          if [ ! -s /tmp/pr_diff.diff ]; then
+            echo "No application code changes to review (only .github/ changes). Skipping."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          fi
 
           cat /tmp/changed_files.txt
 
