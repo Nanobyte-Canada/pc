@@ -24,8 +24,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Install opencode
-        run: curl -fsSL https://opencode.ai/install | bash
+        run: npm install -g opencode-ai
 
       - name: Gather PR context
         id: context
