@@ -20,7 +20,7 @@ class SubscriptionManager(
     fun init() {
         val twsClient = ibkrClient as? TwsIbkrClient
         if (twsClient != null) {
-            twsClient.addReconnectHandler(Runnable { resubscribeAll() })
+            twsClient.setReconnectHandler(Runnable { resubscribeAll() })
         } else {
             logger.warn("IbkrClient is not TwsIbkrClient, reconnect handler not registered")
         }
@@ -45,6 +45,7 @@ class SubscriptionManager(
     }
 
     fun unsubscribe(conId: Int) {
+        resubscribeFailures.remove(conId)
         synchronized(subscriptionLock) {
             val subscription = activeSubscriptions.remove(conId)
             if (subscription != null) {

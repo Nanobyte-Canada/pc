@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 @Component
 class TwsIbkrClient(
@@ -45,14 +46,13 @@ class TwsIbkrClient(
     private val requestTimeout = properties.reconnectDelayMs.coerceAtLeast(10000)
     private val chainRequestTimeout = 30000L
 
-    private val reconnectHandlers = CopyOnWriteArrayList<Runnable>()
+    @Volatile private var initialConnectComplete = false
+    private val reconnectHandler = AtomicReference<Runnable>()
 
-    fun addReconnectHandler(handler: Runnable) {
-        if (reconnectHandlers.isNotEmpty()) {
-            log.warn("Reconnect handler already registered; overwriting")
-            reconnectHandlers.clear()
+    fun setReconnectHandler(handler: Runnable) {
+        if (!reconnectHandler.compareAndSet(null, handler)) {
+            log.warn("Reconnect handler already registered, ignoring duplicate")
         }
-        reconnectHandlers.add(handler)
     }
 
     data class GreeksData(
@@ -121,6 +121,7 @@ class TwsIbkrClient(
         pendingRequests.clear()
         contractAccumulators.clear()
         optionChainParamAccumulators.clear()
+        greeksStore.clear()
         if (::client.isInitialized && client.isConnected) {
             client.eDisconnect()
         }
@@ -351,7 +352,11 @@ class TwsIbkrClient(
         nextReqId.set(orderId.coerceAtLeast(nextReqId.get()))
         connected.set(true)
         connectionReady.countDown()
-        reconnectHandlers.forEach { it.run() }
+        if (initialConnectComplete) {
+            reconnectHandler.get()?.run()
+        } else {
+            initialConnectComplete = true
+        }
     }
 
     override fun managedAccounts(accountsList: String?) {

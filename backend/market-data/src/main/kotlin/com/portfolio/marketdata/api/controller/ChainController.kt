@@ -38,7 +38,7 @@ class ChainController(
     @Value("\${chain.build-timeout-seconds:15}") private val buildTimeoutSeconds: Long,
     @Value("\${chain.build-max-threads:4}") private val buildMaxThreads: Int
 ) : DisposableBean {
-    private val chainBuildExecutor: ExecutorService = Executors.newFixedThreadPool(buildMaxThreads) { r ->
+    private val chainBuildExecutor: ExecutorService = Executors.newFixedThreadPool(buildMaxThreads.coerceIn(1, 64)) { r ->
         Thread(r, "chain-build").apply { isDaemon = true }
     }
 
@@ -87,10 +87,25 @@ class ChainController(
 
     @GetMapping("/{underlying}/expirations")
     fun getExpirations(@PathVariable underlying: String): ResponseEntity<OptionExpirationsResponse> {
+        val cachedChain = quoteCacheService.getChain(underlying)
+        if (cachedChain != null) {
+            return ResponseEntity.ok(OptionExpirationsResponse(underlying, cachedChain.spotPrice, cachedChain.expirations.keys.toList().sorted()))
+        }
+
         if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
 
         val spotPrice = resolveSpotPrice(underlying) ?: return ResponseEntity.notFound().build()
-        val expirations = ibkrClient.requestOptionExpirations(underlying)
+        val expirations = try {
+            CompletableFuture.supplyAsync({ ibkrClient.requestOptionExpirations(underlying) }, chainBuildExecutor)
+                .get(buildTimeoutSeconds, TimeUnit.SECONDS)
+        } catch (e: TimeoutException) {
+            log.warn("Expirations request timed out for {}", underlying)
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            log.warn("Expirations request interrupted for {}", underlying)
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        }
         if (expirations.isEmpty()) return ResponseEntity.notFound().build()
         return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice, expirations))
     }
@@ -113,6 +128,7 @@ class ChainController(
             log.warn("Chain build timed out for {} expiry {}", underlying, expiryDate)
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
         }
+        quoteCacheService.cacheChain(underlying, chain)
         return ResponseEntity.ok(OptionsChainResponse.fromDomain(chain))
     }
 
@@ -137,6 +153,10 @@ class ChainController(
 
     private fun buildChainFromIbkr(underlying: String): OptionsChain? {
         val future = CompletableFuture.supplyAsync({
+            if (!ibkrClient.isConnected()) {
+                log.warn("IBKR disconnected before async chain build for {}", underlying)
+                throw ChainBuildTimeoutException(underlying)
+            }
             val spotPrice = resolveSpotPrice(underlying) ?: return@supplyAsync null
 
             val contracts = try { ibkrClient.requestOptionChain(underlying) } catch (e: Exception) {
@@ -171,6 +191,10 @@ class ChainController(
         } catch (e: CancellationException) {
             log.warn("Chain build cancelled for {}", underlying, e)
             null
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            log.warn("Chain build interrupted for {}", underlying)
+            null
         } catch (e: Exception) {
             log.error("Failed to build option chain for {}", underlying, e)
             null
@@ -179,6 +203,10 @@ class ChainController(
 
     private fun buildChainForExpiry(underlying: String, expiry: LocalDate, maxDelta: Double, strikesPerSide: Int = 25): OptionsChain? {
         val future = CompletableFuture.supplyAsync({
+            if (!ibkrClient.isConnected()) {
+                log.warn("IBKR disconnected before async chain build for {} expiry {}", underlying, expiry)
+                throw ChainBuildTimeoutException(underlying, expiry)
+            }
             val spotPrice = resolveSpotPrice(underlying) ?: return@supplyAsync null
 
             val contracts = try {
@@ -211,6 +239,10 @@ class ChainController(
             throw ChainBuildTimeoutException(underlying, expiry)
         } catch (e: CancellationException) {
             log.warn("Chain build cancelled for {} expiry {}", underlying, expiry, e)
+            null
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            log.warn("Chain build interrupted for {} expiry {}", underlying, expiry)
             null
         } catch (e: Exception) {
             log.error("Failed to build option chain for {} expiry {}", underlying, expiry, e)
