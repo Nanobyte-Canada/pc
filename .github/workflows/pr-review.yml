@@ -121,17 +121,17 @@ jobs:
           End with a summary line: SUMMARY: X HIGH, Y LOW
           PROMPT_EOF
 
-          ADDITIONAL_FILES=""
-          for f in /tmp/contributing.md /tmp/pr_diff.diff /tmp/review_prompt.txt; do
-            [ -f "$f" ] && ADDITIONAL_FILES="$ADDITIONAL_FILES --file $f"
-          done
-
           if [ ! -s /tmp/review_prompt.txt ]; then
             echo "::error::Review prompt file is missing or empty"
             exit 1
           fi
 
-          cat /tmp/review_prompt.txt | opencode run --model "${{ inputs.model }}" $ADDITIONAL_FILES 2>&1 | tee /tmp/review_output.txt
+          ADDITIONAL_FILES_ARGS=()
+          for f in /tmp/contributing.md /tmp/pr_diff.diff /tmp/review_prompt.txt; do
+            [ -f "$f" ] && ADDITIONAL_FILES_ARGS+=(--file "$f")
+          done
+
+          cat /tmp/review_prompt.txt | opencode run --model "${{ inputs.model }}" "${ADDITIONAL_FILES_ARGS[@]}" 2>&1 | tee /tmp/review_output.txt
 
       - name: Parse results and count findings
         if: steps.context.outputs.skip != 'true'
