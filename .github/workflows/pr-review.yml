@@ -8,6 +8,11 @@ on:
         type: string
         required: false
         default: 'opencode/deepseek-v4-flash-free'
+      fail-on-high:
+        description: 'Fail the build on HIGH severity findings'
+        type: boolean
+        required: false
+        default: true
     secrets:
       api_key:
         description: 'OpenCode Zen API key (from opencode.ai/auth)'
@@ -24,8 +29,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Install opencode
-        run: curl -fsSL https://opencode.ai/install | bash
+        run: npm install -g opencode-ai@1.17.7
 
       - name: Gather PR context
         id: context
@@ -76,12 +85,7 @@ jobs:
         if: steps.context.outputs.skip != 'true'
         timeout-minutes: 15
         run: |
-          ADDITIONAL_FILES=""
-          for f in /tmp/contributing.md /tmp/pr_diff.diff; do
-            [ -f "$f" ] && ADDITIONAL_FILES="$ADDITIONAL_FILES --file $f"
-          done
-
-          REVIEW_PROMPT=$(cat << 'PROMPT_EOF'
+          cat > /tmp/review_prompt.txt << 'PROMPT_EOF'
           You are an expert PR reviewer. Analyze the attached diff (and contributing.md if provided) across three dimensions:
 
           1. CODE QUALITY REVIEW:
@@ -121,9 +125,18 @@ jobs:
           Separate findings with "---"
           End with a summary line: SUMMARY: X HIGH, Y LOW
           PROMPT_EOF
-          )
 
-          opencode run --model "${{ inputs.model }}" $ADDITIONAL_FILES "$REVIEW_PROMPT" 2>&1 | tee /tmp/review_output.txt
+          if [ ! -s /tmp/review_prompt.txt ]; then
+            echo "::error::Review prompt file is missing or empty"
+            exit 1
+          fi
+
+          declare -a ADDITIONAL_FILES_ARGS
+          for f in /tmp/contributing.md /tmp/pr_diff.diff; do
+            [ -f "$f" ] && ADDITIONAL_FILES_ARGS+=(--file "$f")
+          done
+
+          cat /tmp/review_prompt.txt | opencode run --model "${{ inputs.model }}" "${ADDITIONAL_FILES_ARGS[@]}" 2>&1 | tee /tmp/review_output.txt
 
       - name: Parse results and count findings
         if: steps.context.outputs.skip != 'true'
@@ -163,7 +176,7 @@ jobs:
             prefix += `| 🟡 **LOW** | ${lowCount} |\n\n`;
 
             if (highCount > 0) {
-              prefix += `> ⚠️ **${highCount} HIGH severity ${highCount === 1 ? 'issue' : 'issues'} found — build will fail.**\n\n`;
+              prefix += `> ⚠️ **${highCount} HIGH severity ${highCount === 1 ? 'issue' : 'issues'} found.**\n\n`;
             }
 
             const maxBodyLen = 60000;
@@ -180,12 +193,12 @@ jobs:
             console.log(`PR comment posted: ${highCount} HIGH, ${lowCount} LOW`);
 
       - name: Fail build on HIGH findings
-        if: steps.context.outputs.skip != 'true' && steps.parse.outputs.HIGH_COUNT != '0'
+        if: steps.context.outputs.skip != 'true' && inputs.fail-on-high && steps.parse.outputs.HIGH_COUNT != '0'
         run: |
           echo "::error::Build failed: ${{ steps.parse.outputs.HIGH_COUNT }} HIGH severity findings found. Check the PR comment for details."
           exit 1
 
-      - name: Pass build on LOW-only findings
-        if: steps.context.outputs.skip != 'true' && steps.parse.outputs.HIGH_COUNT == '0' && steps.parse.outputs.LOW_COUNT != '0'
+      - name: Report findings
+        if: steps.context.outputs.skip != 'true'
         run: |
-          echo "::notice::${{ steps.parse.outputs.LOW_COUNT }} LOW severity findings found (non-blocking)."
+          echo "::notice::${{ steps.parse.outputs.HIGH_COUNT }} HIGH and ${{ steps.parse.outputs.LOW_COUNT }} LOW findings found. Check the PR comment for details."
