@@ -14,5 +14,6 @@ jobs:
     uses: ./.github/workflows/pr-review.yml
     with:
       model: opencode/deepseek-v4-flash-free
+      fail-on-high: false
     secrets:
       api_key: ${{ secrets.OPENCODE_API_KEY }}

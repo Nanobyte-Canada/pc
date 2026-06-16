@@ -8,6 +8,11 @@ on:
         type: string
         required: false
         default: 'opencode/deepseek-v4-flash-free'
+      fail-on-high:
+        description: 'Fail the build on HIGH severity findings'
+        type: boolean
+        required: false
+        default: true
     secrets:
       api_key:
         description: 'OpenCode Zen API key (from opencode.ai/auth)'
@@ -126,8 +131,8 @@ jobs:
             exit 1
           fi
 
-          ADDITIONAL_FILES_ARGS=()
-          for f in /tmp/contributing.md /tmp/pr_diff.diff /tmp/review_prompt.txt; do
+          declare -a ADDITIONAL_FILES_ARGS
+          for f in /tmp/contributing.md /tmp/pr_diff.diff; do
             [ -f "$f" ] && ADDITIONAL_FILES_ARGS+=(--file "$f")
           done
 
@@ -187,7 +192,13 @@ jobs:
 
             console.log(`PR comment posted: ${highCount} HIGH, ${lowCount} LOW`);
 
+      - name: Fail build on HIGH findings
+        if: steps.context.outputs.skip != 'true' && inputs.fail-on-high && steps.parse.outputs.HIGH_COUNT != '0'
+        run: |
+          echo "::error::Build failed: ${{ steps.parse.outputs.HIGH_COUNT }} HIGH severity findings found. Check the PR comment for details."
+          exit 1
+
       - name: Report findings
         if: steps.context.outputs.skip != 'true'
         run: |
-          echo "::notice::${{ steps.parse.outputs.HIGH_COUNT }} HIGH and ${{ steps.parse.outputs.LOW_COUNT }} LOW findings found (non-blocking). Check the PR comment for details."
+          echo "::notice::${{ steps.parse.outputs.HIGH_COUNT }} HIGH and ${{ steps.parse.outputs.LOW_COUNT }} LOW findings found. Check the PR comment for details."
