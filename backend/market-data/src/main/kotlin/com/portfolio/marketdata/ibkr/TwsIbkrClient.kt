@@ -45,10 +45,10 @@ class TwsIbkrClient(
     private val requestTimeout = properties.reconnectDelayMs.coerceAtLeast(10000)
     private val chainRequestTimeout = 30000L
 
-    @Volatile private var reconnectHandler: Runnable? = null
+    private val reconnectHandlers = CopyOnWriteArrayList<Runnable>()
 
-    fun setReconnectHandler(handler: Runnable) {
-        this.reconnectHandler = handler
+    fun addReconnectHandler(handler: Runnable) {
+        reconnectHandlers.add(handler)
     }
 
     data class GreeksData(
@@ -347,7 +347,7 @@ class TwsIbkrClient(
         nextReqId.set(orderId.coerceAtLeast(nextReqId.get()))
         connected.set(true)
         connectionReady.countDown()
-        reconnectHandler?.run()
+        reconnectHandlers.forEach { it.run() }
     }
 
     override fun managedAccounts(accountsList: String?) {

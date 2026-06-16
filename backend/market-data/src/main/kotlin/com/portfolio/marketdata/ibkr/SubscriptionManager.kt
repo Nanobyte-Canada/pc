@@ -18,7 +18,12 @@ class SubscriptionManager(
 
     @PostConstruct
     fun init() {
-        (ibkrClient as? TwsIbkrClient)?.setReconnectHandler(Runnable { resubscribeAll() })
+        val twsClient = ibkrClient as? TwsIbkrClient
+        if (twsClient != null) {
+            twsClient.addReconnectHandler(Runnable { resubscribeAll() })
+        } else {
+            logger.warn("IbkrClient is not TwsIbkrClient, reconnect handler not registered")
+        }
     }
 
     fun subscribe(conId: Int, callback: (tickType: Int, value: Double) -> Unit) {
@@ -68,15 +73,16 @@ class SubscriptionManager(
     fun getPinnedCount(): Int = pinnedConIds.size
 
     fun resubscribeAll() {
-        synchronized(subscriptionLock) {
+        val snapshot = synchronized(subscriptionLock) {
             if (activeSubscriptions.isEmpty()) return
-            logger.info("Resubscribing {} active subscriptions after reconnect", activeSubscriptions.size)
-            for ((conId, sub) in activeSubscriptions) {
-                try {
-                    ibkrClient.requestMarketData(conId, sub.callback)
-                } catch (e: Exception) {
-                    logger.error("Failed to resubscribe conId={}", conId, e)
-                }
+            activeSubscriptions.entries.map { it.key to it.value.callback }.toList()
+        }
+        logger.info("Resubscribing {} active subscriptions after reconnect", snapshot.size)
+        for ((conId, callback) in snapshot) {
+            try {
+                ibkrClient.requestMarketData(conId, callback)
+            } catch (e: Exception) {
+                logger.error("Failed to resubscribe conId={}", conId, e)
             }
         }
     }

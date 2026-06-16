@@ -6,13 +6,16 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.portfolio.common.domain.OptionsChain
 import com.portfolio.common.domain.Quote
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
 
 @Service
 class QuoteCacheService(
-    private val redisTemplate: RedisTemplate<String, String>
+    private val redisTemplate: RedisTemplate<String, String>,
+    @Value("\${cache.quote-ttl-seconds:60}") private val quoteTtlSeconds: Long,
+    @Value("\${cache.chain-ttl-seconds:300}") private val chainTtlSeconds: Long
 ) {
     private val objectMapper: ObjectMapper = jacksonObjectMapper().apply {
         registerModule(JavaTimeModule())
@@ -22,13 +25,11 @@ class QuoteCacheService(
     companion object {
         private const val QUOTE_PREFIX = "quote:"
         private const val CHAIN_PREFIX = "chain:"
-        private const val QUOTE_TTL_SECONDS = 60L
-        private const val CHAIN_TTL_SECONDS = 300L
     }
 
     fun cacheQuote(quote: Quote) {
         val key = QUOTE_PREFIX + quote.symbol
-        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(quote), QUOTE_TTL_SECONDS, TimeUnit.SECONDS)
+        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(quote), quoteTtlSeconds, TimeUnit.SECONDS)
     }
 
     fun getQuote(symbol: String): Quote? {
@@ -38,7 +39,7 @@ class QuoteCacheService(
 
     fun cacheChain(underlying: String, chain: OptionsChain) {
         val key = CHAIN_PREFIX + underlying
-        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(chain), CHAIN_TTL_SECONDS, TimeUnit.SECONDS)
+        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(chain), chainTtlSeconds, TimeUnit.SECONDS)
     }
 
     fun getChain(underlying: String): OptionsChain? {
