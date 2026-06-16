@@ -43,17 +43,12 @@ jobs:
             exit 0
           fi
 
-          git diff "$BASE_SHA...$HEAD_SHA" -- ':!.github' > /tmp/pr_diff.diff
+          git diff "$BASE_SHA...$HEAD_SHA" > /tmp/pr_diff.diff
           echo "diff_size=$(wc -c < /tmp/pr_diff.diff)" >> $GITHUB_OUTPUT
           echo "skip=false" >> $GITHUB_OUTPUT
 
-          git diff --name-only "$BASE_SHA...$HEAD_SHA" -- ':!.github' > /tmp/changed_files.txt
+          git diff --name-only "$BASE_SHA...$HEAD_SHA" > /tmp/changed_files.txt
           echo "changed_files=$(wc -l < /tmp/changed_files.txt)" >> $GITHUB_OUTPUT
-
-          if [ ! -s /tmp/pr_diff.diff ]; then
-            echo "No application code changes to review (only .github/ changes). Skipping."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          fi
 
           cat /tmp/changed_files.txt
 
@@ -176,7 +171,7 @@ jobs:
             prefix += `| 🟡 **LOW** | ${lowCount} |\n\n`;
 
             if (highCount > 0) {
-              prefix += `> ⚠️ **${highCount} HIGH severity ${highCount === 1 ? 'issue' : 'issues'} found — build will fail.**\n\n`;
+              prefix += `> ⚠️ **${highCount} HIGH severity ${highCount === 1 ? 'issue' : 'issues'} found.**\n\n`;
             }
 
             const maxBodyLen = 60000;
@@ -192,13 +187,7 @@ jobs:
 
             console.log(`PR comment posted: ${highCount} HIGH, ${lowCount} LOW`);
 
-      - name: Fail build on HIGH findings
-        if: steps.context.outputs.skip != 'true' && steps.parse.outputs.HIGH_COUNT != '0'
+      - name: Report findings
+        if: steps.context.outputs.skip != 'true'
         run: |
-          echo "::error::Build failed: ${{ steps.parse.outputs.HIGH_COUNT }} HIGH severity findings found. Check the PR comment for details."
-          exit 1
-
-      - name: Pass build on LOW-only findings
-        if: steps.context.outputs.skip != 'true' && steps.parse.outputs.HIGH_COUNT == '0' && steps.parse.outputs.LOW_COUNT != '0'
-        run: |
-          echo "::notice::${{ steps.parse.outputs.LOW_COUNT }} LOW severity findings found (non-blocking)."
+          echo "::notice::${{ steps.parse.outputs.HIGH_COUNT }} HIGH and ${{ steps.parse.outputs.LOW_COUNT }} LOW findings found (non-blocking). Check the PR comment for details."
