@@ -18,8 +18,8 @@ class SubscriptionManagerTest {
 
         manager.resubscribeAll()
 
-        verify(exactly = 1) { ibkrClient.requestMarketData(1001, any()) }
-        verify(exactly = 1) { ibkrClient.requestMarketData(1002, any()) }
+        verify(exactly = 2) { ibkrClient.requestMarketData(1001, any()) }
+        verify(exactly = 2) { ibkrClient.requestMarketData(1002, any()) }
     }
 
     @Test
@@ -39,8 +39,8 @@ class SubscriptionManagerTest {
 
         manager.resubscribeAll()
 
-        verify(exactly = 0) { ibkrClient.requestMarketData(1001, any()) }
-        verify(exactly = 1) { ibkrClient.requestMarketData(1002, any()) }
+        verify(exactly = 1) { ibkrClient.requestMarketData(1001, any()) }
+        verify(exactly = 2) { ibkrClient.requestMarketData(1002, any()) }
     }
 
     @Test
@@ -55,8 +55,8 @@ class SubscriptionManagerTest {
 
         manager.resubscribeAll()
 
-        verify(exactly = 1) { ibkrClient.requestMarketData(1001, any()) }
-        verify(exactly = 1) { ibkrClient.requestMarketData(1002, any()) }
+        verify(exactly = 2) { ibkrClient.requestMarketData(1001, any()) }
+        verify(exactly = 2) { ibkrClient.requestMarketData(1002, any()) }
     }
 
     @Test
@@ -71,6 +71,6 @@ class SubscriptionManagerTest {
         manager.resubscribeAll()
         manager.resubscribeAll()
 
-        verify(exactly = 3) { ibkrClient.requestMarketData(1001, any()) }
+        verify(exactly = 4) { ibkrClient.requestMarketData(1001, any()) }
     }
 }

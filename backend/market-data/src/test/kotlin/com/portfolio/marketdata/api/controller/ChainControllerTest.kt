@@ -31,7 +31,7 @@ class ChainControllerTest {
     private val quoteCacheService = mockk<QuoteCacheService>()
     private val chainBuilder = mockk<OptionsChainBuilder>()
     private val greeksCalculator = mockk<GreeksCalculator>()
-    private val ibkrClient = mockk<IbkrClient>()
+    private val ibkrClient = mockk<IbkrClient>(relaxed = true)
     private val properties = AppProperties(maxDteDefault = 90)
 
     private lateinit var controller: ChainController
@@ -156,6 +156,7 @@ class ChainControllerTest {
         every { quoteCacheService.getChain("AAPL") } returns null
         every { quoteCacheService.getExpirations("AAPL") } returns allExpirations
         every { quoteCacheService.getQuote("AAPL") } returns mockk { every { last } returns BigDecimal("150.00") }
+        every { ibkrClient.isConnected() } returns true
 
         val response = controller.getExpirations("AAPL", null)
 
@@ -192,6 +193,7 @@ class ChainControllerTest {
         every { quoteCacheService.getChain("QQQ") } returns null
         every { quoteCacheService.getExpirations("QQQ") } returns listOf(in30, in60, in120)
         every { quoteCacheService.getQuote("QQQ") } returns mockk { every { last } returns BigDecimal("400.00") }
+        every { ibkrClient.isConnected() } returns true
 
         val response = controller.getExpirations("QQQ", 45)
 

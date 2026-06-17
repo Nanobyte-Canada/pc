@@ -116,19 +116,21 @@ class ChainController(
         if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
 
         val spotPrice = resolveSpotPrice(underlying) ?: return ResponseEntity.notFound().build()
-        val allExpirations = try {
-            CompletableFuture.supplyAsync({ ibkrClient.requestOptionExpirations(underlying) }, chainBuildExecutor)
-                .get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
-        } catch (e: TimeoutException) {
-            log.warn("Expirations request timed out for {}", underlying)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            log.warn("Expirations request interrupted for {}", underlying)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        }
+        val allExpirations = quoteCacheService.getExpirations(underlying)
+            ?: try {
+                CompletableFuture.supplyAsync({ ibkrClient.requestOptionExpirations(underlying) }, chainBuildExecutor)
+                    .get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
+            } catch (e: TimeoutException) {
+                log.warn("Expirations request timed out for {}", underlying)
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                log.warn("Expirations request interrupted for {}", underlying)
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+            }.also { exps ->
+                if (exps != null && exps.isNotEmpty()) quoteCacheService.cacheExpirations(underlying, exps)
+            }
         if (allExpirations.isEmpty()) return ResponseEntity.notFound().build()
-
         val filtered = filterByDte(allExpirations, maxDte)
         return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice, filtered))
     }
@@ -177,8 +179,7 @@ class ChainController(
     }
 
     private fun filterByDte(expirations: List<LocalDate>, maxDte: Int?): List<LocalDate> {
-        if (maxDte == null) return expirations
-        val effectiveMaxDte = maxDte.coerceAtLeast(1)
+        val effectiveMaxDte = maxDte ?: properties.maxDteDefault
         val today = LocalDate.now()
         return expirations.filter { ChronoUnit.DAYS.between(today, it) in 0..effectiveMaxDte.toLong() }
     }
