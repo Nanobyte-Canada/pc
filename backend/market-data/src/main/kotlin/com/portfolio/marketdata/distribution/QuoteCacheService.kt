@@ -28,6 +28,7 @@ class QuoteCacheService(
         private const val QUOTE_PREFIX = "quote:"
         private const val CHAIN_PREFIX = "chain:"
         private const val EXPIRATION_PREFIX = "expirations:"
+        private const val EXPIRATION_TTL_HOURS = 24L
     }
 
     fun cacheQuote(quote: Quote) {
