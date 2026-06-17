@@ -19,7 +19,7 @@ class QuoteCacheServiceTest {
     @BeforeEach
     fun setup() {
         every { redisTemplate.opsForValue() } returns opsForValue
-        service = QuoteCacheService(redisTemplate)
+        service = QuoteCacheService(redisTemplate, 60L, 300L)
     }
 
     @Test
