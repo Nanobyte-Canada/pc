@@ -75,7 +75,7 @@ export function OptionsPage() {
     } finally {
       setIsLoadingChain(false)
     }
-  }, [setSelectedUnderlying, setQuote, setChain, subscribe, subscribeChainExpiry, unsubscribeChain, selectedUnderlying, setStrategies, strategiesLoaded, strikesPerSide])
+  }, [setSelectedUnderlying, setQuote, setChain, subscribe, subscribeChainExpiry, unsubscribeChain, selectedUnderlying, setStrategies, strategiesLoaded, strikesPerSide, toast])
 
   const handleExpiryChange = useCallback(async (expiry: string) => {
     if (!selectedUnderlying) return
