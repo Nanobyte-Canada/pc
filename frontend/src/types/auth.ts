@@ -21,11 +21,6 @@ export interface AuthResponse {
   message?: string;
 }
 
-export interface SignupResponse {
-  message: string;
-  userId: number;
-}
-
 export interface MessageResponse {
   message: string;
 }
@@ -35,24 +30,4 @@ export interface AuthErrorResponse {
   message: string;
   field?: string;
   lockedUntil?: string;
-}
-
-export interface SignupRequest {
-  email: string;
-  password: string;
-  name?: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface ForgotPasswordRequest {
-  email: string;
-}
-
-export interface ResetPasswordRequest {
-  token: string;
-  newPassword: string;
 }

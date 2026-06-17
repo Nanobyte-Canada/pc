@@ -1,0 +1,310 @@
+- generic [ref=e6]:
+  - complementary [ref=e7]:
+    - navigation "Main navigation" [ref=e8]:
+      - generic [ref=e9]: P
+      - button "Portfolio" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+      - button "Wheel" [ref=e16] [cursor=pointer]:
+        - img [ref=e17]
+      - button "Connections" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - 'generic "IBKR Gateway: connecting" [ref=e25]':
+        - generic [ref=e27]: IBKR...
+      - button "Toggle theme" [ref=e28] [cursor=pointer]:
+        - img [ref=e29]
+      - button "Admin settings" [ref=e35] [cursor=pointer]:
+        - img [ref=e36]
+      - button "User profile" [ref=e39] [cursor=pointer]: S
+  - main [ref=e41]:
+    - generic [ref=e42]:
+      - generic [ref=e44]:
+        - button "All Accounts" [ref=e45] [cursor=pointer]
+        - button "Q LIRA ••9683" [ref=e46] [cursor=pointer]:
+          - generic [ref=e47]: Q
+          - generic [ref=e48]: LIRA
+          - generic [ref=e49]: ••9683
+        - button "Q RRSP ••8214" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]: Q
+          - generic [ref=e52]: RRSP
+          - generic [ref=e53]: ••8214
+        - button "Q MARGIN ••4150" [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]: Q
+          - generic [ref=e56]: MARGIN
+          - generic [ref=e57]: ••4150
+        - button "Q RRSP ••2736" [ref=e58] [cursor=pointer]:
+          - generic [ref=e59]: Q
+          - generic [ref=e60]: RRSP
+          - generic [ref=e61]: ••2736
+        - button "Q TFSA ••0190" [ref=e62] [cursor=pointer]:
+          - generic [ref=e63]: Q
+          - generic [ref=e64]: TFSA
+          - generic [ref=e65]: ••0190
+      - heading "Wheel Strategy" [level=1] [ref=e67]
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - generic [ref=e73]: Capital Available
+              - img [ref=e74]
+            - generic [ref=e77]: C$ 95,889
+            - generic [ref=e79]:
+              - generic [ref=e80]: C$
+              - generic [ref=e81]: 95,889.00
+            - generic [ref=e82]:
+              - generic [ref=e83]: US$
+              - generic [ref=e84]: "0.00"
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - generic [ref=e87]: Capital Deployed
+              - img [ref=e88]
+            - generic [ref=e90]: US$41,750.00
+            - generic [ref=e92]:
+              - generic [ref=e93]: CSP
+              - generic [ref=e94]: US$41,750.00
+            - generic [ref=e95]:
+              - generic [ref=e96]: CC
+              - generic [ref=e97]: US$4,800.00
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - generic [ref=e100]: CC Available
+              - img [ref=e101]
+            - generic [ref=e103]: 18 contracts
+            - generic [ref=e105]:
+              - generic [ref=e106]: QQU.TO
+              - generic [ref=e107]: "6"
+            - generic [ref=e108]:
+              - generic [ref=e109]: SPXU.TO
+              - generic [ref=e110]: "5"
+            - generic [ref=e111]:
+              - generic [ref=e112]: TQQQ
+              - generic [ref=e113]: "1"
+          - generic [ref=e114]:
+            - generic [ref=e115]:
+              - generic [ref=e116]: Premium & P&L
+              - img [ref=e117]
+            - generic [ref=e119]: "-US$1,952.00"
+            - generic [ref=e121]:
+              - generic [ref=e122]: Premium
+              - generic [ref=e123]: +US$2,260.00
+            - generic [ref=e124]:
+              - generic [ref=e125]: Unrealized
+              - generic [ref=e126]: "-US$1,952.00"
+          - generic [ref=e127]:
+            - generic [ref=e128]:
+              - generic [ref=e129]: Positions
+              - img [ref=e130]
+            - generic [ref=e134]: "5"
+            - generic [ref=e136]:
+              - generic [ref=e137]: CSP
+              - generic [ref=e138]: "4"
+            - generic [ref=e139]:
+              - generic [ref=e140]: CC
+              - generic [ref=e141]: "1"
+            - generic [ref=e142]:
+              - generic [ref=e143]: Expiring
+              - generic [ref=e144]: "0"
+        - generic [ref=e145]:
+          - button "Previous weeks" [ref=e146] [cursor=pointer]:
+            - img [ref=e147]
+          - generic [ref=e149]: Jun 5 — Jun 26, 2026
+          - button "Next weeks" [ref=e150] [cursor=pointer]:
+            - img [ref=e151]
+          - button "Today" [ref=e153] [cursor=pointer]
+        - generic [ref=e154]:
+          - table [ref=e156]:
+            - rowgroup [ref=e157]:
+              - row "Ticker Jun 5 1d Fri Jun 12 8d Fri Jun 18 Monthly 14d Thu Jun 26 22d Fri" [ref=e158]:
+                - columnheader "Ticker" [ref=e159]
+                - columnheader "Jun 5 1d Fri" [ref=e160]:
+                  - generic [ref=e161]: Jun 5
+                  - generic [ref=e162]:
+                    - generic [ref=e163]: 1d
+                    - generic [ref=e164]: Fri
+                - columnheader "Jun 12 8d Fri" [ref=e165]:
+                  - generic [ref=e166]: Jun 12
+                  - generic [ref=e167]:
+                    - generic [ref=e168]: 8d
+                    - generic [ref=e169]: Fri
+                - columnheader "Jun 18 Monthly 14d Thu" [ref=e170]:
+                  - generic [ref=e171]:
+                    - text: Jun 18
+                    - generic [ref=e172]: Monthly
+                  - generic [ref=e173]:
+                    - generic [ref=e174]: 14d
+                    - generic [ref=e175]: Thu
+                - columnheader "Jun 26 22d Fri" [ref=e176]:
+                  - generic [ref=e177]: Jun 26
+                  - generic [ref=e178]:
+                    - generic [ref=e179]: 22d
+                    - generic [ref=e180]: Fri
+            - rowgroup [ref=e181]:
+              - row "AQN.TO 551 shares + CSP + CC + CSP + CC + CSP + CC + CSP + CC" [ref=e182]:
+                - cell "AQN.TO 551 shares" [ref=e183]:
+                  - generic [ref=e184]: AQN.TO
+                  - generic [ref=e185]: 551 shares
+                - cell "+ CSP + CC" [ref=e186]:
+                  - generic [ref=e188]:
+                    - button "+ CSP" [ref=e189] [cursor=pointer]
+                    - button "+ CC" [ref=e190] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e191]:
+                  - generic [ref=e193]:
+                    - button "+ CSP" [ref=e194] [cursor=pointer]
+                    - button "+ CC" [ref=e195] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e196]:
+                  - generic [ref=e198]:
+                    - button "+ CSP" [ref=e199] [cursor=pointer]
+                    - button "+ CC" [ref=e200] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e201]:
+                  - generic [ref=e203]:
+                    - button "+ CSP" [ref=e204] [cursor=pointer]
+                    - button "+ CC" [ref=e205] [cursor=pointer]
+              - row "NPI.TO 148 shares + CSP + CC + CSP + CC + CSP + CC + CSP + CC" [ref=e206]:
+                - cell "NPI.TO 148 shares" [ref=e207]:
+                  - generic [ref=e208]: NPI.TO
+                  - generic [ref=e209]: 148 shares
+                - cell "+ CSP + CC" [ref=e210]:
+                  - generic [ref=e212]:
+                    - button "+ CSP" [ref=e213] [cursor=pointer]
+                    - button "+ CC" [ref=e214] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e215]:
+                  - generic [ref=e217]:
+                    - button "+ CSP" [ref=e218] [cursor=pointer]
+                    - button "+ CC" [ref=e219] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e220]:
+                  - generic [ref=e222]:
+                    - button "+ CSP" [ref=e223] [cursor=pointer]
+                    - button "+ CC" [ref=e224] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e225]:
+                  - generic [ref=e227]:
+                    - button "+ CSP" [ref=e228] [cursor=pointer]
+                    - button "+ CC" [ref=e229] [cursor=pointer]
+              - row "QQU.TO 671 shares + CSP + CC + CSP + CC + CSP + CC + CSP + CC" [ref=e230]:
+                - cell "QQU.TO 671 shares" [ref=e231]:
+                  - generic [ref=e232]: QQU.TO
+                  - generic [ref=e233]: 671 shares
+                - cell "+ CSP + CC" [ref=e234]:
+                  - generic [ref=e236]:
+                    - button "+ CSP" [ref=e237] [cursor=pointer]
+                    - button "+ CC" [ref=e238] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e239]:
+                  - generic [ref=e241]:
+                    - button "+ CSP" [ref=e242] [cursor=pointer]
+                    - button "+ CC" [ref=e243] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e244]:
+                  - generic [ref=e246]:
+                    - button "+ CSP" [ref=e247] [cursor=pointer]
+                    - button "+ CC" [ref=e248] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e249]:
+                  - generic [ref=e251]:
+                    - button "+ CSP" [ref=e252] [cursor=pointer]
+                    - button "+ CC" [ref=e253] [cursor=pointer]
+              - row "SOXL + CSP + CC + CSP + CC $100 Put 62.6% +US$374.00 $120 Put 55.2% +US$755.00 + CSP + CC + CSP + CC" [ref=e254]:
+                - cell "SOXL" [ref=e255]:
+                  - generic [ref=e256]: SOXL
+                - cell "+ CSP + CC" [ref=e257]:
+                  - generic [ref=e259]:
+                    - button "+ CSP" [ref=e260] [cursor=pointer]
+                    - button "+ CC" [ref=e261] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e262]:
+                  - generic [ref=e264]:
+                    - button "+ CSP" [ref=e265] [cursor=pointer]
+                    - button "+ CC" [ref=e266] [cursor=pointer]
+                - cell "$100 Put 62.6% +US$374.00 $120 Put 55.2% +US$755.00 + CSP + CC" [ref=e267]:
+                  - generic [ref=e268]:
+                    - button "$100 Put 62.6% +US$374.00" [ref=e269] [cursor=pointer]:
+                      - generic [ref=e270]:
+                        - generic [ref=e271]: $100 Put
+                        - generic [ref=e272]: 62.6%
+                      - generic [ref=e274]: +US$374.00
+                    - button "$120 Put 55.2% +US$755.00" [ref=e275] [cursor=pointer]:
+                      - generic [ref=e276]:
+                        - generic [ref=e277]: $120 Put
+                        - generic [ref=e278]: 55.2%
+                      - generic [ref=e280]: +US$755.00
+                    - generic [ref=e281]:
+                      - button "+ CSP" [ref=e282] [cursor=pointer]
+                      - button "+ CC" [ref=e283] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e284]:
+                  - generic [ref=e286]:
+                    - button "+ CSP" [ref=e287] [cursor=pointer]
+                    - button "+ CC" [ref=e288] [cursor=pointer]
+              - row "SPXU.TO 574 shares + CSP + CC + CSP + CC + CSP + CC + CSP + CC" [ref=e289]:
+                - cell "SPXU.TO 574 shares" [ref=e290]:
+                  - generic [ref=e291]: SPXU.TO
+                  - generic [ref=e292]: 574 shares
+                - cell "+ CSP + CC" [ref=e293]:
+                  - generic [ref=e295]:
+                    - button "+ CSP" [ref=e296] [cursor=pointer]
+                    - button "+ CC" [ref=e297] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e298]:
+                  - generic [ref=e300]:
+                    - button "+ CSP" [ref=e301] [cursor=pointer]
+                    - button "+ CC" [ref=e302] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e303]:
+                  - generic [ref=e305]:
+                    - button "+ CSP" [ref=e306] [cursor=pointer]
+                    - button "+ CC" [ref=e307] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e308]:
+                  - generic [ref=e310]:
+                    - button "+ CSP" [ref=e311] [cursor=pointer]
+                    - button "+ CC" [ref=e312] [cursor=pointer]
+              - row "TECL + CSP + CC + CSP + CC $140 Put 45.5% +US$350.00 + CSP + CC + CSP + CC" [ref=e313]:
+                - cell "TECL" [ref=e314]:
+                  - generic [ref=e315]: TECL
+                - cell "+ CSP + CC" [ref=e316]:
+                  - generic [ref=e318]:
+                    - button "+ CSP" [ref=e319] [cursor=pointer]
+                    - button "+ CC" [ref=e320] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e321]:
+                  - generic [ref=e323]:
+                    - button "+ CSP" [ref=e324] [cursor=pointer]
+                    - button "+ CC" [ref=e325] [cursor=pointer]
+                - cell "$140 Put 45.5% +US$350.00 + CSP + CC" [ref=e326]:
+                  - generic [ref=e327]:
+                    - button "$140 Put 45.5% +US$350.00" [ref=e328] [cursor=pointer]:
+                      - generic [ref=e329]:
+                        - generic [ref=e330]: $140 Put
+                        - generic [ref=e331]: 45.5%
+                      - generic [ref=e333]: +US$350.00
+                    - generic [ref=e334]:
+                      - button "+ CSP" [ref=e335] [cursor=pointer]
+                      - button "+ CC" [ref=e336] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e337]:
+                  - generic [ref=e339]:
+                    - button "+ CSP" [ref=e340] [cursor=pointer]
+                    - button "+ CC" [ref=e341] [cursor=pointer]
+              - row "TQQQ 100 shares + CSP + CC + CSP + CC $57.5 Put 33.1% +US$109.00 $48 CC 44.1% -US$3,540.00 + CSP + CC + CSP + CC" [ref=e342]:
+                - cell "TQQQ 100 shares" [ref=e343]:
+                  - generic [ref=e344]: TQQQ
+                  - generic [ref=e345]: 100 shares
+                - cell "+ CSP + CC" [ref=e346]:
+                  - generic [ref=e348]:
+                    - button "+ CSP" [ref=e349] [cursor=pointer]
+                    - button "+ CC" [ref=e350] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e351]:
+                  - generic [ref=e353]:
+                    - button "+ CSP" [ref=e354] [cursor=pointer]
+                    - button "+ CC" [ref=e355] [cursor=pointer]
+                - cell "$57.5 Put 33.1% +US$109.00 $48 CC 44.1% -US$3,540.00 + CSP + CC" [ref=e356]:
+                  - generic [ref=e357]:
+                    - button "$57.5 Put 33.1% +US$109.00" [ref=e358] [cursor=pointer]:
+                      - generic [ref=e359]:
+                        - generic [ref=e360]: $57.5 Put
+                        - generic [ref=e361]: 33.1%
+                      - generic [ref=e363]: +US$109.00
+                    - button "$48 CC 44.1% -US$3,540.00" [ref=e364] [cursor=pointer]:
+                      - generic [ref=e365]:
+                        - generic [ref=e366]: $48 CC
+                        - generic [ref=e367]: 44.1%
+                      - generic [ref=e369]: "-US$3,540.00"
+                    - generic [ref=e370]:
+                      - button "+ CSP" [ref=e371] [cursor=pointer]
+                      - button "+ CC" [ref=e372] [cursor=pointer]
+                - cell "+ CSP + CC" [ref=e373]:
+                  - generic [ref=e375]:
+                    - button "+ CSP" [ref=e376] [cursor=pointer]
+                    - button "+ CC" [ref=e377] [cursor=pointer]
+          - button "+ Add Ticker" [ref=e378] [cursor=pointer]
+        - generic [ref=e379]:
+          - generic [ref=e380]: CSP
+          - generic [ref=e382]: CC

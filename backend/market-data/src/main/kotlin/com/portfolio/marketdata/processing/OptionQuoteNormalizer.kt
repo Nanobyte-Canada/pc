@@ -43,11 +43,11 @@ class OptionQuoteNormalizer {
         var volume: Long? = null
 
         fun tryEmit(underlying: String, optionType: OptionType, strike: BigDecimal, expiry: LocalDate): OptionQuote? {
-            val b = bid ?: return null
-            val a = ask ?: return null
+            val b = bid?.takeIf { it >= 0 } ?: return null
+            val a = ask?.takeIf { it >= 0 } ?: return null
 
             val normalizedBid = if (b == 0.0) a else b
-            val normalizedLast = last?.let { if (it == 0.0) (normalizedBid + a) / 2.0 else it } ?: (normalizedBid + a) / 2.0
+            val normalizedLast = last?.let { if (it <= 0.0) (normalizedBid + a) / 2.0 else it } ?: (normalizedBid + a) / 2.0
 
             return OptionQuote(
                 underlying = underlying, optionType = optionType, strike = strike, expiry = expiry,

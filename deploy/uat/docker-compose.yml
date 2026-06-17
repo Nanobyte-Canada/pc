@@ -51,39 +51,6 @@ services:
     networks:
       - uat-network
 
-  ib-gateway:
-    image: ghcr.io/gnzsnz/ib-gateway:10.30.1t
-    container_name: uat-ib-gateway
-    environment:
-      TWS_USERID: ${IBKR_USERNAME}
-      TWS_PASSWORD: ${IBKR_PASSWORD}
-      TRADING_MODE: paper
-      TWS_ACCEPT_INCOMING: "accept"
-      READ_ONLY_API: "yes"
-      VNC_SERVER_PASSWORD: ${IBKR_VNC_PASSWORD:-}
-      TWS_PORT: "4002"
-    ports:
-      - "127.0.0.1:25900:5900"
-      - "127.0.0.1:24002:4002"
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "4002"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 120s
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-    logging:
-      driver: json-file
-      options:
-        max-size: "50m"
-        max-file: "5"
-    networks:
-      - uat-network
-
   backend:
     image: ghcr.io/saurabhbilakhia/portfolio-backend:${IMAGE_TAG}
     container_name: uat-backend
@@ -179,8 +146,8 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      IBKR_HOST: ib-gateway
-      IBKR_PORT: "4002"
+      IBKR_HOST: host.docker.internal
+      IBKR_PORT: "14001"
       IBKR_CLIENT_ID: ${IBKR_CLIENT_ID:-1}
     ports:
       - "20082:8082"
@@ -190,8 +157,6 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      ib-gateway:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
@@ -263,11 +228,11 @@ services:
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY}
       GATEWAY_API_KEY: ${GATEWAY_API_KEY}
       IBKR_GATEWAY_ENABLED: "true"
-      IBKR_HOST: ib-gateway
-      IBKR_PORT: "4002"
+      IBKR_HOST: host.docker.internal
+      IBKR_PORT: "14001"
       IBKR_GATEWAY_CLIENT_ID: ${IBKR_GATEWAY_CLIENT_ID:-2}
-      QUESTRADE_ENABLED: ${QUESTRADE_ENABLED:-false}
-      WEALTHSIMPLE_ENABLED: ${WEALTHSIMPLE_ENABLED:-false}
+      QUESTRADE_ENABLED: "true"
+      WEALTHSIMPLE_ENABLED: "true"
     ports:
       - "20084:8084"
     extra_hosts:
@@ -276,8 +241,6 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      ib-gateway:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]

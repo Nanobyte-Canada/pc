@@ -9,5 +9,6 @@ data class AppProperties(
     val clientId: Int = 1,
     val maxConnections: Int = 2,
     val reconnectDelayMs: Long = 5000,
-    val maxChainExpirations: Int = 12
+    val maxChainExpirations: Int = 12,
+    val maxDteDefault: Int = 90
 )

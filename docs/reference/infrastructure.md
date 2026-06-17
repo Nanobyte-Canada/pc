@@ -25,15 +25,6 @@ Two-stage build for local development and CI.
 - Entrypoint: `java -jar app.jar`
 - Exposes port 8080
 
-### backend/portfolio/Dockerfile.prebuilt -- VPS Runtime-Only
-
-Simplified runtime image for VPS deployments where `app.jar` is pre-built by CI.
-
-- Base: `eclipse-temurin:21-jre`
-- No build stage -- expects `app.jar` in build context
-- Creates non-root user `appuser:appgroup` (UID/GID 1001)
-- Same health check as full Dockerfile
-- No CA certificate installation (VPS uses Nginx for TLS termination)
 
 ### backend/broker-gateway/Dockerfile -- Full Multi-Stage Build
 
@@ -69,14 +60,6 @@ Three-stage build.
 - Health check: `wget --no-verbose --tries=1 --spider http://localhost:80/` (30s interval, 3s timeout, 5s start period)
 - Exposes port 80
 
-### frontend/Dockerfile.prebuilt -- VPS Runtime-Only
-
-Minimal Nginx image for VPS deployments where `dist/` is pre-built by CI.
-
-- Base: `nginx:alpine`
-- Copies pre-built `dist/` and `nginx.conf`
-- Health check: `wget` to `http://localhost:80/nginx-health`
-- Exposes port 80
 
 ### docker-compose.yml -- Local Development
 

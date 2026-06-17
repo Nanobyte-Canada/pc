@@ -3,6 +3,7 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
+  # === Prod backend services ===
   - job_name: "portfolio-backend"
     metrics_path: /actuator/prometheus
     static_configs:
@@ -43,6 +44,48 @@ scrape_configs:
           service: broker-gateway
           environment: prod
 
+  # === UAT backend services ===
+  - job_name: "portfolio-backend-uat"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:20080"]
+        labels:
+          service: backend
+          environment: uat
+
+  - job_name: "portfolio-ingestion-uat"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:20081"]
+        labels:
+          service: ingestion
+          environment: uat
+
+  - job_name: "portfolio-market-data-uat"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:20082"]
+        labels:
+          service: market-data
+          environment: uat
+
+  - job_name: "portfolio-strategy-uat"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:20083"]
+        labels:
+          service: strategy
+          environment: uat
+
+  - job_name: "portfolio-broker-gateway-uat"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:20084"]
+        labels:
+          service: broker-gateway
+          environment: uat
+
+  # === Infrastructure exporters ===
   - job_name: "cadvisor"
     static_configs:
       - targets: ["cadvisor:8080"]
@@ -54,7 +97,23 @@ scrape_configs:
   - job_name: "postgres-exporter"
     static_configs:
       - targets: ["postgres-exporter:9187"]
+        labels:
+          environment: prod
+
+  - job_name: "postgres-exporter-uat"
+    static_configs:
+      - targets: ["postgres-exporter-uat:9187"]
+        labels:
+          environment: uat
 
   - job_name: "redis-exporter"
     static_configs:
       - targets: ["redis-exporter:9121"]
+        labels:
+          environment: prod
+
+  - job_name: "redis-exporter-uat"
+    static_configs:
+      - targets: ["redis-exporter-uat:9121"]
+        labels:
+          environment: uat

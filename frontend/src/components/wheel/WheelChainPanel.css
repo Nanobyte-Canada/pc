@@ -125,3 +125,43 @@
   .wcp2-expiry { flex-direction: column; align-items: center; }
   .wcp2-expiry__label { display: none; }
 }
+
+.wcp2-strikes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.wcp2-strikes__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.wcp2-strikes__options {
+  display: flex;
+  gap: 2px;
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+.wcp2-strikes__btn {
+  padding: 3px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.wcp2-strikes__btn:hover {
+  color: var(--text-secondary);
+}
+.wcp2-strikes__btn--active {
+  background: rgba(255,255,255,0.1);
+  color: var(--text-primary);
+}

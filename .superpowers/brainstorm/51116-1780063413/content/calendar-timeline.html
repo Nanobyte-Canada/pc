@@ -1,0 +1,275 @@
+<h2>Tickers on Y-axis · Weekly Expiry Calendar on X-axis</h2>
+<p class="subtitle">Navigate the timeline with left/right arrows. Shows 4 weekly expiry columns at a time.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Wheel Strategy — Calendar Timeline View</div>
+  <div class="mockup-body" style="padding:0; font-family:system-ui; font-size:12px; background:#0f1729;">
+
+    <!-- Header bar: title + account + capital summary -->
+    <div style="padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="font-size:18px; font-weight:700; color:#e2e8f0;">Wheel Strategy</div>
+        <div style="display:flex; gap:6px;">
+          <span style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); color:#10b981; padding:3px 10px; border-radius:12px; font-size:10px; cursor:pointer;">All Accounts</span>
+          <span style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:#94a3b8; padding:3px 10px; border-radius:12px; font-size:10px; cursor:pointer;">TFSA ••0190</span>
+          <span style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:#94a3b8; padding:3px 10px; border-radius:12px; font-size:10px; cursor:pointer;">MARGIN ••4150</span>
+        </div>
+      </div>
+      <!-- KPI strip -->
+      <div style="display:flex; gap:16px; font-size:11px;">
+        <div><span style="color:#64748b;">Cash </span><span style="color:#e2e8f0; font-family:monospace;">US$33,109</span> <span style="color:#64748b; font-size:10px;">/ C$108,118</span></div>
+        <div style="color:rgba(255,255,255,0.1);">|</div>
+        <div><span style="color:#64748b;">Deployed </span><span style="color:#e2e8f0; font-family:monospace;">US$53,250</span></div>
+        <div style="color:rgba(255,255,255,0.1);">|</div>
+        <div><span style="color:#64748b;">Premium </span><span style="color:#10b981; font-family:monospace;">+US$2,675</span></div>
+        <div style="color:rgba(255,255,255,0.1);">|</div>
+        <div><span style="color:#64748b;">P&L </span><span style="color:#f87171; font-family:monospace;">-US$1,386</span></div>
+      </div>
+    </div>
+
+    <!-- Timeline navigation -->
+    <div style="display:flex; align-items:center; padding:8px 16px; border-bottom:1px solid rgba(255,255,255,0.06); gap:8px;">
+      <button style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#e2e8f0; padding:4px 10px; cursor:pointer; font-size:13px;">&#8592;</button>
+      <div style="flex:1; text-align:center; color:#94a3b8; font-size:11px; letter-spacing:0.5px; text-transform:uppercase;">
+        May 29 — Jun 19, 2026
+      </div>
+      <button style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#e2e8f0; padding:4px 10px; cursor:pointer; font-size:13px;">&#8594;</button>
+      <div style="width:1px; height:16px; background:rgba(255,255,255,0.08); margin:0 4px;"></div>
+      <button style="background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.25); border-radius:6px; color:#a78bfa; padding:4px 10px; cursor:pointer; font-size:11px; font-weight:500;">Today</button>
+    </div>
+
+    <!-- Grid -->
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; min-width:800px;">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+            <th style="padding:10px 14px; text-align:left; color:#94a3b8; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:140px; position:sticky; left:0; background:#0f1729; z-index:1;">Ticker</th>
+            <!-- Week 1: May 29 (this week, highlighted) -->
+            <th style="padding:10px 12px; text-align:center; min-width:170px; background:rgba(239,68,68,0.04);">
+              <div style="font-weight:600; color:#e2e8f0;">May 29</div>
+              <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:2px;">
+                <span style="background:rgba(239,68,68,0.25); color:#f87171; padding:1px 6px; border-radius:3px; font-size:10px; font-weight:600;">0d</span>
+                <span style="font-size:10px; color:#64748b;">Fri</span>
+              </div>
+            </th>
+            <!-- Week 2: Jun 5 -->
+            <th style="padding:10px 12px; text-align:center; min-width:170px;">
+              <div style="font-weight:600; color:#e2e8f0;">Jun 5</div>
+              <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:2px;">
+                <span style="background:rgba(234,179,8,0.2); color:#eab308; padding:1px 6px; border-radius:3px; font-size:10px;">7d</span>
+                <span style="font-size:10px; color:#64748b;">Fri</span>
+              </div>
+            </th>
+            <!-- Week 3: Jun 12 -->
+            <th style="padding:10px 12px; text-align:center; min-width:170px;">
+              <div style="font-weight:600; color:#e2e8f0;">Jun 12</div>
+              <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:2px;">
+                <span style="background:rgba(34,197,94,0.2); color:#22c55e; padding:1px 6px; border-radius:3px; font-size:10px;">14d</span>
+                <span style="font-size:10px; color:#64748b;">Fri</span>
+              </div>
+            </th>
+            <!-- Week 4: Jun 19 (monthly) -->
+            <th style="padding:10px 12px; text-align:center; min-width:170px;">
+              <div style="display:flex; align-items:center; justify-content:center; gap:4px;">
+                <span style="font-weight:600; color:#e2e8f0;">Jun 19</span>
+                <span style="background:rgba(99,102,241,0.2); color:#a78bfa; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:500;">Monthly</span>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:2px;">
+                <span style="background:rgba(34,197,94,0.2); color:#22c55e; padding:1px 6px; border-radius:3px; font-size:10px;">21d</span>
+                <span style="font-size:10px; color:#64748b;">Fri</span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- SOXL -->
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:10px 14px; position:sticky; left:0; background:#0f1729; z-index:1;">
+              <div style="font-size:15px; font-weight:700; color:#e2e8f0;">SOXL</div>
+              <div style="font-size:10px; color:#94a3b8; font-family:monospace;">$676.00</div>
+              <div style="font-size:10px; color:#10b981; margin-top:2px;">3 pos · +$1,414</div>
+            </td>
+            <!-- May 29 -->
+            <td style="padding:6px 8px; vertical-align:top; background:rgba(239,68,68,0.02);">
+              <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.18); border-radius:6px; padding:8px 10px; cursor:pointer; transition: border-color 0.15s;">
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="color:#a78bfa; font-weight:600; font-family:monospace;">$70 Put</span>
+                  <span style="color:#94a3b8; font-size:10px;">89.6%</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                  <span style="color:#94a3b8; font-size:10px;">prem $290</span>
+                  <span style="color:#10b981; font-family:monospace; font-size:11px;">+$289</span>
+                </div>
+              </div>
+            </td>
+            <!-- Jun 5 -->
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px; transition: border-color 0.15s, color 0.15s;" onmouseover="this.style.borderColor='rgba(99,102,241,0.3)';this.style.color='#a78bfa'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.color='#475569'">+</div>
+            </td>
+            <!-- Jun 12 -->
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px; transition: border-color 0.15s, color 0.15s;" onmouseover="this.style.borderColor='rgba(99,102,241,0.3)';this.style.color='#a78bfa'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.color='#475569'">+</div>
+            </td>
+            <!-- Jun 19 (has 2 positions) -->
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.18); border-radius:6px; padding:8px 10px; cursor:pointer;">
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#a78bfa; font-weight:600; font-family:monospace;">$100 Put</span>
+                    <span style="color:#94a3b8; font-size:10px;">85.2%</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                    <span style="color:#94a3b8; font-size:10px;">prem $500</span>
+                    <span style="color:#10b981; font-family:monospace; font-size:11px;">+$382</span>
+                  </div>
+                </div>
+                <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.18); border-radius:6px; padding:8px 10px; cursor:pointer;">
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#a78bfa; font-weight:600; font-family:monospace;">$120 Put</span>
+                    <span style="color:#94a3b8; font-size:10px;">82.2%</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                    <span style="color:#94a3b8; font-size:10px;">prem $960</span>
+                    <span style="color:#10b981; font-family:monospace; font-size:11px;">+$743</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- TECL -->
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:10px 14px; position:sticky; left:0; background:#0f1729; z-index:1;">
+              <div style="font-size:15px; font-weight:700; color:#e2e8f0;">TECL</div>
+              <div style="font-size:10px; color:#94a3b8; font-family:monospace;">$256.00</div>
+              <div style="font-size:10px; color:#10b981; margin-top:2px;">1 pos · +$344</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top; background:rgba(239,68,68,0.02);">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px;">+</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px;">+</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px;">+</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.18); border-radius:6px; padding:8px 10px; cursor:pointer;">
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="color:#fb923c; font-weight:600; font-family:monospace;">$140 CC</span>
+                  <span style="color:#94a3b8; font-size:10px;">45.3%</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                  <span style="color:#94a3b8; font-size:10px;">prem $440</span>
+                  <span style="color:#10b981; font-family:monospace; font-size:11px;">+$344</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- TQQQ -->
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:10px 14px; position:sticky; left:0; background:#0f1729; z-index:1;">
+              <div style="font-size:15px; font-weight:700; color:#e2e8f0;">TQQQ</div>
+              <div style="font-size:10px; color:#94a3b8; font-family:monospace;">$827.00</div>
+              <div style="font-size:10px; color:#f87171; margin-top:2px;">3 pos · -$3,144</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top; background:rgba(239,68,68,0.02);">
+              <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.18); border-radius:6px; padding:8px 10px; cursor:pointer;">
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="color:#a78bfa; font-weight:600; font-family:monospace;">$45 Put</span>
+                  <span style="color:#94a3b8; font-size:10px;">94.6%</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                  <span style="color:#94a3b8; font-size:10px;">prem $125</span>
+                  <span style="color:#10b981; font-family:monospace; font-size:11px;">+$124</span>
+                </div>
+              </div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px;">+</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px;">+</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.18); border-radius:6px; padding:8px 10px; cursor:pointer;">
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#a78bfa; font-weight:600; font-family:monospace;">$57.50 Put</span>
+                    <span style="color:#94a3b8; font-size:10px;">93.0%</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                    <span style="color:#94a3b8; font-size:10px;">prem $130</span>
+                    <span style="color:#10b981; font-family:monospace; font-size:11px;">+$94</span>
+                  </div>
+                </div>
+                <div style="background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.18); border-radius:6px; padding:8px 10px; cursor:pointer;">
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#fb923c; font-weight:600; font-family:monospace;">$48 Put</span>
+                    <span style="color:#94a3b8; font-size:10px;">94.2%</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                    <span style="color:#94a3b8; font-size:10px;">prem $230</span>
+                    <span style="color:#f87171; font-family:monospace; font-size:11px;">-$3,362</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- UPRO -->
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:10px 14px; position:sticky; left:0; background:#0f1729; z-index:1;">
+              <div style="font-size:15px; font-weight:700; color:#e2e8f0;">UPRO</div>
+              <div style="font-size:10px; color:#94a3b8; font-family:monospace;">$236.00</div>
+              <div style="font-size:10px; color:#94a3b8; margin-top:2px;">0 pos</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top; background:rgba(239,68,68,0.02);">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px;">+</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px;">+</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px;">+</div>
+            </td>
+            <td style="padding:6px 8px; vertical-align:top;">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:6px; padding:14px; cursor:pointer; color:#475569; font-size:18px;">+</div>
+            </td>
+          </tr>
+
+          <!-- Add Ticker row -->
+          <tr>
+            <td colspan="5" style="padding:8px 14px;">
+              <div style="display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.08); border-radius:8px; padding:10px; cursor:pointer; color:#64748b; font-size:12px; transition: border-color 0.15s, color 0.15s;" onmouseover="this.style.borderColor='rgba(99,102,241,0.3)';this.style.color='#a78bfa'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='#64748b'">
+                + Add Ticker
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer: legend -->
+    <div style="display:flex; gap:16px; padding:10px 16px; border-top:1px solid rgba(255,255,255,0.06); font-size:10px; color:#64748b;">
+      <div style="display:flex; align-items:center; gap:4px;">
+        <span style="width:8px; height:8px; border-radius:2px; background:rgba(99,102,241,0.3);"></span> CSP
+      </div>
+      <div style="display:flex; align-items:center; gap:4px;">
+        <span style="width:8px; height:8px; border-radius:2px; background:rgba(249,115,22,0.3);"></span> Covered Call
+      </div>
+      <div style="display:flex; align-items:center; gap:4px;">
+        <span style="width:8px; height:8px; border-radius:2px; background:rgba(239,68,68,0.3);"></span> Expiring today
+      </div>
+      <div style="display:flex; align-items:center; gap:4px;">
+        <span style="background:rgba(99,102,241,0.2); color:#a78bfa; padding:0px 4px; border-radius:2px; font-size:9px;">Monthly</span> 3rd Friday
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top:12px; padding:12px 16px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px; font-size:12px; color:#94a3b8;">
+  <strong style="color:#e2e8f0;">Calendar navigation:</strong> ← → arrows shift the 4-week window. "Today" button snaps back to current week. Monthly expiries (3rd Friday) get a badge. The first column with expiring positions gets a red tint for urgency. Sticky ticker column stays visible while scrolling.
+</div>

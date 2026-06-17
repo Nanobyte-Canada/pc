@@ -21,7 +21,7 @@ export function CumulativeReturnChart({ portfolioReturns, benchmarkComparison }:
     }
   })
 
-  const series: any[] = [
+  const series = [
     {
       type: 'line' as const,
       xKey: 'date',
@@ -41,10 +41,9 @@ export function CumulativeReturnChart({ portfolioReturns, benchmarkComparison }:
       yName: 'Benchmark',
       stroke: '#9333ea',
       strokeWidth: 2,
-      strokeOpacity: 0.7,
-      marker: { enabled: false },
-      lineDash: [4, 4]
-    })
+      marker: { enabled: false }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
   }
 
   const options = {

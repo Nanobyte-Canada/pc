@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { RefreshCw, Play, ChevronDown, ChevronRight, Check, Minus, Circle, AlertTriangle } from 'lucide-react'
+import { RefreshCw, Play, Square, ChevronDown, ChevronRight, Check, Minus, Circle, AlertTriangle } from 'lucide-react'
 import {
   getIngestionStats,
   getActiveRun,
@@ -9,6 +9,7 @@ import {
   getRunErrors,
   triggerExchangeSync,
   triggerFullIngestion,
+  cancelIngestion,
   type IngestionStats,
   type ActiveRun,
   type IngestionRun,
@@ -264,6 +265,19 @@ function WorkflowsSection({ activeRun }: { activeRun: ActiveRun | undefined }) {
     },
   })
 
+  const cancelMutation = useMutation({
+    mutationFn: cancelIngestion,
+    onSuccess: () => {
+      toast.success('Ingestion run cancelled')
+      queryClient.invalidateQueries({ queryKey: ['ingestion-active-run'] })
+      queryClient.invalidateQueries({ queryKey: ['ingestion-runs'] })
+      queryClient.invalidateQueries({ queryKey: ['ingestion-stats'] })
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to cancel run')
+    },
+  })
+
   const isRunning = activeRun?.isRunning ?? false
 
   return (
@@ -305,14 +319,32 @@ function WorkflowsSection({ activeRun }: { activeRun: ActiveRun | undefined }) {
 
         <ActiveRunProgress activeRun={activeRun} />
 
-        <button
-          className="admin-run-btn admin-run-btn--primary"
-          onClick={() => fullIngestionMutation.mutate()}
-          disabled={fullIngestionMutation.isPending || isRunning}
-        >
-          <Play size={12} />
-          {isRunning ? 'Running...' : 'Run Full Ingestion'}
-        </button>
+        {isRunning && activeRun?.startedAt && (
+          <div className="admin-stat-hint" style={{ marginBottom: 8 }}>
+            Started {timeAgo(activeRun.startedAt)}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="admin-run-btn admin-run-btn--primary"
+            onClick={() => fullIngestionMutation.mutate()}
+            disabled={fullIngestionMutation.isPending || isRunning}
+          >
+            <Play size={12} />
+            {isRunning ? 'Running...' : 'Run Full Ingestion'}
+          </button>
+          {isRunning && (
+            <button
+              className="admin-run-btn admin-run-btn--danger"
+              onClick={() => cancelMutation.mutate()}
+              disabled={cancelMutation.isPending}
+            >
+              <Square size={12} />
+              {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Run'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -1,0 +1,220 @@
+- generic [active] [ref=e1]:
+  - heading "Wheel Strategy Order — Final Design" [level=2] [ref=e2]
+  - paragraph [ref=e3]: Full desktop and mobile views with currency-aware buying power
+  - generic [ref=e4]:
+    - heading "Desktop (1024px+) — Full View with Order Panel Open" [level=3] [ref=e5]
+    - generic [ref=e6]:
+      - generic [ref=e7]: Wheel Strategy — Desktop (SOXL CSP selected)
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]: P
+          - img [ref=e13]
+          - img [ref=e19]
+          - img [ref=e25]
+          - generic [ref=e28]: SB
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - generic [ref=e32]: Wheel Strategy
+            - generic [ref=e33]:
+              - generic [ref=e36]: CSP
+              - generic [ref=e39]: CC
+          - generic [ref=e40]:
+            - generic [ref=e41]: All Accounts
+            - generic [ref=e42]:
+              - generic [ref=e43]: Q
+              - text: TFSA ••0190
+          - generic [ref=e44]:
+            - generic [ref=e45]: Cash C$ 108,117 · US$ 33,108
+            - generic [ref=e47]: CSP Deployed US$ 53,250
+            - generic [ref=e49]: Premium +US$ 2,675
+            - generic [ref=e51]: Unrealized -US$ 1,247
+          - generic [ref=e53]:
+            - generic [ref=e54]: Expiry
+            - generic [ref=e55]:
+              - generic [ref=e56]: SOXL
+              - generic [ref=e57]: $217.98
+            - generic [ref=e58]:
+              - generic [ref=e59]: TECL
+              - generic [ref=e60]: $226.00
+            - generic [ref=e61]:
+              - generic [ref=e62]: TQQQ
+              - generic [ref=e63]: $82.54
+            - generic [ref=e64]:
+              - generic [ref=e65]: UPRO
+              - generic [ref=e66]: $82.90
+            - generic [ref=e67]:
+              - text: Jun 18
+              - generic [ref=e68]: 23d
+            - generic [ref=e69] [cursor=pointer]:
+              - generic [ref=e70]: $100.00
+              - generic [ref=e71]:
+                - generic [ref=e72]: +$500
+                - generic [ref=e73]: +$375
+              - img [ref=e75]
+            - generic [ref=e76] [cursor=pointer]:
+              - generic [ref=e77]: $140.00
+              - generic [ref=e78]:
+                - generic [ref=e79]: +$440
+                - generic [ref=e80]: +$347
+            - generic [ref=e81] [cursor=pointer]:
+              - generic [ref=e82]: $57.50
+              - generic [ref=e83]:
+                - generic [ref=e84]: +$130
+                - generic [ref=e85]: +$88
+            - img [ref=e88] [cursor=pointer]
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - generic [ref=e92]: SOXL
+              - generic [ref=e93]: Direxion Daily Semiconductor Bull 3X
+            - img [ref=e95] [cursor=pointer]
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - generic [ref=e100]: $217.98
+              - generic [ref=e101]: "-$7.81 (-3.58%)"
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - generic [ref=e104]: Bid × Size
+                - generic [ref=e105]: $5.00 × 10
+              - generic [ref=e106]:
+                - generic [ref=e107]: Mid
+                - generic [ref=e108]: $5.25
+              - generic [ref=e109]:
+                - generic [ref=e110]: Ask × Size
+                - generic [ref=e111]: $5.50 × 8
+          - generic [ref=e112]:
+            - generic [ref=e113]: SOXL 18 Jun 2026 100.00 Put
+            - generic [ref=e114]: Last Price $5.00
+            - generic [ref=e115]:
+              - generic [ref=e116]:
+                - generic [ref=e117]: Option type
+                - generic [ref=e118]:
+                  - text: Put
+                  - img [ref=e119]
+              - generic [ref=e121]:
+                - generic [ref=e122]: Expiration
+                - generic [ref=e123]:
+                  - text: 18 Jun 2026
+                  - img [ref=e124]
+              - generic [ref=e126]:
+                - generic [ref=e127]: Strike
+                - generic [ref=e128]:
+                  - text: "100.00"
+                  - img [ref=e129]
+              - generic [ref=e131]:
+                - generic [ref=e132]: Order type
+                - generic [ref=e133]:
+                  - text: Limit
+                  - img [ref=e134]
+          - generic [ref=e136]:
+            - generic [ref=e137]: Quantity
+            - generic [ref=e138]:
+              - generic [ref=e139] [cursor=pointer]: −
+              - generic [ref=e140]: "1"
+              - generic [ref=e141] [cursor=pointer]: +
+          - generic [ref=e142]:
+            - generic [ref=e143]: Limit price
+            - generic [ref=e144]:
+              - generic [ref=e145]: US$
+              - generic [ref=e146]: "5.00"
+          - generic [ref=e147]:
+            - generic [ref=e148]: Duration
+            - generic [ref=e149]:
+              - text: Day
+              - img [ref=e150]
+          - generic [ref=e152]:
+            - generic [ref=e153]:
+              - generic [ref=e154]: Q
+              - generic [ref=e155]: TFSA ••0190
+              - img [ref=e156]
+            - generic [ref=e158]:
+              - generic [ref=e159]: Buying Power
+              - generic [ref=e160]: US$ 33,108
+          - generic [ref=e161]:
+            - generic [ref=e162]: Estimated order total
+            - generic [ref=e163]: US$ 500.00
+          - generic [ref=e164]:
+            - generic [ref=e165] [cursor=pointer]: Buy
+            - generic [ref=e166] [cursor=pointer]: Sell
+  - generic [ref=e167]:
+    - heading "Mobile (< 768px) — Full View with Order Sheet" [level=3] [ref=e168]
+    - generic [ref=e169]:
+      - generic [ref=e170]: Wheel — Mobile Order Sheet (SOXL CSP)
+      - generic [ref=e172]:
+        - generic [ref=e173]:
+          - generic [ref=e174]: Wheel Strategy
+          - generic [ref=e175]:
+            - generic [ref=e178]: CSP
+            - generic [ref=e181]: CC
+        - generic [ref=e183]:
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - generic [ref=e188]: SOXL
+              - generic [ref=e189]: Direxion Daily Semi Bull 3X
+            - generic [ref=e190]:
+              - generic [ref=e191]: $217.98
+              - generic [ref=e192]: "-$7.81 (-3.58%)"
+          - generic [ref=e193]:
+            - generic [ref=e194]:
+              - generic [ref=e195]: Bid × Size
+              - generic [ref=e196]: $5.00 × 10
+            - generic [ref=e197]:
+              - generic [ref=e198]: Mid
+              - generic [ref=e199]: $5.25
+            - generic [ref=e200]:
+              - generic [ref=e201]: Ask × Size
+              - generic [ref=e202]: $5.50 × 8
+          - generic [ref=e203]: SOXL 18 Jun 2026 100.00 Put
+          - generic [ref=e204]: Last Price $5.00
+          - generic [ref=e205]:
+            - generic [ref=e206]:
+              - generic [ref=e207]: Option type
+              - generic [ref=e208]:
+                - text: Put
+                - img [ref=e209]
+            - generic [ref=e211]:
+              - generic [ref=e212]: Expiration
+              - generic [ref=e213]:
+                - text: 18 Jun 2026
+                - img [ref=e214]
+            - generic [ref=e216]:
+              - generic [ref=e217]: Strike
+              - generic [ref=e218]:
+                - text: "100.00"
+                - img [ref=e219]
+            - generic [ref=e221]:
+              - generic [ref=e222]: Order type
+              - generic [ref=e223]:
+                - text: Limit
+                - img [ref=e224]
+          - generic [ref=e226]:
+            - generic [ref=e227]: Quantity
+            - generic [ref=e228]:
+              - generic [ref=e229]: −
+              - generic [ref=e230]: "1"
+              - generic [ref=e231]: +
+          - generic [ref=e232]:
+            - generic [ref=e233]:
+              - generic [ref=e234]: Limit price
+              - generic [ref=e235]:
+                - generic [ref=e236]: US$
+                - generic [ref=e237]: "5.00"
+            - generic [ref=e238]:
+              - generic [ref=e239]: Duration
+              - generic [ref=e240]:
+                - text: Day
+                - img [ref=e241]
+          - generic [ref=e243]:
+            - generic [ref=e244]:
+              - generic [ref=e245]: Q
+              - generic [ref=e246]: TFSA ••0190
+              - img [ref=e247]
+            - generic [ref=e249]:
+              - generic [ref=e250]: Buying Power
+              - generic [ref=e251]: US$ 33,108
+          - generic [ref=e252]:
+            - generic [ref=e253]: Estimated total
+            - generic [ref=e254]: US$ 500.00
+          - generic [ref=e255]:
+            - generic [ref=e256]: Buy
+            - generic [ref=e257]: Sell

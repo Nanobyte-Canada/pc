@@ -45,12 +45,14 @@ class ReportingServiceTest {
         amount: BigDecimal,
         tradeDate: LocalDate,
         symbol: String? = null,
-        connectionId: Long = 1L
+        connectionId: Long = 1L,
+        amountCad: BigDecimal? = null
     ): BrokerActivity {
         val conn = mockk<BrokerConnection> { every { id } returns connectionId }
         return mockk {
             every { this@mockk.type } returns type
             every { this@mockk.amount } returns amount
+            every { this@mockk.amountCad } returns amountCad
             every { this@mockk.tradeDate } returns tradeDate
             every { this@mockk.symbol } returns symbol
             every { this@mockk.connection } returns conn

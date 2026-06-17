@@ -13,17 +13,21 @@ export function BasicDetailSections({ data }: Props) {
         {data.general ? (
           <div className="detail-section-content">
             <div className="detail-info-grid">
-              {data.general.Description && (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {(data.general as any).Description && (
                 <div className="detail-info-full">
                   <span className="detail-info-label">Description</span>
-                  <p className="detail-info-value">{data.general.Description}</p>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  <p className="detail-info-value">{(data.general as any).Description}</p>
                 </div>
               )}
-              {data.general.Officers && data.general.Officers.length > 0 && (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {(data.general as any).Officers && (data.general as any).Officers.length > 0 && (
                 <div className="detail-info-full">
                   <span className="detail-info-label">Officers</span>
                   <ul className="detail-officers-list">
-                    {data.general.Officers.map((officer: any, idx: number) => (
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {(data.general as any).Officers.map((officer: { Name?: string; Title?: string }, idx: number) => (
                       <li key={idx}>
                         <strong>{officer.Name}</strong> - {officer.Title}
                       </li>
@@ -31,34 +35,44 @@ export function BasicDetailSections({ data }: Props) {
                   </ul>
                 </div>
               )}
-              {data.general.ISIN && (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {(data.general as any).ISIN && (
                 <div className="detail-info-item">
                   <span className="detail-info-label">ISIN</span>
-                  <span className="detail-info-value">{data.general.ISIN}</span>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  <span className="detail-info-value">{(data.general as any).ISIN}</span>
                 </div>
               )}
-              {data.general.CUSIP && (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {(data.general as any).CUSIP && (
                 <div className="detail-info-item">
                   <span className="detail-info-label">CUSIP</span>
-                  <span className="detail-info-value">{data.general.CUSIP}</span>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  <span className="detail-info-value">{(data.general as any).CUSIP}</span>
                 </div>
               )}
-              {data.general.Sector && (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {(data.general as any).Sector && (
                 <div className="detail-info-item">
                   <span className="detail-info-label">Sector</span>
-                  <span className="detail-info-value">{data.general.Sector}</span>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  <span className="detail-info-value">{(data.general as any).Sector}</span>
                 </div>
               )}
-              {data.general.Industry && (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {(data.general as any).Industry && (
                 <div className="detail-info-item">
                   <span className="detail-info-label">Industry</span>
-                  <span className="detail-info-value">{data.general.Industry}</span>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  <span className="detail-info-value">{(data.general as any).Industry}</span>
                 </div>
               )}
-              {data.general.Country && (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {(data.general as any).Country && (
                 <div className="detail-info-item">
                   <span className="detail-info-label">Country</span>
-                  <span className="detail-info-value">{data.general.Country}</span>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  <span className="detail-info-value">{(data.general as any).Country}</span>
                 </div>
               )}
             </div>

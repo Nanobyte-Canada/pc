@@ -1,0 +1,24 @@
+- generic [ref=e6]:
+  - complementary [ref=e7]:
+    - navigation "Main navigation" [ref=e8]:
+      - generic [ref=e9]: P
+      - button "Portfolio" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+      - button "Wheel" [ref=e16] [cursor=pointer]:
+        - img [ref=e17]
+      - button "Connections" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - 'generic "IBKR Gateway: connecting" [ref=e25]':
+        - generic [ref=e27]: IBKR...
+      - button "Toggle theme" [ref=e28] [cursor=pointer]:
+        - img [ref=e29]
+      - button "Admin settings" [ref=e35] [cursor=pointer]:
+        - img [ref=e36]
+      - button "User profile" [ref=e39] [cursor=pointer]: S
+  - main [ref=e41]:
+    - generic [ref=e43]:
+      - heading "Options Trading" [level=1] [ref=e44]
+      - generic [ref=e46]:
+        - textbox "Enter symbol (e.g. SPY)" [ref=e47]: SPY
+        - button "Load Chain" [ref=e48] [cursor=pointer]
+      - generic [ref=e49]: Live

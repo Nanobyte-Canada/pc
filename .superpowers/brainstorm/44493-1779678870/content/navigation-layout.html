@@ -1,0 +1,273 @@
+<h2>Navigation & Layout Patterns</h2>
+<p class="subtitle">Desktop, tablet, and mobile breakpoints for the Verdant Dark design system</p>
+
+<!-- Desktop Layout -->
+<div class="section">
+  <h3>Desktop (1024px+)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Desktop — Icon Rail + Flyout Panel</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:400px;display:flex;font-family:'DM Sans',sans-serif;">
+        <!-- Icon Rail -->
+        <div style="width:56px;background:#0f1520;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:4px;flex-shrink:0;">
+          <!-- Logo -->
+          <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;font-weight:700;margin-bottom:16px;">P</div>
+
+          <!-- Nav Items -->
+          <div style="width:40px;height:40px;border-radius:8px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;position:relative;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <div style="position:absolute;left:0;top:8px;bottom:8px;width:2px;border-radius:0 2px 2px 0;background:#10b981;"></div>
+          </div>
+          <div style="width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div style="width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+          </div>
+          <div style="width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <div style="width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+
+          <!-- Spacer -->
+          <div style="flex:1;"></div>
+
+          <!-- Bottom items -->
+          <div style="width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </div>
+          <div style="width:32px;height:32px;border-radius:9999px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">SB</div>
+        </div>
+
+        <!-- Flyout Panel (shown on hover/click) -->
+        <div style="width:200px;background:#111827;border-right:1px solid rgba(255,255,255,0.06);padding:16px 12px;display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;padding:8px;margin-bottom:4px;">Dashboard</div>
+          <div style="padding:8px 10px;border-radius:8px;background:rgba(16,185,129,0.08);color:#e2e8f0;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;">
+            <span style="color:#10b981;">Overview</span>
+          </div>
+          <div style="padding:8px 10px;border-radius:8px;color:#94a3b8;font-size:13px;font-weight:500;">Analytics</div>
+
+          <div style="height:1px;background:rgba(255,255,255,0.06);margin:8px 0;"></div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;padding:8px;">Accounts</div>
+          <div style="padding:8px 10px;border-radius:8px;color:#94a3b8;font-size:13px;">TFSA — $312,400</div>
+          <div style="padding:8px 10px;border-radius:8px;color:#94a3b8;font-size:13px;">RRSP — $289,100</div>
+          <div style="padding:8px 10px;border-radius:8px;color:#94a3b8;font-size:13px;">Margin — $245,730</div>
+
+          <div style="height:1px;background:rgba(255,255,255,0.06);margin:8px 0;"></div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;padding:8px;">Screeners</div>
+          <div style="padding:8px 10px;border-radius:8px;color:#94a3b8;font-size:13px;">Stocks</div>
+          <div style="padding:8px 10px;border-radius:8px;color:#94a3b8;font-size:13px;">ETFs</div>
+        </div>
+
+        <!-- Main Content -->
+        <div style="flex:1;padding:24px;overflow:hidden;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <div>
+              <div style="font-size:20px;font-weight:600;color:#e2e8f0;">Dashboard</div>
+              <div style="font-size:13px;color:#64748b;margin-top:2px;">Portfolio Overview</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="padding:6px 14px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);font-size:12px;color:#94a3b8;">Last 24h</div>
+              <div style="padding:6px 14px;border-radius:8px;background:#10b981;font-size:12px;color:white;font-weight:500;">+ New</div>
+            </div>
+          </div>
+
+          <!-- Content area placeholder -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;">
+              <div style="font-size:11px;color:#6ee7b7;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Total Value</div>
+              <div style="font-size:22px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">$847,230</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Day Change</div>
+              <div style="font-size:22px;font-weight:700;color:#6ee7b7;margin-top:6px;font-family:'JetBrains Mono',monospace;">+$3,120</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Available Cash</div>
+              <div style="font-size:22px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">$42,850</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;height:120px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:12px;">Chart / Widget Area</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tablet Layout -->
+<div class="section">
+  <h3>Tablet / iPad (768px – 1023px)</h3>
+  <div class="mockup">
+    <div class="mockup-header">iPad — Collapsed Rail + Slide-over Panel</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:360px;display:flex;font-family:'DM Sans',sans-serif;max-width:500px;margin:0 auto;">
+        <!-- Collapsed Rail -->
+        <div style="width:52px;background:#0f1520;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:4px;flex-shrink:0;">
+          <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:13px;color:white;font-weight:700;margin-bottom:12px;">P</div>
+          <div style="width:36px;height:36px;border-radius:8px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <div style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+          </div>
+          <div style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <div style="flex:1;"></div>
+          <div style="width:28px;height:28px;border-radius:9999px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:10px;color:white;font-weight:600;">SB</div>
+        </div>
+
+        <!-- Main Content (wider on tablet) -->
+        <div style="flex:1;padding:20px;">
+          <div style="font-size:18px;font-weight:600;color:#e2e8f0;margin-bottom:4px;">Dashboard</div>
+          <div style="font-size:12px;color:#64748b;margin-bottom:16px;">Portfolio Overview</div>
+
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:10px;color:#6ee7b7;text-transform:uppercase;letter-spacing:0.5px;">Total Value</div>
+              <div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-top:4px;font-family:monospace;">$847,230</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Day P&L</div>
+              <div style="font-size:18px;font-weight:700;color:#6ee7b7;margin-top:4px;font-family:monospace;">+$3,120</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;height:100px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:11px;">Chart Area</div>
+          <div style="margin-top:10px;background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;height:100px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:11px;">Holdings Table</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:13px;color:#94a3b8;margin-top:8px;">Tap any rail icon to slide-over the flyout panel. Tap outside or swipe left to dismiss. Two-column metric grid adapts to available width.</p>
+</div>
+
+<!-- Mobile Layout -->
+<div class="section">
+  <h3>Mobile (< 768px)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Mobile — Bottom Tab Bar + Pull-to-refresh</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:480px;display:flex;flex-direction:column;font-family:'DM Sans',sans-serif;max-width:320px;margin:0 auto;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+        <!-- Status Bar -->
+        <div style="height:44px;background:#0a0f1a;display:flex;align-items:center;justify-content:space-between;padding:0 20px;">
+          <span style="font-size:12px;color:#e2e8f0;font-weight:600;">9:41</span>
+          <div style="display:flex;gap:4px;">
+            <div style="width:16px;height:10px;border-radius:2px;border:1px solid #e2e8f0;position:relative;"><div style="position:absolute;inset:1px;background:#6ee7b7;border-radius:1px;"></div></div>
+          </div>
+        </div>
+
+        <!-- Header -->
+        <div style="padding:0 20px 16px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:22px;font-weight:700;color:#e2e8f0;">$847,230</div>
+            <div style="font-size:13px;color:#6ee7b7;margin-top:2px;">+$3,120 (0.37%) today</div>
+          </div>
+          <div style="width:36px;height:36px;border-radius:9999px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:13px;color:white;font-weight:600;">SB</div>
+        </div>
+
+        <!-- Chart -->
+        <div style="padding:0 20px;">
+          <svg viewBox="0 0 280 80" style="width:100%;height:80px;">
+            <defs><linearGradient id="gm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10b981" stop-opacity="0.2"/><stop offset="1" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0,65 C20,60 50,55 80,48 C110,41 130,35 160,30 C190,25 220,18 250,12 L280,8 L280,80 L0,80Z" fill="url(#gm)"/>
+            <path d="M0,65 C20,60 50,55 80,48 C110,41 130,35 160,30 C190,25 220,18 250,12 L280,8" fill="none" stroke="#10b981" stroke-width="2"/>
+          </svg>
+          <div style="display:flex;justify-content:center;gap:4px;margin-top:8px;">
+            <span style="font-size:11px;padding:4px 12px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-weight:500;">1D</span>
+            <span style="font-size:11px;padding:4px 12px;border-radius:6px;color:#64748b;">1W</span>
+            <span style="font-size:11px;padding:4px 12px;border-radius:6px;color:#64748b;">1M</span>
+            <span style="font-size:11px;padding:4px 12px;border-radius:6px;color:#64748b;">3M</span>
+            <span style="font-size:11px;padding:4px 12px;border-radius:6px;color:#64748b;">1Y</span>
+            <span style="font-size:11px;padding:4px 12px;border-radius:6px;color:#64748b;">All</span>
+          </div>
+        </div>
+
+        <!-- Accounts Section -->
+        <div style="padding:20px;flex:1;">
+          <div style="font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:10px;">Accounts</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:13px;color:#e2e8f0;font-weight:500;">TFSA</div>
+                <div style="font-size:11px;color:#64748b;">Questrade</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:13px;color:#e2e8f0;font-weight:600;font-family:monospace;">$312,400</div>
+                <div style="font-size:11px;color:#6ee7b7;">+1.8%</div>
+              </div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:13px;color:#e2e8f0;font-weight:500;">RRSP</div>
+                <div style="font-size:11px;color:#64748b;">Wealthsimple</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:13px;color:#e2e8f0;font-weight:600;font-family:monospace;">$289,100</div>
+                <div style="font-size:11px;color:#6ee7b7;">+2.4%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Tab Bar -->
+        <div style="height:64px;background:#0f1520;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-around;padding:0 8px;flex-shrink:0;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span style="font-size:9px;color:#10b981;font-weight:600;">Home</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            <span style="font-size:9px;color:#64748b;">Accounts</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <span style="font-size:9px;color:#64748b;">Screener</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span style="font-size:9px;color:#64748b;">Options</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+            <span style="font-size:9px;color:#64748b;">More</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:13px;color:#94a3b8;margin-top:8px;">5 bottom tabs: Home, Accounts, Screener, Options, More. The "More" tab opens a sheet with: Wheel Strategy, Connections, Reporting, Admin, Profile, Settings. Value-first mobile layout — total portfolio value is the hero element.</p>
+</div>
+
+<!-- Navigation Architecture -->
+<div class="section" style="margin-top:24px;">
+  <h3>Navigation Architecture</h3>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;font-size:13px;">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+        <td style="padding:8px;color:#94a3b8;font-weight:600;width:25%;">Breakpoint</td>
+        <td style="padding:8px;color:#94a3b8;font-weight:600;">Navigation</td>
+        <td style="padding:8px;color:#94a3b8;font-weight:600;">Content Grid</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+        <td style="padding:8px;color:#6ee7b7;font-weight:500;">Mobile<br><span style="font-size:11px;color:#64748b;">&lt; 768px</span></td>
+        <td style="padding:8px;color:#e2e8f0;">Bottom tab bar (5 items) + "More" sheet for overflow</td>
+        <td style="padding:8px;color:#e2e8f0;">Single column, full-bleed cards</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+        <td style="padding:8px;color:#6ee7b7;font-weight:500;">Tablet<br><span style="font-size:11px;color:#64748b;">768 – 1023px</span></td>
+        <td style="padding:8px;color:#e2e8f0;">Icon rail (52px) + tap-to-expand flyout</td>
+        <td style="padding:8px;color:#e2e8f0;">2-column metric grid, full-width tables</td>
+      </tr>
+      <tr>
+        <td style="padding:8px;color:#6ee7b7;font-weight:500;">Desktop<br><span style="font-size:11px;color:#64748b;">1024px+</span></td>
+        <td style="padding:8px;color:#e2e8f0;">Icon rail (56px) + hover flyout panel (200px)</td>
+        <td style="padding:8px;color:#e2e8f0;">3-4 column widget grid, side panels</td>
+      </tr>
+    </table>
+  </div>
+</div>

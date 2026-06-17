@@ -1,0 +1,372 @@
+- generic [ref=e6]:
+  - complementary [ref=e7]:
+    - navigation "Main navigation" [ref=e8]:
+      - generic [ref=e9]: P
+      - button "Portfolio" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+      - button "Wheel" [ref=e16] [cursor=pointer]:
+        - img [ref=e17]
+      - button "Connections" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - button "Toggle theme" [ref=e25] [cursor=pointer]:
+        - img [ref=e26]
+      - button "Admin settings" [ref=e32] [cursor=pointer]:
+        - img [ref=e33]
+      - button "User profile" [ref=e36] [cursor=pointer]: S
+  - main [ref=e38]:
+    - generic [ref=e39]:
+      - generic [ref=e41]:
+        - button "All Accounts" [ref=e42] [cursor=pointer]
+        - button "Q LIRA ••9683" [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]: Q
+          - generic [ref=e45]: LIRA
+          - generic [ref=e46]: ••9683
+        - button "Q RRSP ••8214" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: Q
+          - generic [ref=e49]: RRSP
+          - generic [ref=e50]: ••8214
+        - button "Q MARGIN ••4150" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: Q
+          - generic [ref=e53]: MARGIN
+          - generic [ref=e54]: ••4150
+        - button "Q RRSP ••2736" [ref=e55] [cursor=pointer]:
+          - generic [ref=e56]: Q
+          - generic [ref=e57]: RRSP
+          - generic [ref=e58]: ••2736
+        - button "Q TFSA ••0190" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]: Q
+          - generic [ref=e61]: TFSA
+          - generic [ref=e62]: ••0190
+      - heading "Wheel Strategy" [level=1] [ref=e64]
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - generic [ref=e69]:
+                - generic [ref=e70]: Capital Available
+                - img [ref=e71]
+              - generic [ref=e74]: C$ 79,834
+              - generic [ref=e76]:
+                - generic [ref=e77]: C$
+                - generic [ref=e78]: 79,833.62
+              - generic [ref=e79]:
+                - generic [ref=e80]: US$
+                - generic [ref=e81]: "0.00"
+            - generic [ref=e82]:
+              - generic [ref=e83]:
+                - generic [ref=e84]: Capital Deployed
+                - img [ref=e85]
+              - generic [ref=e87]: US$53,250.00
+              - generic [ref=e89]:
+                - generic [ref=e90]: CSP
+                - generic [ref=e91]: US$53,250.00
+              - generic [ref=e92]:
+                - generic [ref=e93]: CC
+                - generic [ref=e94]: US$4,800.00
+            - generic [ref=e95]:
+              - generic [ref=e96]:
+                - generic [ref=e97]: CC Available
+                - img [ref=e98]
+              - generic [ref=e100]: 0 contracts
+              - generic [ref=e102]:
+                - generic [ref=e103]: None
+                - generic [ref=e104]: "--"
+            - generic [ref=e105]:
+              - generic [ref=e106]:
+                - generic [ref=e107]: Premium & P&L
+                - img [ref=e108]
+              - generic [ref=e110]: "-US$1,539.00"
+              - generic [ref=e112]:
+                - generic [ref=e113]: Premium
+                - generic [ref=e114]: +US$2,675.00
+              - generic [ref=e115]:
+                - generic [ref=e116]: Unrealized
+                - generic [ref=e117]: "-US$1,539.00"
+            - generic [ref=e118]:
+              - generic [ref=e119]:
+                - generic [ref=e120]: Positions
+                - img [ref=e121]
+              - generic [ref=e125]: "7"
+              - generic [ref=e127]:
+                - generic [ref=e128]: CSP
+                - generic [ref=e129]: "6"
+              - generic [ref=e130]:
+                - generic [ref=e131]: CC
+                - generic [ref=e132]: "1"
+              - generic [ref=e133]:
+                - generic [ref=e134]: Expiring
+                - generic [ref=e135]: "2"
+          - generic [ref=e136]:
+            - button "Previous weeks" [ref=e137] [cursor=pointer]:
+              - img [ref=e138]
+            - generic [ref=e140]: May 29 — Jun 18, 2026
+            - button "Next weeks" [ref=e141] [cursor=pointer]:
+              - img [ref=e142]
+            - button "Today" [ref=e144] [cursor=pointer]
+          - generic [ref=e145]:
+            - table [ref=e147]:
+              - rowgroup [ref=e148]:
+                - row "Ticker May 29 0d Fri Jun 5 7d Fri Jun 12 14d Fri Jun 18 Monthly 20d Thu" [ref=e149]:
+                  - columnheader "Ticker" [ref=e150]
+                  - columnheader "May 29 0d Fri" [ref=e151]:
+                    - generic [ref=e152]: May 29
+                    - generic [ref=e153]:
+                      - generic [ref=e154]: 0d
+                      - generic [ref=e155]: Fri
+                  - columnheader "Jun 5 7d Fri" [ref=e156]:
+                    - generic [ref=e157]: Jun 5
+                    - generic [ref=e158]:
+                      - generic [ref=e159]: 7d
+                      - generic [ref=e160]: Fri
+                  - columnheader "Jun 12 14d Fri" [ref=e161]:
+                    - generic [ref=e162]: Jun 12
+                    - generic [ref=e163]:
+                      - generic [ref=e164]: 14d
+                      - generic [ref=e165]: Fri
+                  - columnheader "Jun 18 Monthly 20d Thu" [ref=e166]:
+                    - generic [ref=e167]:
+                      - text: Jun 18
+                      - generic [ref=e168]: Monthly
+                    - generic [ref=e169]:
+                      - generic [ref=e170]: 20d
+                      - generic [ref=e171]: Thu
+              - rowgroup [ref=e172]:
+                - row "SOXL $676 US$ 29,000 $70 Put 89.6% +US$289.00 + + + $100 Put 85.2% +US$350.00 $120 Put 82.2% +US$700.00 +" [ref=e173]:
+                  - cell "SOXL $676 US$ 29,000" [ref=e174]:
+                    - generic [ref=e175]: SOXL
+                    - generic [ref=e176]: $676
+                    - generic [ref=e177]: US$ 29,000
+                  - cell "$70 Put 89.6% +US$289.00 +" [ref=e178]:
+                    - generic [ref=e179]:
+                      - button "$70 Put 89.6% +US$289.00" [ref=e180] [cursor=pointer]:
+                        - generic [ref=e181]:
+                          - generic [ref=e182]: $70 Put
+                          - generic [ref=e183]: 89.6%
+                        - generic [ref=e185]: +US$289.00
+                      - button "+" [ref=e186] [cursor=pointer]
+                  - cell "+" [ref=e187]:
+                    - button "+" [ref=e189] [cursor=pointer]
+                  - cell "+" [ref=e190]:
+                    - button "+" [ref=e192] [cursor=pointer]
+                  - cell "$100 Put 85.2% +US$350.00 $120 Put 82.2% +US$700.00 +" [ref=e193]:
+                    - generic [ref=e194]:
+                      - button "$100 Put 85.2% +US$350.00" [ref=e195] [cursor=pointer]:
+                        - generic [ref=e196]:
+                          - generic [ref=e197]: $100 Put
+                          - generic [ref=e198]: 85.2%
+                        - generic [ref=e200]: +US$350.00
+                      - button "$120 Put 82.2% +US$700.00" [ref=e201] [cursor=pointer]:
+                        - generic [ref=e202]:
+                          - generic [ref=e203]: $120 Put
+                          - generic [ref=e204]: 82.2%
+                        - generic [ref=e206]: +US$700.00
+                      - button "+" [ref=e207] [cursor=pointer]
+                - row "TECL $256 US$ 14,000 + + + $140 Put 45.3% +US$378.00 +" [ref=e208]:
+                  - cell "TECL $256 US$ 14,000" [ref=e209]:
+                    - generic [ref=e210]: TECL
+                    - generic [ref=e211]: $256
+                    - generic [ref=e212]: US$ 14,000
+                  - cell "+" [ref=e213]:
+                    - button "+" [ref=e215] [cursor=pointer]
+                  - cell "+" [ref=e216]:
+                    - button "+" [ref=e218] [cursor=pointer]
+                  - cell "+" [ref=e219]:
+                    - button "+" [ref=e221] [cursor=pointer]
+                  - cell "$140 Put 45.3% +US$378.00 +" [ref=e222]:
+                    - generic [ref=e223]:
+                      - button "$140 Put 45.3% +US$378.00" [ref=e224] [cursor=pointer]:
+                        - generic [ref=e225]:
+                          - generic [ref=e226]: $140 Put
+                          - generic [ref=e227]: 45.3%
+                        - generic [ref=e229]: +US$378.00
+                      - button "+" [ref=e230] [cursor=pointer]
+                - row "TQQQ $827 US$ 10,250 $45 Put 94.6% +US$124.00 + + + $57.5 Put 93.0% +US$99.00 $48 CC 94.2% -US$3,479.00 +" [ref=e231]:
+                  - cell "TQQQ $827 US$ 10,250" [ref=e232]:
+                    - generic [ref=e233]: TQQQ
+                    - generic [ref=e234]: $827
+                    - generic [ref=e235]: US$ 10,250
+                  - cell "$45 Put 94.6% +US$124.00 +" [ref=e236]:
+                    - generic [ref=e237]:
+                      - button "$45 Put 94.6% +US$124.00" [ref=e238] [cursor=pointer]:
+                        - generic [ref=e239]:
+                          - generic [ref=e240]: $45 Put
+                          - generic [ref=e241]: 94.6%
+                        - generic [ref=e243]: +US$124.00
+                      - button "+" [ref=e244] [cursor=pointer]
+                  - cell "+" [ref=e245]:
+                    - button "+" [ref=e247] [cursor=pointer]
+                  - cell "+" [ref=e248]:
+                    - button "+" [ref=e250] [cursor=pointer]
+                  - cell "$57.5 Put 93.0% +US$99.00 $48 CC 94.2% -US$3,479.00 +" [ref=e251]:
+                    - generic [ref=e252]:
+                      - button "$57.5 Put 93.0% +US$99.00" [ref=e253] [cursor=pointer]:
+                        - generic [ref=e254]:
+                          - generic [ref=e255]: $57.5 Put
+                          - generic [ref=e256]: 93.0%
+                        - generic [ref=e258]: +US$99.00
+                      - button "$48 CC 94.2% -US$3,479.00" [ref=e259] [cursor=pointer]:
+                        - generic [ref=e260]:
+                          - generic [ref=e261]: $48 CC
+                          - generic [ref=e262]: 94.2%
+                        - generic [ref=e264]: "-US$3,479.00"
+                      - button "+" [ref=e265] [cursor=pointer]
+            - button "+ Add Ticker" [ref=e266] [cursor=pointer]
+          - generic [ref=e267]:
+            - generic [ref=e268]: CSP
+            - generic [ref=e270]: CC
+        - generic [ref=e274]:
+          - generic [ref=e275]:
+            - generic [ref=e276]:
+              - generic [ref=e277]: SOXL
+              - generic [ref=e278]: Cash-Secured Put
+            - button "Close order panel" [ref=e279] [cursor=pointer]:
+              - img [ref=e280]
+          - generic [ref=e283]:
+            - generic [ref=e284]:
+              - generic [ref=e285]: US$676.00
+              - generic [ref=e286]: +US$289.00
+            - generic [ref=e287]:
+              - generic [ref=e288]:
+                - generic [ref=e289]: Bid
+                - generic [ref=e290]: "--"
+              - generic [ref=e291]:
+                - generic [ref=e292]: Mid
+                - generic [ref=e293]: "--"
+              - generic [ref=e294]:
+                - generic [ref=e295]: Ask
+                - generic [ref=e296]: "--"
+          - generic [ref=e297]:
+            - generic [ref=e298]: SOXL --- 70 Put
+            - generic [ref=e299]: "Last: US$290.00"
+            - generic [ref=e300]:
+              - generic [ref=e301]:
+                - generic [ref=e302]: Option Type
+                - generic [ref=e303]:
+                  - combobox [ref=e304] [cursor=pointer]:
+                    - option "Put" [selected]
+                    - option "Call"
+                  - img
+              - generic [ref=e305]:
+                - generic [ref=e306]: Expiration
+                - generic [ref=e307]:
+                  - combobox [ref=e308] [cursor=pointer]:
+                    - option "Select..." [selected]
+                    - option "Jun 5, 2026"
+                    - option "Jun 12, 2026"
+                    - option "Jun 19, 2026"
+                    - option "Jun 26, 2026"
+                    - option "Jul 3, 2026"
+                    - option "Jul 10, 2026"
+                    - option "Jul 17, 2026"
+                    - option "Jul 24, 2026"
+                    - option "Jul 31, 2026"
+                    - option "Aug 7, 2026"
+                    - option "Aug 14, 2026"
+                    - option "Aug 21, 2026"
+                    - option "Aug 28, 2026"
+                    - option "Sep 4, 2026"
+                    - option "Sep 11, 2026"
+                    - option "Sep 18, 2026"
+                    - option "Sep 25, 2026"
+                    - option "Oct 2, 2026"
+                    - option "Oct 9, 2026"
+                    - option "Oct 16, 2026"
+                    - option "Oct 23, 2026"
+                    - option "Oct 30, 2026"
+                    - option "Nov 6, 2026"
+                    - option "Nov 13, 2026"
+                    - option "Nov 20, 2026"
+                    - option "Nov 27, 2026"
+                  - img
+              - generic [ref=e309]:
+                - generic [ref=e310]: Strike
+                - generic [ref=e311]:
+                  - combobox [ref=e312] [cursor=pointer]:
+                    - option "Select..." [selected]
+                    - option "576.00"
+                    - option "581.00"
+                    - option "586.00"
+                    - option "591.00"
+                    - option "596.00"
+                    - option "601.00"
+                    - option "606.00"
+                    - option "611.00"
+                    - option "616.00"
+                    - option "621.00"
+                    - option "626.00"
+                    - option "631.00"
+                    - option "636.00"
+                    - option "641.00"
+                    - option "646.00"
+                    - option "651.00"
+                    - option "656.00"
+                    - option "661.00"
+                    - option "666.00"
+                    - option "671.00"
+                    - option "676.00"
+                    - option "681.00"
+                    - option "686.00"
+                    - option "691.00"
+                    - option "696.00"
+                    - option "701.00"
+                    - option "706.00"
+                    - option "711.00"
+                    - option "716.00"
+                    - option "721.00"
+                    - option "726.00"
+                    - option "731.00"
+                    - option "736.00"
+                    - option "741.00"
+                    - option "746.00"
+                    - option "751.00"
+                    - option "756.00"
+                    - option "761.00"
+                    - option "766.00"
+                    - option "771.00"
+                    - option "776.00"
+                  - img
+              - generic [ref=e313]:
+                - generic [ref=e314]: Order Type
+                - generic [ref=e315]:
+                  - combobox [ref=e316] [cursor=pointer]:
+                    - option "Limit" [selected]
+                    - option "Market"
+                  - img
+          - generic [ref=e317]:
+            - generic [ref=e318]: Quantity
+            - generic [ref=e319]:
+              - button "Decrease quantity" [ref=e320] [cursor=pointer]:
+                - img [ref=e321]
+              - generic [ref=e322]: "1"
+              - button "Increase quantity" [ref=e323] [cursor=pointer]:
+                - img [ref=e324]
+          - generic [ref=e325]:
+            - generic [ref=e326]: Limit Price
+            - generic [ref=e327]:
+              - generic [ref=e328]: US$
+              - textbox "0.00" [ref=e329]
+          - generic [ref=e330]:
+            - generic [ref=e331]: Duration
+            - generic [ref=e332]:
+              - combobox [ref=e333] [cursor=pointer]:
+                - option "Day" [selected]
+                - option "GTC"
+              - img
+          - generic [ref=e334]:
+            - generic [ref=e335]: Account
+            - generic [ref=e336]:
+              - generic [ref=e338]:
+                - combobox [ref=e339] [cursor=pointer]:
+                  - option "QUESTRADE LIRA ••9683" [selected]
+                  - option "QUESTRADE RRSP ••8214"
+                  - option "QUESTRADE MARGIN ••4150"
+                  - option "QUESTRADE RRSP ••2736"
+                  - option "QUESTRADE TFSA ••0190"
+                - img
+              - generic [ref=e341]: "--"
+          - generic [ref=e342]:
+            - generic [ref=e343]: Estimated Total
+            - generic [ref=e344]: "--"
+          - generic [ref=e345]:
+            - button "Buy" [ref=e346] [cursor=pointer]
+            - button "Sell" [ref=e347] [cursor=pointer]

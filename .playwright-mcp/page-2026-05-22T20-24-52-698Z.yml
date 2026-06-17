@@ -1,0 +1,189 @@
+- generic [ref=e6]:
+  - complementary [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: P
+        - generic [ref=e11]: Portfolio Builder
+        - button "Collapse sidebar" [ref=e12] [cursor=pointer]:
+          - img [ref=e13]
+      - navigation [ref=e17]:
+        - generic [ref=e18]:
+          - paragraph [ref=e19]: Main
+          - generic [ref=e20]:
+            - link "Dashboard" [ref=e21] [cursor=pointer]:
+              - /url: /
+              - img [ref=e22]
+              - generic [ref=e27]: Dashboard
+            - link "Individual LIRA" [ref=e28] [cursor=pointer]:
+              - /url: /brokers/accounts/90
+              - img [ref=e29]
+              - generic [ref=e31]: Individual LIRA
+            - link "Individual Locked-In RRSP" [ref=e32] [cursor=pointer]:
+              - /url: /brokers/accounts/91
+              - img [ref=e33]
+              - generic [ref=e35]: Individual Locked-In RRSP
+            - link "Individual Margin" [ref=e36] [cursor=pointer]:
+              - /url: /brokers/accounts/89
+              - img [ref=e37]
+              - generic [ref=e39]: Individual Margin
+            - link "Individual RRSP" [ref=e40] [cursor=pointer]:
+              - /url: /brokers/accounts/92
+              - img [ref=e41]
+              - generic [ref=e43]: Individual RRSP
+            - link "Individual TFSA" [ref=e44] [cursor=pointer]:
+              - /url: /brokers/accounts/88
+              - img [ref=e45]
+              - generic [ref=e47]: Individual TFSA
+            - link "Analytics" [ref=e48] [cursor=pointer]:
+              - /url: /analytics
+              - img [ref=e49]
+              - generic [ref=e51]: Analytics
+        - generic [ref=e52]:
+          - paragraph [ref=e53]: Portfolios
+          - link "Portfolio" [ref=e55] [cursor=pointer]:
+            - /url: /portfolios
+            - img [ref=e56]
+            - generic [ref=e59]: Portfolio
+        - generic [ref=e60]:
+          - paragraph [ref=e61]: Screeners
+          - generic [ref=e62]:
+            - link "Stocks 21,664" [ref=e63] [cursor=pointer]:
+              - /url: /screener/stocks
+              - img [ref=e64]
+              - generic [ref=e67]: Stocks
+              - generic [ref=e68]: 21,664
+            - link "ETFs 7,180" [ref=e69] [cursor=pointer]:
+              - /url: /screener/etfs
+              - img [ref=e70]
+              - generic [ref=e73]: ETFs
+              - generic [ref=e74]: 7,180
+            - link "Mutual Funds 26,832" [ref=e75] [cursor=pointer]:
+              - /url: /screener/mutual-funds
+              - img [ref=e76]
+              - generic [ref=e80]: Mutual Funds
+              - generic [ref=e81]: 26,832
+            - link "Preferred Stocks 735" [ref=e82] [cursor=pointer]:
+              - /url: /screener/preferred-stocks
+              - img [ref=e83]
+              - generic [ref=e85]: Preferred Stocks
+              - generic [ref=e86]: "735"
+            - link "Indices 1,666" [ref=e87] [cursor=pointer]:
+              - /url: /screener/indices
+              - img [ref=e88]
+              - generic [ref=e90]: Indices
+              - generic [ref=e91]: 1,666
+            - link "Bonds 129" [ref=e92] [cursor=pointer]:
+              - /url: /screener/bonds
+              - img [ref=e93]
+              - generic [ref=e96]: Bonds
+              - generic [ref=e97]: "129"
+        - generic [ref=e98]:
+          - paragraph [ref=e99]: Brokers
+          - generic [ref=e100]:
+            - link "Connections" [ref=e101] [cursor=pointer]:
+              - /url: /brokers/connections
+              - img [ref=e102]
+              - generic [ref=e105]: Connections
+            - link "Positions" [ref=e106] [cursor=pointer]:
+              - /url: /brokers/positions
+              - img [ref=e107]
+              - generic [ref=e110]: Positions
+            - link "Reporting" [ref=e111] [cursor=pointer]:
+              - /url: /brokers/reporting
+              - img [ref=e112]
+              - generic [ref=e115]: Reporting
+        - generic [ref=e116]:
+          - paragraph [ref=e117]: Options
+          - link "Options Trading" [ref=e119] [cursor=pointer]:
+            - /url: /options
+            - img [ref=e120]
+            - generic [ref=e123]: Options Trading
+        - generic [ref=e124]:
+          - paragraph [ref=e125]: Admin
+          - link "Admin Panel" [ref=e126] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e127]
+            - generic [ref=e129]: Admin Panel
+      - generic [ref=e130]:
+        - generic [ref=e131]:
+          - button "Refresh Data" [ref=e133] [cursor=pointer]:
+            - img [ref=e134]
+          - button "Switch to light mode" [ref=e139] [cursor=pointer]:
+            - img [ref=e140]
+          - button [ref=e147] [cursor=pointer]:
+            - img [ref=e148]
+        - paragraph [ref=e151]: "Last refreshed: 08:55 p.m."
+        - generic [ref=e153]:
+          - generic [ref=e154]: S
+          - generic [ref=e155]:
+            - paragraph [ref=e156]: Saurabh
+            - paragraph [ref=e157]: saurabh.bilakhia@gmail.com
+          - generic [ref=e158]:
+            - link "Profile" [ref=e159] [cursor=pointer]:
+              - /url: /profile
+              - img [ref=e160]
+            - button "Logout" [ref=e163] [cursor=pointer]:
+              - img [ref=e164]
+  - main [ref=e168]:
+    - generic [ref=e169]:
+      - heading "Options Trading" [level=1] [ref=e171]
+      - generic [ref=e172]:
+        - generic [ref=e173]:
+          - generic [ref=e174]:
+            - textbox "Enter symbol (e.g. SPY)" [ref=e175]: AAPL
+            - button "Load Chain" [ref=e176] [cursor=pointer]
+            - generic [ref=e182]: "Active: AAPL"
+          - generic [ref=e177]: Live
+        - generic [ref=e183]:
+          - button "BULL_CALL_SPREAD" [ref=e184] [cursor=pointer]
+          - button "BEAR_PUT_SPREAD" [ref=e185] [cursor=pointer]
+          - button "BULL_PUT_SPREAD" [ref=e186] [cursor=pointer]
+          - button "BEAR_CALL_SPREAD" [ref=e187] [cursor=pointer]
+          - button "IRON_CONDOR" [ref=e188] [cursor=pointer]
+          - button "COVERED_CALL" [ref=e189] [cursor=pointer]
+          - button "PROTECTIVE_PUT" [ref=e190] [cursor=pointer]
+      - generic [ref=e191]:
+        - generic [ref=e192]: AAPL
+        - generic [ref=e193]: $446.23
+        - generic [ref=e194]:
+          - generic [ref=e195]: Bid
+          - generic [ref=e196]: $446.20
+        - generic [ref=e197]:
+          - generic [ref=e198]: Ask
+          - generic [ref=e199]: $446.25
+        - generic [ref=e200]:
+          - generic [ref=e201]: Spread
+          - generic [ref=e202]: $0.05
+        - generic [ref=e203]:
+          - generic [ref=e204]: Volume
+          - generic [ref=e205]: 6,093
+      - generic [ref=e206]:
+        - generic [ref=e208]:
+          - generic [ref=e209]:
+            - button "2026-06-19" [ref=e210] [cursor=pointer]
+            - button "2026-07-17" [ref=e211] [cursor=pointer]
+            - button "2026-08-21" [ref=e212] [cursor=pointer]
+            - button "2026-09-18" [ref=e213] [cursor=pointer]
+          - table [ref=e214]:
+            - rowgroup [ref=e215]:
+              - row "Bid Ask Last Delta Vol Strike Bid Ask Last Delta Vol" [ref=e216]:
+                - columnheader "Bid" [ref=e217]
+                - columnheader "Ask" [ref=e218]
+                - columnheader "Last" [ref=e219]
+                - columnheader "Delta" [ref=e220]
+                - columnheader "Vol" [ref=e221]
+                - columnheader "Strike" [ref=e222]
+                - columnheader "Bid" [ref=e223]
+                - columnheader "Ask" [ref=e224]
+                - columnheader "Last" [ref=e225]
+                - columnheader "Delta" [ref=e226]
+                - columnheader "Vol" [ref=e227]
+              - row "CALLS PUTS" [ref=e228]:
+                - columnheader "CALLS" [ref=e229]
+                - columnheader [ref=e230]
+                - columnheader "PUTS" [ref=e231]
+            - rowgroup
+        - generic [ref=e233]:
+          - generic [ref=e235]: Legs (0)
+          - generic [ref=e236]: Click on bid/ask in the options chain to add legs
+          - button "Calculate P&L" [disabled] [ref=e237]

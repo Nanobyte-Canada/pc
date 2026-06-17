@@ -12,8 +12,10 @@ class ModelPortfolioServiceTest {
     private val modelRepository = mockk<ModelPortfolioRepository>()
     private val allocationRepository = mockk<ModelPortfolioAllocationRepository>()
     private val connectionRepository = mockk<BrokerConnectionRepository>()
+    private val instrumentLookup = mockk<com.portfolio.service.IngestionInstrumentLookupService>(relaxed = true)
+    private val lookThroughService = mockk<com.portfolio.service.LookThroughService>(relaxed = true)
     private val service = ModelPortfolioService(
-        modelRepository, allocationRepository, connectionRepository
+        modelRepository, allocationRepository, connectionRepository, instrumentLookup, lookThroughService
     )
 
     @Test

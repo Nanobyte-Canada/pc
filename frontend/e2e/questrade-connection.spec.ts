@@ -129,7 +129,7 @@ test.describe.serial('Questrade Connection UAT', () => {
     const health = await resp.json()
     expect(health.status).toBe('UP')
 
-    const connectionsResp = await fetch(`${GATEWAY_URL}/api/v1/gateway/connections?userId=0`, {
+    await fetch(`${GATEWAY_URL}/api/v1/gateway/connections?userId=0`, {
       headers: { 'X-Gateway-Api-Key': GATEWAY_KEY }
     }).catch(() => null)
 

@@ -1,0 +1,185 @@
+<h2>Section 2a: Strategy Selection — Desktop (4-Column) & Mobile</h2>
+<p class="subtitle">Updated: Desktop now uses 4-column grid</p>
+
+<div class="section">
+  <h3>Desktop Layout (≥768px) — 4 Columns</h3>
+  <div class="mockup">
+    <div class="mockup-header">Desktop — /strategies</div>
+    <div class="mockup-body" style="background: #0f1117; color: #e4e4e7; font-family: 'DM Sans', sans-serif; padding: 0;">
+
+      <!-- Page Header -->
+      <div style="padding: 20px 24px 0; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1 style="font-family: Inter, sans-serif; font-size: 22px; font-weight: 700; margin: 0; color: #f4f4f5;">Multi-Leg Strategies</h1>
+          <span style="font-size: 13px; color: #71717a;">Build, execute, and manage options strategies</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div style="padding: 8px 16px; border-radius: 8px; background: transparent; border: 1px solid #27272a; font-size: 13px; color: #a1a1aa; cursor: pointer;">Build Strategy</div>
+          <div style="padding: 8px 16px; border-radius: 8px; background: #27272a; font-size: 13px; color: #f4f4f5; cursor: pointer;">Open Positions <span style="background: #3b82f6; color: white; padding: 1px 7px; border-radius: 10px; font-size: 11px; margin-left: 4px;">3</span></div>
+        </div>
+      </div>
+
+      <!-- Market Outlook Filter -->
+      <div style="padding: 16px 24px; display: flex; gap: 8px;">
+        <div style="padding: 6px 14px; border-radius: 20px; background: #3b82f6; font-size: 12px; color: white;">All</div>
+        <div style="padding: 6px 14px; border-radius: 20px; background: #27272a; font-size: 12px; color: #a1a1aa;">Bullish</div>
+        <div style="padding: 6px 14px; border-radius: 20px; background: #27272a; font-size: 12px; color: #a1a1aa;">Bearish</div>
+        <div style="padding: 6px 14px; border-radius: 20px; background: #27272a; font-size: 12px; color: #a1a1aa;">Neutral</div>
+      </div>
+
+      <!-- Strategy Cards Grid — 4 columns -->
+      <div style="padding: 0 24px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+
+        <!-- Bull Call Spread -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; cursor: pointer;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div style="font-size: 14px; font-weight: 600; color: #f4f4f5;">Bull Call Spread</div>
+            <span style="font-size: 9px; padding: 2px 7px; border-radius: 4px; background: rgba(34,197,94,0.15); color: #4ade80; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">Bullish</span>
+          </div>
+          <div style="font-size: 11px; color: #71717a; line-height: 1.5; margin-bottom: 12px;">Buy a call and sell a higher-strike call. Limited risk, limited reward.</div>
+          <div style="display: flex; gap: 12px; font-size: 10px; color: #52525b;">
+            <span>2 Legs</span>
+            <span>Debit</span>
+            <span>Risk: Limited</span>
+          </div>
+          <div style="margin-top: 12px; height: 36px; border-top: 1px solid #27272a; padding-top: 8px;">
+            <svg viewBox="0 0 200 30" style="width: 100%; height: 30px;">
+              <line x1="0" y1="15" x2="200" y2="15" stroke="#27272a" stroke-width="1"/>
+              <polyline points="10,24 70,24 130,6 190,6" fill="none" stroke="#4ade80" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Bear Put Spread -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; cursor: pointer;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div style="font-size: 14px; font-weight: 600; color: #f4f4f5;">Bear Put Spread</div>
+            <span style="font-size: 9px; padding: 2px 7px; border-radius: 4px; background: rgba(239,68,68,0.15); color: #f87171; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">Bearish</span>
+          </div>
+          <div style="font-size: 11px; color: #71717a; line-height: 1.5; margin-bottom: 12px;">Buy a put and sell a lower-strike put. Profit from downside with limited risk.</div>
+          <div style="display: flex; gap: 12px; font-size: 10px; color: #52525b;">
+            <span>2 Legs</span>
+            <span>Debit</span>
+            <span>Risk: Limited</span>
+          </div>
+          <div style="margin-top: 12px; height: 36px; border-top: 1px solid #27272a; padding-top: 8px;">
+            <svg viewBox="0 0 200 30" style="width: 100%; height: 30px;">
+              <line x1="0" y1="15" x2="200" y2="15" stroke="#27272a" stroke-width="1"/>
+              <polyline points="10,6 70,6 130,24 190,24" fill="none" stroke="#f87171" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Bull Put Spread -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; cursor: pointer;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div style="font-size: 14px; font-weight: 600; color: #f4f4f5;">Bull Put Spread</div>
+            <span style="font-size: 9px; padding: 2px 7px; border-radius: 4px; background: rgba(34,197,94,0.15); color: #4ade80; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">Bullish</span>
+          </div>
+          <div style="font-size: 11px; color: #71717a; line-height: 1.5; margin-bottom: 12px;">Sell a put and buy a lower-strike put. Collect premium with limited downside.</div>
+          <div style="display: flex; gap: 12px; font-size: 10px; color: #52525b;">
+            <span>2 Legs</span>
+            <span>Credit</span>
+            <span>Risk: Limited</span>
+          </div>
+          <div style="margin-top: 12px; height: 36px; border-top: 1px solid #27272a; padding-top: 8px;">
+            <svg viewBox="0 0 200 30" style="width: 100%; height: 30px;">
+              <line x1="0" y1="15" x2="200" y2="15" stroke="#27272a" stroke-width="1"/>
+              <polyline points="10,24 70,24 130,6 190,6" fill="none" stroke="#4ade80" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Bear Call Spread -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; cursor: pointer;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div style="font-size: 14px; font-weight: 600; color: #f4f4f5;">Bear Call Spread</div>
+            <span style="font-size: 9px; padding: 2px 7px; border-radius: 4px; background: rgba(239,68,68,0.15); color: #f87171; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">Bearish</span>
+          </div>
+          <div style="font-size: 11px; color: #71717a; line-height: 1.5; margin-bottom: 12px;">Sell a call and buy a higher-strike call. Collect premium on bearish outlook.</div>
+          <div style="display: flex; gap: 12px; font-size: 10px; color: #52525b;">
+            <span>2 Legs</span>
+            <span>Credit</span>
+            <span>Risk: Limited</span>
+          </div>
+          <div style="margin-top: 12px; height: 36px; border-top: 1px solid #27272a; padding-top: 8px;">
+            <svg viewBox="0 0 200 30" style="width: 100%; height: 30px;">
+              <line x1="0" y1="15" x2="200" y2="15" stroke="#27272a" stroke-width="1"/>
+              <polyline points="10,6 70,6 130,24 190,24" fill="none" stroke="#f87171" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Iron Condor -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; cursor: pointer;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div style="font-size: 14px; font-weight: 600; color: #f4f4f5;">Iron Condor</div>
+            <span style="font-size: 9px; padding: 2px 7px; border-radius: 4px; background: rgba(59,130,246,0.15); color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">Neutral</span>
+          </div>
+          <div style="font-size: 11px; color: #71717a; line-height: 1.5; margin-bottom: 12px;">Sell OTM call & put spreads. Profit from low volatility within a range.</div>
+          <div style="display: flex; gap: 12px; font-size: 10px; color: #52525b;">
+            <span>4 Legs</span>
+            <span>Credit</span>
+            <span>Risk: Limited</span>
+          </div>
+          <div style="margin-top: 12px; height: 36px; border-top: 1px solid #27272a; padding-top: 8px;">
+            <svg viewBox="0 0 200 30" style="width: 100%; height: 30px;">
+              <line x1="0" y1="15" x2="200" y2="15" stroke="#27272a" stroke-width="1"/>
+              <polyline points="10,24 35,24 65,6 135,6 165,24 190,24" fill="none" stroke="#60a5fa" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Covered Call -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; cursor: pointer;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div style="font-size: 14px; font-weight: 600; color: #f4f4f5;">Covered Call</div>
+            <span style="font-size: 9px; padding: 2px 7px; border-radius: 4px; background: rgba(34,197,94,0.15); color: #4ade80; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">Bullish</span>
+          </div>
+          <div style="font-size: 11px; color: #71717a; line-height: 1.5; margin-bottom: 12px;">Own shares and sell a call. Generate income on existing positions.</div>
+          <div style="display: flex; gap: 12px; font-size: 10px; color: #52525b;">
+            <span>1 Leg + Stock</span>
+            <span>Credit</span>
+            <span>Risk: Stock</span>
+          </div>
+          <div style="margin-top: 12px; height: 36px; border-top: 1px solid #27272a; padding-top: 8px;">
+            <svg viewBox="0 0 200 30" style="width: 100%; height: 30px;">
+              <line x1="0" y1="15" x2="200" y2="15" stroke="#27272a" stroke-width="1"/>
+              <polyline points="10,26 100,8 140,8 190,8" fill="none" stroke="#4ade80" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Protective Put -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; cursor: pointer;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div style="font-size: 14px; font-weight: 600; color: #f4f4f5;">Protective Put</div>
+            <span style="font-size: 9px; padding: 2px 7px; border-radius: 4px; background: rgba(234,179,8,0.15); color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">Defensive</span>
+          </div>
+          <div style="font-size: 11px; color: #71717a; line-height: 1.5; margin-bottom: 12px;">Own shares and buy a put. Insurance against downside while keeping upside.</div>
+          <div style="display: flex; gap: 12px; font-size: 10px; color: #52525b;">
+            <span>1 Leg + Stock</span>
+            <span>Debit</span>
+            <span>Risk: Premium</span>
+          </div>
+          <div style="margin-top: 12px; height: 36px; border-top: 1px solid #27272a; padding-top: 8px;">
+            <svg viewBox="0 0 200 30" style="width: 100%; height: 30px;">
+              <line x1="0" y1="15" x2="200" y2="15" stroke="#27272a" stroke-width="1"/>
+              <polyline points="10,8 60,8 120,22 190,4" fill="none" stroke="#facc15" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px; padding: 16px; background: rgba(59,130,246,0.08); border-radius: 10px; border: 1px solid rgba(59,130,246,0.2);">
+  <h3 style="margin-top: 0;">Responsive Breakpoints</h3>
+  <ul style="font-size: 14px; line-height: 1.8; margin: 0;">
+    <li><strong>≥1200px:</strong> 4-column grid (shown above)</li>
+    <li><strong>768px–1199px:</strong> 2-column grid</li>
+    <li><strong>≤767px:</strong> Single-column compact list (mobile view from v1)</li>
+  </ul>
+</div>

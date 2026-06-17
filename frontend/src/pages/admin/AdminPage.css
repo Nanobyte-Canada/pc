@@ -353,6 +353,16 @@
   border-color: var(--accent-hover);
 }
 
+.admin-run-btn--danger {
+  border-color: var(--error);
+  background: var(--error);
+  color: #fff;
+}
+
+.admin-run-btn--danger:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
 /* ── Active Run Progress ── */
 .admin-progress-steps {
   display: flex;

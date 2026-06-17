@@ -136,7 +136,7 @@ class BrokerServiceTest {
         }
         every { userRepository.findById(1L) } returns Optional.of(user)
         every { gatewayClient.deleteConnection("gw-conn-123") } just runs
-        every { connectionRepository.findByUserId(1L) } returns listOf(connection)
+        every { connectionRepository.findByGatewayConnectionId("gw-conn-123") } returns listOf(connection)
         every { connectionRepository.save(any()) } answers { firstArg() }
 
         service.disconnectBroker("gw-conn-123", 1L)

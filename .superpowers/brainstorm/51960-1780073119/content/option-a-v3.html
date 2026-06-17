@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Option A — v3 Exposure Only</title>
+<style>
+  :root {
+    --bg-primary: #0c1220;
+    --bg-secondary: #111a2e;
+    --border: rgba(255,255,255,0.06);
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0a0e1a; color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:16px; }
+  .layout { display:flex; gap:20px; align-items:flex-start; }
+  .viewport-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); text-align:center; margin-bottom:8px; }
+
+  /* DESKTOP */
+  .desktop-frame { flex:1; max-width:1100px; background:var(--bg-primary); border-radius:12px; border:2px solid rgba(255,255,255,0.06); overflow:hidden; display:flex; height:700px; }
+  .icon-rail { width:44px; background:var(--bg-secondary); border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; padding:10px 0; gap:3px; flex-shrink:0; }
+  .icon-rail__logo { width:24px; height:24px; border-radius:6px; background:rgba(16,185,129,0.15); color:#10b981; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:10px; margin-bottom:10px; }
+  .icon-rail__btn { width:32px; height:32px; border-radius:6px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .icon-rail__btn--active { background:rgba(16,185,129,0.12); color:#10b981; }
+  .icon-rail__spacer { flex:1; }
+  .icon-rail__avatar { width:24px; height:24px; border-radius:50%; background:rgba(16,185,129,0.15); color:#10b981; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:600; }
+  .desktop-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .account-nav { display:flex; gap:5px; padding:8px 16px 0; flex-wrap:wrap; }
+  .account-pill { padding:4px 10px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,0.03); color:var(--text-secondary); font-size:9px; cursor:pointer; display:flex; align-items:center; gap:4px; font-weight:500; }
+  .account-pill--active { background:rgba(16,185,129,0.12); border-color:rgba(16,185,129,0.25); color:#6ee7b7; }
+  .account-pill__icon { width:13px; height:13px; border-radius:3px; background:#1a5c3a; color:#4ade80; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; }
+  .desktop-content { padding:0 16px; flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .page-header { display:flex; align-items:center; padding:6px 0 10px; }
+  .page-title { font-size:18px; font-weight:700; color:var(--text-primary); }
+
+  .kpi-row { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:10px; flex-shrink:0; }
+  .kpi-card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:10px; }
+  .kpi-card__header { display:flex; align-items:center; justify-content:space-between; }
+  .kpi-card__label { font-size:9px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); font-weight:500; }
+  .kpi-card__icon { color:var(--text-secondary); font-size:11px; }
+  .kpi-card__value { font-size:14px; font-weight:700; font-family:var(--font-mono); color:var(--text-primary); margin-top:4px; }
+  .kpi-card__value--positive { color:#6ee7b7; }
+  .kpi-card__value--negative { color:#f87171; }
+  .kpi-card__value--cc { color:#fb923c; }
+  .kpi-card__divider { height:1px; background:var(--border); margin:6px 0; }
+  .kpi-card__breakdown { display:flex; justify-content:space-between; padding:1px 0; }
+  .kpi-card__breakdown-label { font-size:8px; color:var(--text-muted); }
+  .kpi-card__breakdown-value { font-size:9px; font-family:var(--font-mono); color:var(--text-secondary); }
+
+  .timeline-nav { display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-shrink:0; }
+  .timeline-btn { background:var(--bg-secondary); border:1px solid var(--border); border-radius:5px; color:var(--text-primary); padding:3px 8px; cursor:pointer; font-size:12px; font-family:inherit; }
+  .timeline-range { flex:1; text-align:center; font-size:9px; color:var(--text-secondary); letter-spacing:0.4px; text-transform:uppercase; }
+  .timeline-today { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:5px; color:#6ee7b7; padding:3px 8px; cursor:pointer; font-size:9px; font-weight:500; font-family:inherit; }
+
+  .grid-wrapper { background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:0; }
+  .grid-scroll { overflow:auto; flex:1; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { padding:6px 8px; font-size:8px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); font-weight:500; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg-secondary); z-index:2; }
+  thead th.ticker-col { text-align:left; width:110px; position:sticky; left:0; z-index:3; }
+  thead th.expiry-col { text-align:center; min-width:140px; }
+  .expiry-date { font-size:11px; font-weight:600; color:var(--text-primary); text-transform:none; letter-spacing:0; }
+  .expiry-meta { display:flex; align-items:center; justify-content:center; gap:3px; margin-top:1px; }
+  .dte-badge { padding:0px 4px; border-radius:3px; font-size:8px; font-weight:600; }
+  .dte-badge--critical { background:rgba(239,68,68,0.25); color:#f87171; }
+  .dte-badge--warning { background:rgba(234,179,8,0.2); color:#eab308; }
+  .dte-badge--safe { background:rgba(34,197,94,0.2); color:#22c55e; }
+  .monthly-badge { background:rgba(99,102,241,0.2); color:#a78bfa; padding:0px 4px; border-radius:3px; font-size:7px; font-weight:500; }
+  tbody td { padding:4px 6px; vertical-align:top; border-bottom:1px solid rgba(255,255,255,0.03); }
+  td.ticker-cell { padding:6px 10px; position:sticky; left:0; background:var(--bg-secondary); z-index:1; }
+  .ticker-name { font-size:12px; font-weight:700; color:var(--text-primary); }
+  .ticker-price { font-size:9px; color:var(--text-secondary); font-family:var(--font-mono); }
+  .ticker-exposure { font-size:9px; font-family:var(--font-mono); color:var(--text-secondary); margin-top:2px; }
+  .ticker-shares { font-size:8px; color:#94a3b8; margin-top:1px; }
+  .ticker-cc-badge { display:inline-flex; align-items:center; gap:2px; background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.2); color:#fb923c; padding:0px 4px; border-radius:3px; font-size:7px; font-weight:500; margin-top:2px; }
+
+  .pos-card { border-radius:5px; padding:6px 8px; cursor:pointer; transition:border-color 0.15s; }
+  .pos-card:hover { transform:translateY(-1px); }
+  .pos-card--csp { background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.18); }
+  .pos-card--csp:hover { border-color:rgba(99,102,241,0.35); }
+  .pos-card--cc { background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.18); }
+  .pos-card--cc:hover { border-color:rgba(249,115,22,0.35); }
+  .pos-card__row { display:flex; justify-content:space-between; align-items:center; }
+  .pos-card__row + .pos-card__row { margin-top:2px; }
+  .pos-card__strike { font-weight:600; font-family:var(--font-mono); font-size:10px; }
+  .pos-card__strike--csp { color:#a78bfa; }
+  .pos-card__strike--cc { color:#fb923c; }
+  .pos-card__otm { color:var(--text-muted); font-size:8px; }
+  .pos-card__pnl { font-family:var(--font-mono); font-size:9px; }
+  .pos-card__pnl--positive { color:#6ee7b7; }
+  .pos-card__pnl--negative { color:#f87171; }
+  .empty-slot { display:flex; align-items:center; justify-content:center; border:1px dashed rgba(255,255,255,0.06); border-radius:5px; padding:10px; cursor:pointer; color:#475569; font-size:14px; transition:border-color 0.15s,color 0.15s; }
+  .empty-slot:hover { border-color:rgba(99,102,241,0.3); color:#a78bfa; }
+  .cc-slot { display:flex; align-items:center; justify-content:center; border:1px dashed rgba(249,115,22,0.15); border-radius:5px; padding:10px; cursor:pointer; color:#92400e; font-size:9px; transition:all 0.15s; }
+  .cc-slot:hover { border-color:rgba(249,115,22,0.4); color:#fb923c; background:rgba(249,115,22,0.04); }
+  .add-ticker { display:flex; align-items:center; justify-content:center; border-top:1px solid var(--border); padding:6px; cursor:pointer; color:var(--text-muted); font-size:10px; flex-shrink:0; }
+  .col-expiring { background:rgba(239,68,68,0.03); }
+  .legend { display:flex; gap:12px; padding:4px 0; font-size:8px; color:var(--text-muted); flex-shrink:0; }
+  .legend__item { display:flex; align-items:center; gap:3px; }
+  .legend__dot { width:6px; height:6px; border-radius:2px; }
+  .legend__dot--csp { background:rgba(99,102,241,0.4); }
+  .legend__dot--cc { background:rgba(249,115,22,0.4); }
+
+  /* MOBILE */
+  .mobile-frame { width:340px; height:700px; background:var(--bg-primary); border-radius:20px; border:2px solid rgba(255,255,255,0.06); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; }
+  .mobile-account { display:flex; align-items:center; justify-content:center; padding:7px 12px; gap:5px; border-bottom:1px solid var(--border); }
+  .mobile-account__label { font-size:10px; font-weight:600; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.4px; }
+  .mobile-account__chevron { color:var(--text-muted); font-size:8px; }
+  .mobile-account__dots { display:flex; gap:3px; margin-left:6px; }
+  .mobile-account__dot { width:4px; height:4px; border-radius:50%; background:rgba(255,255,255,0.15); }
+  .mobile-account__dot--active { background:#10b981; }
+  .mobile-kpi { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:6px 10px; }
+  .mobile-kpi__card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:6px 8px; }
+  .mobile-kpi__card--full { grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; }
+  .mobile-kpi__label { font-size:7px; text-transform:uppercase; letter-spacing:0.3px; color:var(--text-secondary); }
+  .mobile-kpi__value { font-size:12px; font-weight:700; font-family:var(--font-mono); color:var(--text-primary); margin-top:2px; }
+  .mobile-kpi__value--negative { color:#f87171; }
+  .mobile-kpi__value--cc { color:#fb923c; }
+  .mobile-kpi__sub { font-size:7px; color:var(--text-muted); font-family:var(--font-mono); margin-top:1px; }
+  .mobile-kpi__card--full .mobile-kpi__value { margin-top:0; margin-left:8px; }
+  .mobile-timeline { display:flex; align-items:center; gap:4px; padding:5px 10px; }
+  .mobile-timeline__btn { background:var(--bg-secondary); border:1px solid var(--border); border-radius:4px; color:var(--text-primary); padding:3px 7px; cursor:pointer; font-size:11px; font-family:inherit; }
+  .mobile-timeline__range { flex:1; text-align:center; font-size:9px; color:var(--text-secondary); }
+  .mobile-timeline__today { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:4px; color:#6ee7b7; padding:2px 7px; cursor:pointer; font-size:8px; font-weight:500; font-family:inherit; }
+  .mobile-grid-wrapper { background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; margin:0 10px; overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:0; }
+  .mobile-grid-scroll { overflow:auto; flex:1; }
+  .mobile-grid-wrapper table thead th { padding:5px 6px; font-size:7px; }
+  .mobile-grid-wrapper table thead th.ticker-col { width:80px; }
+  .mobile-grid-wrapper table thead th.expiry-col { min-width:115px; }
+  .mobile-grid-wrapper table tbody td { padding:3px 5px; }
+  .mobile-grid-wrapper table td.ticker-cell { padding:5px 7px; }
+  .mobile-grid-wrapper .ticker-name { font-size:11px; }
+  .mobile-grid-wrapper .ticker-price { font-size:8px; }
+  .mobile-grid-wrapper .ticker-exposure { font-size:8px; }
+  .mobile-grid-wrapper .ticker-shares { font-size:7px; }
+  .mobile-grid-wrapper .ticker-cc-badge { font-size:7px; }
+  .mobile-grid-wrapper .pos-card { padding:5px 6px; }
+  .mobile-grid-wrapper .pos-card__strike { font-size:9px; }
+  .mobile-grid-wrapper .pos-card__otm { font-size:7px; }
+  .mobile-grid-wrapper .pos-card__pnl { font-size:8px; }
+  .mobile-grid-wrapper .empty-slot { padding:8px; font-size:13px; }
+  .mobile-grid-wrapper .cc-slot { padding:8px; font-size:8px; }
+  .mobile-grid-wrapper .expiry-date { font-size:10px; }
+  .mobile-grid-wrapper .dte-badge { font-size:7px; }
+  .mobile-grid-wrapper .add-ticker { font-size:9px; padding:5px; }
+  .mobile-legend { display:flex; gap:8px; padding:3px 10px; font-size:7px; color:var(--text-muted); flex-shrink:0; }
+  .mobile-legend__item { display:flex; align-items:center; gap:2px; }
+  .mobile-legend__dot { width:5px; height:5px; border-radius:2px; }
+  .bottom-tabs { display:flex; border-top:1px solid var(--border); background:var(--bg-secondary); padding:5px 0 14px; flex-shrink:0; }
+  .bottom-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:1px; color:var(--text-muted); font-size:8px; cursor:pointer; }
+  .bottom-tab--active { color:#10b981; }
+  .bottom-tab__icon { font-size:15px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- DESKTOP -->
+  <div>
+    <div class="viewport-label">Desktop — 4 weeks</div>
+    <div class="desktop-frame">
+      <nav class="icon-rail">
+        <div class="icon-rail__logo">P</div>
+        <button class="icon-rail__btn">&#9633;</button>
+        <button class="icon-rail__btn icon-rail__btn--active">&#9678;</button>
+        <button class="icon-rail__btn">&#128279;</button>
+        <div class="icon-rail__spacer"></div>
+        <button class="icon-rail__btn">&#9788;</button>
+        <button class="icon-rail__btn">&#9881;</button>
+        <div class="icon-rail__avatar">S</div>
+      </nav>
+      <div class="desktop-main">
+        <div class="account-nav">
+          <div class="account-pill account-pill--active">All Accounts</div>
+          <div class="account-pill"><span class="account-pill__icon">Q</span> LIRA ••9683</div>
+          <div class="account-pill"><span class="account-pill__icon">Q</span> RRSP ••8214</div>
+          <div class="account-pill"><span class="account-pill__icon">Q</span> MARGIN ••4150</div>
+          <div class="account-pill"><span class="account-pill__icon">Q</span> RRSP ••2736</div>
+          <div class="account-pill"><span class="account-pill__icon">Q</span> TFSA ••0190</div>
+        </div>
+        <div class="desktop-content">
+          <div class="page-header"><h1 class="page-title">Wheel Strategy</h1></div>
+          <div class="kpi-row">
+            <div class="kpi-card">
+              <div class="kpi-card__header"><span class="kpi-card__label">Capital Available</span><span class="kpi-card__icon">&#128176;</span></div>
+              <div class="kpi-card__value">C$ 79,834</div>
+              <div class="kpi-card__divider"></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">C$</span><span class="kpi-card__breakdown-value">79,833.62</span></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">US$</span><span class="kpi-card__breakdown-value">33,108.50</span></div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-card__header"><span class="kpi-card__label">Capital Deployed</span><span class="kpi-card__icon">&#9878;</span></div>
+              <div class="kpi-card__value">US$ 53,250</div>
+              <div class="kpi-card__divider"></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">CSP</span><span class="kpi-card__breakdown-value">US$ 53,250</span></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">CC</span><span class="kpi-card__breakdown-value">US$ 4,800</span></div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-card__header"><span class="kpi-card__label">CC Available</span><span class="kpi-card__icon">&#x25B2;</span></div>
+              <div class="kpi-card__value kpi-card__value--cc">7 contracts</div>
+              <div class="kpi-card__divider"></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">TQQQ</span><span class="kpi-card__breakdown-value">1</span></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">QQU.TO</span><span class="kpi-card__breakdown-value">3</span></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">SPXU.TO</span><span class="kpi-card__breakdown-value">3</span></div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-card__header"><span class="kpi-card__label">Premium & P&L</span><span class="kpi-card__icon">$</span></div>
+              <div class="kpi-card__value kpi-card__value--negative">-US$ 1,386</div>
+              <div class="kpi-card__divider"></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">Premium</span><span class="kpi-card__breakdown-value" style="color:#6ee7b7;">+US$ 2,675</span></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">Unrealized</span><span class="kpi-card__breakdown-value" style="color:#f87171;">-US$ 1,386</span></div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-card__header"><span class="kpi-card__label">Positions</span><span class="kpi-card__icon">&#9673;</span></div>
+              <div class="kpi-card__value">7</div>
+              <div class="kpi-card__divider"></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">CSP</span><span class="kpi-card__breakdown-value">6</span></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">CC</span><span class="kpi-card__breakdown-value">1</span></div>
+              <div class="kpi-card__breakdown"><span class="kpi-card__breakdown-label">Expiring</span><span class="kpi-card__breakdown-value" style="color:#f87171;">2</span></div>
+            </div>
+          </div>
+
+          <div class="timeline-nav">
+            <button class="timeline-btn">&#8592;</button>
+            <div class="timeline-range">May 29 — Jun 19, 2026</div>
+            <button class="timeline-btn">&#8594;</button>
+            <button class="timeline-today">Today</button>
+          </div>
+
+          <div class="grid-wrapper">
+            <div class="grid-scroll">
+              <table>
+                <thead><tr>
+                  <th class="ticker-col">Ticker</th>
+                  <th class="expiry-col" style="background:rgba(239,68,68,0.04);"><div class="expiry-date">May 29</div><div class="expiry-meta"><span class="dte-badge dte-badge--critical">0d</span><span style="font-size:8px;color:#64748b;">Fri</span></div></th>
+                  <th class="expiry-col"><div class="expiry-date">Jun 5</div><div class="expiry-meta"><span class="dte-badge dte-badge--warning">7d</span><span style="font-size:8px;color:#64748b;">Fri</span></div></th>
+                  <th class="expiry-col"><div class="expiry-date">Jun 12</div><div class="expiry-meta"><span class="dte-badge dte-badge--safe">14d</span><span style="font-size:8px;color:#64748b;">Fri</span></div></th>
+                  <th class="expiry-col"><div class="expiry-date">Jun 19 <span class="monthly-badge">Monthly</span></div><div class="expiry-meta"><span class="dte-badge dte-badge--safe">21d</span><span style="font-size:8px;color:#64748b;">Fri</span></div></th>
+                </tr></thead>
+                <tbody>
+                  <tr>
+                    <td class="ticker-cell">
+                      <div class="ticker-name">SOXL</div>
+                      <div class="ticker-price">$676.00</div>
+                      <div class="ticker-exposure">US$ 29,000</div>
+                    </td>
+                    <td class="col-expiring"><div class="pos-card pos-card--csp"><div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$70 Put</span><span class="pos-card__otm">89.6%</span></div><div class="pos-card__row"><span class="pos-card__pnl pos-card__pnl--positive">+$289</span></div></div></td>
+                    <td><div class="empty-slot">+</div></td>
+                    <td><div class="empty-slot">+</div></td>
+                    <td><div style="display:flex;flex-direction:column;gap:3px;"><div class="pos-card pos-card--csp"><div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$100 Put</span><span class="pos-card__otm">85.2%</span></div><div class="pos-card__row"><span class="pos-card__pnl pos-card__pnl--positive">+$382</span></div></div><div class="pos-card pos-card--csp"><div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$120 Put</span><span class="pos-card__otm">82.2%</span></div><div class="pos-card__row"><span class="pos-card__pnl pos-card__pnl--positive">+$743</span></div></div></div></td>
+                  </tr>
+                  <tr>
+                    <td class="ticker-cell">
+                      <div class="ticker-name">TECL</div>
+                      <div class="ticker-price">$256.00</div>
+                      <div class="ticker-exposure">US$ 14,000</div>
+                    </td>
+                    <td class="col-expiring"><div class="empty-slot">+</div></td>
+                    <td><div class="empty-slot">+</div></td>
+                    <td><div class="empty-slot">+</div></td>
+                    <td><div class="pos-card pos-card--cc"><div class="pos-card__row"><span class="pos-card__strike pos-card__strike--cc">$140 CC</span><span class="pos-card__otm">45.3%</span></div><div class="pos-card__row"><span class="pos-card__pnl pos-card__pnl--positive">+$344</span></div></div></td>
+                  </tr>
+                  <tr>
+                    <td class="ticker-cell">
+                      <div class="ticker-name">TQQQ</div>
+                      <div class="ticker-price">$827.00</div>
+                      <div class="ticker-exposure">US$ 15,050</div>
+                      <div class="ticker-shares">100 shares</div>
+                      <div class="ticker-cc-badge">&#x25B2; 1 CC</div>
+                    </td>
+                    <td class="col-expiring"><div class="pos-card pos-card--csp"><div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$45 Put</span><span class="pos-card__otm">94.6%</span></div><div class="pos-card__row"><span class="pos-card__pnl pos-card__pnl--positive">+$124</span></div></div></td>
+                    <td><div class="cc-slot">+ Sell CC</div></td>
+                    <td><div class="cc-slot">+ Sell CC</div></td>
+                    <td><div style="display:flex;flex-direction:column;gap:3px;"><div class="pos-card pos-card--csp"><div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$57.50 Put</span><span class="pos-card__otm">93.0%</span></div><div class="pos-card__row"><span class="pos-card__pnl pos-card__pnl--positive">+$94</span></div></div><div class="pos-card pos-card--csp"><div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$48 Put</span><span class="pos-card__otm">94.2%</span></div><div class="pos-card__row"><span class="pos-card__pnl pos-card__pnl--negative">-$3,362</span></div></div><div class="cc-slot">+ Sell CC</div></div></td>
+                  </tr>
+                  <tr>
+                    <td class="ticker-cell">
+                      <div class="ticker-name">QQU.TO</div>
+                      <div class="ticker-price">$41.38</div>
+                      <div class="ticker-exposure">C$ 12,414</div>
+                      <div class="ticker-shares">300 shares</div>
+                      <div class="ticker-cc-badge">&#x25B2; 3 CC</div>
+                    </td>
+                    <td class="col-expiring"><div class="cc-slot">+ Sell CC</div></td>
+                    <td><div class="cc-slot">+ Sell CC</div></td>
+                    <td><div class="cc-slot">+ Sell CC</div></td>
+                    <td><div class="cc-slot">+ Sell CC</div></td>
+                  </tr>
+                  <tr>
+                    <td class="ticker-cell">
+                      <div class="ticker-name">SPXU.TO</div>
+                      <div class="ticker-price">$37.08</div>
+                      <div class="ticker-exposure">C$ 11,124</div>
+                      <div class="ticker-shares">300 shares</div>
+                      <div class="ticker-cc-badge">&#x25B2; 3 CC</div>
+                    </td>
+                    <td class="col-expiring"><div class="cc-slot">+ Sell CC</div></td>
+                    <td><div class="cc-slot">+ Sell CC</div></td>
+                    <td><div class="cc-slot">+ Sell CC</div></td>
+                    <td><div class="cc-slot">+ Sell CC</div></td>
+                  </tr>
+                  <tr>
+                    <td class="ticker-cell">
+                      <div class="ticker-name">UPRO</div>
+                      <div class="ticker-price">$236.00</div>
+                      <div class="ticker-exposure" style="color:var(--text-muted);">US$ 0</div>
+                    </td>
+                    <td class="col-expiring"><div class="empty-slot">+</div></td>
+                    <td><div class="empty-slot">+</div></td>
+                    <td><div class="empty-slot">+</div></td>
+                    <td><div class="empty-slot">+</div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="add-ticker">+ Add Ticker</div>
+          </div>
+          <div class="legend">
+            <div class="legend__item"><span class="legend__dot legend__dot--csp"></span> CSP</div>
+            <div class="legend__item"><span class="legend__dot legend__dot--cc"></span> CC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE -->
+  <div>
+    <div class="viewport-label">Mobile — 2 weeks</div>
+    <div class="mobile-frame">
+      <div class="mobile-account">
+        <span class="mobile-account__label">All Accounts</span>
+        <span class="mobile-account__chevron">&#9660;</span>
+        <div class="mobile-account__dots">
+          <span class="mobile-account__dot mobile-account__dot--active"></span>
+          <span class="mobile-account__dot"></span>
+          <span class="mobile-account__dot"></span>
+          <span class="mobile-account__dot"></span>
+          <span class="mobile-account__dot"></span>
+        </div>
+      </div>
+      <div class="mobile-kpi">
+        <div class="mobile-kpi__card">
+          <div class="mobile-kpi__label">Capital Available</div>
+          <div class="mobile-kpi__value">C$ 79,834</div>
+          <div class="mobile-kpi__sub">US$ 33,109</div>
+        </div>
+        <div class="mobile-kpi__card">
+          <div class="mobile-kpi__label">Capital Deployed</div>
+          <div class="mobile-kpi__value">US$ 53,250</div>
+          <div class="mobile-kpi__sub">CSP $53,250 · CC $4,800</div>
+        </div>
+        <div class="mobile-kpi__card">
+          <div class="mobile-kpi__label">Premium & P&L</div>
+          <div class="mobile-kpi__value mobile-kpi__value--negative">-US$ 1,386</div>
+          <div class="mobile-kpi__sub"><span style="color:#6ee7b7;">prem +$2,675</span></div>
+        </div>
+        <div class="mobile-kpi__card">
+          <div class="mobile-kpi__label">Positions</div>
+          <div class="mobile-kpi__value">7</div>
+          <div class="mobile-kpi__sub">6 CSP · 1 CC · <span style="color:#f87171;">2 exp</span></div>
+        </div>
+        <div class="mobile-kpi__card mobile-kpi__card--full">
+          <div class="mobile-kpi__label">CC Available</div>
+          <div class="mobile-kpi__value mobile-kpi__value--cc">7 contracts</div>
+          <div class="mobile-kpi__sub" style="margin-left:auto;">TQQQ 1 · QQU 3 · SPXU 3</div>
+        </div>
+      </div>
+      <div class="mobile-timeline">
+        <button class="mobile-timeline__btn">&#8592;</button>
+        <div class="mobile-timeline__range">May 29 — Jun 5, 2026</div>
+        <button class="mobile-timeline__btn">&#8594;</button>
+        <button class="mobile-timeline__today">Today</button>
+      </div>
+      <div class="mobile-grid-wrapper">
+        <div class="mobile-grid-scroll">
+          <table>
+            <thead><tr>
+              <th class="ticker-col">Ticker</th>
+              <th class="expiry-col" style="background:rgba(239,68,68,0.04);"><div class="expiry-date">May 29</div><div class="expiry-meta"><span class="dte-badge dte-badge--critical">0d</span><span style="font-size:7px;color:#64748b;">Fri</span></div></th>
+              <th class="expiry-col"><div class="expiry-date">Jun 5</div><div class="expiry-meta"><span class="dte-badge dte-badge--warning">7d</span><span style="font-size:7px;color:#64748b;">Fri</span></div></th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="ticker-cell"><div class="ticker-name">SOXL</div><div class="ticker-price">$676.00</div><div class="ticker-exposure">US$ 29,000</div></td>
+                <td class="col-expiring"><div class="pos-card pos-card--csp"><div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$70 Put</span><span class="pos-card__otm">89.6%</span></div><div class="pos-card__row"><span class="pos-card__pnl pos-card__pnl--positive">+$289</span></div></div></td>
+                <td><div class="empty-slot">+</div></td>
+              </tr>
+              <tr>
+                <td class="ticker-cell"><div class="ticker-name">TECL</div><div class="ticker-price">$256.00</div><div class="ticker-exposure">US$ 14,000</div></td>
+                <td class="col-expiring"><div class="empty-slot">+</div></td>
+                <td><div class="empty-slot">+</div></td>
+              </tr>
+              <tr>
+                <td class="ticker-cell"><div class="ticker-name">TQQQ</div><div class="ticker-price">$827.00</div><div class="ticker-exposure">US$ 15,050</div><div class="ticker-shares">100 shr</div><div class="ticker-cc-badge">1 CC</div></td>
+                <td class="col-expiring"><div class="pos-card pos-card--csp"><div class="pos-card__row"><span class="pos-card__strike pos-card__strike--csp">$45 Put</span><span class="pos-card__otm">94.6%</span></div><div class="pos-card__row"><span class="pos-card__pnl pos-card__pnl--positive">+$124</span></div></div></td>
+                <td><div class="cc-slot">+ CC</div></td>
+              </tr>
+              <tr>
+                <td class="ticker-cell"><div class="ticker-name">QQU.TO</div><div class="ticker-price">$41.38</div><div class="ticker-exposure">C$ 12,414</div><div class="ticker-shares">300 shr</div><div class="ticker-cc-badge">3 CC</div></td>
+                <td class="col-expiring"><div class="cc-slot">+ CC</div></td>
+                <td><div class="cc-slot">+ CC</div></td>
+              </tr>
+              <tr>
+                <td class="ticker-cell"><div class="ticker-name">SPXU.TO</div><div class="ticker-price">$37.08</div><div class="ticker-exposure">C$ 11,124</div><div class="ticker-shares">300 shr</div><div class="ticker-cc-badge">3 CC</div></td>
+                <td class="col-expiring"><div class="cc-slot">+ CC</div></td>
+                <td><div class="cc-slot">+ CC</div></td>
+              </tr>
+              <tr>
+                <td class="ticker-cell"><div class="ticker-name">UPRO</div><div class="ticker-price">$236.00</div><div class="ticker-exposure" style="color:var(--text-muted);">US$ 0</div></td>
+                <td class="col-expiring"><div class="empty-slot">+</div></td>
+                <td><div class="empty-slot">+</div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="add-ticker">+ Add Ticker</div>
+      </div>
+      <div class="mobile-legend">
+        <div class="mobile-legend__item"><span class="mobile-legend__dot legend__dot--csp"></span> CSP</div>
+        <div class="mobile-legend__item"><span class="mobile-legend__dot legend__dot--cc"></span> CC</div>
+      </div>
+      <div class="bottom-tabs">
+        <div class="bottom-tab"><span class="bottom-tab__icon">&#9633;</span>Portfolio</div>
+        <div class="bottom-tab bottom-tab--active"><span class="bottom-tab__icon">&#9678;</span>Wheel</div>
+        <div class="bottom-tab"><span class="bottom-tab__icon">&#128279;</span>Connect</div>
+        <div class="bottom-tab"><span class="bottom-tab__icon">&#8943;</span>More</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

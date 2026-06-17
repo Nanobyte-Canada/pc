@@ -1,0 +1,187 @@
+- generic [ref=e6]:
+  - complementary [ref=e7]:
+    - navigation "Main navigation" [ref=e8]:
+      - generic [ref=e9]: P
+      - button "Dashboard" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+      - button "Accounts" [ref=e16] [cursor=pointer]:
+        - img [ref=e17]
+      - button "Screener" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - button "Options" [ref=e25] [cursor=pointer]:
+        - img [ref=e26]
+      - button "Toggle theme" [ref=e29] [cursor=pointer]:
+        - img [ref=e30]
+      - button "Admin settings" [ref=e36] [cursor=pointer]:
+        - img [ref=e37]
+      - button "User profile" [ref=e40] [cursor=pointer]: S
+  - main [ref=e42]:
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - heading "Connected Accounts" [level=3] [ref=e48]
+        - generic [ref=e50]:
+          - generic [ref=e51] [cursor=pointer]:
+            - generic [ref=e52]: Q
+            - generic [ref=e53]:
+              - generic [ref=e55]: LIRA
+              - generic [ref=e56]:
+                - generic [ref=e57]: C$ 45,763
+                - generic [ref=e58]: +$46,078
+          - generic [ref=e59] [cursor=pointer]:
+            - generic [ref=e60]: Q
+            - generic [ref=e61]:
+              - generic [ref=e63]: RRSP
+              - generic [ref=e64]:
+                - generic [ref=e65]: C$ 40,277
+                - generic [ref=e66]: +$16,552
+          - generic [ref=e67] [cursor=pointer]:
+            - generic [ref=e68]: Q
+            - generic [ref=e69]:
+              - generic [ref=e71]: MARGIN
+              - generic [ref=e72]:
+                - generic [ref=e73]: C$ 85
+                - generic [ref=e74]: +$85
+          - generic [ref=e75] [cursor=pointer]:
+            - generic [ref=e76]: Q
+            - generic [ref=e77]:
+              - generic [ref=e79]: RRSP
+              - generic [ref=e80]:
+                - generic [ref=e81]: C$ 27,378
+                - generic [ref=e82]: +$5,423
+          - generic [ref=e83] [cursor=pointer]:
+            - generic [ref=e84]: Q
+            - generic [ref=e85]:
+              - generic [ref=e87]: TFSA
+              - generic [ref=e88]:
+                - generic [ref=e89]: C$ 126,419
+                - generic [ref=e90]: +$85,682
+      - generic [ref=e91]:
+        - heading "Portfolio Summary" [level=3] [ref=e93]
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - generic [ref=e98]: Investment
+            - generic [ref=e99]: C$ 0
+            - generic [ref=e102]:
+              - generic [ref=e103]: C$
+              - generic [ref=e104]: "0"
+          - generic [ref=e105]:
+            - generic [ref=e106]: Cash
+            - generic [ref=e107]: C$ 0
+            - generic [ref=e110]:
+              - generic [ref=e111]: C$
+              - generic [ref=e112]: "0"
+          - generic [ref=e113]:
+            - generic [ref=e114]: Buying Power
+            - generic [ref=e115]: C$ 0
+            - generic [ref=e118]:
+              - generic [ref=e119]: C$
+              - generic [ref=e120]: "0"
+      - generic [ref=e121]:
+        - heading "Returns (IRR)" [level=3] [ref=e123]
+        - generic [ref=e125]: No return data available yet
+      - generic [ref=e126]:
+        - heading "Sector & Industry Exposure" [level=3] [ref=e128]
+        - generic [ref=e130]:
+          - generic [ref=e131]:
+            - figure "chart, 2 series":
+              - img [ref=e132]:
+                - generic:
+                  - img
+            - status
+          - generic [ref=e134]:
+            - generic [ref=e136]: Unknown
+            - generic [ref=e137]: 100%
+      - generic [ref=e138]:
+        - heading "Fees & Commission" [level=3] [ref=e140]
+        - generic [ref=e142]:
+          - generic [ref=e143]:
+            - generic [ref=e144]: Last 12 months
+            - generic [ref=e145]: $0.00
+          - generic [ref=e146]:
+            - generic [ref=e147]:
+              - generic [ref=e148]:
+                - img [ref=e149]
+                - generic [ref=e152]: Fees
+              - generic [ref=e153]: $0.00
+            - generic [ref=e154]:
+              - generic [ref=e155]:
+                - img [ref=e156]
+                - generic [ref=e158]: Commissions
+              - generic [ref=e159]: $0.00
+            - generic [ref=e160]:
+              - generic [ref=e161]:
+                - img [ref=e162]
+                - generic [ref=e166]: MER (annual)
+              - generic [ref=e167]: $0.00
+          - generic [ref=e168]:
+            - generic [ref=e169]: MER per month
+            - generic [ref=e170]: $0.00
+      - generic [ref=e171]:
+        - heading "Dividend Calendar" [level=3] [ref=e173]
+        - generic [ref=e175]:
+          - generic [ref=e176]:
+            - button [ref=e177] [cursor=pointer]:
+              - img [ref=e178]
+            - generic [ref=e180]: May 2026
+            - button [ref=e181] [cursor=pointer]:
+              - img [ref=e182]
+          - generic [ref=e184]:
+            - generic [ref=e185]: Dividends$0.00
+            - generic [ref=e186]: Reinvested$0.00
+          - generic [ref=e187]:
+            - generic [ref=e188]: Su
+            - generic [ref=e189]: Mo
+            - generic [ref=e190]: Tu
+            - generic [ref=e191]: We
+            - generic [ref=e192]: Th
+            - generic [ref=e193]: Fr
+            - generic [ref=e194]: Sa
+            - generic [ref=e200]: "1"
+            - generic [ref=e201]: "2"
+            - generic [ref=e202]: "3"
+            - generic [ref=e203]: "4"
+            - generic [ref=e204]: "5"
+            - generic [ref=e205]: "6"
+            - generic [ref=e206]: "7"
+            - generic [ref=e207]: "8"
+            - generic [ref=e208]: "9"
+            - generic [ref=e209]: "10"
+            - generic [ref=e210]: "11"
+            - generic [ref=e211]: "12"
+            - generic [ref=e212]: "13"
+            - generic [ref=e213]: "14"
+            - generic [ref=e214]: "15"
+            - generic [ref=e215]: "16"
+            - generic [ref=e216]: "17"
+            - generic [ref=e217]: "18"
+            - generic [ref=e218]: "19"
+            - generic [ref=e219]: "20"
+            - generic [ref=e220]: "21"
+            - generic [ref=e221]: "22"
+            - generic [ref=e222]: "23"
+            - generic [ref=e223]: "24"
+            - generic [ref=e224]: "25"
+            - generic [ref=e225]: "26"
+            - generic [ref=e226]: "27"
+            - generic [ref=e227]: "28"
+            - generic [ref=e228]: "29"
+            - generic [ref=e229]: "30"
+            - generic [ref=e230]: "31"
+          - generic [ref=e231]:
+            - img [ref=e232]
+            - generic [ref=e234]: No dividends this month
+      - generic [ref=e235]:
+        - heading "Orders" [level=3] [ref=e237]
+        - generic [ref=e239]:
+          - generic [ref=e240]:
+            - button "Open" [ref=e241] [cursor=pointer]
+            - button "Pending" [disabled] [ref=e242]
+          - generic [ref=e244]:
+            - img [ref=e245]
+            - generic [ref=e248]: No open orders
+      - heading "Rebalancing Progress" [level=3] [ref=e251]
+      - generic [ref=e254]:
+        - heading "Positions & Holdings" [level=3] [ref=e256]
+        - generic [ref=e260]:
+          - img [ref=e261]
+          - generic [ref=e263]: No positions

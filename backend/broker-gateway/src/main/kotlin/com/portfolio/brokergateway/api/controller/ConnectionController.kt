@@ -9,7 +9,6 @@ import com.portfolio.brokergateway.api.dto.CreateConnectionRequest
 import com.portfolio.brokergateway.config.AdapterRegistry
 import com.portfolio.brokergateway.credential.CredentialService
 import com.portfolio.brokergateway.credential.GatewayConnection
-import com.portfolio.brokergateway.exception.BrokerAuthenticationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -77,13 +76,18 @@ class ConnectionController(
         val rawCredentials = credentialService.getCredentials(connectionId)
         val adapter = adapterRegistry.getAdapter(rawCredentials.brokerType)
         var credentials = credentialService.getCredentialsWithRefresh(connectionId, adapter)
-        val result = try {
-            adapter.validateConnection(credentials)
-        } catch (e: BrokerAuthenticationException) {
-            log.warn("Validation 401 for connection {}, force-refreshing...", connectionId)
-            credentials = credentialService.forceRefresh(connectionId, adapter)
-            adapter.validateConnection(credentials)
+        var result = adapter.validateConnection(credentials)
+
+        if (!result.connected) {
+            log.warn("Validation failed for connection {}, force-refreshing...", connectionId)
+            try {
+                credentials = credentialService.forceRefresh(connectionId, adapter)
+                result = adapter.validateConnection(credentials)
+            } catch (e: Exception) {
+                log.warn("Force-refresh failed for connection {}: {}", connectionId, e.message)
+            }
         }
+
         return ResponseEntity.ok(mapOf(
             "connected" to result.connected,
             "message" to result.message,

@@ -250,13 +250,9 @@
 | `PositionDetailsPage.tsx` | PositionDetailsPage | `/brokers/positions/:connectionId` | Detailed positions for a single broker connection |
 | `AccountDetailPage.tsx` | AccountDetailPage | `/brokers/accounts/:connectionId` | Individual account detail with breadcrumb nav ("Accounts > [Type]") and DashboardGrid in ACCOUNT context. Shows 4 KPI cards: Returns, Total Value, Investment, and Buying Power (instead of Returns for account-specific view) |
 | `ReportingPage.tsx` | ReportingPage | `/brokers/reporting` | Reporting dashboard with KPIs, charts, and activity table |
-| `ProfilePage.tsx` | ProfilePage | `/profile` | User profile management (name, avatar, password, linked identities) |
+| `ProfilePage.tsx` | ProfilePage | `/profile` | User profile management (name, avatar, linked identities) |
 | `admin/AdminPage.tsx` + `.css` | AdminPage | `/admin` (ADMIN role required) | Admin panel rewired to ingestion-service (port 8081). Verdant Dark redesign with 6-column summary stats, instrument type breakdown grid, two-column workflows + recent runs layout, status dots and progress bars. Auto-refresh every 10 seconds |
-| `auth/LoginPage.tsx` | LoginPage | `/login` (public) | Login form with Google OAuth option |
-| `auth/SignupPage.tsx` | SignupPage | `/signup` (public) | Registration form |
-| `auth/ForgotPasswordPage.tsx` | ForgotPasswordPage | `/forgot-password` (public) | Password reset request form |
-| `auth/ResetPasswordPage.tsx` | ResetPasswordPage | `/reset-password` (public) | Password reset form (with token from email) |
-| `auth/VerifyEmailPage.tsx` | VerifyEmailPage | `/verify-email` (public) | Email verification landing page |
+| `auth/LoginPage.tsx` | LoginPage | `/login` (public) | Flush-background split layout with "Continue with Google" button. No email/password form. |
 | `UnauthorizedPage.tsx` | UnauthorizedPage | `/unauthorized` | Unauthorized access page |
 
 ---
@@ -267,10 +263,6 @@ Defined in `App.tsx`. All pages are lazy-loaded with `React.lazy()` and wrapped 
 
 ```
 /login                              -- LoginPage (public)
-/signup                             -- SignupPage (public)
-/forgot-password                    -- ForgotPasswordPage (public)
-/reset-password                     -- ResetPasswordPage (public)
-/verify-email                       -- VerifyEmailPage (public)
 /unauthorized                       -- UnauthorizedPage (public)
 
 / (ProtectedRoute + AppLayout)
@@ -440,17 +432,11 @@ Base API utility module. All other services depend on this.
 
 | Export | Parameters | Endpoint | Method |
 |--------|-----------|----------|--------|
-| `signup(request)` | `SignupRequest` | `/auth/signup` | POST |
-| `login(request)` | `LoginRequest` | `/auth/login` | POST |
 | `logout()` | -- | `/auth/logout` | POST |
 | `refreshToken()` | -- | `/auth/refresh` | POST |
-| `forgotPassword(request)` | `ForgotPasswordRequest` | `/auth/forgot-password` | POST |
-| `resetPassword(request)` | `ResetPasswordRequest` | `/auth/reset-password` | POST |
-| `resendVerification(email)` | `email: string` | `/auth/resend-verification` | POST |
 | `getMe()` | -- | `/auth/me` | GET |
 | `initiateGoogleLogin()` | -- | Redirects to `/auth/google` | -- |
 | `updateProfile(data)` | `UpdateProfileData` | `/auth/profile` | PUT |
-| `changePassword(data)` | `ChangePasswordData` | `/auth/change-password` | POST |
 
 ### brokerService.ts
 

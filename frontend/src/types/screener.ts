@@ -40,16 +40,27 @@ export interface InstrumentDetail {
   isin: string | null;
   currency: string | null;
   country: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   general: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   highlights: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   valuation: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   technicals: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   financials: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   earnings: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   splitsDividends: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sharesStats: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   analystRatings: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   etfData: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mutualFundData: Record<string, any> | null;
 }
 

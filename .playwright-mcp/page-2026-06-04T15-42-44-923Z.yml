@@ -1,0 +1,28 @@
+- generic [ref=e23]:
+  - complementary [ref=e24]:
+    - navigation "Main navigation" [ref=e25]:
+      - generic [ref=e26]: P
+      - button "Portfolio" [ref=e27] [cursor=pointer]:
+        - img [ref=e28]
+      - button "Wheel" [ref=e33] [cursor=pointer]:
+        - img [ref=e34]
+      - button "Connections" [ref=e38] [cursor=pointer]:
+        - img [ref=e39]
+      - 'generic "IBKR Gateway: connecting" [ref=e42]':
+        - generic [ref=e44]: IBKR...
+      - button "Toggle theme" [ref=e45] [cursor=pointer]:
+        - img [ref=e46]
+      - button "Admin settings" [ref=e52] [cursor=pointer]:
+        - img [ref=e53]
+      - button "User profile" [ref=e56] [cursor=pointer]: S
+  - main [ref=e58]:
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - heading "Options Trading" [level=1] [ref=e61]
+        - generic [ref=e63]:
+          - textbox "Enter symbol (e.g. SPY)" [ref=e64]
+          - button "Load Chain" [disabled] [ref=e65]
+        - generic [ref=e66]: Live
+      - generic [ref=e68]:
+        - paragraph [ref=e69]: Enter a symbol above to load the options chain
+        - paragraph [ref=e70]: Try SPY, QQQ, AAPL, MSFT, or NVDA

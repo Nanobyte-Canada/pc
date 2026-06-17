@@ -1,0 +1,229 @@
+<h2>How should the 90-day timeline be structured?</h2>
+<p class="subtitle">This is the core visualization — how positions map to time. Consider: you have multiple tickers, each with CSPs and CCs at various expiries across a 90-day window.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Horizontal Timeline Grid</h3>
+      <p>Tickers on the Y-axis, dates on the X-axis. Each position is a card/chip placed at its expiry date. Empty cells = gaps where you could open a position. Think of a Gantt chart for options.</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.8; overflow-x: auto;">
+          <div style="display: grid; grid-template-columns: 80px repeat(6, 1fr); gap: 2px; min-width: 600px;">
+            <div style="font-weight: bold; padding: 4px;">Ticker</div>
+            <div style="font-weight: bold; padding: 4px; text-align: center; border-bottom: 2px solid #e74c3c;">May 30<br><span style="font-size:10px;color:#888;">7 DTE</span></div>
+            <div style="font-weight: bold; padding: 4px; text-align: center; border-bottom: 2px solid #e67e22;">Jun 6<br><span style="font-size:10px;color:#888;">14 DTE</span></div>
+            <div style="font-weight: bold; padding: 4px; text-align: center; border-bottom: 2px solid #f1c40f;">Jun 20<br><span style="font-size:10px;color:#888;">28 DTE</span></div>
+            <div style="font-weight: bold; padding: 4px; text-align: center; border-bottom: 2px solid #2ecc71;">Jul 18<br><span style="font-size:10px;color:#888;">56 DTE</span></div>
+            <div style="font-weight: bold; padding: 4px; text-align: center; border-bottom: 2px solid #3498db;">Aug 15<br><span style="font-size:10px;color:#888;">84 DTE</span></div>
+            <div style="font-weight: bold; padding: 4px; text-align: center; color: #888;">Gaps</div>
+
+            <!-- SPY Row -->
+            <div style="font-weight: bold; padding: 8px 4px;">SPY</div>
+            <div style="padding: 4px;">
+              <div style="background: #2d2d6b; color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px;">
+                CSP $540<br>+$3.20 <span style="color: #2ecc71;">+$180</span>
+              </div>
+            </div>
+            <div style="padding: 4px; background: rgba(255,255,255,0.03); border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 20px;">+</div>
+            <div style="padding: 4px;">
+              <div style="background: #6b2d4a; color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px;">
+                CC $580<br>+$2.10 <span style="color: #2ecc71;">+$95</span>
+              </div>
+            </div>
+            <div style="padding: 4px; background: rgba(255,255,255,0.03); border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 20px;">+</div>
+            <div style="padding: 4px; background: rgba(255,255,255,0.03); border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 20px;">+</div>
+            <div style="padding: 4px; color: #e67e22; font-size: 11px; display: flex; align-items: center;">2 open slots</div>
+
+            <!-- AAPL Row -->
+            <div style="font-weight: bold; padding: 8px 4px;">AAPL</div>
+            <div style="padding: 4px;">
+              <div style="background: #2d2d6b; color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px;">
+                CSP $190<br>+$4.50 <span style="color: #e74c3c;">-$120</span>
+              </div>
+            </div>
+            <div style="padding: 4px;">
+              <div style="background: #2d2d6b; color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px;">
+                CSP $185<br>+$2.80 <span style="color: #2ecc71;">+$60</span>
+              </div>
+            </div>
+            <div style="padding: 4px; background: rgba(255,255,255,0.03); border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 20px;">+</div>
+            <div style="padding: 4px; background: rgba(255,255,255,0.03); border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 20px;">+</div>
+            <div style="padding: 4px; background: rgba(255,255,255,0.03); border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 20px;">+</div>
+            <div style="padding: 4px; color: #e67e22; font-size: 11px; display: flex; align-items: center;">3 open slots</div>
+
+            <!-- QQQ Row -->
+            <div style="font-weight: bold; padding: 8px 4px;">QQQ</div>
+            <div style="padding: 4px; background: rgba(255,255,255,0.03); border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 20px;">+</div>
+            <div style="padding: 4px; background: rgba(255,255,255,0.03); border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 20px;">+</div>
+            <div style="padding: 4px;">
+              <div style="background: #6b2d4a; color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px;">
+                CC $480<br>+$5.10 <span style="color: #2ecc71;">+$310</span>
+              </div>
+            </div>
+            <div style="padding: 4px; background: rgba(255,255,255,0.03); border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 20px;">+</div>
+            <div style="padding: 4px; background: rgba(255,255,255,0.03); border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 20px;">+</div>
+            <div style="padding: 4px; color: #e67e22; font-size: 11px; display: flex; align-items: center;">4 open slots</div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top: 12px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Gaps are immediately visible as empty cells</li><li>Natural left-to-right time flow</li><li>Easy to click empty cell to open new position</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Gets wide with many expiry dates</li><li>Limited space per position card</li><li>Multiple positions at same expiry for same ticker need stacking</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Expiry-Grouped Card List</h3>
+      <p>Vertical list grouped by expiry date (nearest first). Each expiry section shows all positions expiring that date as cards. A summary row per expiry shows total premium, P&L. Empty ticker slots shown as "Add position" buttons within each group.</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-body" style="font-size: 12px;">
+          <!-- Expiry Group 1 -->
+          <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(231, 76, 60, 0.15); border-radius: 8px 8px 0 0; border-left: 3px solid #e74c3c;">
+              <div>
+                <span style="font-weight: bold;">May 30, 2026</span>
+                <span style="margin-left: 8px; padding: 2px 8px; background: #e74c3c; color: white; border-radius: 10px; font-size: 10px;">7 DTE</span>
+              </div>
+              <div style="font-size: 11px; color: #888;">2 positions &middot; Premium: $7.70 &middot; P&L: <span style="color: #2ecc71;">+$60</span></div>
+            </div>
+            <div style="display: flex; gap: 8px; padding: 8px; background: rgba(0,0,0,0.1); border-radius: 0 0 8px 8px;">
+              <div style="flex: 1; padding: 10px; background: rgba(45,45,107,0.3); border-radius: 6px; border: 1px solid rgba(45,45,107,0.5);">
+                <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">SPY</span><span style="color: #7b9bf4; font-size: 10px;">CSP</span></div>
+                <div style="margin-top: 4px;">Strike: $540 &middot; +$3.20</div>
+                <div style="color: #2ecc71; font-size: 11px;">P&L: +$180</div>
+              </div>
+              <div style="flex: 1; padding: 10px; background: rgba(45,45,107,0.3); border-radius: 6px; border: 1px solid rgba(45,45,107,0.5);">
+                <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">AAPL</span><span style="color: #7b9bf4; font-size: 10px;">CSP</span></div>
+                <div style="margin-top: 4px;">Strike: $190 &middot; +$4.50</div>
+                <div style="color: #e74c3c; font-size: 11px;">P&L: -$120</div>
+              </div>
+              <div style="flex: 1; padding: 10px; border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666;">
+                + Add position
+              </div>
+            </div>
+          </div>
+          <!-- Expiry Group 2 -->
+          <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(230, 126, 34, 0.15); border-radius: 8px 8px 0 0; border-left: 3px solid #e67e22;">
+              <div>
+                <span style="font-weight: bold;">Jun 6, 2026</span>
+                <span style="margin-left: 8px; padding: 2px 8px; background: #e67e22; color: white; border-radius: 10px; font-size: 10px;">14 DTE</span>
+              </div>
+              <div style="font-size: 11px; color: #888;">1 position &middot; Premium: $2.80 &middot; P&L: <span style="color: #2ecc71;">+$60</span></div>
+            </div>
+            <div style="display: flex; gap: 8px; padding: 8px; background: rgba(0,0,0,0.1); border-radius: 0 0 8px 8px;">
+              <div style="flex: 1; padding: 10px; background: rgba(45,45,107,0.3); border-radius: 6px; border: 1px solid rgba(45,45,107,0.5);">
+                <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">AAPL</span><span style="color: #7b9bf4; font-size: 10px;">CSP</span></div>
+                <div style="margin-top: 4px;">Strike: $185 &middot; +$2.80</div>
+                <div style="color: #2ecc71; font-size: 11px;">P&L: +$60</div>
+              </div>
+              <div style="flex: 1; padding: 10px; border: 1px dashed #555; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666;">
+                + Add position
+              </div>
+            </div>
+          </div>
+          <!-- Expiry Group 3 -->
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(241, 196, 15, 0.15); border-radius: 8px 8px 0 0; border-left: 3px solid #f1c40f;">
+              <div>
+                <span style="font-weight: bold;">Jun 20, 2026</span>
+                <span style="margin-left: 8px; padding: 2px 8px; background: #f1c40f; color: black; border-radius: 10px; font-size: 10px;">28 DTE</span>
+              </div>
+              <div style="font-size: 11px; color: #888;">2 positions &middot; Premium: $7.20 &middot; P&L: <span style="color: #2ecc71;">+$405</span></div>
+            </div>
+            <div style="display: flex; gap: 8px; padding: 8px; background: rgba(0,0,0,0.1); border-radius: 0 0 8px 8px;">
+              <div style="flex: 1; padding: 10px; background: rgba(107,45,74,0.3); border-radius: 6px; border: 1px solid rgba(107,45,74,0.5);">
+                <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">SPY</span><span style="color: #f49bce; font-size: 10px;">CC</span></div>
+                <div style="margin-top: 4px;">Strike: $580 &middot; +$2.10</div>
+                <div style="color: #2ecc71; font-size: 11px;">P&L: +$95</div>
+              </div>
+              <div style="flex: 1; padding: 10px; background: rgba(107,45,74,0.3); border-radius: 6px; border: 1px solid rgba(107,45,74,0.5);">
+                <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">QQQ</span><span style="color: #f49bce; font-size: 10px;">CC</span></div>
+                <div style="margin-top: 4px;">Strike: $480 &middot; +$5.10</div>
+                <div style="color: #2ecc71; font-size: 11px;">P&L: +$310</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top: 12px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Natural grouping by your preferred "expiry first" ordering</li><li>DTE urgency color-coding at a glance</li><li>Flexible card sizing — more room for data</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Harder to see per-ticker coverage gaps across time</li><li>Vertical scrolling with many expiries</li><li>"Add position" less intuitive — which ticker at which expiry?</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid: Timeline Header + Grouped Detail</h3>
+      <p>A compact horizontal timeline bar at top showing all positions as colored dots/chips (overview), plus a detailed expiry-grouped list below (detail). The timeline gives you the 90-day coverage view at a glance; the list below gives you the data. Clicking a position in either view highlights it in both.</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-body" style="font-size: 12px;">
+          <!-- Timeline Bar -->
+          <div style="padding: 12px; background: rgba(0,0,0,0.15); border-radius: 8px; margin-bottom: 16px;">
+            <div style="font-size: 10px; font-weight: bold; margin-bottom: 8px; color: #888;">90-DAY COVERAGE TIMELINE</div>
+            <div style="position: relative; height: 60px;">
+              <!-- Timeline axis -->
+              <div style="position: absolute; top: 28px; left: 0; right: 0; height: 2px; background: #444;"></div>
+              <!-- Date markers -->
+              <div style="position: absolute; top: 34px; left: 0%; font-size: 9px; color: #888;">Today</div>
+              <div style="position: absolute; top: 34px; left: 8%; font-size: 9px; color: #e74c3c;">May 30</div>
+              <div style="position: absolute; top: 34px; left: 16%; font-size: 9px; color: #e67e22;">Jun 6</div>
+              <div style="position: absolute; top: 34px; left: 31%; font-size: 9px; color: #f1c40f;">Jun 20</div>
+              <div style="position: absolute; top: 34px; left: 62%; font-size: 9px; color: #2ecc71;">Jul 18</div>
+              <div style="position: absolute; top: 34px; left: 93%; font-size: 9px; color: #3498db;">Aug 15</div>
+              <!-- Position dots -->
+              <!-- SPY CSP May 30 -->
+              <div style="position: absolute; top: 6px; left: 7%; width: 40px; text-align: center;">
+                <div style="display: inline-block; width: 12px; height: 12px; background: #2d2d6b; border-radius: 50%; border: 2px solid #7b9bf4;"></div>
+                <div style="font-size: 8px; color: #7b9bf4; margin-top: 2px;">SPY</div>
+              </div>
+              <!-- AAPL CSP May 30 -->
+              <div style="position: absolute; top: 6px; left: 12%; width: 40px; text-align: center;">
+                <div style="display: inline-block; width: 12px; height: 12px; background: #2d2d6b; border-radius: 50%; border: 2px solid #7b9bf4;"></div>
+                <div style="font-size: 8px; color: #7b9bf4; margin-top: 2px;">AAPL</div>
+              </div>
+              <!-- AAPL CSP Jun 6 -->
+              <div style="position: absolute; top: 6px; left: 16%; width: 40px; text-align: center;">
+                <div style="display: inline-block; width: 12px; height: 12px; background: #2d2d6b; border-radius: 50%; border: 2px solid #7b9bf4;"></div>
+                <div style="font-size: 8px; color: #7b9bf4; margin-top: 2px;">AAPL</div>
+              </div>
+              <!-- SPY CC Jun 20 -->
+              <div style="position: absolute; top: 6px; left: 30%; width: 40px; text-align: center;">
+                <div style="display: inline-block; width: 12px; height: 12px; background: #6b2d4a; border-radius: 50%; border: 2px solid #f49bce;"></div>
+                <div style="font-size: 8px; color: #f49bce; margin-top: 2px;">SPY</div>
+              </div>
+              <!-- QQQ CC Jun 20 -->
+              <div style="position: absolute; top: 6px; left: 35%; width: 40px; text-align: center;">
+                <div style="display: inline-block; width: 12px; height: 12px; background: #6b2d4a; border-radius: 50%; border: 2px solid #f49bce;"></div>
+                <div style="font-size: 8px; color: #f49bce; margin-top: 2px;">QQQ</div>
+              </div>
+            </div>
+          </div>
+          <!-- Detail list (abbreviated) -->
+          <div style="padding: 8px 12px; background: rgba(231, 76, 60, 0.15); border-radius: 6px; border-left: 3px solid #e74c3c; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div><span style="font-weight: bold;">May 30</span> <span style="color: #e74c3c; font-size: 10px;">7 DTE</span> &middot; SPY CSP $540, AAPL CSP $190</div>
+            <div style="font-size: 11px;">P&L: <span style="color: #2ecc71;">+$60</span></div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(230, 126, 34, 0.15); border-radius: 6px; border-left: 3px solid #e67e22; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div><span style="font-weight: bold;">Jun 6</span> <span style="color: #e67e22; font-size: 10px;">14 DTE</span> &middot; AAPL CSP $185</div>
+            <div style="font-size: 11px;">P&L: <span style="color: #2ecc71;">+$60</span></div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(241, 196, 15, 0.15); border-radius: 6px; border-left: 3px solid #f1c40f; display: flex; justify-content: space-between; align-items: center;">
+            <div><span style="font-weight: bold;">Jun 20</span> <span style="color: #f1c40f; font-size: 10px;">28 DTE</span> &middot; SPY CC $580, QQQ CC $480</div>
+            <div style="font-size: 11px;">P&L: <span style="color: #2ecc71;">+$405</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top: 12px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Best of both: spatial overview + detailed data</li><li>Timeline shows coverage density and gaps visually</li><li>Color-coded dots distinguish CSP (blue) vs CC (pink)</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More complex to build</li><li>Timeline gets crowded with many positions</li><li>Two views to maintain and keep in sync</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

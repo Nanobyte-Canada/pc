@@ -1,0 +1,405 @@
+<h2>Portfolio View — Unified Account Switching</h2>
+<p class="subtitle">Single screen with account switcher — view all accounts or drill into any individual account. Rename "Dashboard" tab to "Portfolio".</p>
+
+<!-- Key Concept -->
+<div class="section">
+  <h3>Concept</h3>
+  <div style="background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.1);border-radius:10px;padding:16px;font-size:13px;color:#cbd5e1;line-height:1.8;">
+    <strong style="color:#6ee7b7;">One screen, all contexts.</strong> The "Portfolio" screen replaces both the current Dashboard and Account Detail pages. An account switcher at the top lets users toggle between the aggregate "All Accounts" view and any individual account. The summary, KPIs, and positions update based on the selection — no page navigation, no breadcrumbs, no back button needed.
+  </div>
+</div>
+
+<!-- Desktop View -->
+<div class="section">
+  <h3>Desktop (1024px+)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Portfolio — Desktop (All Accounts selected)</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:560px;display:flex;font-family:'DM Sans',sans-serif;">
+        <!-- Rail -->
+        <div style="width:56px;background:#0f1520;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:4px;flex-shrink:0;">
+          <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;font-weight:700;margin-bottom:16px;">P</div>
+          <!-- Portfolio (active) -->
+          <div style="width:40px;height:40px;border-radius:6px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;position:relative;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <div style="position:absolute;left:0;top:10px;bottom:10px;width:2px;border-radius:0 2px 2px 0;background:#10b981;"></div>
+          </div>
+          <!-- Wheel -->
+          <div style="width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+          <!-- Connections -->
+          <div style="width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <div style="flex:1;"></div>
+          <div style="width:28px;height:28px;border-radius:9999px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:10px;color:white;font-weight:600;">SB</div>
+        </div>
+
+        <!-- Main Content -->
+        <div style="flex:1;padding:24px 28px;overflow:hidden;display:flex;flex-direction:column;gap:16px;">
+          <!-- Header with Account Switcher -->
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="font-size:22px;font-weight:700;color:#e2e8f0;letter-spacing:-0.3px;">Portfolio</div>
+              <!-- Account Pill Tabs -->
+              <div style="display:flex;gap:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:3px;">
+                <div style="padding:5px 14px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-size:12px;font-weight:500;cursor:pointer;">All Accounts</div>
+                <div style="padding:5px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+                  LIRA
+                </div>
+                <div style="padding:5px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+                  RRSP
+                </div>
+                <div style="padding:5px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+                  Margin
+                </div>
+                <div style="padding:5px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+                  RRSP
+                </div>
+                <div style="padding:5px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+                  TFSA
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="padding:7px 14px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                Search...
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Row (changes based on selection) -->
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Investment</div>
+              <div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">C$ 87,047</div>
+              <div style="height:1px;background:rgba(255,255,255,0.06);margin:6px 0;"></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;"><span style="color:#64748b;">C$</span><span style="color:#94a3b8;font-family:'JetBrains Mono',monospace;">87,046.57</span></div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Cash</div>
+              <div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">C$ 153,847</div>
+              <div style="height:1px;background:rgba(255,255,255,0.06);margin:6px 0;"></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;"><span style="color:#64748b;">C$</span><span style="color:#94a3b8;font-family:'JetBrains Mono',monospace;">108,117.92</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:2px;"><span style="color:#64748b;">US$</span><span style="color:#94a3b8;font-family:'JetBrains Mono',monospace;">33,108.50</span></div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Buying Power</div>
+              <div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">C$ 79,772</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Returns</div>
+              <div style="font-size:18px;font-weight:700;color:#6ee7b7;margin-top:6px;font-family:'JetBrains Mono',monospace;">+C$ 153,744</div>
+              <div style="height:1px;background:rgba(255,255,255,0.06);margin:6px 0;"></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;"><span style="color:#64748b;">ROI</span><span style="color:#6ee7b7;font-family:'JetBrains Mono',monospace;">+176.4%</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:2px;"><span style="color:#64748b;">IRR</span><span style="color:#6ee7b7;font-family:'JetBrains Mono',monospace;">+1000.0%</span></div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Sectors</div>
+              <div style="margin-top:8px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:10px;color:#94a3b8;">Unknown</span><span style="font-size:10px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">100%</span></div>
+                <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;"><div style="height:100%;width:100%;background:#10b981;border-radius:2px;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Positions Table + Tabs (for individual account: shows Activities/Dividends tabs too) -->
+          <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;flex:1;min-height:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:13px;color:#e2e8f0;font-weight:600;">Positions</span>
+                <div style="display:flex;gap:4px;">
+                  <span style="font-size:11px;padding:3px 10px;border-radius:6px;background:rgba(16,185,129,0.15);color:#6ee7b7;font-weight:500;">Holdings</span>
+                  <span style="font-size:11px;padding:3px 10px;border-radius:6px;color:#64748b;">Orders</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                Search...
+              </div>
+            </div>
+            <!-- Table header -->
+            <div style="display:grid;grid-template-columns:2fr 1.2fr 0.8fr 1fr 1fr 1fr 0.8fr;padding:6px 0;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <span>Symbol</span>
+              <span style="text-align:right;">Market Value</span>
+              <span style="text-align:right;">Qty</span>
+              <span style="text-align:right;">Avg Cost</span>
+              <span style="text-align:right;">Price</span>
+              <span style="text-align:right;">P&L</span>
+              <span style="text-align:right;">Weight</span>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1.2fr 0.8fr 1fr 1fr 1fr 0.8fr;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:12px;font-family:'JetBrains Mono',monospace;align-items:center;">
+              <span style="font-family:'DM Sans';font-weight:600;color:#e2e8f0;">QQU.TO</span>
+              <span style="text-align:right;color:#e2e8f0;">C$ 27,376</span>
+              <span style="text-align:right;color:#94a3b8;">671</span>
+              <span style="text-align:right;color:#94a3b8;">C$ 26.00</span>
+              <span style="text-align:right;color:#e2e8f0;">C$ 40.80</span>
+              <span style="text-align:right;color:#6ee7b7;">C$ 9,931</span>
+              <span style="text-align:right;color:#94a3b8;">34.7%</span>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1.2fr 0.8fr 1fr 1fr 1fr 0.8fr;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:12px;font-family:'JetBrains Mono',monospace;align-items:center;">
+              <span style="font-family:'DM Sans';font-weight:600;color:#e2e8f0;">SPXU.TO</span>
+              <span style="text-align:right;color:#e2e8f0;">C$ 21,048</span>
+              <span style="text-align:right;color:#94a3b8;">574</span>
+              <span style="text-align:right;color:#94a3b8;">C$ 25.88</span>
+              <span style="text-align:right;color:#e2e8f0;">C$ 36.67</span>
+              <span style="text-align:right;color:#6ee7b7;">C$ 6,191</span>
+              <span style="text-align:right;color:#94a3b8;">26.7%</span>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1.2fr 0.8fr 1fr 1fr 1fr 0.8fr;padding:10px 0;font-size:12px;font-family:'JetBrains Mono',monospace;align-items:center;">
+              <span style="font-family:'DM Sans';font-weight:600;color:#e2e8f0;">TECL</span>
+              <span style="text-align:right;color:#e2e8f0;">C$ 11,526</span>
+              <span style="text-align:right;color:#94a3b8;">51</span>
+              <span style="text-align:right;color:#94a3b8;">C$ 86.43</span>
+              <span style="text-align:right;color:#e2e8f0;">C$ 226.00</span>
+              <span style="text-align:right;color:#6ee7b7;">C$ 7,118</span>
+              <span style="text-align:right;color:#94a3b8;">14.6%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Desktop: Individual Account Selected -->
+<div class="section">
+  <h3>Desktop — Individual Account Selected (TFSA)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Portfolio — Desktop (TFSA selected — shows Activities/Dividends tabs)</div>
+    <div class="mockup-body" style="padding:0;">
+      <div style="background:#0a0f1a;min-height:500px;display:flex;font-family:'DM Sans',sans-serif;">
+        <div style="width:56px;background:#0f1520;border-right:1px solid rgba(255,255,255,0.06);flex-shrink:0;"></div>
+        <div style="flex:1;padding:24px 28px;display:flex;flex-direction:column;gap:16px;">
+          <!-- Header with TFSA selected -->
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="font-size:22px;font-weight:700;color:#e2e8f0;">Portfolio</div>
+              <div style="display:flex;gap:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:3px;">
+                <div style="padding:5px 14px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;">All Accounts</div>
+                <div style="padding:5px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+                  LIRA
+                </div>
+                <div style="padding:5px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+                  RRSP
+                </div>
+                <div style="padding:5px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+                  Margin
+                </div>
+                <div style="padding:5px 10px;border-radius:6px;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+                  RRSP
+                </div>
+                <!-- TFSA active -->
+                <div style="padding:5px 10px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <div style="width:14px;height:14px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#4ade80;font-weight:800;">Q</div>
+                  TFSA ••0190
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI for TFSA -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+            <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.12);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#6ee7b7;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;">Total Value</div>
+              <div style="font-size:20px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">C$ 126,949</div>
+              <div style="font-size:11px;color:#6ee7b7;margin-top:3px;">+C$ 85,697 (+207.7%)</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Investment</div>
+              <div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">C$ 41,252</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Cash</div>
+              <div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-top:6px;font-family:'JetBrains Mono',monospace;">C$ 85,747</div>
+            </div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Returns</div>
+              <div style="font-size:18px;font-weight:700;color:#6ee7b7;margin-top:6px;font-family:'JetBrains Mono',monospace;">+C$ 85,697</div>
+              <div style="height:1px;background:rgba(255,255,255,0.06);margin:6px 0;"></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;"><span style="color:#64748b;">ROI</span><span style="color:#6ee7b7;font-family:'JetBrains Mono',monospace;">+207.7%</span></div>
+            </div>
+          </div>
+
+          <!-- Content tabs: Positions / Activities / Dividends (only for individual account) -->
+          <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;flex:1;">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:12px;">
+              <span style="font-size:12px;padding:5px 14px;border-radius:6px;background:rgba(16,185,129,0.15);color:#6ee7b7;font-weight:500;">Positions</span>
+              <span style="font-size:12px;padding:5px 14px;border-radius:6px;color:#64748b;">Activities</span>
+              <span style="font-size:12px;padding:5px 14px;border-radius:6px;color:#64748b;">Dividends</span>
+            </div>
+            <div style="font-size:12px;color:#64748b;text-align:center;padding:40px;">Positions for TFSA ••0190 displayed here</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:13px;color:#94a3b8;margin-top:8px;">When an individual account is selected, the KPI row shows 4 cards (Total Value, Investment, Cash, Returns) and the content area shows Positions/Activities/Dividends tabs. The "All Accounts" view shows 5 KPI cards and only Positions (Holdings/Orders).</p>
+</div>
+
+<!-- Mobile View -->
+<div class="section">
+  <h3>Mobile (&lt; 768px)</h3>
+  <div class="split">
+    <!-- Mobile: All Accounts -->
+    <div class="mockup">
+      <div class="mockup-header">Mobile — All Accounts</div>
+      <div class="mockup-body" style="padding:0;">
+        <div style="background:#0a0f1a;min-height:500px;display:flex;flex-direction:column;font-family:'DM Sans',sans-serif;max-width:280px;margin:0 auto;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:44px;background:#0a0f1a;display:flex;align-items:center;justify-content:center;padding:0 16px;">
+            <!-- Account dropdown -->
+            <div style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#e2e8f0;">
+              ALL ACCOUNTS
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <!-- Dot indicators -->
+          <div style="display:flex;justify-content:center;gap:5px;padding:4px 0 12px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#10b981;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:1px;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:1px;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:1px;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:1px;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:1px;"></div>
+          </div>
+
+          <div style="flex:1;padding:0 14px 14px;">
+            <!-- Summary card -->
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:11px;color:#94a3b8;">Total equity</span>
+                <span style="font-size:20px;font-weight:700;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 240,894</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#64748b;">Cash</span><span style="color:#94a3b8;font-family:'JetBrains Mono',monospace;">C$ 153,847</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px;"><span style="color:#64748b;">Market value</span><span style="color:#94a3b8;font-family:'JetBrains Mono',monospace;">C$ 87,047</span></div>
+              <div style="height:1px;background:rgba(255,255,255,0.06);margin:8px 0;"></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#64748b;">Open P&L</span><span style="color:#6ee7b7;font-family:'JetBrains Mono',monospace;">+C$ 153,744</span></div>
+            </div>
+
+            <!-- Compact positions list -->
+            <div style="font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:6px;">Holdings</div>
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;">
+              <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <div><div style="font-size:12px;color:#e2e8f0;font-weight:600;">QQU.TO</div><div style="font-size:9px;color:#64748b;">671 · 34.7%</div></div>
+                <div style="text-align:right;"><div style="font-size:12px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 27,376</div><div style="font-size:9px;color:#6ee7b7;">+C$ 9,931</div></div>
+              </div>
+              <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <div><div style="font-size:12px;color:#e2e8f0;font-weight:600;">SPXU.TO</div><div style="font-size:9px;color:#64748b;">574 · 26.7%</div></div>
+                <div style="text-align:right;"><div style="font-size:12px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 21,048</div><div style="font-size:9px;color:#6ee7b7;">+C$ 6,191</div></div>
+              </div>
+              <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+                <div><div style="font-size:12px;color:#e2e8f0;font-weight:600;">TECL</div><div style="font-size:9px;color:#64748b;">51 · 14.6%</div></div>
+                <div style="text-align:right;"><div style="font-size:12px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 11,526</div><div style="font-size:9px;color:#6ee7b7;">+C$ 7,118</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:56px;background:#0f1520;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-around;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span style="font-size:9px;color:#10b981;font-weight:600;">Portfolio</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span style="font-size:9px;color:#64748b;">Wheel</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span style="font-size:9px;color:#64748b;">Connections</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg><span style="font-size:9px;color:#64748b;">More</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile: Individual Account -->
+    <div class="mockup">
+      <div class="mockup-header">Mobile — TFSA Selected</div>
+      <div class="mockup-body" style="padding:0;">
+        <div style="background:#0a0f1a;min-height:500px;display:flex;flex-direction:column;font-family:'DM Sans',sans-serif;max-width:280px;margin:0 auto;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:44px;background:#0a0f1a;display:flex;align-items:center;justify-content:center;padding:0 16px;">
+            <div style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#e2e8f0;">
+              <div style="width:18px;height:18px;border-radius:4px;background:#1a5c3a;display:flex;align-items:center;justify-content:center;font-size:8px;color:#4ade80;font-weight:800;">Q</div>
+              TFSA ••0190
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <!-- Dots — 6th dot active -->
+          <div style="display:flex;justify-content:center;gap:5px;padding:4px 0 12px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#10b981;margin-top:-1px;"></div>
+          </div>
+
+          <div style="flex:1;padding:0 14px 14px;">
+            <!-- Summary card for TFSA -->
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:11px;color:#94a3b8;">Total equity</span>
+                <span style="font-size:20px;font-weight:700;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 126,949</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#64748b;">Cash</span><span style="color:#94a3b8;font-family:'JetBrains Mono',monospace;">C$ 85,747</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px;"><span style="color:#64748b;">Market value</span><span style="color:#94a3b8;font-family:'JetBrains Mono',monospace;">C$ 41,252</span></div>
+              <div style="height:1px;background:rgba(255,255,255,0.06);margin:8px 0;"></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#64748b;">Open P&L</span><span style="color:#6ee7b7;font-family:'JetBrains Mono',monospace;">+C$ 85,697</span></div>
+            </div>
+
+            <!-- Tabs: Positions / Activities / Dividends -->
+            <div style="display:flex;gap:4px;margin-bottom:10px;">
+              <span style="font-size:11px;padding:4px 10px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-weight:500;">Positions</span>
+              <span style="font-size:11px;padding:4px 10px;border-radius:6px;color:#64748b;">Activities</span>
+              <span style="font-size:11px;padding:4px 10px;border-radius:6px;color:#64748b;">Dividends</span>
+            </div>
+
+            <!-- Positions for TFSA -->
+            <div style="background:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;">
+              <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <div><div style="font-size:12px;color:#e2e8f0;font-weight:600;">QQU.TO</div><div style="font-size:9px;color:#64748b;">300 · 23.6%</div></div>
+                <div style="text-align:right;"><div style="font-size:12px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 12,240</div><div style="font-size:9px;color:#6ee7b7;">+C$ 4,440</div></div>
+              </div>
+              <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <div><div style="font-size:12px;color:#e2e8f0;font-weight:600;">SPXU.TO</div><div style="font-size:9px;color:#64748b;">274 · 18.9%</div></div>
+                <div style="text-align:right;"><div style="font-size:12px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ 10,048</div><div style="font-size:9px;color:#6ee7b7;">+C$ 2,956</div></div>
+              </div>
+              <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+                <div><div style="font-size:12px;color:#e2e8f0;font-weight:600;">SOXL</div><div style="font-size:9px;color:#64748b;">-1 · options</div></div>
+                <div style="text-align:right;"><div style="font-size:12px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;">C$ -2.00</div><div style="font-size:9px;color:#6ee7b7;">+C$ 288</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:56px;background:#0f1520;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-around;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span style="font-size:9px;color:#10b981;font-weight:600;">Portfolio</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span style="font-size:9px;color:#64748b;">Wheel</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span style="font-size:9px;color:#64748b;">Connections</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg><span style="font-size:9px;color:#64748b;">More</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Design Notes -->
+<div class="section" style="margin-top:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;">
+  <h3 style="margin-top:0;font-size:14px;">Design Decisions</h3>
+  <ul style="font-size:13px;color:#cbd5e1;margin:0;padding-left:20px;line-height:1.8;">
+    <li><strong>Renamed "Dashboard" to "Portfolio"</strong> — reflects that this is a portfolio view with account switching, not a generic dashboard.</li>
+    <li><strong>Account switcher (Desktop):</strong> Pill tabs in the header row, next to the title. "All Accounts" first, then individual accounts with broker icon + type. Active tab has emerald background. When individual account selected, shows masked ••number.</li>
+    <li><strong>Account switcher (Mobile):</strong> Dropdown at top center (like the reference images). Shows "ALL ACCOUNTS" or "TFSA ••0190" with chevron. Dot indicators below show which account is active. Tapping the dropdown opens a bottom sheet to select a different account.</li>
+    <li><strong>Context-dependent content:</strong>
+      <ul style="margin-top:4px;padding-left:16px;">
+        <li>"All Accounts": 5 KPI cards + Positions table (Holdings/Orders)</li>
+        <li>Individual account: 4 KPI cards (Total Value highlighted, Investment, Cash, Returns) + content tabs (Positions/Activities/Dividends)</li>
+      </ul>
+    </li>
+    <li><strong>No page navigation:</strong> Switching accounts is state change, not route change. No breadcrumbs, no back button. One URL: <code>/portfolio</code>. The selected account is stored in state (or URL query param for shareability).</li>
+    <li><strong>Bottom tab bar:</strong> Portfolio | Wheel | Connections | More</li>
+  </ul>
+</div>

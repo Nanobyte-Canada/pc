@@ -23,7 +23,6 @@ jobs:
   deploy:
     name: Deploy to ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Validate tag format
         run: |
@@ -97,13 +96,17 @@ jobs:
             ProxyCommand cloudflared access ssh --hostname %h
           EOF
 
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Deploy to ${{ github.event.inputs.environment }}
         run: |
           ENV="${{ github.event.inputs.environment }}"
           TAG="${{ github.event.inputs.tag }}"
 
-          # Copy generated .env to server
-          echo "Uploading .env to server..."
+          # Copy compose file and .env to server
+          echo "Uploading docker-compose.yml and .env to server..."
+          scp deploy/${ENV}/docker-compose.yml portfolio-server:${DEPLOY_PATH}/${ENV}/docker-compose.yml
           scp /tmp/deploy.env portfolio-server:${DEPLOY_PATH}/${ENV}/.env
 
           ssh portfolio-server << REMOTE_SCRIPT

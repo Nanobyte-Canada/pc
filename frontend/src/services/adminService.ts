@@ -30,6 +30,7 @@ export interface ActiveRunStep {
 export interface ActiveRun {
   isRunning: boolean
   runId?: number
+  startedAt?: string
   steps?: ActiveRunStep[]
 }
 
@@ -92,6 +93,10 @@ export async function triggerExchangeSync(): Promise<{ status: string }> {
 
 export async function triggerFullIngestion(): Promise<{ status: string }> {
   return ingestionFetch('/run', { method: 'POST' })
+}
+
+export async function cancelIngestion(): Promise<{ status: string }> {
+  return ingestionFetch('/cancel', { method: 'POST' })
 }
 
 export async function getIngestionRuns(limit: number = 10): Promise<IngestionRun[]> {

@@ -365,16 +365,16 @@ class TwsIbkrClient(
 
     override fun tickPrice(tickerId: Int, field: Int, price: Double, attribs: TickAttrib?) {
         val conId = reqIdToConId[tickerId] ?: return
-        // Populate snapshot accumulator if this is a snapshot request
+        val validPrice = if (price >= 0) price else null
         snapshotAccumulators[tickerId]?.let { snap ->
             when (field) {
-                1 -> snapshotAccumulators[tickerId] = snap.copy(bid = price)
-                2 -> snapshotAccumulators[tickerId] = snap.copy(ask = price)
-                4 -> snapshotAccumulators[tickerId] = snap.copy(last = price)
-                9 -> if (snap.last == null) snapshotAccumulators[tickerId] = snap.copy(last = price)
+                1 -> if (validPrice != null) snapshotAccumulators[tickerId] = snap.copy(bid = validPrice)
+                2 -> if (validPrice != null) snapshotAccumulators[tickerId] = snap.copy(ask = validPrice)
+                4 -> if (validPrice != null) snapshotAccumulators[tickerId] = snap.copy(last = validPrice)
+                9 -> if (validPrice != null && snap.last == null) snapshotAccumulators[tickerId] = snap.copy(last = validPrice)
             }
         }
-        tickCallbacks[conId]?.invoke(field, price)
+        if (validPrice != null) tickCallbacks[conId]?.invoke(field, validPrice)
     }
 
     override fun tickSize(tickerId: Int, field: Int, size: Decimal?) {

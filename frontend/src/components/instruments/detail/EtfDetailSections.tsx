@@ -103,8 +103,6 @@ function fmtLargeNumber(v: number | null): string {
   return `$${v.toFixed(0)}M`;
 }
 
-/** Extract an object with numbered keys ("0", "1", ...) to an array. */
-/** Extract sector/region weights from an object keyed by name. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function namedWeightsToArray(obj: Record<string, any> | null | undefined, pctKey = 'Equity_%'): { name: string; weight: number }[] {
   if (!obj || typeof obj !== 'object') return [];
@@ -128,7 +126,8 @@ function namedWeightsToArray(obj: Record<string, any> | null | undefined, pctKey
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractPerformance(etfData: Record<string, any> | null): { period: string; value: number }[] {
   if (!etfData?.Performance) return [];
-  const perf = etfData.Performance;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const perf = etfData.Performance as any;
   const mapping: [string, string][] = [
     ['YTD', 'Returns_YTD'],
     ['1Y', 'Returns_1Y'],
@@ -148,12 +147,14 @@ function extractPerformance(etfData: Record<string, any> | null): { period: stri
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractRiskMetrics(etfData: Record<string, any> | null, technicals: Record<string, any> | null) {
-  const perf = etfData?.Performance ?? {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const perf = (etfData?.Performance ?? {}) as any;
   return {
     vol1y: parseNum(perf['1y_Volatility']),
     vol3y: parseNum(perf['3y_Volatility']),
     sharpe3y: parseNum(perf['3y_SharpRatio']),
-    beta: parseNum(technicals?.Beta),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    beta: parseNum((technicals as any)?.Beta),
   };
 }
 
@@ -165,11 +166,14 @@ function extractTopHoldings(etfData: Record<string, any> | null): { holdings: Ho
   if (!holdingsObj || typeof holdingsObj !== 'object') return { holdings: [], holdingsCount };
 
   const holdings: HoldingEntry[] = Object.values(holdingsObj)
-    .map((h: any) => ({
-      ticker: (h?.Code ?? '') as string,
-      name: (h?.Name ?? '') as string,
-      weight: parseNum(h?.['Assets_%']) ?? 0,
-    }))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((h: any) => {
+      return {
+        ticker: (h?.Code ?? '') as string,
+        name: (h?.Name ?? '') as string,
+        weight: parseNum(h?.['Assets_%']) ?? 0,
+      };
+    })
     .filter((h) => h.name && h.weight > 0)
     .sort((a, b) => b.weight - a.weight)
     .slice(0, 10);
@@ -211,10 +215,13 @@ function extractAssetAllocation(etfData: Record<string, any> | null): AssetEntry
   // EODHD asset allocation keyed by category ("Bond", "Cash", "Stock US", etc.)
   // Each value has Net_Assets_% or Net_%
   return Object.entries(alloc)
-    .map(([type, val]: [string, any]) => ({
-      type,
-      pct: parseNum(val?.['Net_Assets_%']) ?? parseNum(val?.['Net_%']) ?? 0,
-    }))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map(([type, val]: [string, any]) => {
+      return {
+        type,
+        pct: parseNum(val?.['Net_Assets_%']) ?? parseNum(val?.['Net_%']) ?? 0,
+      };
+    })
     .filter((a) => a.type && a.pct > 0)
     .sort((a, b) => b.pct - a.pct);
 }
@@ -223,8 +230,10 @@ function extractAssetAllocation(etfData: Record<string, any> | null): AssetEntry
 function extractValuationRows(etfData: Record<string, any> | null): ValuationRow[] {
   const vg = etfData?.Valuations_Growth;
   if (!vg) return [];
-  const portfolio = vg.Valuations_Rates_Portfolio ?? {};
-  const category = vg.Valuations_Rates_To_Category ?? {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const portfolio = (vg.Valuations_Rates_Portfolio ?? {}) as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const category = (vg.Valuations_Rates_To_Category ?? {}) as any;
 
   const mapping: { metric: string; key: string; altKey?: string; isDividendYield?: boolean }[] = [
     { metric: 'Price/Earnings', key: 'Price/Prospective Earnings', altKey: 'Price/Earnings' },
@@ -247,7 +256,8 @@ function extractValuationRows(etfData: Record<string, any> | null): ValuationRow
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractGrowthRates(etfData: Record<string, any> | null): GrowthRow[] {
   const vg = etfData?.Valuations_Growth;
-  const portfolio = vg?.Growth_Rates_Portfolio;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const portfolio = vg?.Growth_Rates_Portfolio as any;
   if (!portfolio || typeof portfolio !== 'object') return [];
   return Object.entries(portfolio)
     .map(([label, v]) => ({
@@ -335,20 +345,20 @@ function PerformanceSection({ data }: Props) {
         yName: 'Return',
         fill: '#22c55e',
         tooltip: {
-          renderer: (params: any) => ({
+          renderer: (params: { datum: { period: string; value: number } }) => ({
             content: `${params.datum.period}: ${params.datum.value}%`,
           }),
         },
       },
-    ] as any,
+    ],
     axes: [
       { type: 'category', position: 'bottom' },
       {
         type: 'number',
         position: 'left',
-        label: { formatter: (params: any) => `${params.value}%` },
+        label: { formatter: (params: { value: number }) => `${params.value}%` },
       },
-    ] as any,
+    ],
     legend: { enabled: false },
   };
 
@@ -454,12 +464,12 @@ function HoldingsSection({ data }: Props) {
           data: donutData,
           fills: donutData.map((d) => d.color),
           tooltip: {
-            renderer: (params: any) => ({
+            renderer: (params: { datum: { label: string; value: number } }) => ({
               content: `${params.datum.label}: ${params.datum.value}%`,
             }),
           },
         },
-      ] as any,
+      ],
       legend: { enabled: false },
       padding: { top: 0, right: 0, bottom: 0, left: 0 },
     }),
@@ -592,12 +602,12 @@ function SectorGeographicSection({ data }: Props) {
           data: sectorDonutData,
           fills: sectorDonutData.map((d) => d.color),
           tooltip: {
-            renderer: (params: any) => ({
+            renderer: (params: { datum: { label: string; value: number } }) => ({
               content: `${params.datum.label}: ${params.datum.value}%`,
             }),
           },
         },
-      ] as any,
+      ],
       legend: { enabled: false },
       padding: { top: 0, right: 0, bottom: 0, left: 0 },
     }),
@@ -631,12 +641,12 @@ function SectorGeographicSection({ data }: Props) {
           data: regionDonutData,
           fills: regionDonutData.map((d) => d.color),
           tooltip: {
-            renderer: (params: any) => ({
+            renderer: (params: { datum: { label: string; value: number } }) => ({
               content: `${params.datum.label}: ${params.datum.value}%`,
             }),
           },
         },
-      ] as any,
+      ],
       legend: { enabled: false },
       padding: { top: 0, right: 0, bottom: 0, left: 0 },
     }),

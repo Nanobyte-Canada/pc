@@ -284,8 +284,8 @@ li { margin: 4px 0; font-size: 14px; }
       <div class="kpi-label">Custom React Hooks</div>
     </div>
     <div class="card kpi">
-      <div class="kpi-value">3</div>
-      <div class="kpi-label">Deployment Targets</div>
+      <div class="kpi-value">2</div>
+      <div class="kpi-label">Environments</div>
     </div>
   </div>
 
@@ -360,11 +360,10 @@ li { margin: 4px 0; font-size: 14px; }
       <div class="card-title">Infrastructure</div>
       <table>
         <tr><td><strong>Containers</strong></td><td>Docker + Docker Compose</td></tr>
-        <tr><td><strong>CI/CD</strong></td><td>GitHub Actions (3 workflows)</td></tr>
-        <tr><td><strong>IaC</strong></td><td>Terraform (5 modules)</td></tr>
-        <tr><td><strong>Cloud</strong></td><td>GCP (Cloud Run, SQL, Storage)</td></tr>
-        <tr><td><strong>VPS</strong></td><td>Hostinger (devpc.nanobyte.ca)</td></tr>
-        <tr><td><strong>Proxy</strong></td><td>Nginx + Let's Encrypt SSL</td></tr>
+        <tr><td><strong>CI/CD</strong></td><td>GitHub Actions (2 workflows)</td></tr>
+        <tr><td><strong>Deployment</strong></td><td>Home Server + Cloudflare Tunnel</td></tr>
+        <tr><td><strong>Environments</strong></td><td>Production (portfolio.nanobyte.ca), UAT (uatportfolio.nanobyte.ca)</td></tr>
+        <tr><td><strong>Secrets</strong></td><td>HashiCorp Vault</td></tr>
       </table>
     </div>
   </div>
@@ -996,28 +995,24 @@ graph TB
     LC --> LF[Frontend :3000]
   end
 
-  subgraph VPS["VPS Staging (devpc.nanobyte.ca)"]
-    NG[Nginx + SSL]
-    NG --> VB[Backend :8080]
-    NG --> VF[Frontend :3000]
-    VB --> VP[(PostgreSQL)]
-    note1[No Redis on VPS]
+  subgraph HomeServer["Home Server"]
+    CT[Cloudflare Tunnel]
+    CT --> PROD[Production Stack]
+    CT --> UAT[UAT Stack]
+    PROD --> PB[Backend :10080]
+    PROD --> PF[Frontend :10000]
+    PROD --> PP[(PostgreSQL :15432)]
+    PROD --> PR[(Redis :16379)]
+    UAT --> UB[Backend :20080]
+    UAT --> UF[Frontend :20000]
+    UAT --> UP[(PostgreSQL :25432)]
+    UAT --> UR[(Redis :26379)]
   end
 
-  subgraph GCP["GCP Production"]
-    LB2[Cloud Load Balancer + SSL]
-    LB2 --> CR[Cloud Run Backend]
-    LB2 --> CS[Cloud Storage Frontend + CDN]
-    CR --> SQL[(Cloud SQL PostgreSQL)]
-    CR --> MR[(Memorystore Redis)]
-  end
-
-  GH[GitHub Actions] --> |push main| GCP
-  GH --> |push development| VPS
+  GH[GitHub Actions] --> |deploy.yml| HomeServer
 
   style Local fill:#1a365d,stroke:#2b6cb0,color:#fff
-  style VPS fill:#553c0e,stroke:#d69e2e,color:#fff
-  style GCP fill:#1a4731,stroke:#38a169,color:#fff
+  style HomeServer fill:#1a4731,stroke:#38a169,color:#fff
           </pre>
         </div>
 
@@ -1025,8 +1020,8 @@ graph TB
         <table>
           <tr><th>Environment</th><th>Trigger</th><th>URL</th><th>Profile</th></tr>
           <tr><td><strong>Local</strong></td><td>Manual (<code>docker compose up</code>)</td><td>localhost:3000</td><td><code>local</code></td></tr>
-          <tr><td><strong>VPS Dev</strong></td><td>Push to <code>development</code> branch</td><td>devpc.nanobyte.ca</td><td><code>dev</code></td></tr>
-          <tr><td><strong>GCP Prod</strong></td><td>Push to <code>main</code> branch</td><td>TBD (api.portfolio.example.com)</td><td><code>prod</code></td></tr>
+          <tr><td><strong>Production</strong></td><td>Manual GitHub Action</td><td>portfolio.nanobyte.ca</td><td><code>prod</code></td></tr>
+          <tr><td><strong>UAT</strong></td><td>Manual GitHub Action</td><td>uatportfolio.nanobyte.ca</td><td><code>dev</code></td></tr>
         </table>
       </div>
     </div>
@@ -1042,26 +1037,22 @@ graph TB
         <div class="diagram-container">
           <pre class="mermaid">
 graph LR
-  PR[PR / Push] --> CI[CI Workflow]
+  PR[PR / Push] --> CI[Build Workflow]
   CI --> BT[Backend Tests]
   CI --> FT[Frontend Tests]
-  BT --> BD[Docker Build Check]
-  FT --> FD[Docker Build Check]
+  BT --> BD[Build Docker Images]
+  FT --> BD
+  BD --> GH[Push to GHCR]
 
-  CI --> |main| DEPLOY_GCP[Deploy GCP]
-  DEPLOY_GCP --> DB_GCP[Push to Artifact Registry]
-  DB_GCP --> CR[Deploy Cloud Run]
-  DB_GCP --> CS[Upload to Cloud Storage]
-
-  CI --> |development| DEPLOY_VPS[Deploy VPS]
-  DEPLOY_VPS --> TAR[Create Tarball]
-  TAR --> SCP[SCP to VPS]
-  SCP --> SSH[SSH docker compose up]
-  SSH --> HC[Health Check Loop]
+  MANUAL[Manual Trigger] --> DEPLOY[Deploy Workflow]
+  DEPLOY --> VAULT[Fetch Secrets from Vault]
+  VAULT --> SSH[SSH via Cloudflare Tunnel]
+  SSH --> PULL[docker compose pull]
+  PULL --> UP[docker compose up -d]
+  UP --> HC[Health Check]
 
   style CI fill:#1a4731,stroke:#38a169,color:#fff
-  style DEPLOY_GCP fill:#1a365d,stroke:#2b6cb0,color:#fff
-  style DEPLOY_VPS fill:#553c0e,stroke:#d69e2e,color:#fff
+  style DEPLOY fill:#1a365d,stroke:#2b6cb0,color:#fff
           </pre>
         </div>
       </div>

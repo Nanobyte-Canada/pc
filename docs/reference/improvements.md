@@ -342,7 +342,7 @@ Add/verify security headers in both Nginx and Spring Boot:
 ### 6.1 Container Orchestration Readiness
 **Priority: Medium | Effort: High**
 
-Current VPS deployment uses docker-compose. For production readiness:
+For production readiness:
 - Add Kubernetes manifests (Deployments, Services, Ingress, ConfigMaps, Secrets)
 - Implement health check endpoints that Kubernetes can probe:
   - `/health/live` (liveness — app is running)
@@ -354,18 +354,18 @@ Current VPS deployment uses docker-compose. For production readiness:
 ### 6.2 Blue/Green Deployments
 **Priority: Medium | Effort: Medium**
 
-Current VPS deployment has downtime during docker-compose restart:
+Implement zero-downtime deployment:
 - Implement blue/green with Nginx upstream switching
-- Or use Docker Swarm for rolling updates on VPS
-- Cloud Run already handles this for GCP deployments
+- Or use Docker Swarm for rolling updates
+- Consider load balancer health check integration
 
 ### 6.3 Database Backup Automation
 **Priority: High | Effort: Low**
 
-- Implement automated daily PostgreSQL backups on VPS (pg_dump + upload to cloud storage)
+- Verify automated daily PostgreSQL backups are running (pg_dump + upload to cloud storage)
 - Test backup restoration monthly
-- Cloud SQL handles this for GCP (already configured with 7/30 day retention)
-- Add point-in-time recovery capability on VPS
+- Add point-in-time recovery capability
+- Document restoration procedure
 
 ### 6.4 Infrastructure as Code Improvements
 **Priority: Medium | Effort: Low**
@@ -504,16 +504,16 @@ Current Redis caching is limited. Expand to:
 ### 8.3 CDN for Frontend Assets
 **Priority: Medium | Effort: Low**
 
-- Cloud Storage + Cloud CDN is already configured for GCP
-- For VPS: Add Cloudflare or similar CDN in front of Nginx
+- Add Cloudflare or similar CDN in front of Nginx
 - Configure aggressive caching for versioned assets (JS, CSS with content hashes)
 - Set proper `Cache-Control` headers
+- Leverage Cloudflare Tunnel integration
 
 ### 8.4 Database Read Replicas
 **Priority: Low | Effort: High**
 
 For high-traffic production:
-- Cloud SQL supports read replicas natively
+- Configure PostgreSQL read replicas
 - Configure Spring Data JPA `@Transactional(readOnly = true)` to route to replica
 - Or use connection pool routing with separate read/write datasources
 
@@ -526,7 +526,7 @@ For operations that don't need synchronous response:
 - **Notification delivery**: Queue notifications for async delivery
 - **Report generation**: Generate reports in background, notify when ready
 
-Options: Redis Streams (minimal infra change), RabbitMQ, or Google Pub/Sub (for GCP).
+Options: Redis Streams (minimal infra change), RabbitMQ, or cloud-based message queue.
 
 ### 8.6 API Response Optimization
 **Priority: Medium | Effort: Low**

@@ -71,7 +71,8 @@ class OrderExecutionServiceTest {
         assertEquals(2, response.submittedCount)
         assertEquals(0, response.failedCount)
         assertNotNull(response.batchId)
-        verify(exactly = 2) { tradeOrderRepository.save(any()) }
+        // Each trade is saved twice: once on creation, once after broker submission
+        verify(exactly = 4) { tradeOrderRepository.save(any()) }
     }
 
     @Test

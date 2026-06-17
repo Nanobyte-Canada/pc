@@ -141,6 +141,17 @@ com.portfolio
 | `changePassword` | `(userId: Long, request: ChangePasswordRequest, clientInfo: ClientInfo): MessageResponse` | Verifies current password, updates, revokes all refresh tokens |
 | `updateProfile` | `(userId: Long, request: UpdateProfileRequest, clientInfo: ClientInfo): User` | Updates name and avatarUrl fields |
 
+### GoogleOAuthService
+
+**File:** `auth/service/GoogleOAuthService.kt`
+**Dependencies:** `OAuthStateRepository`, `UserRepository`, `RoleRepository`, `UserRoleRepository`, `UserIdentityRepository`, `JwtTokenProvider`, `RefreshTokenService`, `SecureTokenGenerator`, `AuditService`, `AuthConfig`
+
+| Method | Signature | Description |
+|---|---|---|
+| `initiateGoogleLogin` | `(): String` | Generates secure state token, saves to `oauth_states` table with SHA-256 hash, constructs Google authorization URL with client_id, redirect_uri, scopes (email, profile, openid). Returns authorization URL. |
+| `handleCallback` | `(code: String, state: String, ipAddress: String?, userAgent: String?): AuthTokens` | Validates state token (checks hash match, expiry within 10 minutes, not already used). Exchanges authorization code for Google access token via HTTP POST. Fetches user profile from Google userinfo endpoint. Calls `findOrCreateUser()` to get/create User entity. Generates JWT and refresh token. Returns AuthTokens. |
+| `findOrCreateUser` | `(profile: GoogleUserProfile, ipAddress: String?): User` | Looks up user by Google identity (provider='google', providerUserId=profile.sub). If identity found, updates identity fields (providerEmail, displayName, photoUrl, lastUsedAt) and returns linked user. If not found, checks for existing user with same email. If user with email exists, creates new Identity and links it. If no user exists, creates new User with emailVerified=true, passwordHash=null, assigns USER role, and creates Identity record. Returns User entity. |
+
 ### PasswordService
 
 **File:** `auth/service/PasswordService.kt`
