@@ -9,6 +9,9 @@ import com.portfolio.marketdata.ibkr.IbkrClient
 import com.portfolio.marketdata.processing.GreeksCalculator
 import com.portfolio.marketdata.processing.OptionsChainBuilder
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.DisposableBean
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -20,7 +23,14 @@ import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-import java.util.concurrent.*
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 
 @RestController
 @RequestMapping("/api/v1/chains")
@@ -29,8 +39,25 @@ class ChainController(
     private val chainBuilder: OptionsChainBuilder,
     private val greeksCalculator: GreeksCalculator,
     private val ibkrClient: IbkrClient,
-    private val properties: AppProperties
-) {
+    private val properties: AppProperties,
+    @Value("\${chain.build-timeout-seconds:15}") private val buildTimeoutSeconds: Long,
+    @Value("\${chain.build-max-threads:4}") private val buildMaxThreads: Int
+) : DisposableBean {
+
+    private val chainBuildExecutor: ExecutorService = Executors.newFixedThreadPool(buildMaxThreads.coerceIn(1, 64)) { r ->
+        Thread(r, "chain-build-${threadCounter.incrementAndGet()}").apply { isDaemon = true }
+    }
+
+    private val snapshotExecutor: ExecutorService = Executors.newFixedThreadPool(12) { r ->
+        Thread(r, "chain-snapshot-${snapshotThreadCounter.incrementAndGet()}").apply { isDaemon = true }
+    }
+
+    private val effectiveBuildTimeoutSeconds: Long = buildTimeoutSeconds.coerceAtLeast(1L)
+
+    override fun destroy() {
+        chainBuildExecutor.shutdownNow()
+        snapshotExecutor.shutdownNow()
+    }
 
     @GetMapping("/{underlying}")
     fun getChain(@PathVariable underlying: String): ResponseEntity<OptionsChainResponse> {
@@ -39,7 +66,14 @@ class ChainController(
             return ResponseEntity.ok(OptionsChainResponse.fromDomain(cachedChain))
         }
 
-        val chain = buildChainFromIbkr(underlying) ?: return ResponseEntity.notFound().build()
+        if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+
+        val chain = try {
+            buildChainFromIbkr(underlying) ?: return ResponseEntity.notFound().build()
+        } catch (e: ChainBuildTimeoutException) {
+            log.warn("Chain build timed out for {}", underlying)
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        }
         quoteCacheService.cacheChain(underlying, chain)
         return ResponseEntity.ok(OptionsChainResponse.fromDomain(chain))
     }
@@ -51,7 +85,14 @@ class ChainController(
             return ResponseEntity.ok(OptionsChainResponse.fromDomain(computeGreeks(cachedChain)))
         }
 
-        val chain = buildChainFromIbkr(underlying) ?: return ResponseEntity.notFound().build()
+        if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+
+        val chain = try {
+            buildChainFromIbkr(underlying) ?: return ResponseEntity.notFound().build()
+        } catch (e: ChainBuildTimeoutException) {
+            log.warn("Chain build timed out for {}", underlying)
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        }
         val chainWithGreeks = computeGreeks(chain)
         quoteCacheService.cacheChain(underlying, chainWithGreeks)
         return ResponseEntity.ok(OptionsChainResponse.fromDomain(chainWithGreeks))
@@ -62,22 +103,33 @@ class ChainController(
         @PathVariable underlying: String,
         @RequestParam(required = false) maxDte: Int?
     ): ResponseEntity<OptionExpirationsResponse> {
-        val spotPrice = resolveSpotPrice(underlying) ?: return ResponseEntity.notFound().build()
-
-        val allExpirations = quoteCacheService.getExpirations(underlying)
-            ?: ibkrClient.requestOptionExpirations(underlying).also { exps ->
-                if (exps.isNotEmpty()) quoteCacheService.cacheExpirations(underlying, exps)
+        val cachedChain = quoteCacheService.getChain(underlying)
+        if (cachedChain != null) {
+            if (!ibkrClient.isConnected()) {
+                log.warn("Serving stale expirations from cache for {} because IBKR is disconnected", underlying)
             }
-
-        if (allExpirations.isEmpty()) return ResponseEntity.notFound().build()
-
-        val effectiveMaxDte = maxDte ?: properties.maxDteDefault
-        val today = LocalDate.now()
-        val filtered = allExpirations.filter {
-            ChronoUnit.DAYS.between(today, it) in 0..effectiveMaxDte.toLong()
+            val expirations = cachedChain.expirations.keys.toList().sorted()
+            val filtered = filterByDte(expirations, maxDte)
+            return ResponseEntity.ok(OptionExpirationsResponse(underlying, cachedChain.spotPrice, filtered))
         }
 
-        if (filtered.isEmpty()) return ResponseEntity.notFound().build()
+        if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+
+        val spotPrice = resolveSpotPrice(underlying) ?: return ResponseEntity.notFound().build()
+        val allExpirations = try {
+            CompletableFuture.supplyAsync({ ibkrClient.requestOptionExpirations(underlying) }, chainBuildExecutor)
+                .get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
+        } catch (e: TimeoutException) {
+            log.warn("Expirations request timed out for {}", underlying)
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            log.warn("Expirations request interrupted for {}", underlying)
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        }
+        if (allExpirations.isEmpty()) return ResponseEntity.notFound().build()
+
+        val filtered = filterByDte(allExpirations, maxDte)
         return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice, filtered))
     }
 
@@ -89,74 +141,167 @@ class ChainController(
         @RequestParam(defaultValue = "25") strikesPerSide: Int,
         @RequestParam(defaultValue = "both") side: String
     ): ResponseEntity<OptionsChainResponse> {
+        if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+
         val expiryDate = try { LocalDate.parse(expiry) } catch (_: Exception) {
             return ResponseEntity.badRequest().build()
         }
-        val chain = buildChainForExpiry(underlying, expiryDate, maxDelta, strikesPerSide, side) ?: return ResponseEntity.notFound().build()
+        val chain = try {
+            buildChainForExpiry(underlying, expiryDate, maxDelta, strikesPerSide, side) ?: return ResponseEntity.notFound().build()
+        } catch (e: ChainBuildTimeoutException) {
+            log.warn("Chain build timed out for {} expiry {}", underlying, expiryDate)
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        }
         return ResponseEntity.ok(OptionsChainResponse.fromDomain(chain))
     }
 
     private val log = LoggerFactory.getLogger(javaClass)
+
+    private class ChainBuildTimeoutException(underlying: String, expiry: LocalDate? = null) : RuntimeException(
+        "Chain build timed out for ${underlying.replace(Regex("[\\r\\n]"), "")}${expiry?.let { " expiry $it" } ?: ""}"
+    )
+
     companion object {
         private const val DEFAULT_MAX_DELTA = 0.45
         private const val ESTIMATED_IV = 0.30
+        private val threadCounter = AtomicInteger(0)
+        private val snapshotThreadCounter = AtomicInteger(0)
+    }
+
+    private fun checkConnected(underlying: String): Boolean {
+        if (!ibkrClient.isConnected()) {
+            log.warn("IBKR not connected, cannot fetch chain for {}", underlying)
+            return false
+        }
+        return true
+    }
+
+    private fun filterByDte(expirations: List<LocalDate>, maxDte: Int?): List<LocalDate> {
+        if (maxDte == null) return expirations
+        val effectiveMaxDte = maxDte.coerceAtLeast(1)
+        val today = LocalDate.now()
+        return expirations.filter { ChronoUnit.DAYS.between(today, it) in 0..effectiveMaxDte.toLong() }
     }
 
     private fun buildChainFromIbkr(underlying: String): OptionsChain? {
-        val spotPrice = resolveSpotPrice(underlying) ?: return null
+        val future = CompletableFuture.supplyAsync({
+            if (Thread.interrupted()) throw InterruptedException()
+            if (!ibkrClient.isConnected()) {
+                log.warn("IBKR disconnected before async chain build for {}", underlying)
+                throw ChainBuildTimeoutException(underlying)
+            }
+            val spotPrice = resolveSpotPrice(underlying) ?: return@supplyAsync null
+            if (Thread.interrupted()) throw InterruptedException()
 
-        val contracts = try { ibkrClient.requestOptionChain(underlying) } catch (e: Exception) {
-            log.error("Failed to load option chain for {}", underlying, e)
-            return null
+            val contracts = try { ibkrClient.requestOptionChain(underlying) } catch (e: Exception) {
+                log.error("Failed to load option chain for {}", underlying, e)
+                return@supplyAsync null
+            }
+            if (contracts.isEmpty()) return@supplyAsync null
+
+            val allDeltaFiltered = filterByDelta(contracts, spotPrice, null, DEFAULT_MAX_DELTA)
+
+            log.info("Fetching snapshots for {} delta-filtered contracts out of {} total for {}",
+                allDeltaFiltered.size, contracts.size, underlying)
+
+            val snapshots = fetchSnapshots(allDeltaFiltered)
+
+            val optionQuotes = allDeltaFiltered.mapNotNull { contract ->
+                buildOptionQuote(underlying, contract, spotPrice, snapshots)
+            }
+
+            chainBuilder.build(underlying, spotPrice, optionQuotes)
+        }, chainBuildExecutor)
+
+        return try {
+            future.get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
+        } catch (e: TimeoutException) {
+            // cancel(false) is intentional: IBKR calls are not interrupt-safe and cancel(true) may leave
+            // client state inconsistent. The thread will finish its current work and then exit normally.
+            future.cancel(false)
+            throw ChainBuildTimeoutException(underlying)
+        } catch (e: CancellationException) {
+            log.warn("Chain build cancelled for {}", underlying, e)
+            null
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            log.warn("Chain build interrupted for {}", underlying)
+            null
+        } catch (e: ExecutionException) {
+            val cause = e.cause
+            if (cause is ChainBuildTimeoutException) throw cause
+            log.error("Failed to build option chain for {}", underlying, e)
+            null
+        } catch (e: Exception) {
+            log.error("Failed to build option chain for {}", underlying, e)
+            null
         }
-        if (contracts.isEmpty()) return null
-
-        val allDeltaFiltered = filterByDelta(contracts, spotPrice, null, DEFAULT_MAX_DELTA)
-
-        log.info("Fetching snapshots for {} delta-filtered contracts out of {} total for {}",
-            allDeltaFiltered.size, contracts.size, underlying)
-
-        val snapshots = fetchSnapshots(allDeltaFiltered)
-
-        val optionQuotes = allDeltaFiltered.mapNotNull { contract ->
-            buildOptionQuote(underlying, contract, spotPrice, snapshots)
-        }
-
-        return chainBuilder.build(underlying, spotPrice, optionQuotes)
     }
 
     private fun buildChainForExpiry(underlying: String, expiry: LocalDate, maxDelta: Double, strikesPerSide: Int = 25, side: String = "both"): OptionsChain? {
-        val spotPrice = resolveSpotPrice(underlying) ?: return null
+        val future = CompletableFuture.supplyAsync({
+            if (Thread.interrupted()) throw InterruptedException()
+            if (!ibkrClient.isConnected()) {
+                log.warn("IBKR disconnected before async chain build for {} expiry {}", underlying, expiry)
+                throw ChainBuildTimeoutException(underlying, expiry)
+            }
+            val spotPrice = resolveSpotPrice(underlying) ?: return@supplyAsync null
+            if (Thread.interrupted()) throw InterruptedException()
 
-        val contracts = try {
-            ibkrClient.requestContractDetails(underlying, "OPT", expiry).filter { c ->
-                c.tradingClass == null || c.tradingClass == underlying
-            }.ifEmpty { ibkrClient.requestContractDetails(underlying, "OPT", expiry) }
+            val contracts = try {
+                ibkrClient.requestContractDetails(underlying, "OPT", expiry).filter { c ->
+                    c.tradingClass == null || c.tradingClass == underlying
+                }.ifEmpty { ibkrClient.requestContractDetails(underlying, "OPT", expiry) }
+            } catch (e: Exception) {
+                log.error("Failed to load contracts for {} expiry {}", underlying, expiry, e)
+                return@supplyAsync null
+            }
+            if (contracts.isEmpty()) return@supplyAsync null
+
+            val sideFiltered = when (side.lowercase()) {
+                "put" -> contracts.filter { it.right?.uppercase() in setOf("P", "PUT") }
+                "call" -> contracts.filter { it.right?.uppercase() in setOf("C", "CALL") }
+                else -> contracts
+            }
+            if (sideFiltered.isEmpty()) return@supplyAsync null
+
+            val filtered = filterByStrikeCount(sideFiltered, spotPrice, expiry, strikesPerSide)
+
+            log.info("Fetching snapshots for {} contracts ({} per side, side={}) for {} expiry {}",
+                filtered.size, strikesPerSide, side, underlying, expiry)
+
+            val snapshots = fetchSnapshots(filtered)
+
+            val optionQuotes = filtered.mapNotNull { contract ->
+                buildOptionQuote(underlying, contract, spotPrice, snapshots)
+            }
+
+            chainBuilder.build(underlying, spotPrice, optionQuotes)
+        }, chainBuildExecutor)
+
+        return try {
+            future.get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
+        } catch (e: TimeoutException) {
+            // cancel(false) is intentional: IBKR calls are not interrupt-safe and cancel(true) may leave
+            // client state inconsistent. The thread will finish its current work and then exit normally.
+            future.cancel(false)
+            throw ChainBuildTimeoutException(underlying, expiry)
+        } catch (e: CancellationException) {
+            log.warn("Chain build cancelled for {} expiry {}", underlying, expiry, e)
+            null
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            log.warn("Chain build interrupted for {} expiry {}", underlying, expiry)
+            null
+        } catch (e: ExecutionException) {
+            val cause = e.cause
+            if (cause is ChainBuildTimeoutException) throw cause
+            log.error("Failed to build option chain for {} expiry {}", underlying, expiry, e)
+            null
         } catch (e: Exception) {
-            log.error("Failed to load contracts for {} expiry {}", underlying, expiry, e)
-            return null
+            log.error("Failed to build option chain for {} expiry {}", underlying, expiry, e)
+            null
         }
-        if (contracts.isEmpty()) return null
-
-        val sideFiltered = when (side.lowercase()) {
-            "put" -> contracts.filter { it.right?.uppercase() in setOf("P", "PUT") }
-            "call" -> contracts.filter { it.right?.uppercase() in setOf("C", "CALL") }
-            else -> contracts
-        }
-        if (sideFiltered.isEmpty()) return null
-
-        val filtered = filterByStrikeCount(sideFiltered, spotPrice, expiry, strikesPerSide)
-
-        log.info("Fetching snapshots for {} contracts ({} per side, side={}) for {} expiry {}",
-            filtered.size, strikesPerSide, side, underlying, expiry)
-
-        val snapshots = fetchSnapshots(filtered)
-
-        val optionQuotes = filtered.mapNotNull { contract ->
-            buildOptionQuote(underlying, contract, spotPrice, snapshots)
-        }
-
-        return chainBuilder.build(underlying, spotPrice, optionQuotes)
     }
 
     private fun filterByStrikeCount(
@@ -201,10 +346,6 @@ class ChainController(
                 }
             }.keys
         return eligible.filter { "${it.expiry}:${it.strike}" in validStrikes }
-    }
-
-    private val snapshotExecutor: ExecutorService = Executors.newFixedThreadPool(12) { r ->
-        Thread(r, "chain-snapshot").apply { isDaemon = true }
     }
 
     private fun fetchSnapshots(contracts: List<com.portfolio.marketdata.ibkr.OptionContractDetails>): Map<Int, com.portfolio.marketdata.ibkr.MarketDataSnapshot> {

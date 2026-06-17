@@ -1,5 +1,6 @@
 package com.portfolio.marketdata.ibkr
 
+import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -14,6 +15,16 @@ class SubscriptionManager(
     private val activeSubscriptions = LinkedHashMap<Int, Subscription>(16, 0.75f, true)
     private val subscriptionLock = Any()
     private val pinnedConIds = java.util.concurrent.ConcurrentHashMap.newKeySet<Int>()
+
+    @PostConstruct
+    fun init() {
+        val twsClient = ibkrClient as? TwsIbkrClient
+        if (twsClient != null) {
+            twsClient.setReconnectHandler(Runnable { resubscribeAll() })
+        } else {
+            logger.warn("IbkrClient is not TwsIbkrClient, reconnect handler not registered")
+        }
+    }
 
     fun subscribe(conId: Int, callback: (tickType: Int, value: Double) -> Unit) {
         synchronized(subscriptionLock) {
@@ -34,6 +45,7 @@ class SubscriptionManager(
     }
 
     fun unsubscribe(conId: Int) {
+        resubscribeFailures.remove(conId)
         synchronized(subscriptionLock) {
             val subscription = activeSubscriptions.remove(conId)
             if (subscription != null) {
@@ -60,6 +72,34 @@ class SubscriptionManager(
 
     fun getActiveCount(): Int = activeSubscriptions.size
     fun getPinnedCount(): Int = pinnedConIds.size
+
+    private val resubscribeFailures = java.util.concurrent.ConcurrentHashMap<Int, Int>()
+
+    fun resubscribeAll() {
+        val snapshot = synchronized(subscriptionLock) {
+            if (activeSubscriptions.isEmpty()) emptyList()
+            else activeSubscriptions.entries.map { it.key to it.value.callback }.toList()
+        }
+        if (snapshot.isEmpty()) return
+        // Prune failure entries for conIds that are no longer active
+        val currentConIds = snapshot.map { it.first }.toSet()
+        resubscribeFailures.keys.filter { it !in currentConIds }.forEach { resubscribeFailures.remove(it) }
+        logger.info("Resubscribing {} active subscriptions after reconnect", snapshot.size)
+        for ((conId, callback) in snapshot) {
+            try {
+                ibkrClient.requestMarketData(conId, callback)
+                resubscribeFailures.remove(conId)
+            } catch (e: Exception) {
+                val failures = resubscribeFailures.merge(conId, 1, Int::plus)!!
+                if (failures >= 3) {
+                    logger.warn("Failed to resubscribe conId={} after {} attempts, will retry on next reconnect", conId, failures)
+                } else {
+                    logger.error("Failed to resubscribe conId={} (attempt {})", conId, failures, e)
+                }
+            }
+        }
+    }
+
     fun isSubscribed(conId: Int): Boolean = activeSubscriptions.containsKey(conId)
 
     private fun evictLRU() {

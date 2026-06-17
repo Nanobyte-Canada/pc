@@ -1,18 +1,29 @@
 package com.portfolio.marketdata.api.controller
 
-import com.portfolio.common.domain.*
+import com.portfolio.common.domain.Greeks
+import com.portfolio.common.domain.GreeksSource
+import com.portfolio.common.domain.OptionQuote
+import com.portfolio.common.domain.OptionType
+import com.portfolio.common.domain.OptionsChain
+import com.portfolio.common.domain.StrikeData
 import com.portfolio.marketdata.config.AppProperties
 import com.portfolio.marketdata.distribution.QuoteCacheService
 import com.portfolio.marketdata.ibkr.IbkrClient
+import com.portfolio.marketdata.ibkr.MarketDataSnapshot
 import com.portfolio.marketdata.ibkr.OptionContractDetails
 import com.portfolio.marketdata.processing.GreeksCalculator
 import com.portfolio.marketdata.processing.OptionsChainBuilder
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.concurrent.CountDownLatch
 import kotlin.test.assertEquals
 
 class ChainControllerTest {
@@ -31,7 +42,108 @@ class ChainControllerTest {
             delta = BigDecimal.ZERO, gamma = BigDecimal.ZERO, theta = BigDecimal.ZERO,
             vega = BigDecimal.ZERO, rho = BigDecimal.ZERO, source = GreeksSource.BLACK_SCHOLES
         )
-        controller = ChainController(quoteCacheService, chainBuilder, greeksCalculator, ibkrClient, properties)
+        controller = ChainController(quoteCacheService, chainBuilder, greeksCalculator, ibkrClient, properties, 15, 2)
+    }
+
+    @Test
+    fun `getChain returns 503 when IBKR not connected`() {
+        every { ibkrClient.isConnected() } returns false
+        every { quoteCacheService.getChain("SPY") } returns null
+
+        val response = controller.getChain("SPY")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
+
+    @Test
+    fun `getChainWithGreeks returns 503 when IBKR not connected`() {
+        every { ibkrClient.isConnected() } returns false
+        every { quoteCacheService.getChain("SPY") } returns null
+
+        val response = controller.getChainWithGreeks("SPY")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
+
+    @Test
+    fun `getExpirations returns 503 when IBKR not connected`() {
+        every { ibkrClient.isConnected() } returns false
+        every { quoteCacheService.getChain("SPY") } returns null
+
+        val response = controller.getExpirations("SPY")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
+
+    @Test
+    fun `getChainForExpiry returns 503 when IBKR not connected`() {
+        every { ibkrClient.isConnected() } returns false
+
+        val response = controller.getChainForExpiry("SPY", "20260618", 0.45, 25, "both")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
+
+    @Test
+    fun `getChain returns 200 from cache without IBKR call`() {
+        val cachedChain = OptionsChain(
+            underlying = "SPY",
+            spotPrice = BigDecimal.valueOf(400),
+            expirations = emptyMap()
+        )
+        every { quoteCacheService.getChain("SPY") } returns cachedChain
+
+        val response = controller.getChain("SPY")
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+        verify(exactly = 0) { ibkrClient.isConnected() }
+    }
+
+    @Test
+    fun `getChain returns 200 on successful build`() {
+        val expiry = LocalDate.now().plusDays(30)
+        every { quoteCacheService.getChain("SPY") } returns null
+        every { ibkrClient.isConnected() } returns true
+        every { quoteCacheService.getQuote("SPY") } returns null
+        every { ibkrClient.requestContractDetails("SPY", "STK") } returns listOf(
+            OptionContractDetails(conId=1, symbol="SPY", secType="STK", exchange="SMART", expiry=null, strike=null, right=null)
+        )
+        every { ibkrClient.requestMarketDataSnapshot(1) } returns MarketDataSnapshot(conId=1, last=400.0)
+        every { ibkrClient.requestOptionChain("SPY") } returns listOf(
+            OptionContractDetails(conId=2, symbol="SPY", secType="OPT", exchange="SMART", expiry=expiry, strike=BigDecimal.valueOf(400), right="C")
+        )
+        every { ibkrClient.requestMarketDataSnapshot(2) } returns MarketDataSnapshot(
+            conId=2, bid=5.0, ask=5.5, last=5.25, delta=0.5, gamma=0.01, theta=-0.1, vega=0.2
+        )
+        every { chainBuilder.build(any(), any(), any()) } returns OptionsChain(
+            underlying = "SPY",
+            spotPrice = BigDecimal.valueOf(400),
+            expirations = emptyMap()
+        )
+
+        val response = controller.getChain("SPY")
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+    }
+
+    @Test
+    fun `getChain returns 503 on timeout`() {
+        val latch = CountDownLatch(1)
+        every { quoteCacheService.getChain("SPY") } returns null
+        every { ibkrClient.isConnected() } returns true
+        every { quoteCacheService.getQuote("SPY") } returns null
+        every { ibkrClient.requestContractDetails("SPY", "STK") } returns listOf(
+            OptionContractDetails(conId=1, symbol="SPY", secType="STK", exchange="SMART", expiry=null, strike=null, right=null)
+        )
+        every { ibkrClient.requestMarketDataSnapshot(1) } returns MarketDataSnapshot(conId=1, last=400.0)
+        every { ibkrClient.requestOptionChain("SPY") } answers { latch.await(); emptyList() }
+
+        val timeoutController = ChainController(quoteCacheService, chainBuilder, greeksCalculator, ibkrClient, properties, 1, 2)
+        val response = timeoutController.getChain("SPY")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+        // Release the latch so the background thread can exit (clean up for other tests)
+        latch.countDown()
     }
 
     @Test
@@ -41,6 +153,7 @@ class ChainControllerTest {
         val beyond90 = today.plusDays(180)
         val allExpirations = listOf(within90, beyond90)
 
+        every { quoteCacheService.getChain("AAPL") } returns null
         every { quoteCacheService.getExpirations("AAPL") } returns allExpirations
         every { quoteCacheService.getQuote("AAPL") } returns mockk { every { last } returns BigDecimal("150.00") }
 
@@ -52,21 +165,21 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getExpirations fetches from IBKR on cache miss and caches raw result`() {
+    fun `getExpirations fetches from IBKR on cache miss and filters`() {
         val today = LocalDate.now()
         val within90 = today.plusDays(30)
         val beyond90 = today.plusDays(180)
 
+        every { quoteCacheService.getChain("SPY") } returns null
         every { quoteCacheService.getExpirations("SPY") } returns null
         every { ibkrClient.requestOptionExpirations("SPY") } returns listOf(within90, beyond90)
-        every { quoteCacheService.cacheExpirations("SPY", listOf(within90, beyond90)) } just Runs
         every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
+        every { ibkrClient.isConnected() } returns true
 
         val response = controller.getExpirations("SPY", null)
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(listOf(within90), response.body!!.expirations)
-        verify { quoteCacheService.cacheExpirations("SPY", listOf(within90, beyond90)) }
     }
 
     @Test
@@ -76,6 +189,7 @@ class ChainControllerTest {
         val in60 = today.plusDays(60)
         val in120 = today.plusDays(120)
 
+        every { quoteCacheService.getChain("QQQ") } returns null
         every { quoteCacheService.getExpirations("QQQ") } returns listOf(in30, in60, in120)
         every { quoteCacheService.getQuote("QQQ") } returns mockk { every { last } returns BigDecimal("400.00") }
 
@@ -87,9 +201,11 @@ class ChainControllerTest {
 
     @Test
     fun `getExpirations returns 404 when IBKR returns empty`() {
+        every { quoteCacheService.getChain("XYZ") } returns null
         every { quoteCacheService.getExpirations("XYZ") } returns null
         every { ibkrClient.requestOptionExpirations("XYZ") } returns emptyList()
         every { quoteCacheService.getQuote("XYZ") } returns mockk { every { last } returns BigDecimal("10.00") }
+        every { ibkrClient.isConnected() } returns true
 
         val response = controller.getExpirations("XYZ", null)
 
@@ -117,6 +233,7 @@ class ChainControllerTest {
             mapOf(expiry to mapOf(BigDecimal("150") to StrikeData(call = null, put = putQuote)))
         )
 
+        every { ibkrClient.isConnected() } returns true
         every { quoteCacheService.getQuote("AAPL") } returns mockk { every { last } returns BigDecimal("155.00") }
         every { ibkrClient.requestContractDetails("AAPL", "OPT", expiry, any(), any()) } returns listOf(putContract, callContract)
         every { ibkrClient.requestMarketDataSnapshot(1) } returns mockk {
@@ -143,6 +260,7 @@ class ChainControllerTest {
         )
         val chain = OptionsChain("SPY", BigDecimal("455"), emptyMap())
 
+        every { ibkrClient.isConnected() } returns true
         every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("455.00") }
         every { ibkrClient.requestContractDetails("SPY", "OPT", expiry, any(), any()) } returns contracts
         every { ibkrClient.requestMarketDataSnapshot(any()) } returns null
