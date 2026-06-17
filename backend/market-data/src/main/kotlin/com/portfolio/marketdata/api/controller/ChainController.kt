@@ -23,6 +23,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -41,6 +42,8 @@ class ChainController(
     private val chainBuildExecutor: ExecutorService = Executors.newFixedThreadPool(buildMaxThreads.coerceIn(1, 64)) { r ->
         Thread(r, "chain-build").apply { isDaemon = true }
     }
+
+    private val effectiveBuildTimeoutSeconds: Long = buildTimeoutSeconds.coerceAtLeast(1L)
 
     override fun destroy() {
         chainBuildExecutor.shutdownNow()
@@ -97,7 +100,7 @@ class ChainController(
         val spotPrice = resolveSpotPrice(underlying) ?: return ResponseEntity.notFound().build()
         val expirations = try {
             CompletableFuture.supplyAsync({ ibkrClient.requestOptionExpirations(underlying) }, chainBuildExecutor)
-                .get(buildTimeoutSeconds, TimeUnit.SECONDS)
+                .get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
         } catch (e: TimeoutException) {
             log.warn("Expirations request timed out for {}", underlying)
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
@@ -128,7 +131,6 @@ class ChainController(
             log.warn("Chain build timed out for {} expiry {}", underlying, expiryDate)
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
         }
-        quoteCacheService.cacheChain(underlying, chain)
         return ResponseEntity.ok(OptionsChainResponse.fromDomain(chain))
     }
 
@@ -184,7 +186,7 @@ class ChainController(
         }, chainBuildExecutor)
 
         return try {
-            future.get(buildTimeoutSeconds, TimeUnit.SECONDS)
+            future.get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
         } catch (e: TimeoutException) {
             future.cancel(false)
             throw ChainBuildTimeoutException(underlying)
@@ -194,6 +196,11 @@ class ChainController(
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             log.warn("Chain build interrupted for {}", underlying)
+            null
+        } catch (e: ExecutionException) {
+            val cause = e.cause
+            if (cause is ChainBuildTimeoutException) throw cause
+            log.error("Failed to build option chain for {}", underlying, e)
             null
         } catch (e: Exception) {
             log.error("Failed to build option chain for {}", underlying, e)
@@ -223,7 +230,8 @@ class ChainController(
 
             log.info("Building chain: {} contracts ({} per side) for {} expiry {}", filtered.size, strikesPerSide, underlying, expiry)
 
-            val snapshots = emptyMap<Int, com.portfolio.marketdata.ibkr.MarketDataSnapshot>()
+            val snapshotContracts = filtered.take(30)
+            val snapshots = fetchSnapshots(snapshotContracts)
 
             val optionQuotes = filtered.mapNotNull { contract ->
                 buildOptionQuote(underlying, contract, spotPrice, snapshots)
@@ -233,7 +241,7 @@ class ChainController(
         }, chainBuildExecutor)
 
         return try {
-            future.get(buildTimeoutSeconds, TimeUnit.SECONDS)
+            future.get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
         } catch (e: TimeoutException) {
             future.cancel(false)
             throw ChainBuildTimeoutException(underlying, expiry)
@@ -243,6 +251,11 @@ class ChainController(
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             log.warn("Chain build interrupted for {} expiry {}", underlying, expiry)
+            null
+        } catch (e: ExecutionException) {
+            val cause = e.cause
+            if (cause is ChainBuildTimeoutException) throw cause
+            log.error("Failed to build option chain for {} expiry {}", underlying, expiry, e)
             null
         } catch (e: Exception) {
             log.error("Failed to build option chain for {} expiry {}", underlying, expiry, e)

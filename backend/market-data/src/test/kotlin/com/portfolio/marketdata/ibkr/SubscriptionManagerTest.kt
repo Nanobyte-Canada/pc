@@ -42,4 +42,35 @@ class SubscriptionManagerTest {
         verify(exactly = 0) { ibkrClient.requestMarketData(1001, any()) }
         verify(exactly = 1) { ibkrClient.requestMarketData(1002, any()) }
     }
+
+    @Test
+    fun `resubscribeAll handles exception and continues`() {
+        val manager = SubscriptionManager(ibkrClient, 100)
+
+        manager.subscribe(1001) { _, _ -> }
+        manager.subscribe(1002) { _, _ -> }
+
+        every { ibkrClient.requestMarketData(1001, any()) } throws RuntimeException("network error")
+        every { ibkrClient.requestMarketData(1002, any()) } returns Unit
+
+        manager.resubscribeAll()
+
+        verify(exactly = 1) { ibkrClient.requestMarketData(1001, any()) }
+        verify(exactly = 1) { ibkrClient.requestMarketData(1002, any()) }
+    }
+
+    @Test
+    fun `resubscribeAll retries on repeated failures`() {
+        val manager = SubscriptionManager(ibkrClient, 100)
+
+        manager.subscribe(1001) { _, _ -> }
+
+        every { ibkrClient.requestMarketData(1001, any()) } throws RuntimeException("network error")
+
+        manager.resubscribeAll()
+        manager.resubscribeAll()
+        manager.resubscribeAll()
+
+        verify(exactly = 3) { ibkrClient.requestMarketData(1001, any()) }
+    }
 }
