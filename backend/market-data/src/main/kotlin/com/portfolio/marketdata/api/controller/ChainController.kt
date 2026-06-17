@@ -117,18 +117,8 @@ class ChainController(
 
         val spotPrice = resolveSpotPrice(underlying) ?: return ResponseEntity.notFound().build()
         val allExpirations = quoteCacheService.getExpirations(underlying)
-            ?: try {
-                CompletableFuture.supplyAsync({ ibkrClient.requestOptionExpirations(underlying) }, chainBuildExecutor)
-                    .get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
-            } catch (e: TimeoutException) {
-                log.warn("Expirations request timed out for {}", underlying)
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-            } catch (e: InterruptedException) {
-                Thread.currentThread().interrupt()
-                log.warn("Expirations request interrupted for {}", underlying)
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-            }.also { exps ->
-                if (exps != null && exps.isNotEmpty()) quoteCacheService.cacheExpirations(underlying, exps)
+            ?: ibkrClient.requestOptionExpirations(underlying).also { exps ->
+                if (exps.isNotEmpty()) quoteCacheService.cacheExpirations(underlying, exps)
             }
         if (allExpirations.isEmpty()) return ResponseEntity.notFound().build()
         val filtered = filterByDte(allExpirations, maxDte)
