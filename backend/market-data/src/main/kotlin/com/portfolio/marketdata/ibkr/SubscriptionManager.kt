@@ -77,9 +77,13 @@ class SubscriptionManager(
 
     fun resubscribeAll() {
         val snapshot = synchronized(subscriptionLock) {
-            if (activeSubscriptions.isEmpty()) return
-            activeSubscriptions.entries.map { it.key to it.value.callback }.toList()
+            if (activeSubscriptions.isEmpty()) emptyList()
+            else activeSubscriptions.entries.map { it.key to it.value.callback }.toList()
         }
+        if (snapshot.isEmpty()) return
+        // Prune failure entries for conIds that are no longer active
+        val currentConIds = snapshot.map { it.first }.toSet()
+        resubscribeFailures.keys.filter { it !in currentConIds }.forEach { resubscribeFailures.remove(it) }
         logger.info("Resubscribing {} active subscriptions after reconnect", snapshot.size)
         for ((conId, callback) in snapshot) {
             try {

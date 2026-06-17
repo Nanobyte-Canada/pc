@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.concurrent.CountDownLatch
 import kotlin.test.assertEquals
 
 class ChainControllerTest {
@@ -111,6 +112,7 @@ class ChainControllerTest {
 
     @Test
     fun `getChain returns 503 on timeout`() {
+        val latch = CountDownLatch(1)
         every { quoteCacheService.getChain("SPY") } returns null
         every { ibkrClient.isConnected() } returns true
         every { quoteCacheService.getQuote("SPY") } returns null
@@ -118,11 +120,13 @@ class ChainControllerTest {
             OptionContractDetails(conId=1, symbol="SPY", secType="STK", exchange="SMART", expiry=null, strike=null, right=null)
         )
         every { ibkrClient.requestMarketDataSnapshot(1) } returns MarketDataSnapshot(conId=1, last=400.0)
-        every { ibkrClient.requestOptionChain("SPY") } answers { Thread.sleep(3000); emptyList() }
+        every { ibkrClient.requestOptionChain("SPY") } answers { latch.await(); emptyList() }
 
         val controller = ChainController(quoteCacheService, chainBuilder, greeksCalculator, ibkrClient, 1, 2)
         val response = controller.getChain("SPY")
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+        // Release the latch so the background thread can exit (clean up for other tests)
+        latch.countDown()
     }
 }

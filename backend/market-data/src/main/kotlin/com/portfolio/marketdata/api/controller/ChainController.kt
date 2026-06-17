@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 
 @RestController
 @RequestMapping("/api/v1/chains")
@@ -40,7 +41,7 @@ class ChainController(
     @Value("\${chain.build-max-threads:4}") private val buildMaxThreads: Int
 ) : DisposableBean {
     private val chainBuildExecutor: ExecutorService = Executors.newFixedThreadPool(buildMaxThreads.coerceIn(1, 64)) { r ->
-        Thread(r, "chain-build").apply { isDaemon = true }
+        Thread(r, "chain-build-${threadCounter.incrementAndGet()}").apply { isDaemon = true }
     }
 
     private val effectiveBuildTimeoutSeconds: Long = buildTimeoutSeconds.coerceAtLeast(1L)
@@ -92,6 +93,9 @@ class ChainController(
     fun getExpirations(@PathVariable underlying: String): ResponseEntity<OptionExpirationsResponse> {
         val cachedChain = quoteCacheService.getChain(underlying)
         if (cachedChain != null) {
+            if (!ibkrClient.isConnected()) {
+                log.warn("Serving stale expirations from cache for {} because IBKR is disconnected", underlying)
+            }
             return ResponseEntity.ok(OptionExpirationsResponse(underlying, cachedChain.spotPrice, cachedChain.expirations.keys.toList().sorted()))
         }
 
@@ -137,12 +141,13 @@ class ChainController(
     private val log = LoggerFactory.getLogger(javaClass)
 
     private class ChainBuildTimeoutException(underlying: String, expiry: LocalDate? = null) : RuntimeException(
-        "Chain build timed out for $underlying${expiry?.let { " expiry $it" } ?: ""}"
+        "Chain build timed out for ${underlying.replace(Regex("[\\r\\n]"), "")}${expiry?.let { " expiry $it" } ?: ""}"
     )
 
     companion object {
         private const val DEFAULT_MAX_DELTA = 0.45
         private const val ESTIMATED_IV = 0.30
+        private val threadCounter = AtomicInteger(0)
     }
 
     private fun checkConnected(underlying: String): Boolean {
@@ -155,11 +160,13 @@ class ChainController(
 
     private fun buildChainFromIbkr(underlying: String): OptionsChain? {
         val future = CompletableFuture.supplyAsync({
+            if (Thread.interrupted()) throw InterruptedException()
             if (!ibkrClient.isConnected()) {
                 log.warn("IBKR disconnected before async chain build for {}", underlying)
                 throw ChainBuildTimeoutException(underlying)
             }
             val spotPrice = resolveSpotPrice(underlying) ?: return@supplyAsync null
+            if (Thread.interrupted()) throw InterruptedException()
 
             val contracts = try { ibkrClient.requestOptionChain(underlying) } catch (e: Exception) {
                 log.error("Failed to load option chain for {}", underlying, e)
@@ -188,6 +195,8 @@ class ChainController(
         return try {
             future.get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
         } catch (e: TimeoutException) {
+            // cancel(false) is intentional: IBKR calls are not interrupt-safe and cancel(true) may leave
+            // client state inconsistent. The thread will finish its current work and then exit normally.
             future.cancel(false)
             throw ChainBuildTimeoutException(underlying)
         } catch (e: CancellationException) {
@@ -210,11 +219,13 @@ class ChainController(
 
     private fun buildChainForExpiry(underlying: String, expiry: LocalDate, maxDelta: Double, strikesPerSide: Int = 25): OptionsChain? {
         val future = CompletableFuture.supplyAsync({
+            if (Thread.interrupted()) throw InterruptedException()
             if (!ibkrClient.isConnected()) {
                 log.warn("IBKR disconnected before async chain build for {} expiry {}", underlying, expiry)
                 throw ChainBuildTimeoutException(underlying, expiry)
             }
             val spotPrice = resolveSpotPrice(underlying) ?: return@supplyAsync null
+            if (Thread.interrupted()) throw InterruptedException()
 
             val contracts = try {
                 ibkrClient.requestContractDetails(underlying, "OPT", expiry).filter { c ->
@@ -243,6 +254,8 @@ class ChainController(
         return try {
             future.get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
         } catch (e: TimeoutException) {
+            // cancel(false) is intentional: IBKR calls are not interrupt-safe and cancel(true) may leave
+            // client state inconsistent. The thread will finish its current work and then exit normally.
             future.cancel(false)
             throw ChainBuildTimeoutException(underlying, expiry)
         } catch (e: CancellationException) {
