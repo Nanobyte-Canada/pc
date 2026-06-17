@@ -70,7 +70,7 @@ class ChainControllerTest {
         every { ibkrClient.isConnected() } returns false
         every { quoteCacheService.getChain("SPY") } returns null
 
-        val response = controller.getExpirations("SPY")
+        val response = controller.getExpirations("SPY", null)
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
     }
