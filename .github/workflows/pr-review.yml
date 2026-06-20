@@ -55,8 +55,7 @@ jobs:
           echo "=== Changed files ==="
           cat /tmp/changed_files.txt
 
-          CODE_PATTERN='\.(kt|ts|tsx|java|css|sql)$|\.gradle\.kts$|\.(xml|html|properties)$|^((?!\.github\/).)*\.(yml|yaml)$'
-          CODE_FILES=$(grep -cE "$CODE_PATTERN" /tmp/changed_files.txt || true)
+          CODE_FILES=$(grep -v '^\.github/' /tmp/changed_files.txt | grep -cE '\.(kt|ts|tsx|java|css|sql|yml|yaml)$|\.gradle\.kts$|\.(xml|html|properties)$' || true)
 
           echo ""
           echo "Code files found: $CODE_FILES"
