@@ -192,18 +192,27 @@ jobs:
 
           grep -n 'SUMMARY:' /tmp/review_output.txt || true
 
+      - name: Warn on zero findings
+        if: steps.context.outputs.skip != 'true' && steps.parse.outputs.HIGH_COUNT == '0' && steps.parse.outputs.LOW_COUNT == '0'
+        run: |
+          echo "::warning::Review produced 0 findings on a code diff. This may indicate the review missed issues — consider a manual review."
+
       - name: Post PR comment with review results
         if: steps.context.outputs.skip != 'true'
         uses: actions/github-script@v7
         env:
           HIGH_COUNT: ${{ steps.parse.outputs.HIGH_COUNT }}
           LOW_COUNT: ${{ steps.parse.outputs.LOW_COUNT }}
+          HAS_TRUNCATED: ${{ steps.context.outputs.has_truncated }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         with:
           script: |
             const fs = require('fs');
             const reviewText = fs.readFileSync('/tmp/review_output.txt', 'utf8').trim();
             const highCount = parseInt(process.env.HIGH_COUNT || '0');
             const lowCount = parseInt(process.env.LOW_COUNT || '0');
+            const hasTruncated = process.env.HAS_TRUNCATED === 'true';
+            const runUrl = process.env.RUN_URL;
 
             if (!reviewText) {
               console.log('No review output to post');
@@ -212,11 +221,19 @@ jobs:
 
             let prefix = '## OpenCode PR Review\n\n';
             prefix += '| Severity | Count |\n|----------|-------|\n';
-            prefix += `| 🔴 **HIGH** | ${highCount} |\n`;
-            prefix += `| 🟡 **LOW** | ${lowCount} |\n\n`;
+            prefix += `| :red_circle: **HIGH** | ${highCount} |\n`;
+            prefix += `| :yellow_circle: **LOW** | ${lowCount} |\n\n`;
 
             if (highCount > 0) {
-              prefix += `> ⚠️ **${highCount} HIGH severity ${highCount === 1 ? 'issue' : 'issues'} found.**\n\n`;
+              prefix += `> :warning: **${highCount} HIGH severity ${highCount === 1 ? 'issue' : 'issues'} found.**\n\n`;
+            }
+
+            if (hasTruncated) {
+              prefix += '> :information_source: Diff was truncated to 30KB. Review may be incomplete for large PRs.\n\n';
+            }
+
+            if (highCount === 0 && lowCount === 0) {
+              prefix += '> :information_source: No findings reported. Consider a manual review for completeness.\n\n';
             }
 
             const maxBodyLen = 60000;
@@ -224,10 +241,12 @@ jobs:
               ? reviewText.substring(0, maxBodyLen) + '\n\n...(output truncated)'
               : reviewText;
 
+            const footer = `\n\n---\n<sub>[View workflow run](${runUrl})</sub>`;
+
             await github.rest.issues.createComment({
               ...context.repo,
               issue_number: context.issue.number,
-              body: prefix + '---\n\n' + truncated
+              body: prefix + '---\n\n' + truncated + footer
             });
 
             console.log(`PR comment posted: ${highCount} HIGH, ${lowCount} LOW`);
