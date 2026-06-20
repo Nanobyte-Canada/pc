@@ -139,3 +139,9 @@ deploy/monitoring/.env
 screenshots/
 .playwright-mcp/
 .superpowers/brainstorm/
+
+# AI-generated analysis docs (kept locally, not committed)
+docs/big_pickle/
+docs/deepseek_v4_flash/
+docs/minimax_2-7/
+docs/comparision/
