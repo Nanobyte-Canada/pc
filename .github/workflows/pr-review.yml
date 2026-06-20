@@ -7,7 +7,7 @@ on:
         description: 'OpenCode model (provider/model), e.g. opencode/claude-sonnet-4-6'
         type: string
         required: false
-        default: 'opencode/deepseek-v4-flash-free'
+        default: 'opencode/deepseek-v4-pro'
       fail-on-high:
         description: 'Fail the build on HIGH severity findings'
         type: boolean
@@ -100,17 +100,6 @@ jobs:
             });
             console.log('Skip comment posted');
 
-      - name: Attach contributing.md if present
-        if: steps.context.outputs.skip != 'true'
-        run: |
-          for f in CONTRIBUTING.md .github/CONTRIBUTING.md docs/CONTRIBUTING.md; do
-            if [ -f "$f" ]; then
-              cp "$f" /tmp/contributing.md
-              echo "Attached $f"
-              break
-            fi
-          done
-
       - name: Configure OpenCode auth
         if: steps.context.outputs.skip != 'true'
         run: |
@@ -126,38 +115,38 @@ jobs:
 
       - name: Run PR Review with OpenCode
         if: steps.context.outputs.skip != 'true'
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           cat > /tmp/review_prompt.txt << 'PROMPT_EOF'
-          You are an expert PR reviewer. Analyze the attached diff (and contributing.md if provided) across three dimensions:
+          You are reviewing a PR for the Portfolio Construction App.
+          Tech: Kotlin 2.0/Spring Boot 3.3 + React 18/TypeScript 5.6/Vite 5
+          DB: PostgreSQL 16 + Flyway migrations. Redis 7. MockK for testing.
+          Key constraints (see INDEX.md and CONTRIBUTING.md attached for details):
+            - No local JDK — backend runs in Docker; No Tailwind CSS — use plain CSS
+            - Hibernate DDL=validate — schema managed exclusively by Flyway
+            - Frontend uses apiFetch() for all API calls
+            - MockK not Mockito; Vitest + Testing Library for frontend tests
+          Context docs are attached — use them to validate consistency, do not review the docs themselves.
 
-          1. CODE QUALITY REVIEW:
-          - Redundant/duplicate code patterns
-          - Violations of SOLID/OOP principles (single responsibility, open-closed, Liskov substitution, interface segregation, dependency inversion)
-          - Logic gaps: missing edge cases, null-safety issues, inadequate error handling, boundary condition bugs
-          - Logging: appropriate levels (info/warn/error), meaningful messages, sufficient context data
-          - Test coverage: missing unit tests for core logic, missing integration tests for critical paths, untested edge cases
-          - Linting violations (check for trailing whitespace, unused imports, inconsistent naming)
-          - Performance: nested loops, N+1 queries, unnecessarily large allocations, sync operations in async paths
-          - Breaking changes: API contract changes, database schema migrations, interface signature changes, removed exports
-          - Contributing.md compliance (if present)
+          Review the attached PR diff across two passes. Complete Pass 1 first, then Pass 2.
 
-          2. DOCUMENTATION REVIEW:
-          - Code changes that should be reflected in documentation
-          - Missing or stale ADR records
-          - Backend API docs, frontend component docs, database schema docs, infrastructure config docs out of sync
-          - Missing JSDoc/KDoc for public APIs
+          === PASS 1: CODE QUALITY & BREAKING CHANGES ===
+          - Logic bugs: null safety, edge cases, boundary conditions, error handling
+          - Breaking changes: API signatures, DB migrations, removed exports, schema changes — cross-reference the attached api-endpoints.md and database-schema.md
+          - Code duplication, SOLID violations, performance (N+1 queries, sync in async paths)
+          - Test coverage: new logic without tests, deleted tests without replacement
+          - For Kotlin changes: verify against backend-services.md patterns; watch for MockK vs Mockito
+          - For frontend changes: verify apiFetch() usage, check against frontend-map.md component patterns
 
-          3. SECURITY REVIEW:
-          - Vulnerable dependency patterns (unpinned versions, known-vulnerable packages)
-          - Authorization gaps (missing role checks, exposed admin endpoints)
-          - Injection risks (SQL, NoSQL, command injection, XSS)
-          - Sensitive data exposure (secrets in code, missing encryption)
-          - Authentication weaknesses (token validation, session handling)
+          === PASS 2: SECURITY & DOCUMENTATION ===
+          - Auth gaps, injection risks (SQL, XSS, command), secret/token exposure in code — check against config/.env.example for proper env var usage
+          - Missing or stale documentation relative to code changes
+          - Missing KDoc for public Kotlin APIs, JSDoc for public TypeScript APIs
+          - Violations of constraints from INDEX.md or CONTRIBUTING.md (Tailwind usage, direct fetch instead of apiFetch, etc.)
 
           OUTPUT RULES:
           - Prefix each finding with [HIGH] or [LOW]
-          - [HIGH] = breaking changes, security vulnerabilities, logic bugs, missing critical tests, performance issues, authorization gaps
+          - [HIGH] = breaking changes, security vulnerabilities, logic bugs, missing critical tests, performance issues, authorization gaps, constraint violations
           - [LOW] = style suggestions, minor doc gaps, refactoring opportunities, non-critical warnings
 
           FORMAT EACH FINDING AS:
@@ -166,7 +155,7 @@ jobs:
           Suggestion: how to fix or improve
 
           Separate findings with "---"
-          End with a summary line: SUMMARY: X HIGH, Y LOW
+          End with exactly: SUMMARY: X HIGH, Y LOW
           PROMPT_EOF
 
           if [ ! -s /tmp/review_prompt.txt ]; then
@@ -174,12 +163,20 @@ jobs:
             exit 1
           fi
 
-          declare -a ADDITIONAL_FILES_ARGS
-          for f in /tmp/contributing.md /tmp/pr_diff.diff; do
-            [ -f "$f" ] && ADDITIONAL_FILES_ARGS+=(--file "$f")
+          declare -a FILE_ARGS
+          for f in /tmp/pr_diff.diff README.md \
+                   docs/reference/INDEX.md \
+                   docs/reference/backend-services.md \
+                   docs/reference/frontend-map.md \
+                   docs/reference/database-schema.md \
+                   docs/reference/api-endpoints.md \
+                   docs/reference/configurations.md \
+                   CONTRIBUTING.md \
+                   config/.env.example; do
+            [ -f "$f" ] && FILE_ARGS+=(--file "$f") && echo "Attached: $f" || echo "Skipped (missing): $f"
           done
 
-          cat /tmp/review_prompt.txt | opencode run --model "${{ inputs.model }}" "${ADDITIONAL_FILES_ARGS[@]}" 2>&1 | tee /tmp/review_output.txt
+          cat /tmp/review_prompt.txt | opencode run --model "${{ inputs.model }}" "${FILE_ARGS[@]}" 2>&1 | tee /tmp/review_output.txt
 
       - name: Parse results and count findings
         if: steps.context.outputs.skip != 'true'
