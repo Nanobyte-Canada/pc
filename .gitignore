@@ -133,3 +133,15 @@ gradle_output.txt
 deploy/prod/.env
 deploy/uat/.env
 deploy/monitoring/.env
+
+# Development artifacts (repo cleanup)
+/*.png
+screenshots/
+.playwright-mcp/
+.superpowers/brainstorm/
+
+# AI-generated analysis docs (kept locally, not committed)
+docs/big_pickle/
+docs/deepseek_v4_flash/
+docs/minimax_2-7/
+docs/comparision/

@@ -10,7 +10,6 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 
 @Component
 class TwsIbkrClient(
@@ -47,12 +46,10 @@ class TwsIbkrClient(
     private val chainRequestTimeout = 30000L
 
     @Volatile private var initialConnectComplete = false
-    private val reconnectHandler = AtomicReference<Runnable>()
+    private val reconnectHandlers = CopyOnWriteArrayList<Runnable>()
 
-    fun setReconnectHandler(handler: Runnable) {
-        if (!reconnectHandler.compareAndSet(null, handler)) {
-            log.warn("Reconnect handler already registered, ignoring duplicate")
-        }
+    override fun registerReconnectHandler(handler: Runnable) {
+        reconnectHandlers.add(handler)
     }
 
     data class GreeksData(
@@ -353,7 +350,11 @@ class TwsIbkrClient(
         connected.set(true)
         connectionReady.countDown()
         if (initialConnectComplete) {
-            reconnectHandler.get()?.run()
+            reconnectHandlers.forEach { handler ->
+                try { handler.run() } catch (e: Exception) {
+                    log.error("Reconnect handler threw exception", e)
+                }
+            }
         } else {
             initialConnectComplete = true
         }

@@ -14,16 +14,12 @@ class SubscriptionManager(
     private val logger = LoggerFactory.getLogger(SubscriptionManager::class.java)
     private val activeSubscriptions = LinkedHashMap<Int, Subscription>(16, 0.75f, true)
     private val subscriptionLock = Any()
+    private val resubscribeLock = Any()
     private val pinnedConIds = java.util.concurrent.ConcurrentHashMap.newKeySet<Int>()
 
     @PostConstruct
     fun init() {
-        val twsClient = ibkrClient as? TwsIbkrClient
-        if (twsClient != null) {
-            twsClient.setReconnectHandler(Runnable { resubscribeAll() })
-        } else {
-            logger.warn("IbkrClient is not TwsIbkrClient, reconnect handler not registered")
-        }
+        ibkrClient.registerReconnectHandler { resubscribeAll() }
     }
 
     fun subscribe(conId: Int, callback: (tickType: Int, value: Double) -> Unit) {
@@ -76,25 +72,27 @@ class SubscriptionManager(
     private val resubscribeFailures = java.util.concurrent.ConcurrentHashMap<Int, Int>()
 
     fun resubscribeAll() {
-        val snapshot = synchronized(subscriptionLock) {
-            if (activeSubscriptions.isEmpty()) emptyList()
-            else activeSubscriptions.entries.map { it.key to it.value.callback }.toList()
-        }
-        if (snapshot.isEmpty()) return
-        // Prune failure entries for conIds that are no longer active
-        val currentConIds = snapshot.map { it.first }.toSet()
-        resubscribeFailures.keys.filter { it !in currentConIds }.forEach { resubscribeFailures.remove(it) }
-        logger.info("Resubscribing {} active subscriptions after reconnect", snapshot.size)
-        for ((conId, callback) in snapshot) {
-            try {
-                ibkrClient.requestMarketData(conId, callback)
-                resubscribeFailures.remove(conId)
-            } catch (e: Exception) {
-                val failures = resubscribeFailures.merge(conId, 1, Int::plus)!!
-                if (failures >= 3) {
-                    logger.warn("Failed to resubscribe conId={} after {} attempts, will retry on next reconnect", conId, failures)
-                } else {
-                    logger.error("Failed to resubscribe conId={} (attempt {})", conId, failures, e)
+        synchronized(resubscribeLock) {
+            val snapshot = synchronized(subscriptionLock) {
+                if (activeSubscriptions.isEmpty()) emptyList()
+                else activeSubscriptions.entries.map { it.key to it.value.callback }.toList()
+            }
+            if (snapshot.isEmpty()) return
+            // Prune failure entries for conIds that are no longer active
+            val currentConIds = snapshot.map { it.first }.toSet()
+            resubscribeFailures.keys.filter { it !in currentConIds }.forEach { resubscribeFailures.remove(it) }
+            logger.info("Resubscribing {} active subscriptions after reconnect", snapshot.size)
+            for ((conId, callback) in snapshot) {
+                try {
+                    ibkrClient.requestMarketData(conId, callback)
+                    resubscribeFailures.remove(conId)
+                } catch (e: Exception) {
+                    val failures = resubscribeFailures.merge(conId, 1, Int::plus)!!
+                    if (failures >= 3) {
+                        logger.warn("Failed to resubscribe conId={} after {} attempts, will retry on next reconnect", conId, failures)
+                    } else {
+                        logger.error("Failed to resubscribe conId={} (attempt {})", conId, failures, e)
+                    }
                 }
             }
         }

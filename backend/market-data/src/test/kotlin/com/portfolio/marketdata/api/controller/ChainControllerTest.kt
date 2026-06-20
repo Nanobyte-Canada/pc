@@ -272,4 +272,32 @@ class ChainControllerTest {
         verify { ibkrClient.requestMarketDataSnapshot(1) }
         verify { ibkrClient.requestMarketDataSnapshot(2) }
     }
+
+    @Test
+    fun `getChainForExpiry returns 200 from cache without IBKR call`() {
+        val expiry = LocalDate.now().plusDays(30)
+        val cachedChain = OptionsChain(
+            underlying = "SPY",
+            spotPrice = BigDecimal.valueOf(450),
+            expirations = mapOf(expiry to mapOf(BigDecimal("450") to StrikeData(null, null)))
+        )
+        every { quoteCacheService.getChain("SPY") } returns cachedChain
+
+        val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+        verify(exactly = 0) { ibkrClient.isConnected() }
+        verify(exactly = 0) { ibkrClient.requestContractDetails(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `getChainForExpiry returns 503 when cache miss and IBKR not connected`() {
+        val expiry = LocalDate.now().plusDays(30)
+        every { quoteCacheService.getChain("SPY") } returns null
+        every { ibkrClient.isConnected() } returns false
+
+        val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
 }

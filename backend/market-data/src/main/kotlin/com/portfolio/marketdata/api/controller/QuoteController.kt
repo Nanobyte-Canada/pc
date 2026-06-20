@@ -6,6 +6,7 @@ import com.portfolio.marketdata.db.repository.UnderlyingPriceRepository
 import com.portfolio.marketdata.distribution.QuoteCacheService
 import com.portfolio.marketdata.ibkr.IbkrClient
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -39,7 +40,10 @@ class QuoteController(
                 symbol = latestPrice.ticker, bid = latestPrice.price, ask = latestPrice.price,
                 last = latestPrice.price, volume = latestPrice.volume ?: 0L, timestamp = latestPrice.observedAt
             )
-        } else if (ibkrClient.isConnected()) {
+        } else if (!ibkrClient.isConnected()) {
+            logger.warn("IBKR not connected, cannot fetch quote for {}", symbol)
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        } else {
             val contracts = ibkrClient.requestContractDetails(symbol, "STK")
             val conId = contracts.firstOrNull()?.conId
                 ?: return ResponseEntity.notFound().build()
@@ -54,8 +58,6 @@ class QuoteController(
                 volume = snapshot.volume ?: 0L,
                 timestamp = Instant.now()
             )
-        } else {
-            return ResponseEntity.notFound().build()
         }
 
         quoteCacheService.cacheQuote(quote)

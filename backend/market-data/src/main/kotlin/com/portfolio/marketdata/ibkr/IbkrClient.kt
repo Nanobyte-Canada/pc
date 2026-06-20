@@ -7,6 +7,7 @@ interface IbkrClient {
     fun connect()
     fun disconnect()
     fun isConnected(): Boolean
+    fun registerReconnectHandler(handler: Runnable) {}
     fun requestMarketData(conId: Int, callback: (tickType: Int, value: Double) -> Unit)
     fun cancelMarketData(conId: Int)
     fun requestOptionChain(underlying: String): List<OptionContractDetails>
