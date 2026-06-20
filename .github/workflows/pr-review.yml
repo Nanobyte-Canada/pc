@@ -7,7 +7,7 @@ on:
         description: 'OpenCode model (provider/model), e.g. opencode/claude-sonnet-4-6'
         type: string
         required: false
-        default: 'opencode/deepseek-v4-flash-free'
+        default: 'opencode/deepseek-v4-pro'
       fail-on-high:
         description: 'Fail the build on HIGH severity findings'
         type: boolean
@@ -45,28 +45,59 @@ jobs:
           if [ -z "$BASE_SHA" ] || [ -z "$HEAD_SHA" ]; then
             echo "No PR event context. Required for diff generation."
             echo "skip=true" >> $GITHUB_OUTPUT
+            echo "has_code_changes=false" >> $GITHUB_OUTPUT
             exit 0
           fi
-
-          git diff "$BASE_SHA...$HEAD_SHA" > /tmp/pr_diff.diff
-          echo "diff_size=$(wc -c < /tmp/pr_diff.diff)" >> $GITHUB_OUTPUT
-          echo "skip=false" >> $GITHUB_OUTPUT
 
           git diff --name-only "$BASE_SHA...$HEAD_SHA" > /tmp/changed_files.txt
           echo "changed_files=$(wc -l < /tmp/changed_files.txt)" >> $GITHUB_OUTPUT
 
+          echo "=== Changed files ==="
           cat /tmp/changed_files.txt
 
-      - name: Attach contributing.md if present
-        if: steps.context.outputs.skip != 'true'
-        run: |
-          for f in CONTRIBUTING.md .github/CONTRIBUTING.md docs/CONTRIBUTING.md; do
-            if [ -f "$f" ]; then
-              cp "$f" /tmp/contributing.md
-              echo "Attached $f"
-              break
-            fi
-          done
+          CODE_FILES=$(grep -v '^\.github/' /tmp/changed_files.txt | grep -cE '\.(kt|ts|tsx|java|css|sql|yml|yaml)$|\.gradle\.kts$|\.(xml|html|properties)$' || true)
+
+          echo ""
+          echo "Code files found: $CODE_FILES"
+
+          if [ "$CODE_FILES" -eq 0 ]; then
+            echo "No code files changed. Skipping LLM review."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "has_code_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          git diff "$BASE_SHA...$HEAD_SHA" -- . ':!.github' ':!*.png' ':!*.jpg' ':!*.md' ':!*.lock' ':!package-lock.json' ':!*.svg' > /tmp/pr_diff.diff
+
+          FULL_SIZE=$(wc -c < /tmp/pr_diff.diff)
+          MAX_SIZE=30720
+          if [ "$FULL_SIZE" -gt "$MAX_SIZE" ]; then
+            head -c "$MAX_SIZE" /tmp/pr_diff.diff > /tmp/pr_diff_truncated.diff
+            echo "" >> /tmp/pr_diff_truncated.diff
+            echo "... (diff truncated at ${MAX_SIZE} bytes from ${FULL_SIZE} bytes)" >> /tmp/pr_diff_truncated.diff
+            mv /tmp/pr_diff_truncated.diff /tmp/pr_diff.diff
+            echo "has_truncated=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_truncated=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "diff_size=$(wc -c < /tmp/pr_diff.diff)" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
+          echo "has_code_changes=true" >> $GITHUB_OUTPUT
+
+          echo "Review diff size: $(wc -c < /tmp/pr_diff.diff) bytes"
+
+      - name: Post skip comment for non-code changes
+        if: steps.context.outputs.has_code_changes == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: '## OpenCode PR Review\n\nSkipping automated review — no code changes detected (docs, config, or CI files only).\n\nHuman review recommended if these changes affect behavior.'
+            });
+            console.log('Skip comment posted');
 
       - name: Configure OpenCode auth
         if: steps.context.outputs.skip != 'true'
@@ -83,38 +114,38 @@ jobs:
 
       - name: Run PR Review with OpenCode
         if: steps.context.outputs.skip != 'true'
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           cat > /tmp/review_prompt.txt << 'PROMPT_EOF'
-          You are an expert PR reviewer. Analyze the attached diff (and contributing.md if provided) across three dimensions:
+          You are reviewing a PR for the Portfolio Construction App.
+          Tech: Kotlin 2.0/Spring Boot 3.3 + React 18/TypeScript 5.6/Vite 5
+          DB: PostgreSQL 16 + Flyway migrations. Redis 7. MockK for testing.
+          Key constraints (see INDEX.md and CONTRIBUTING.md attached for details):
+            - No local JDK — backend runs in Docker; No Tailwind CSS — use plain CSS
+            - Hibernate DDL=validate — schema managed exclusively by Flyway
+            - Frontend uses apiFetch() for all API calls
+            - MockK not Mockito; Vitest + Testing Library for frontend tests
+          Context docs are attached — use them to validate consistency, do not review the docs themselves.
 
-          1. CODE QUALITY REVIEW:
-          - Redundant/duplicate code patterns
-          - Violations of SOLID/OOP principles (single responsibility, open-closed, Liskov substitution, interface segregation, dependency inversion)
-          - Logic gaps: missing edge cases, null-safety issues, inadequate error handling, boundary condition bugs
-          - Logging: appropriate levels (info/warn/error), meaningful messages, sufficient context data
-          - Test coverage: missing unit tests for core logic, missing integration tests for critical paths, untested edge cases
-          - Linting violations (check for trailing whitespace, unused imports, inconsistent naming)
-          - Performance: nested loops, N+1 queries, unnecessarily large allocations, sync operations in async paths
-          - Breaking changes: API contract changes, database schema migrations, interface signature changes, removed exports
-          - Contributing.md compliance (if present)
+          Review the attached PR diff across two passes. Complete Pass 1 first, then Pass 2.
 
-          2. DOCUMENTATION REVIEW:
-          - Code changes that should be reflected in documentation
-          - Missing or stale ADR records
-          - Backend API docs, frontend component docs, database schema docs, infrastructure config docs out of sync
-          - Missing JSDoc/KDoc for public APIs
+          === PASS 1: CODE QUALITY & BREAKING CHANGES ===
+          - Logic bugs: null safety, edge cases, boundary conditions, error handling
+          - Breaking changes: API signatures, DB migrations, removed exports, schema changes — cross-reference the attached api-endpoints.md and database-schema.md
+          - Code duplication, SOLID violations, performance (N+1 queries, sync in async paths)
+          - Test coverage: new logic without tests, deleted tests without replacement
+          - For Kotlin changes: verify against backend-services.md patterns; watch for MockK vs Mockito
+          - For frontend changes: verify apiFetch() usage, check against frontend-map.md component patterns
 
-          3. SECURITY REVIEW:
-          - Vulnerable dependency patterns (unpinned versions, known-vulnerable packages)
-          - Authorization gaps (missing role checks, exposed admin endpoints)
-          - Injection risks (SQL, NoSQL, command injection, XSS)
-          - Sensitive data exposure (secrets in code, missing encryption)
-          - Authentication weaknesses (token validation, session handling)
+          === PASS 2: SECURITY & DOCUMENTATION ===
+          - Auth gaps, injection risks (SQL, XSS, command), secret/token exposure in code — check against config/.env.example for proper env var usage
+          - Missing or stale documentation relative to code changes
+          - Missing KDoc for public Kotlin APIs, JSDoc for public TypeScript APIs
+          - Violations of constraints from INDEX.md or CONTRIBUTING.md (Tailwind usage, direct fetch instead of apiFetch, etc.)
 
           OUTPUT RULES:
           - Prefix each finding with [HIGH] or [LOW]
-          - [HIGH] = breaking changes, security vulnerabilities, logic bugs, missing critical tests, performance issues, authorization gaps
+          - [HIGH] = breaking changes, security vulnerabilities, logic bugs, missing critical tests, performance issues, authorization gaps, constraint violations
           - [LOW] = style suggestions, minor doc gaps, refactoring opportunities, non-critical warnings
 
           FORMAT EACH FINDING AS:
@@ -123,7 +154,7 @@ jobs:
           Suggestion: how to fix or improve
 
           Separate findings with "---"
-          End with a summary line: SUMMARY: X HIGH, Y LOW
+          End with exactly: SUMMARY: X HIGH, Y LOW
           PROMPT_EOF
 
           if [ ! -s /tmp/review_prompt.txt ]; then
@@ -131,12 +162,20 @@ jobs:
             exit 1
           fi
 
-          declare -a ADDITIONAL_FILES_ARGS
-          for f in /tmp/contributing.md /tmp/pr_diff.diff; do
-            [ -f "$f" ] && ADDITIONAL_FILES_ARGS+=(--file "$f")
+          declare -a FILE_ARGS
+          for f in /tmp/pr_diff.diff README.md \
+                   docs/reference/INDEX.md \
+                   docs/reference/backend-services.md \
+                   docs/reference/frontend-map.md \
+                   docs/reference/database-schema.md \
+                   docs/reference/api-endpoints.md \
+                   docs/reference/configurations.md \
+                   CONTRIBUTING.md \
+                   config/.env.example; do
+            [ -f "$f" ] && FILE_ARGS+=(--file "$f") && echo "Attached: $f" || echo "Skipped (missing): $f"
           done
 
-          cat /tmp/review_prompt.txt | opencode run --model "${{ inputs.model }}" "${ADDITIONAL_FILES_ARGS[@]}" 2>&1 | tee /tmp/review_output.txt
+          cat /tmp/review_prompt.txt | opencode run --model "${{ inputs.model }}" "${FILE_ARGS[@]}" 2>&1 | tee /tmp/review_output.txt
 
       - name: Parse results and count findings
         if: steps.context.outputs.skip != 'true'
@@ -152,18 +191,27 @@ jobs:
 
           grep -n 'SUMMARY:' /tmp/review_output.txt || true
 
+      - name: Warn on zero findings
+        if: steps.context.outputs.skip != 'true' && steps.parse.outputs.HIGH_COUNT == '0' && steps.parse.outputs.LOW_COUNT == '0'
+        run: |
+          echo "::warning::Review produced 0 findings on a code diff. This may indicate the review missed issues — consider a manual review."
+
       - name: Post PR comment with review results
         if: steps.context.outputs.skip != 'true'
         uses: actions/github-script@v7
         env:
           HIGH_COUNT: ${{ steps.parse.outputs.HIGH_COUNT }}
           LOW_COUNT: ${{ steps.parse.outputs.LOW_COUNT }}
+          HAS_TRUNCATED: ${{ steps.context.outputs.has_truncated }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         with:
           script: |
             const fs = require('fs');
             const reviewText = fs.readFileSync('/tmp/review_output.txt', 'utf8').trim();
             const highCount = parseInt(process.env.HIGH_COUNT || '0');
             const lowCount = parseInt(process.env.LOW_COUNT || '0');
+            const hasTruncated = process.env.HAS_TRUNCATED === 'true';
+            const runUrl = process.env.RUN_URL;
 
             if (!reviewText) {
               console.log('No review output to post');
@@ -172,11 +220,19 @@ jobs:
 
             let prefix = '## OpenCode PR Review\n\n';
             prefix += '| Severity | Count |\n|----------|-------|\n';
-            prefix += `| 🔴 **HIGH** | ${highCount} |\n`;
-            prefix += `| 🟡 **LOW** | ${lowCount} |\n\n`;
+            prefix += `| :red_circle: **HIGH** | ${highCount} |\n`;
+            prefix += `| :yellow_circle: **LOW** | ${lowCount} |\n\n`;
 
             if (highCount > 0) {
-              prefix += `> ⚠️ **${highCount} HIGH severity ${highCount === 1 ? 'issue' : 'issues'} found.**\n\n`;
+              prefix += `> :warning: **${highCount} HIGH severity ${highCount === 1 ? 'issue' : 'issues'} found.**\n\n`;
+            }
+
+            if (hasTruncated) {
+              prefix += '> :information_source: Diff was truncated to 30KB. Review may be incomplete for large PRs.\n\n';
+            }
+
+            if (highCount === 0 && lowCount === 0) {
+              prefix += '> :information_source: No findings reported. Consider a manual review for completeness.\n\n';
             }
 
             const maxBodyLen = 60000;
@@ -184,10 +240,12 @@ jobs:
               ? reviewText.substring(0, maxBodyLen) + '\n\n...(output truncated)'
               : reviewText;
 
+            const footer = `\n\n---\n<sub>[View workflow run](${runUrl})</sub>`;
+
             await github.rest.issues.createComment({
               ...context.repo,
               issue_number: context.issue.number,
-              body: prefix + '---\n\n' + truncated
+              body: prefix + '---\n\n' + truncated + footer
             });
 
             console.log(`PR comment posted: ${highCount} HIGH, ${lowCount} LOW`);
