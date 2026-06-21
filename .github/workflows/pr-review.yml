@@ -56,6 +56,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          mkdir -p /tmp/review
           bash scripts/classify.sh --base "$BASE_SHA" --head "$HEAD_SHA" \
             --config "${{ inputs.config_path }}" 2>&1 | tee /tmp/review/classify-output.txt
 
