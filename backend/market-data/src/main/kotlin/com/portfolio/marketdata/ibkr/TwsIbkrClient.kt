@@ -508,7 +508,7 @@ class TwsIbkrClient(
         log.error("TwsIbkrClient: {}", str)
     }
 
-    override fun error(id: Int, errorCode: Int, errorMsg: String?, advancedOrderRejectJson: String?) {
+    override fun error(id: Int, errorTime: Long, errorCode: Int, errorMsg: String?, advancedOrderRejectJson: String?) {
         when (errorCode) {
             // Connection-level errors
             502, 504 -> {
