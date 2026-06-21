@@ -44,6 +44,7 @@ class ChainController(
     @Value("\${chain.build-max-threads:4}") private val buildMaxThreads: Int
 ) : DisposableBean {
 
+    // Per-contract snapshot fetch timeout in seconds. Used by fetchSnapshots for parallel snapshot requests.
     @Value("\${chain.snapshot-timeout-seconds:8}") private val snapshotTimeoutSeconds: Long = 8
 
     private val chainBuildExecutor: ExecutorService = Executors.newFixedThreadPool(buildMaxThreads.coerceIn(1, 64)) { r ->
@@ -215,10 +216,12 @@ class ChainController(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
+    /** Thrown when a chain build exceeds the configured timeout (chain.build-timeout-seconds). */
     private class ChainBuildTimeoutException(underlying: String, expiry: LocalDate? = null) : RuntimeException(
         "Chain build timed out for ${underlying.replace(Regex("[\\r\\n]"), "")}${expiry?.let { " expiry $it" } ?: ""}"
     )
 
+    /** Thrown when IBKR disconnects during an async chain build to distinguish from actual timeouts. */
     private class ChainBuildUnavailableException(underlying: String, expiry: LocalDate? = null) : RuntimeException(
         "IBKR disconnected during chain build for ${underlying.replace(Regex("[\\r\\n]"), "")}${expiry?.let { " expiry $it" } ?: ""}"
     )

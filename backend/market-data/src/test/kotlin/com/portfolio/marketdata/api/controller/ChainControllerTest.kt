@@ -282,4 +282,31 @@ class ChainControllerTest {
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
     }
+
+    @Test
+    fun `getExpirations fetches from IBKR on cache miss with async timeout`() {
+        val today = LocalDate.now()
+        val within90 = today.plusDays(30)
+        val beyond90 = today.plusDays(180)
+
+        every { quoteCacheService.getExpirations("SPY") } returns null
+        every { ibkrClient.requestOptionExpirations("SPY") } returns listOf(within90, beyond90)
+        every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
+        every { ibkrClient.isConnected() } returns true
+
+        val response = controller.getExpirations("SPY", null)
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertEquals(listOf(within90), response.body!!.expirations)
+    }
+
+    @Test
+    fun `getExpirations returns 503 when IBKR disconnects mid-fetch`() {
+        every { quoteCacheService.getExpirations("SPY") } returns null
+        every { ibkrClient.isConnected() } returnsMany listOf(true, false)
+
+        val response = controller.getExpirations("SPY", null)
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
 }
