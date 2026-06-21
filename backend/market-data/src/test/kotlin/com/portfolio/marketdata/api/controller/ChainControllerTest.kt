@@ -17,6 +17,7 @@ import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.clearMocks
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -37,6 +38,7 @@ class ChainControllerTest {
 
     @BeforeEach
     fun setup() {
+        clearMocks(quoteCacheService, ibkrClient, chainBuilder, greeksCalculator)
         every { greeksCalculator.calculate(any(), any(), any(), any(), any(), any()) } returns Greeks(
             delta = BigDecimal.ZERO, gamma = BigDecimal.ZERO, theta = BigDecimal.ZERO,
             vega = BigDecimal.ZERO, rho = BigDecimal.ZERO, source = GreeksSource.BLACK_SCHOLES
@@ -95,7 +97,8 @@ class ChainControllerTest {
         val response = controller.getChain("SPY")
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        verify(exactly = 0) { ibkrClient.isConnected() }
+        verify(exactly = 0) { ibkrClient.requestContractDetails(any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { ibkrClient.requestMarketDataSnapshot(any()) }
     }
 
     @Test
@@ -228,7 +231,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getChainForExpiry returns 200 from cache without IBKR call`() {
+    fun `getChainForExpiry returns 200 from cache without heavy IBKR calls`() {
         val expiry = LocalDate.now().plusDays(30)
         val cachedChain = OptionsChain(
             underlying = "SPY",
@@ -240,8 +243,8 @@ class ChainControllerTest {
         val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        verify(exactly = 0) { ibkrClient.isConnected() }
         verify(exactly = 0) { ibkrClient.requestContractDetails(any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { ibkrClient.requestMarketDataSnapshot(any()) }
     }
 
     @Test
