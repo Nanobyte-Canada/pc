@@ -7,6 +7,9 @@ interface IbkrClient {
     fun connect()
     fun disconnect()
     fun isConnected(): Boolean
+    /** Register a callback invoked after reconnection. Implementations must store and invoke handlers
+     *  on reconnect (e.g. in the `nextValidId` TWS callback after the initial connection). */
+    fun registerReconnectHandler(handler: Runnable) {}
     fun requestMarketData(conId: Int, callback: (tickType: Int, value: Double) -> Unit)
     fun cancelMarketData(conId: Int)
     fun requestOptionChain(underlying: String): List<OptionContractDetails>

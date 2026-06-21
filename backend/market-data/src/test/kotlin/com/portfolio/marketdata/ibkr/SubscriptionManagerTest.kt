@@ -3,7 +3,11 @@ package com.portfolio.marketdata.ibkr
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class SubscriptionManagerTest {
 
@@ -70,6 +74,26 @@ class SubscriptionManagerTest {
         manager.resubscribeAll()
         manager.resubscribeAll()
         manager.resubscribeAll()
+
+        verify(exactly = 4) { ibkrClient.requestMarketData(1001, any()) }
+    }
+
+    @RepeatedTest(5)
+    fun `resubscribeAll is safe under concurrent execution`() {
+        val manager = SubscriptionManager(ibkrClient, 100)
+        manager.subscribe(1001) { _, _ -> }
+
+        val latch = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(3)
+        val futures = (1..3).map {
+            executor.submit {
+                latch.await()
+                manager.resubscribeAll()
+            }
+        }
+        latch.countDown()
+        futures.forEach { it.get(5, TimeUnit.SECONDS) }
+        executor.shutdown()
 
         verify(exactly = 4) { ibkrClient.requestMarketData(1001, any()) }
     }

@@ -41,6 +41,8 @@ class ChainControllerTest {
             delta = BigDecimal.ZERO, gamma = BigDecimal.ZERO, theta = BigDecimal.ZERO,
             vega = BigDecimal.ZERO, rho = BigDecimal.ZERO, source = GreeksSource.BLACK_SCHOLES
         )
+        every { quoteCacheService.getChain(any()) } returns null
+        every { quoteCacheService.getExpirations(any()) } returns null
         controller = ChainController(quoteCacheService, chainBuilder, greeksCalculator, ibkrClient, properties, 15, 2)
     }
 
@@ -95,7 +97,8 @@ class ChainControllerTest {
         val response = controller.getChain("SPY")
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        verify(exactly = 0) { ibkrClient.isConnected() }
+        verify(exactly = 0) { ibkrClient.requestContractDetails(any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { ibkrClient.requestMarketDataSnapshot(any()) }
     }
 
     @Test
@@ -225,5 +228,85 @@ class ChainControllerTest {
         assertEquals(HttpStatus.OK, response.statusCode)
         verify { ibkrClient.requestMarketDataSnapshot(1) }
         verify { ibkrClient.requestMarketDataSnapshot(2) }
+    }
+
+    @Test
+    fun `getChainForExpiry returns 200 from cache without heavy IBKR calls`() {
+        val expiry = LocalDate.now().plusDays(30)
+        val cachedChain = OptionsChain(
+            underlying = "SPY",
+            spotPrice = BigDecimal.valueOf(450),
+            expirations = mapOf(expiry to mapOf(BigDecimal("450") to StrikeData(null, null)))
+        )
+        every { quoteCacheService.getChain("SPY") } returns cachedChain
+
+        val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+        verify(exactly = 0) { ibkrClient.requestContractDetails(any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { ibkrClient.requestMarketDataSnapshot(any()) }
+    }
+
+    @Test
+    fun `getChainForExpiry returns 503 when cache miss and IBKR not connected`() {
+        val expiry = LocalDate.now().plusDays(30)
+        every { quoteCacheService.getChain("SPY") } returns null
+        every { ibkrClient.isConnected() } returns false
+
+        val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
+
+    @Test
+    fun `getChain returns 503 when IBKR disconnects mid-build`() {
+        every { quoteCacheService.getChain("SPY") } returns null
+        every { ibkrClient.isConnected() } returnsMany listOf(true, false)
+        every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
+        every { ibkrClient.requestOptionChain("SPY") } returns emptyList()
+
+        val response = controller.getChain("SPY")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
+
+    @Test
+    fun `getChainForExpiry returns 503 when IBKR disconnects mid-build`() {
+        val expiry = LocalDate.now().plusDays(30)
+        every { quoteCacheService.getChain("SPY") } returns null
+        every { ibkrClient.isConnected() } returnsMany listOf(true, false)
+        every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
+        every { ibkrClient.requestContractDetails("SPY", "OPT", expiry, any(), any()) } returns emptyList()
+
+        val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
+
+    @Test
+    fun `getExpirations fetches from IBKR on cache miss with async timeout`() {
+        val today = LocalDate.now()
+        val within90 = today.plusDays(30)
+        val beyond90 = today.plusDays(180)
+
+        every { quoteCacheService.getExpirations("SPY") } returns null
+        every { ibkrClient.requestOptionExpirations("SPY") } returns listOf(within90, beyond90)
+        every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
+        every { ibkrClient.isConnected() } returns true
+
+        val response = controller.getExpirations("SPY", null)
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertEquals(listOf(within90), response.body!!.expirations)
+    }
+
+    @Test
+    fun `getExpirations returns 503 when IBKR disconnects mid-fetch`() {
+        every { quoteCacheService.getExpirations("SPY") } returns null
+        every { ibkrClient.isConnected() } returnsMany listOf(true, false)
+
+        val response = controller.getExpirations("SPY", null)
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
     }
 }
