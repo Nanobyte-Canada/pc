@@ -6,8 +6,8 @@ cd "$(dirname "$0")/../.."
 cat > /tmp/review/classifier-output.json << 'JSON'
 {
   "files": [
-    {"path": "src/controller/AccountController.kt", "bucket": "code"},
-    {"path": "src/controller/AccountController.kt", "bucket": "api_spec"},
+    {"path": "/tmp/test_structural.kt", "bucket": "code"},
+    {"path": "/tmp/test_structural.kt", "bucket": "api_spec"},
     {"path": "docs/api-endpoints.md", "bucket": "docs"},
     {"path": "bad_migration.sql", "bucket": "migration"},
     {"path": "backend/db/migration/V73__add_metrics.sql", "bucket": "migration"}
@@ -23,8 +23,7 @@ cat > /tmp/review/classifier-output.json << 'JSON'
 }
 JSON
 
-mkdir -p src/controller
-cat > src/controller/AccountController.kt << 'KT'
+cat > /tmp/test_structural.kt << 'KT'
 class ExistingClass {
     fun existingMethod() = 42
 }

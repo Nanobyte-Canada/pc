@@ -29,6 +29,7 @@ FINDINGS_FILE="/tmp/review/structural-findings.txt"
 > "$FINDINGS_FILE"
 
 if [ ! -f "$MANIFEST" ]; then
+  echo "No classifier output at $MANIFEST — skipping structural checks" >&2
   echo "SUMMARY: 0 HIGH, 0 LOW" > "$FINDINGS_FILE"
   exit 0
 fi
