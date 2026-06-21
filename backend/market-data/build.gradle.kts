@@ -19,7 +19,6 @@ java {
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://invesdwin.de/repo/invesdwin-oss/") }
 }
 
 dependencies {
@@ -46,8 +45,8 @@ dependencies {
     // Metrics
     implementation("io.micrometer:micrometer-registry-prometheus")
 
-    // IBKR TWS API
-    implementation("com.interactivebrokers:tws-api:10.20.01")
+    // IBKR TWS API (vendored from interactivebrokers.github.io)
+    implementation(files("libs/TwsApi.jar"))
 
     // Logging
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")

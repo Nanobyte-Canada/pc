@@ -1,21 +1,10 @@
 FROM gradle:8.10-jdk21-alpine AS build
 WORKDIR /build
 
-# Import Invesdwin Maven repo full certificate chain into JVM truststore (for TWS API dependency)
-RUN apk add --no-cache openssl && \
-    JAVA_CACERTS=$(find /opt -name cacerts -type f 2>/dev/null | head -1) && \
-    echo | openssl s_client -showcerts -connect invesdwin.de:443 -servername invesdwin.de 2>/dev/null | \
-    awk 'BEGIN{n=0} /BEGIN CERTIFICATE/{n++; fn="/tmp/invesdwin-cert-"n".pem"} {if(fn) print > fn} /END CERTIFICATE/{fn=""}' && \
-    for cert in /tmp/invesdwin-cert-*.pem; do \
-      [ -f "$cert" ] && keytool -import -trustcacerts -keystore "$JAVA_CACERTS" -storepass changeit \
-        -noprompt -alias "$(basename $cert .pem)" -file "$cert" 2>/dev/null || true; \
-    done && \
-    rm -f /tmp/invesdwin-cert-*.pem
-
 # Copy common module for composite build
 COPY common ./common
 
-# Copy market-data service
+# Copy market-data service (includes vendored TwsApi.jar in libs/)
 COPY market-data ./market-data
 
 WORKDIR /build/market-data
