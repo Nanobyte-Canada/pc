@@ -11,8 +11,9 @@ usage() {
   echo "  --head          Head SHA of the PR"
   echo "  --config        Path to review-config.yml (default: .github/review-config.yml)"
   echo "  --changed-files Path to file with changed files list (for testing, overrides git diff)"
-  exit 1
 }
+
+die() { usage; exit 1; }
 
 BASE=""
 HEAD=""
@@ -25,8 +26,8 @@ while [[ $# -gt 0 ]]; do
     --head) HEAD="$2"; shift 2 ;;
     --config) CONFIG="$2"; shift 2 ;;
     --changed-files) CHANGED_FILES="$2"; shift 2 ;;
-    --help) usage ;;
-    *) echo "Unknown: $1"; usage ;;
+    --help) usage; exit 0 ;;
+    *) echo "Unknown: $1"; die ;;
   esac
 done
 
@@ -37,7 +38,7 @@ if [ -n "$CHANGED_FILES" ]; then
 elif [ -n "$BASE" ] && [ -n "$HEAD" ]; then
   git diff --name-only "$BASE...$HEAD" > /tmp/review/changed_files.txt
 else
-  echo "{\"error\": \"--base and --head required, or --changed-files\"}"
+  echo "{\"error\": \"--base and --head required, or --changed-files\"}" >&2
   exit 1
 fi
 
@@ -102,7 +103,7 @@ ONLY_SKIPPABLE=true
 for b in "${BUCKET_PRECEDENCE[@]}"; do
   if [ "${BUCKET_COUNTS[$b]}" -gt 0 ]; then
     case "$b" in
-      generated|binary|config) ;;
+      generated|binary) ;;
       *) ONLY_SKIPPABLE=false ;;
     esac
   fi
@@ -130,7 +131,7 @@ jq -n \
   --argjson has_structural "$HAS_STRUCTURAL" \
   --argjson skip_review "$ONLY_SKIPPABLE" \
   --argjson truncated false \
-  --arg diff_size_bytes "$(wc -c < /tmp/review/changed_files.txt 2>/dev/null || echo 0)" \
+  --arg diff_size_bytes "$([ -n "$CHANGED_FILES" ] && echo 0 || git diff "$BASE...$HEAD" 2>/dev/null | wc -c)" \
   '{
     files: $files,
     buckets: $buckets,
