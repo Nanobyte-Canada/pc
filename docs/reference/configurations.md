@@ -488,6 +488,19 @@ spring.mvc.problemdetails.enabled: true
 | `IBKR_PORT` | Interactive Brokers TWS/Gateway port | `4001` | Market data service |
 | `IBKR_CLIENT_ID` | IBKR client connection ID | `1` | Market data service |
 
+### Market Data Service Application Properties
+
+Properties configurable via `@Value` annotations in the market-data service:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `chain.build-timeout-seconds` | Long | `15` | Max seconds before a chain build times out and returns 503 |
+| `chain.build-max-threads` | Int | `4` | Max concurrent chain build threads (capped 1-64) |
+| `chain.snapshot-timeout-seconds` | Long | `8` | Per-contract snapshot fetch timeout in seconds |
+| `cache.quote-ttl-seconds` | Long | `60` | Redis TTL for individual quote cache entries |
+| `cache.chain-ttl-seconds` | Long | `300` | Redis TTL for options chain cache entries |
+| `ibkr.max-subscriptions` | Int | `100` | Max active market data subscriptions before LRU eviction |
+
 ---
 
 ## Strategy Service Configuration

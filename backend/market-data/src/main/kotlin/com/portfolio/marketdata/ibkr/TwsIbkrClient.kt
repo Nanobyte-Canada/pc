@@ -52,6 +52,11 @@ class TwsIbkrClient(
         reconnectHandlers.add(handler)
     }
 
+    @Deprecated("Use registerReconnectHandler instead", ReplaceWith("registerReconnectHandler(handler)"))
+    fun setReconnectHandler(handler: Runnable) {
+        registerReconnectHandler(handler)
+    }
+
     data class GreeksData(
         val impliedVol: Double = Double.MAX_VALUE,
         val delta: Double = Double.MAX_VALUE,

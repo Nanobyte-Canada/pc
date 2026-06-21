@@ -254,4 +254,29 @@ class ChainControllerTest {
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
     }
+
+    @Test
+    fun `getChain returns 503 when IBKR disconnects mid-build`() {
+        every { quoteCacheService.getChain("SPY") } returns null
+        every { ibkrClient.isConnected() } returnsMany listOf(true, false)
+        every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
+        every { ibkrClient.requestOptionChain("SPY") } returns emptyList()
+
+        val response = controller.getChain("SPY")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
+
+    @Test
+    fun `getChainForExpiry returns 503 when IBKR disconnects mid-build`() {
+        val expiry = LocalDate.now().plusDays(30)
+        every { quoteCacheService.getChain("SPY") } returns null
+        every { ibkrClient.isConnected() } returnsMany listOf(true, false)
+        every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
+        every { ibkrClient.requestContractDetails("SPY", "OPT", expiry, any(), any()) } returns emptyList()
+
+        val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+    }
 }

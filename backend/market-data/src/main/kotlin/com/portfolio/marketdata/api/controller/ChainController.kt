@@ -44,7 +44,7 @@ class ChainController(
     @Value("\${chain.build-max-threads:4}") private val buildMaxThreads: Int
 ) : DisposableBean {
 
-    @Value("\${chain.snapshot-timeout-seconds:5}") private val snapshotTimeoutSeconds: Long = 5
+    @Value("\${chain.snapshot-timeout-seconds:8}") private val snapshotTimeoutSeconds: Long = 8
 
     private val chainBuildExecutor: ExecutorService = Executors.newFixedThreadPool(buildMaxThreads.coerceIn(1, 64)) { r ->
         Thread(r, "chain-build-${threadCounter.incrementAndGet()}").apply { isDaemon = true }
@@ -139,7 +139,10 @@ class ChainController(
             val spotPrice = resolveSpotPrice(underlying) ?: return@supplyAsync null
             if (Thread.interrupted()) throw InterruptedException()
             val allExpirations = quoteCacheService.getExpirations(underlying)
-                ?: ibkrClient.requestOptionExpirations(underlying).also { exps ->
+                ?: run {
+                    if (Thread.interrupted()) throw InterruptedException()
+                    ibkrClient.requestOptionExpirations(underlying)
+                }.also { exps ->
                     if (exps.isNotEmpty()) quoteCacheService.cacheExpirations(underlying, exps)
                 }
             if (allExpirations.isEmpty()) return@supplyAsync null
@@ -419,6 +422,8 @@ class ChainController(
 
         val futures = contracts.map { contract ->
             CompletableFuture.supplyAsync({
+                // Interrupt check is for executor shutdown (shutdownNow) safety, not timeout cancellation.
+                // Timeout uses cancel(false) since IBKR calls are not interrupt-safe.
                 if (Thread.interrupted()) return@supplyAsync null
                 try {
                     ibkrClient.requestMarketDataSnapshot(contract.conId)?.let { contract.conId to it }

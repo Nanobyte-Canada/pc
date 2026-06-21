@@ -95,6 +95,6 @@ class SubscriptionManagerTest {
         futures.forEach { it.get(5, TimeUnit.SECONDS) }
         executor.shutdown()
 
-        verify(atLeast = 1) { ibkrClient.requestMarketData(1001, any()) }
+        verify(atLeast = 3) { ibkrClient.requestMarketData(1001, any()) }
     }
 }
