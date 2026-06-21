@@ -1,0 +1,60 @@
+# Default PR Review Configuration
+# All fields optional — remove any you don't need.
+# See docs: https://github.com/org/pr-review-pipeline
+
+models:
+  code_review: opencode/deepseek-v4-pro
+  doc_review: opencode/deepseek-v4-pro
+
+file_classification:
+  code:
+    - "**/*.{kt,java,ts,tsx,js,jsx,py,go,rs,rb,php,scala,swift}"
+  api_spec:
+    - "**/openapi*.{yml,yaml,json}"
+    - "**/*controller*.py"
+    - "**/*handler*.go"
+    - "**/*routes*.ts"
+    - "**/*Controller*.kt"
+  tests:
+    - "**/*test*.py"
+    - "**/*_test.go"
+    - "**/*Test*.{kt,java}"
+    - "**/*.test.{ts,tsx}"
+    - "**/__tests__/**"
+    - "**/*spec*.{rs,kt}"
+  migration:
+    - "**/db/migration/*.sql"
+    - "**/alembic/**/*.py"
+    - "**/migrations/**/*.py"
+  docs:
+    - "**/*.{md,rst,adoc}"
+    - "docs/**"
+  generated:
+    - "**/*.generated.*"
+    - "**/*_pb2.py"
+    - "**/*.pb.go"
+    - "**/generated/**"
+    - "openapi-generator/**"
+  binary:
+    - "**/*.{png,jpg,jpeg,gif,svg,ico,lock,woff2,eot,ttf}"
+
+ignore_patterns:
+  - "package-lock.json"
+  - "yarn.lock"
+  - "*.svg"
+  - "*.snap"
+
+skip_llm_patterns:
+  - "*.css"
+  - "*.properties"
+  - "*.yml"
+  - "*.yaml"
+
+doc_manifest: []
+
+reference_docs: []
+
+rule_overrides: {}
+
+fail_on_high: true
+max_diff_bytes: 30720
