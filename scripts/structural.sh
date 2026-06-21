@@ -97,7 +97,8 @@ while IFS= read -r cpath; do
       while IFS= read -r line; do
         if echo "$line" | grep -qE '^\s*(fun |class |interface |object )'; then
           if ! echo "$prev" | grep -q '/\*\*'; then
-            ident=$(echo "$line" | grep -oE '(fun |class |interface |object )\w+' | head -1)
+            ident=$(echo "$line" | grep -oE '(fun |class |interface |object )\w+' | head -1) || true
+            [ -z "$ident" ] && { prev="$line"; continue; }
             write_finding "LOW" "Missing Docstring" \
               "New public declaration '$ident' lacks KDoc comment" \
               "$cpath:1" \
@@ -112,7 +113,7 @@ while IFS= read -r cpath; do
       while IFS= read -r line; do
         if echo "$line" | grep -qE '^\s*(export (function|const|class|interface|type) |function )'; then
           if ! echo "$prev" | grep -q '/\*\*'; then
-            ident=$(echo "$line" | grep -oE '(function |const |class |interface |type )\w+' | head -1)
+            ident=$(echo "$line" | grep -oE '(function |const |class |interface |type )\w+' | head -1) || true
             write_finding "LOW" "Missing Docstring" \
               "New public declaration '$ident' lacks JSDoc comment" \
               "$cpath:1" \
@@ -127,7 +128,7 @@ while IFS= read -r cpath; do
       while IFS= read -r line; do
         if echo "$line" | grep -qE '^\s*(def |class )'; then
           if ! echo "$prev" | grep -qE '^\s*("""|#|def |class )'; then
-            ident=$(echo "$line" | grep -oE '(def |class )\w+' | head -1)
+            ident=$(echo "$line" | grep -oE '(def |class )\w+' | head -1) || true
             if [ -n "$ident" ]; then
               write_finding "LOW" "Missing Docstring" \
                 "New public declaration '$ident' lacks docstring" \
