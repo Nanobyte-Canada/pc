@@ -341,7 +341,7 @@ class TwsIbkrAccountClient(
     override fun cancelOrder(orderId: Int) {
         sendExecutor.submit {
             try {
-                client.cancelOrder(orderId, "")
+                client.cancelOrder(orderId, OrderCancel())
                 log.info("TwsIbkrAccountClient: cancel request sent for order {}", orderId)
             } catch (e: Exception) {
                 log.error("TwsIbkrAccountClient: failed to cancel order {}", orderId, e)
