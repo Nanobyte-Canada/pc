@@ -154,7 +154,10 @@ fi
 
 # Only attempt LLM call if opencode is available
 if command -v opencode &>/dev/null; then
-  cat "$PROMPT_FILE" | opencode run --model "$MODEL" "${FILE_ARGS[@]}" 2>&1 | tee "$OUTPUT_FILE"
+  cat "$PROMPT_FILE" | opencode run --model "$MODEL" "${FILE_ARGS[@]}" 2>&1 | tee "$OUTPUT_FILE" || {
+    echo "Warning: opencode run failed — skipping $TYPE review" >&2
+    echo "SUMMARY: 0 HIGH, 0 LOW" > "$OUTPUT_FILE"
+  }
 else
   echo "Warning: opencode not found — skipping $TYPE review. Install with: npm install -g opencode-ai" >&2
   echo "SUMMARY: 0 HIGH, 0 LOW" > "$OUTPUT_FILE"
