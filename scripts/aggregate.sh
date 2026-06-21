@@ -28,7 +28,7 @@ ALL_FINDINGS=$(cat "$FINDINGS_DIR"/{structural,code,doc}-findings.txt 2>/dev/nul
 
 if [ -z "$(echo "$ALL_FINDINGS" | grep -v '^SUMMARY:' | grep -v '^$')" ]; then
   {
-    echo "## PR Review"
+  echo "## PR Review${PR_TITLE:+: $PR_TITLE}"
     echo ""
     echo "| Severity | Count |"
     echo "|----------|-------|"
@@ -55,7 +55,7 @@ current_block=""
 while IFS= read -r line; do
   if [ "$line" = "---" ] || [[ "$line" =~ ^SUMMARY: ]]; then
     if [ -n "$current_block" ]; then
-      severity=$(echo "$current_block" | grep -oP '^\[(HIGH|LOW)\]' | head -1 | tr -d '[]')
+      severity=$(echo "$current_block" | grep -oE '^\[(HIGH|LOW)\]' | head -1 | tr -d '[]')
       rest=$(echo "$current_block" | sed 's/^\[HIGH\] //;s/^\[LOW\] //')
       category_desc=$(echo "$rest" | head -1)
       location=$(echo "$current_block" | grep '^Location:' | sed 's/^Location: //')
@@ -86,13 +86,13 @@ apply_override() {
 
   if echo "$category" | grep -qi "missing.*docstring\|lacks.*doc\|lacks.*jsdoc\|lacks.*kdoc"; then
     if [ -f "$CONFIG" ] && grep -q "missing_docstring:" "$CONFIG" 2>/dev/null; then
-      override=$(grep "missing_docstring:" "$CONFIG" | grep -oP '\w+$' || true)
+      override=$(grep "missing_docstring:" "$CONFIG" | grep -oE '[a-zA-Z0-9_]+$' || true)
       [ -n "$override" ] && echo "$override" && return
     fi
   fi
   if echo "$category" | grep -qi "performance"; then
     if [ -f "$CONFIG" ] && grep -q "performance_concern:" "$CONFIG" 2>/dev/null; then
-      override=$(grep "performance_concern:" "$CONFIG" | grep -oP '\w+$' || true)
+      override=$(grep "performance_concern:" "$CONFIG" | grep -oE '[a-zA-Z0-9_]+$' || true)
       [ -n "$override" ] && echo "$override" && return
     fi
   fi

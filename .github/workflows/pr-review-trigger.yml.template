@@ -18,4 +18,4 @@ jobs:
       config_path: '.github/review-config.yml'
       fail_on_high: true
     secrets:
-      api_key: ${{ secrets.LLM_API_KEY }}
+      api_key: ${{ secrets.OPENCODE_API_KEY }}
