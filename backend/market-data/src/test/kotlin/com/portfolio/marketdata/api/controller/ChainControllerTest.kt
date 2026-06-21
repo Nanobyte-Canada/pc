@@ -17,7 +17,6 @@ import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.clearMocks
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -38,11 +37,12 @@ class ChainControllerTest {
 
     @BeforeEach
     fun setup() {
-        clearMocks(quoteCacheService, ibkrClient, chainBuilder, greeksCalculator)
         every { greeksCalculator.calculate(any(), any(), any(), any(), any(), any()) } returns Greeks(
             delta = BigDecimal.ZERO, gamma = BigDecimal.ZERO, theta = BigDecimal.ZERO,
             vega = BigDecimal.ZERO, rho = BigDecimal.ZERO, source = GreeksSource.BLACK_SCHOLES
         )
+        every { quoteCacheService.getChain(any()) } returns null
+        every { quoteCacheService.getExpirations(any()) } returns null
         controller = ChainController(quoteCacheService, chainBuilder, greeksCalculator, ibkrClient, properties, 15, 2)
     }
 
