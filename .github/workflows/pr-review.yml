@@ -4,10 +4,10 @@ on:
   workflow_call:
     inputs:
       model:
-        description: 'OpenCode model (provider/model), e.g. opencode/claude-sonnet-4-6'
+        description: 'OpenCode model (provider/model), e.g. opencode-go/deepseek-v4-pro'
         type: string
         required: false
-        default: 'opencode/deepseek-v4-pro'
+        default: 'opencode-go/deepseek-v4-pro'
       fail-on-high:
         description: 'Fail the build on HIGH severity findings'
         type: boolean
@@ -15,7 +15,7 @@ on:
         default: true
     secrets:
       api_key:
-        description: 'OpenCode Zen API key (from opencode.ai/auth)'
+        description: 'OpenCode Go API key (from opencode.ai/auth)'
         required: true
 
 jobs:
@@ -105,7 +105,7 @@ jobs:
           mkdir -p ~/.local/share/opencode
           cat > ~/.local/share/opencode/auth.json << EOF
           {
-            "opencode": {
+            "opencode-go": {
               "type": "api",
               "key": "${{ secrets.api_key }}"
             }

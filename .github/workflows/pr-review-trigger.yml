@@ -13,7 +13,7 @@ jobs:
     name: OpenCode PR Review
     uses: ./.github/workflows/pr-review.yml
     with:
-      model: opencode/deepseek-v4-pro
+      model: opencode-go/deepseek-v4-pro
       fail-on-high: true
     secrets:
       api_key: ${{ secrets.OPENCODE_API_KEY }}
