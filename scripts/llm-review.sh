@@ -7,7 +7,7 @@ usage() {
   echo "Run LLM-based review (code quality or documentation drift)."
   echo ""
   echo "  --type       Review type: 'code' or 'docs'"
-  echo "  --model      LLM model identifier (default: opencode/deepseek-v4-pro)"
+  echo "  --model      LLM model identifier (default: opencode-go/deepseek-v4-pro)"
   echo "  --config     Path to review-config.yml (default: .github/review-config.yml)"
   echo "  --dry-run    Print the prompt and context without calling the LLM"
 }
@@ -15,7 +15,7 @@ usage() {
 die() { usage; exit 1; }
 
 TYPE=""
-MODEL="opencode/deepseek-v4-pro"
+MODEL="opencode-go/deepseek-v4-pro"
 CONFIG=".github/review-config.yml"
 DRY_RUN=false
 

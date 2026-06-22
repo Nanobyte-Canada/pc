@@ -1,6 +1,6 @@
 ---
 name: pr-review
-model: opencode/deepseek-v4-pro
+model: opencode-go/deepseek-v4-pro
 mode: subagent
 description: PR review agent that runs the full pipeline — classify changed files, run structural checks, LLM code review, LLM doc review, and aggregate findings
 ---
