@@ -1,8 +1,11 @@
-name: PR Review - Code, Docs & Security
+# Copy this file to your repo as .github/workflows/pr-review-trigger.yml
+# and configure the LLM_API_KEY secret in your repo settings.
+
+name: PR Review
 
 on:
   pull_request:
-    branches: [development, main]
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -10,7 +13,6 @@ permissions:
 
 jobs:
   review:
-    name: OpenCode PR Review
     uses: ./.github/workflows/pr-review.yml
     with:
       config_path: '.github/review-config.yml'

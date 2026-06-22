@@ -3,16 +3,18 @@ name: PR Review (Reusable)
 on:
   workflow_call:
     inputs:
-      model:
-        description: 'OpenCode model (provider/model), e.g. opencode-go/deepseek-v4-pro'
+      config_path:
+        description: 'Path to review config (relative to repo root)'
         type: string
-        required: false
-        default: 'opencode-go/deepseek-v4-pro'
-      fail-on-high:
+        default: '.github/review-config.yml'
+      fail_on_high:
         description: 'Fail the build on HIGH severity findings'
         type: boolean
-        required: false
         default: true
+      max_diff_bytes:
+        description: 'Maximum diff size before truncation'
+        type: number
+        default: 30720
     secrets:
       api_key:
         description: 'OpenCode Go API key (from opencode.ai/auth)'
@@ -34,73 +36,9 @@ jobs:
           node-version: "20"
 
       - name: Install opencode
-        run: npm install -g opencode-ai@1.17.7
-
-      - name: Gather PR context
-        id: context
-        run: |
-          BASE_SHA="${{ github.event.pull_request.base.sha || '' }}"
-          HEAD_SHA="${{ github.event.pull_request.head.sha || '' }}"
-
-          if [ -z "$BASE_SHA" ] || [ -z "$HEAD_SHA" ]; then
-            echo "No PR event context. Required for diff generation."
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "has_code_changes=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          git diff --name-only "$BASE_SHA...$HEAD_SHA" > /tmp/changed_files.txt
-          echo "changed_files=$(wc -l < /tmp/changed_files.txt)" >> $GITHUB_OUTPUT
-
-          echo "=== Changed files ==="
-          cat /tmp/changed_files.txt
-
-          CODE_FILES=$(grep -v '^\.github/' /tmp/changed_files.txt | grep -cE '\.(kt|ts|tsx|java|css|sql|yml|yaml)$|\.gradle\.kts$|\.(xml|html|properties)$' || true)
-
-          echo ""
-          echo "Code files found: $CODE_FILES"
-
-          if [ "$CODE_FILES" -eq 0 ]; then
-            echo "No code files changed. Skipping LLM review."
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "has_code_changes=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          git diff "$BASE_SHA...$HEAD_SHA" -- . ':!.github' ':!*.png' ':!*.jpg' ':!*.md' ':!*.lock' ':!package-lock.json' ':!*.svg' > /tmp/pr_diff.diff
-
-          FULL_SIZE=$(wc -c < /tmp/pr_diff.diff)
-          MAX_SIZE=30720
-          if [ "$FULL_SIZE" -gt "$MAX_SIZE" ]; then
-            head -c "$MAX_SIZE" /tmp/pr_diff.diff > /tmp/pr_diff_truncated.diff
-            echo "" >> /tmp/pr_diff_truncated.diff
-            echo "... (diff truncated at ${MAX_SIZE} bytes from ${FULL_SIZE} bytes)" >> /tmp/pr_diff_truncated.diff
-            mv /tmp/pr_diff_truncated.diff /tmp/pr_diff.diff
-            echo "has_truncated=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_truncated=false" >> $GITHUB_OUTPUT
-          fi
-
-          echo "diff_size=$(wc -c < /tmp/pr_diff.diff)" >> $GITHUB_OUTPUT
-          echo "skip=false" >> $GITHUB_OUTPUT
-          echo "has_code_changes=true" >> $GITHUB_OUTPUT
-
-          echo "Review diff size: $(wc -c < /tmp/pr_diff.diff) bytes"
-
-      - name: Post skip comment for non-code changes
-        if: steps.context.outputs.has_code_changes == 'false'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              ...context.repo,
-              issue_number: context.issue.number,
-              body: '## OpenCode PR Review\n\nSkipping automated review — no code changes detected (docs, config, or CI files only).\n\nHuman review recommended if these changes affect behavior.'
-            });
-            console.log('Skip comment posted');
+        run: npm install -g opencode-ai
 
       - name: Configure OpenCode auth
-        if: steps.context.outputs.skip != 'true'
         run: |
           mkdir -p ~/.local/share/opencode
           cat > ~/.local/share/opencode/auth.json << EOF
@@ -112,151 +50,92 @@ jobs:
           }
           EOF
 
-      - name: Run PR Review with OpenCode
-        if: steps.context.outputs.skip != 'true'
-        timeout-minutes: 20
-        run: |
-          cat > /tmp/review_prompt.txt << 'PROMPT_EOF'
-          You are reviewing a PR for the Portfolio Construction App.
-          Tech: Kotlin 2.0/Spring Boot 3.3 + React 18/TypeScript 5.6/Vite 5
-          DB: PostgreSQL 16 + Flyway migrations. Redis 7. MockK for testing.
-          Key constraints (see INDEX.md and CONTRIBUTING.md attached for details):
-            - No local JDK — backend runs in Docker; No Tailwind CSS — use plain CSS
-            - Hibernate DDL=validate — schema managed exclusively by Flyway
-            - Frontend uses apiFetch() for all API calls
-            - MockK not Mockito; Vitest + Testing Library for frontend tests
-          Context docs are attached — use them to validate consistency, do not review the docs themselves.
-
-          Review the attached PR diff across two passes. Complete Pass 1 first, then Pass 2.
-
-          === PASS 1: CODE QUALITY & BREAKING CHANGES ===
-          - Logic bugs: null safety, edge cases, boundary conditions, error handling
-          - Breaking changes: API signatures, DB migrations, removed exports, schema changes — cross-reference the attached api-endpoints.md and database-schema.md
-          - Code duplication, SOLID violations, performance (N+1 queries, sync in async paths)
-          - Test coverage: new logic without tests, deleted tests without replacement
-          - For Kotlin changes: verify against backend-services.md patterns; watch for MockK vs Mockito
-          - For frontend changes: verify apiFetch() usage, check against frontend-map.md component patterns
-
-          === PASS 2: SECURITY & DOCUMENTATION ===
-          - Auth gaps, injection risks (SQL, XSS, command), secret/token exposure in code — check against config/.env.example for proper env var usage
-          - Missing or stale documentation relative to code changes
-          - Missing KDoc for public Kotlin APIs, JSDoc for public TypeScript APIs
-          - Violations of constraints from INDEX.md or CONTRIBUTING.md (Tailwind usage, direct fetch instead of apiFetch, etc.)
-
-          OUTPUT RULES:
-          - Prefix each finding with [HIGH] or [LOW]
-          - [HIGH] = breaking changes, security vulnerabilities, logic bugs, missing critical tests, performance issues, authorization gaps, constraint violations
-          - [LOW] = style suggestions, minor doc gaps, refactoring opportunities, non-critical warnings
-
-          FORMAT EACH FINDING AS:
-          [SEVERITY] Category: Description
-          Location: file:line (or N/A)
-          Suggestion: how to fix or improve
-
-          Separate findings with "---"
-          End with exactly: SUMMARY: X HIGH, Y LOW
-          PROMPT_EOF
-
-          if [ ! -s /tmp/review_prompt.txt ]; then
-            echo "::error::Review prompt file is missing or empty"
-            exit 1
-          fi
-
-          declare -a FILE_ARGS
-          for f in /tmp/pr_diff.diff README.md \
-                   docs/reference/INDEX.md \
-                   docs/reference/backend-services.md \
-                   docs/reference/frontend-map.md \
-                   docs/reference/database-schema.md \
-                   docs/reference/api-endpoints.md \
-                   docs/reference/configurations.md \
-                   CONTRIBUTING.md \
-                   config/.env.example; do
-            [ -f "$f" ] && FILE_ARGS+=(--file "$f") && echo "Attached: $f" || echo "Skipped (missing): $f"
-          done
-
-          cat /tmp/review_prompt.txt | opencode run --model "${{ inputs.model }}" "${FILE_ARGS[@]}" 2>&1 | tee /tmp/review_output.txt
-
-      - name: Parse results and count findings
-        if: steps.context.outputs.skip != 'true'
-        id: parse
-        run: |
-          HIGH_COUNT=$(grep -c '^\[HIGH\]' /tmp/review_output.txt || true)
-          LOW_COUNT=$(grep -c '^\[LOW\]' /tmp/review_output.txt || true)
-
-          echo "HIGH_COUNT=$HIGH_COUNT" >> $GITHUB_OUTPUT
-          echo "LOW_COUNT=$LOW_COUNT" >> $GITHUB_OUTPUT
-
-          echo "Findings: $HIGH_COUNT HIGH, $LOW_COUNT LOW"
-
-          grep -n 'SUMMARY:' /tmp/review_output.txt || true
-
-      - name: Warn on zero findings
-        if: steps.context.outputs.skip != 'true' && steps.parse.outputs.HIGH_COUNT == '0' && steps.parse.outputs.LOW_COUNT == '0'
-        run: |
-          echo "::warning::Review produced 0 findings on a code diff. This may indicate the review missed issues — consider a manual review."
-
-      - name: Post PR comment with review results
-        if: steps.context.outputs.skip != 'true'
-        uses: actions/github-script@v7
+      - name: Stage 1 — Classifier
+        id: classify
         env:
-          HIGH_COUNT: ${{ steps.parse.outputs.HIGH_COUNT }}
-          LOW_COUNT: ${{ steps.parse.outputs.LOW_COUNT }}
-          HAS_TRUNCATED: ${{ steps.context.outputs.has_truncated }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p /tmp/review
+          bash scripts/classify.sh --base "$BASE_SHA" --head "$HEAD_SHA" \
+            --config "${{ inputs.config_path }}" 2>&1 | tee /tmp/review/classify-output.txt
+
+          CLASS_JSON=$(cat /tmp/review/classifier-output.json)
+          echo "skip_review=$(echo $CLASS_JSON | jq -r '.skip_review')" >> $GITHUB_OUTPUT
+          echo "has_code=$(echo $CLASS_JSON | jq -r '.has_code')" >> $GITHUB_OUTPUT
+          echo "has_docs=$(echo $CLASS_JSON | jq -r '.has_docs')" >> $GITHUB_OUTPUT
+          echo "has_structural=$(echo $CLASS_JSON | jq -r '.has_structural_targets')" >> $GITHUB_OUTPUT
+
+      - name: Post skip comment (non-code changes)
+        if: steps.classify.outputs.skip_review == 'true'
+        uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const reviewText = fs.readFileSync('/tmp/review_output.txt', 'utf8').trim();
-            const highCount = parseInt(process.env.HIGH_COUNT || '0');
-            const lowCount = parseInt(process.env.LOW_COUNT || '0');
-            const hasTruncated = process.env.HAS_TRUNCATED === 'true';
-            const runUrl = process.env.RUN_URL;
-
-            if (!reviewText) {
-              console.log('No review output to post');
-              return;
-            }
-
-            let prefix = '## OpenCode PR Review\n\n';
-            prefix += '| Severity | Count |\n|----------|-------|\n';
-            prefix += `| :red_circle: **HIGH** | ${highCount} |\n`;
-            prefix += `| :yellow_circle: **LOW** | ${lowCount} |\n\n`;
-
-            if (highCount > 0) {
-              prefix += `> :warning: **${highCount} HIGH severity ${highCount === 1 ? 'issue' : 'issues'} found.**\n\n`;
-            }
-
-            if (hasTruncated) {
-              prefix += '> :information_source: Diff was truncated to 30KB. Review may be incomplete for large PRs.\n\n';
-            }
-
-            if (highCount === 0 && lowCount === 0) {
-              prefix += '> :information_source: No findings reported. Consider a manual review for completeness.\n\n';
-            }
-
-            const maxBodyLen = 60000;
-            const truncated = reviewText.length > maxBodyLen
-              ? reviewText.substring(0, maxBodyLen) + '\n\n...(output truncated)'
-              : reviewText;
-
-            const footer = `\n\n---\n<sub>[View workflow run](${runUrl})</sub>`;
-
             await github.rest.issues.createComment({
               ...context.repo,
               issue_number: context.issue.number,
-              body: prefix + '---\n\n' + truncated + footer
+              body: '## PR Review\n\nSkipping automated review — no code changes detected.'
             });
 
-            console.log(`PR comment posted: ${highCount} HIGH, ${lowCount} LOW`);
+      - name: Generate PR diff
+        if: steps.classify.outputs.skip_review != 'true'
+        run: |
+          mkdir -p /tmp/review
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          MAX_SIZE=${{ inputs.max_diff_bytes }}
+
+          git diff "$BASE_SHA...$HEAD_SHA" > /tmp/review/pr_diff.diff
+
+          FULL_SIZE=$(wc -c < /tmp/review/pr_diff.diff)
+          if [ "$FULL_SIZE" -gt "$MAX_SIZE" ]; then
+            head -c "$MAX_SIZE" /tmp/review/pr_diff.diff > /tmp/review/pr_diff_truncated.diff
+            echo "" >> /tmp/review/pr_diff_truncated.diff
+            echo "... (diff truncated at ${MAX_SIZE} bytes from ${FULL_SIZE} bytes)" >> /tmp/review/pr_diff_truncated.diff
+            mv /tmp/review/pr_diff_truncated.diff /tmp/review/pr_diff.diff
+          fi
+
+      - name: Stage 2 — Structural Checker
+        if: steps.classify.outputs.skip_review != 'true' && steps.classify.outputs.has_structural == 'true'
+        run: bash scripts/structural.sh
+
+      - name: Stage 3 — LLM Code Review
+        if: steps.classify.outputs.skip_review != 'true' && steps.classify.outputs.has_code == 'true'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/llm-review.sh --type code
+
+      - name: Stage 4 — LLM Doc Review
+        if: steps.classify.outputs.skip_review != 'true' && steps.classify.outputs.has_docs == 'true'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/llm-review.sh --type docs
+
+      - name: Stage 5 — Aggregator
+        id: aggregate
+        if: steps.classify.outputs.skip_review != 'true'
+        run: bash scripts/aggregate.sh
+
+      - name: Post PR comment
+        if: steps.classify.outputs.skip_review != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_NUMBER: ${{ github.event.pull_request.number }}
+        run: bash scripts/post-comment.sh
+
+      - name: Warn on zero findings
+        if: steps.classify.outputs.skip_review != 'true' && steps.aggregate.outputs.high_count == '0' && steps.aggregate.outputs.low_count == '0'
+        run: |
+          echo "::warning::Review produced 0 findings on a code diff. Consider a manual review."
 
       - name: Fail build on HIGH findings
-        if: steps.context.outputs.skip != 'true' && inputs.fail-on-high && steps.parse.outputs.HIGH_COUNT != '0'
+        if: steps.classify.outputs.skip_review != 'true' && inputs.fail_on_high && steps.aggregate.outputs.high_count != '0'
         run: |
-          echo "::error::Build failed: ${{ steps.parse.outputs.HIGH_COUNT }} HIGH severity findings found. Check the PR comment for details."
+          echo "::error::Build failed: ${{ steps.aggregate.outputs.high_count }} HIGH severity findings found."
           exit 1
-
-      - name: Report findings
-        if: steps.context.outputs.skip != 'true'
-        run: |
-          echo "::notice::${{ steps.parse.outputs.HIGH_COUNT }} HIGH and ${{ steps.parse.outputs.LOW_COUNT }} LOW findings found. Check the PR comment for details."
