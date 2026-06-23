@@ -163,6 +163,9 @@ LOW_COUNT=${#LOW_FINDINGS[@]}
   echo "---"
   echo ""
   echo "SUMMARY: $HIGH_COUNT HIGH, $LOW_COUNT LOW"
+  # Hidden HTML comments for the review-loop workflow to parse
+  echo "<!-- review-round: ${REVIEW_ROUND:-1} -->"
+  echo "<!-- last-reviewed-sha: ${HEAD_SHA:-unknown} -->"
 } > "$AGGREGATED_FILE"
 
 [ -n "${GITHUB_OUTPUT:-}" ] && echo "high_count=$HIGH_COUNT" >> "$GITHUB_OUTPUT" && echo "low_count=$LOW_COUNT" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,73 @@
+name: SDLC Agent
+
+on:
+  issues:
+    types: [labeled]
+  repository_dispatch:
+    types: [sdlc-phase]
+
+jobs:
+  run-agent:
+    # Stage 1: GitHub-hosted runner. Stage 2 changes this to: self-hosted
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    # Only run on agent-ready label (Stage 1) or repository_dispatch (Stage 3)
+    if: |
+      (github.event_name == 'issues' && github.event.label.name == 'agent-ready') ||
+      github.event_name == 'repository_dispatch'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bootstrap shared opencode config
+        run: |
+          git clone --depth 1 https://github.com/${{ github.repository_owner }}/nanobyte-services /tmp/nbs
+          # Copy shared config, then let repo-specific .opencode/ override
+          cp -r /tmp/nbs/sdlc/opencode/* .opencode/ 2>/dev/null || true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install opencode
+        run: npm install -g opencode-ai
+
+      - name: Configure opencode auth
+        run: |
+          mkdir -p ~/.local/share/opencode
+          echo '${{ secrets.OPENCODE_AUTH_JSON }}' > ~/.local/share/opencode/auth.json
+
+      - name: Determine agent + model + issue
+        id: params
+        run: |
+          if [ "${{ github.event_name }}" = "issues" ]; then
+            echo "agent=planner" >> $GITHUB_OUTPUT
+            echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            echo "phase=triaging" >> $GITHUB_OUTPUT
+          else
+            echo "agent=${{ github.event.client_payload.agent }}" >> $GITHUB_OUTPUT
+            echo "model=${{ github.event.client_payload.model }}" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.client_payload.issue_number }}" >> $GITHUB_OUTPUT
+            echo "phase=${{ github.event.client_payload.phase }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run phase agent
+        run: |
+          opencode run \
+            --agent "${{ steps.params.outputs.agent }}" \
+            --model "${{ steps.params.outputs.model }}" \
+            --format json \
+            --dangerously-skip-permissions \
+            "Process issue #${{ steps.params.outputs.issue_number }} — phase: ${{ steps.params.outputs.phase }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ steps.params.outputs.issue_number }}
+          PHASE: ${{ steps.params.outputs.phase }}
+          GITHUB_REPOSITORY: ${{ github.repository }}

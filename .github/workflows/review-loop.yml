@@ -1,0 +1,143 @@
+name: SDLC Review Loop
+
+on:
+  workflow_run:
+    workflows: ["build", "PR Review (Reusable)"]
+    types: [completed]
+
+# Concurrency: one review-loop per PR — don't double-dispatch
+# when both build and pr-review complete
+concurrency:
+  group: review-loop-${{ github.event.workflow_run.pull_requests[0].number }}
+  cancel-in-progress: false
+
+jobs:
+  review-loop:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      actions: write
+    # Only act when BOTH workflows have completed
+    if: github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR number and check both workflows completed
+        id: pr
+        run: |
+          PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+
+          # Check that both build and pr-review have completed for this PR
+          # Query the workflow run status via GitHub API
+          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          BUILD_STATUS=$(gh api repos/${{ github.repository }}/actions/runs \
+            --jq ".workflow_runs[] | select(.head_sha == \"$HEAD_SHA\" and .name == \"build\") | .conclusion" \
+            | head -1)
+          REVIEW_STATUS=$(gh api repos/${{ github.repository }}/actions/runs \
+            --jq ".workflow_runs[] | select(.head_sha == \"$HEAD_SHA\" and .name == \"PR Review (Reusable)\") | .conclusion" \
+            | head -1)
+
+          echo "build_status=$BUILD_STATUS" >> $GITHUB_OUTPUT
+          echo "review_status=$REVIEW_STATUS" >> $GITHUB_OUTPUT
+
+          # If either is still in_progress, exit early — wait for the other
+          if [ "$BUILD_STATUS" = "null" ] || [ -z "$BUILD_STATUS" ] || \
+             [ "$REVIEW_STATUS" = "null" ] || [ -z "$REVIEW_STATUS" ]; then
+            echo "both_completed=false" >> $GITHUB_OUTPUT
+          else
+            echo "both_completed=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Exit if not both completed
+        if: steps.pr.outputs.both_completed != 'true'
+        run: echo "Waiting for both workflows to complete. Exiting."
+
+      - name: Parse review findings
+        if: steps.pr.outputs.both_completed == 'true'
+        id: findings
+        run: |
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+          # Read the latest review comment from the PR
+          COMMENT=$(gh pr view $PR_NUMBER --json comments --jq '
+            [.comments[] | select(.body | contains("SUMMARY:"))] | last | .body
+          ')
+          if [ -z "$COMMENT" ] || [ "$COMMENT" = "null" ]; then
+            echo "high_count=0" >> $GITHUB_OUTPUT
+            echo "low_count=0" >> $GITHUB_OUTPUT
+            echo "round=1" >> $GITHUB_OUTPUT
+            echo "last_reviewed_sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          else
+            # Parse SUMMARY line
+            SUMMARY=$(echo "$COMMENT" | grep '^SUMMARY:' | head -1)
+            HIGH=$(echo "$SUMMARY" | grep -oE '[0-9]+ HIGH' | grep -oE '[0-9]+')
+            LOW=$(echo "$SUMMARY" | grep -oE '[0-9]+ LOW' | grep -oE '[0-9]+')
+            # Parse hidden HTML comments
+            ROUND=$(echo "$COMMENT" | grep -oP '(?<=<!-- review-round: )[0-9]+' || echo "1")
+            LAST_SHA=$(echo "$COMMENT" | grep -oP '(?<=<!-- last-reviewed-sha: )[a-f0-9]+' || echo "${{ github.event.workflow_run.head_sha }}")
+            echo "high_count=${HIGH:-0}" >> $GITHUB_OUTPUT
+            echo "low_count=${LOW:-0}" >> $GITHUB_OUTPUT
+            echo "round=${ROUND:-1}" >> $GITHUB_OUTPUT
+            echo "last_reviewed_sha=${LAST_SHA}" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge if clean
+        if: |
+          steps.pr.outputs.both_completed == 'true' &&
+          steps.findings.outputs.high_count == '0' &&
+          steps.findings.outputs.low_count == '0'
+        run: |
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+          echo "PR #$PR_NUMBER is clean — auto-merging"
+          gh pr merge $PR_NUMBER --squash --auto --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Block if max rounds exceeded
+        if: |
+          steps.pr.outputs.both_completed == 'true' &&
+          (steps.findings.outputs.high_count != '0' || steps.findings.outputs.low_count != '0') &&
+          steps.findings.outputs.round >= '3'
+        run: |
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+          # Post a Blocked comment
+          gh pr comment $PR_NUMBER --body "## Blocked: Review Loop Exhausted (3 rounds)
+
+          The build agent could not resolve all findings after 3 review rounds.
+          Unresolved findings: ${{ steps.findings.outputs.high_count }} HIGH, ${{ steps.findings.outputs.low_count }} LOW.
+
+          Please review the findings above and provide guidance. Move the card back to \`Executing\` after updating." --repo ${{ github.repository }}
+          # TODO: move Projects card to "Blocked" lane via GraphQL
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Re-dispatch build agent to fix findings
+        if: |
+          steps.pr.outputs.both_completed == 'true' &&
+          (steps.findings.outputs.high_count != '0' || steps.findings.outputs.low_count != '0') &&
+          steps.findings.outputs.round < '3'
+        run: |
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+          ROUND=$(({{ steps.findings.outputs.round }} + 1))
+          echo "Re-dispatching build agent for round $ROUND"
+          # Fire repository_dispatch to re-trigger the build agent
+          gh api repos/${{ github.repository }}/dispatches \
+            -f event_type=sdlc-phase \
+            -f 'client_payload[agent]=build' \
+            -f 'client_payload[model]=opencode-go/deepseek-v4-pro' \
+            -f 'client_payload[phase]=review-fix' \
+            -f 'client_payload[issue_number]=0' \
+            -f "client_payload[pr_number]=$PR_NUMBER" \
+            -f "client_payload[review_round]=$ROUND" \
+            -f "client_payload[last_reviewed_sha]=${{ steps.findings.outputs.last_reviewed_sha }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
