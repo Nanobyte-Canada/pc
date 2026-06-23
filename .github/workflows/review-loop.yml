@@ -13,7 +13,8 @@ concurrency:
 
 jobs:
   review-loop:
-    runs-on: self-hosted
+    # Stage 1: GitHub-hosted runner. Stage 2 changes this to: self-hosted
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       issues: write
@@ -127,7 +128,7 @@ jobs:
           steps.findings.outputs.round < '3'
         run: |
           PR_NUMBER="${{ steps.pr.outputs.number }}"
-          ROUND=$(({{ steps.findings.outputs.round }} + 1))
+          ROUND=$(( ${{ steps.findings.outputs.round }} + 1 ))
           echo "Re-dispatching build agent for round $ROUND"
           # Fire repository_dispatch to re-trigger the build agent
           gh api repos/${{ github.repository }}/dispatches \
