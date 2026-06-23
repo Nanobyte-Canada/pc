@@ -25,8 +25,10 @@ jobs:
           fetch-depth: 0
 
       - name: Bootstrap shared opencode config
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git clone --depth 1 https://github.com/${{ github.repository_owner }}/nanobyte-services /tmp/nbs
+          git clone --depth 1 https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository_owner }}/nanobyte-services /tmp/nbs
           # Copy shared config, then let repo-specific .opencode/ override
           cp -r /tmp/nbs/sdlc/opencode/* .opencode/ 2>/dev/null || true
 
