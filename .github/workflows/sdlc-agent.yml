@@ -13,6 +13,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      projects: write
     # Only run on agent-ready label (Stage 1) or repository_dispatch (Stage 3)
     if: |
       (github.event_name == 'issues' && github.event.label.name == 'agent-ready') ||
@@ -23,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Bootstrap shared opencode config
+      - name: Bootstrap shared opencode config + scripts
         env:
           NANOBYTE_TOKEN: ${{ secrets.NANOBYTE_SERVICES_TOKEN }}
         run: |
@@ -31,6 +32,10 @@ jobs:
           git clone --depth 1 https://x-access-token:${NANOBYTE_TOKEN}@github.com/${{ github.repository_owner }}/nanobyte-services /tmp/nbs
           # Copy shared config, then let repo-specific .opencode/ override
           cp -r /tmp/nbs/sdlc/opencode/* .opencode/ 2>/dev/null || true
+          # Copy shared scripts (update-card-status.sh, etc.)
+          mkdir -p scripts
+          cp /tmp/nbs/sdlc/scripts/update-card-status.sh scripts/ 2>/dev/null || true
+          chmod +x scripts/update-card-status.sh 2>/dev/null || true
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -79,4 +84,5 @@ jobs:
           PR_NUMBER: ${{ steps.params.outputs.pr_number }}
           REVIEW_ROUND: ${{ steps.params.outputs.review_round }}
           LAST_REVIEWED_SHA: ${{ steps.params.outputs.last_reviewed_sha }}
+          PROJECT_ID: ${{ secrets.SDLC_PROJECT_ID }}
           GITHUB_REPOSITORY: ${{ github.repository }}
