@@ -35,7 +35,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-      projects: write
+      repository-projects: write
     # Run on SDLC lane labels (Stage 1/2) or repository_dispatch (Stage 3)
     if: |
       (github.event_name == 'workflow_dispatch') ||
