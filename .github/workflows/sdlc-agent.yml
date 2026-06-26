@@ -14,9 +14,9 @@ jobs:
       issues: write
       pull-requests: write
       projects: write
-    # Only run on agent-ready label (Stage 1) or repository_dispatch (Stage 3)
+    # Run on SDLC lane labels (Stage 1/2) or repository_dispatch (Stage 3)
     if: |
-      (github.event_name == 'issues' && github.event.label.name == 'agent-ready') ||
+      (github.event_name == 'issues' && contains(fromJson('["Triaging","Planning","Executing","Testing","Bug Fixing","Publishing","agent-ready"]'), github.event.label.name)) ||
       github.event_name == 'repository_dispatch'
     steps:
       - name: Checkout repo
