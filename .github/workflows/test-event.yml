@@ -1,0 +1,9 @@
+name: Test Event
+on:
+  issues:
+    types: [labeled]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Event received: ${{ github.event.label.name }} (${{ github.event_name }})"
