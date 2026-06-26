@@ -27,6 +27,7 @@ jobs:
         env:
           NANOBYTE_TOKEN: ${{ secrets.NANOBYTE_SERVICES_TOKEN }}
         run: |
+          rm -rf /tmp/nbs
           git clone --depth 1 https://x-access-token:${NANOBYTE_TOKEN}@github.com/${{ github.repository_owner }}/nanobyte-services /tmp/nbs
           # Copy shared config, then let repo-specific .opencode/ override
           cp -r /tmp/nbs/sdlc/opencode/* .opencode/ 2>/dev/null || true
