@@ -5,6 +5,28 @@ on:
     types: [labeled]
   repository_dispatch:
     types: [sdlc-phase]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number
+        required: true
+        default: "39"
+      label:
+        description: Label that triggered the event
+        required: true
+        default: "Planning"
+      phase:
+        description: SDLC phase
+        required: true
+        default: "planning"
+      agent:
+        description: Agent to use
+        required: true
+        default: "planner"
+      model:
+        description: Model to use
+        required: true
+        default: "opencode-go/glm-5.2"
 
 jobs:
   run-agent:
@@ -16,6 +38,7 @@ jobs:
       projects: write
     # Run on SDLC lane labels (Stage 1/2) or repository_dispatch (Stage 3)
     if: |
+      (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'issues' && contains(fromJson('["Triaging","Planning","Executing","Testing","Bug Fixing","Publishing","agent-ready"]'), github.event.label.name)) ||
       github.event_name == 'repository_dispatch'
     steps:
@@ -58,6 +81,11 @@ jobs:
             echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
             echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
             echo "phase=triaging" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
+            echo "model=${{ github.event.inputs.model }}" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.inputs.issue_number }}" >> $GITHUB_OUTPUT
+            echo "phase=${{ github.event.inputs.phase }}" >> $GITHUB_OUTPUT
           else
             echo "agent=${{ github.event.client_payload.agent }}" >> $GITHUB_OUTPUT
             echo "model=${{ github.event.client_payload.model }}" >> $GITHUB_OUTPUT
