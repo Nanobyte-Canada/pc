@@ -13,8 +13,7 @@ concurrency:
 
 jobs:
   review-loop:
-    # Stage 1: GitHub-hosted runner. Stage 2 changes this to: self-hosted
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: write
       issues: write
