@@ -73,14 +73,40 @@ jobs:
           mkdir -p ~/.local/share/opencode
           echo '${{ secrets.OPENCODE_AUTH_JSON }}' > ~/.local/share/opencode/auth.json
 
-      - name: Determine agent + model + issue
+      - name: Determine agent + model + issue + phase
         id: params
         run: |
           if [ "${{ github.event_name }}" = "issues" ]; then
-            echo "agent=planner" >> $GITHUB_OUTPUT
-            echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
-            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
-            echo "phase=triaging" >> $GITHUB_OUTPUT
+            ISSUE_NUM=${{ github.event.issue.number }}
+            LABEL="${{ github.event.label.name }}"
+            case "$LABEL" in
+              Triaging|Planning)
+                echo "agent=planner" >> $GITHUB_OUTPUT
+                echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+                echo "phase=planning" >> $GITHUB_OUTPUT
+                ;;
+              Executing)
+                echo "agent=build" >> $GITHUB_OUTPUT
+                echo "model=opencode-go/deepseek-v4-pro" >> $GITHUB_OUTPUT
+                echo "phase=execution" >> $GITHUB_OUTPUT
+                ;;
+              Testing)
+                echo "agent=tester" >> $GITHUB_OUTPUT
+                echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+                echo "phase=testing" >> $GITHUB_OUTPUT
+                ;;
+              Bug\ Fixing)
+                echo "agent=bugfixer" >> $GITHUB_OUTPUT
+                echo "model=opencode-go/deepseek-v4-pro" >> $GITHUB_OUTPUT
+                echo "phase=bugfix" >> $GITHUB_OUTPUT
+                ;;
+              Publishing)
+                echo "agent=deployer" >> $GITHUB_OUTPUT
+                echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+                echo "phase=publish" >> $GITHUB_OUTPUT
+                ;;
+            esac
+            echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
             echo "model=${{ github.event.inputs.model }}" >> $GITHUB_OUTPUT
