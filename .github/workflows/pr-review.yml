@@ -78,14 +78,39 @@ jobs:
             });
 
       - name: Generate PR diff
+        id: generate-diff
         if: steps.classify.outputs.skip_review != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           mkdir -p /tmp/review
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           MAX_SIZE=${{ inputs.max_diff_bytes }}
 
-          git diff "$BASE_SHA...$HEAD_SHA" > /tmp/review/pr_diff.diff
+          # Read the previous review comment to extract round + last-reviewed-sha
+          PREV_COMMENT=$(gh pr view "$PR_NUMBER" --json comments --jq \
+            '[.comments[] | select(.body | contains("SUMMARY:"))] | last | .body' \
+            2>/dev/null || echo "")
+
+          PREV_ROUND=0
+          PREV_SHA=""
+          if [ -n "$PREV_COMMENT" ] && [ "$PREV_COMMENT" != "null" ]; then
+            PREV_ROUND=$(echo "$PREV_COMMENT" | grep -oP '(?<=<!-- review-round: )[0-9]+' || echo "0")
+            PREV_SHA=$(echo "$PREV_COMMENT" | grep -oP '(?<=<!-- last-reviewed-sha: )[a-f0-9]+' || echo "")
+          fi
+
+          REVIEW_ROUND=$((PREV_ROUND + 1))
+
+          # Delta-only review for rounds 2+ (if we have a valid previous SHA)
+          if [ -n "$PREV_SHA" ] && [ "$REVIEW_ROUND" -gt 1 ]; then
+            echo "Reviewing delta since $PREV_SHA (round $REVIEW_ROUND)"
+            git diff "$PREV_SHA...$HEAD_SHA" > /tmp/review/pr_diff.diff
+          else
+            echo "Reviewing full diff (round $REVIEW_ROUND)"
+            git diff "$BASE_SHA...$HEAD_SHA" > /tmp/review/pr_diff.diff
+          fi
 
           FULL_SIZE=$(wc -c < /tmp/review/pr_diff.diff)
           if [ "$FULL_SIZE" -gt "$MAX_SIZE" ]; then
@@ -94,6 +119,9 @@ jobs:
             echo "... (diff truncated at ${MAX_SIZE} bytes from ${FULL_SIZE} bytes)" >> /tmp/review/pr_diff_truncated.diff
             mv /tmp/review/pr_diff_truncated.diff /tmp/review/pr_diff.diff
           fi
+
+          echo "review_round=$REVIEW_ROUND" >> $GITHUB_OUTPUT
+          echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
 
       - name: Stage 2 — Structural Checker
         if: steps.classify.outputs.skip_review != 'true' && steps.classify.outputs.has_structural == 'true'
@@ -120,6 +148,9 @@ jobs:
       - name: Stage 5 — Aggregator
         id: aggregate
         if: steps.classify.outputs.skip_review != 'true'
+        env:
+          HEAD_SHA: ${{ steps.generate-diff.outputs.head_sha }}
+          REVIEW_ROUND: ${{ steps.generate-diff.outputs.review_round }}
         run: bash scripts/aggregate.sh
 
       - name: Post PR comment
