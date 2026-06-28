@@ -27,11 +27,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Bootstrap shared scripts
+        env:
+          NANOBYTE_TOKEN: ${{ secrets.NANOBYTE_SERVICES_TOKEN }}
+        run: |
+          rm -rf /tmp/nbs
+          git clone --depth 1 https://x-access-token:${NANOBYTE_TOKEN}@github.com/${{ github.repository_owner }}/nanobyte-services /tmp/nbs
+          mkdir -p scripts
+          cp /tmp/nbs/sdlc/scripts/update-card-status.sh scripts/
+          chmod +x scripts/update-card-status.sh
+
       - name: Get PR number and check both workflows completed
         id: pr
         run: |
           PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
           echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+
+          # Resolve the linked issue number from the PR body (e.g., "Closes #42")
+          PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq '.body' 2>/dev/null || echo "")
+          ISSUE_NUM=$(echo "$PR_BODY" | grep -oP '(?:Closes|Resolves|Fixes) #\K[0-9]+' | head -1 || echo "0")
+          if [ -z "$ISSUE_NUM" ] || [ "$ISSUE_NUM" = "0" ]; then
+            # Fallback: check PR's linked issues via API
+            ISSUE_NUM=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER --jq '.body' 2>/dev/null | grep -oP '(?:Closes|Resolves|Fixes) #\K[0-9]+' | head -1 || echo "0")
+          fi
+          echo "issue_number=${ISSUE_NUM:-0}" >> $GITHUB_OUTPUT
 
           # Check that both build and pr-review have completed for this PR
           # Query the workflow run status via GitHub API
@@ -107,8 +126,13 @@ jobs:
           steps.pr.outputs.both_completed == 'true' &&
           (steps.findings.outputs.high_count != '0' || steps.findings.outputs.low_count != '0') &&
           steps.findings.outputs.round >= '3'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROJECT_ID: ${{ secrets.SDLC_PROJECT_ID }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           PR_NUMBER="${{ steps.pr.outputs.number }}"
+          ISSUE_NUMBER="${{ steps.pr.outputs.issue_number }}"
           # Post a Blocked comment
           gh pr comment $PR_NUMBER --body "## Blocked: Review Loop Exhausted (3 rounds)
 
@@ -116,9 +140,12 @@ jobs:
           Unresolved findings: ${{ steps.findings.outputs.high_count }} HIGH, ${{ steps.findings.outputs.low_count }} LOW.
 
           Please review the findings above and provide guidance. Move the card back to \`Executing\` after updating." --repo ${{ github.repository }}
-          # TODO: move Projects card to "Blocked" lane via GraphQL
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Move the Projects card to "Blocked" lane
+          if [ "$ISSUE_NUMBER" != "0" ] && [ -n "$PROJECT_ID" ]; then
+            bash scripts/update-card-status.sh --issue "$ISSUE_NUMBER" --lane "Blocked" --repo ${{ github.repository }}
+          else
+            echo "WARNING: Could not move card to Blocked — issue_number=$ISSUE_NUMBER, PROJECT_ID set=${PROJECT_ID:+yes}"
+          fi
 
       - name: Re-dispatch build agent to fix findings
         if: |
@@ -135,7 +162,7 @@ jobs:
             -f 'client_payload[agent]=build' \
             -f 'client_payload[model]=opencode-go/deepseek-v4-pro' \
             -f 'client_payload[phase]=review-fix' \
-            -f 'client_payload[issue_number]=0' \
+            -f 'client_payload[issue_number]=${{ steps.pr.outputs.issue_number }}' \
             -f "client_payload[pr_number]=$PR_NUMBER" \
             -f "client_payload[review_round]=$ROUND" \
             -f "client_payload[last_reviewed_sha]=${{ steps.findings.outputs.last_reviewed_sha }}"
