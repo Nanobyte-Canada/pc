@@ -41,6 +41,7 @@ class SecurityConfig(
                         "/auth/google",
                         "/auth/google/callback",
                         "/health",
+                        "/ready",
                         "/actuator/**",
                         "/api/**"
                     )
@@ -56,7 +57,7 @@ class SecurityConfig(
             // Authorization rules
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers("/health", "/api/v1/version").permitAll()
+                    .requestMatchers("/health", "/ready", "/api/v1/version").permitAll()
                     .requestMatchers(
                         "/auth/refresh",
                         "/auth/google",

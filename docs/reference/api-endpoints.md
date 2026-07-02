@@ -50,7 +50,7 @@ All errors follow a consistent format:
 
 | Controller | Base Path | Endpoints | Auth |
 |---|---|---|---|
-| [HealthController](#healthcontroller) | `/health` | 1 | Public |
+| [HealthController](#healthcontroller) | `/health`, `/ready` | 2 | Public |
 | [VersionController](#versioncontroller) | `/api/v1/version` | 1 | Public |
 | [AuthController](#authcontroller) | `/auth` | 11 | Mixed |
 | [ScreenerController](#screenercontroller) | `/api/v1/screener` | 5 | Authenticated |
@@ -62,7 +62,7 @@ All errors follow a consistent format:
 | [PortfolioGroupController](#portfoliogroupcontroller) | `/api/v1/portfolio-groups` | 14 | Authenticated |
 | [TradingController](#tradingcontroller) | `/api/v1/trading` | 5 | Authenticated |
 | [NotificationController](#notificationcontroller) | `/api/v1/notifications` | 5 | Authenticated |
-**Total: 82 endpoints**
+**Total: 83 endpoints**
 
 ---
 
@@ -73,9 +73,14 @@ All errors follow a consistent format:
 | Method | Path | Auth | Service | Response |
 |---|---|---|---|---|
 | `GET` | `/health` | Public | (inline) | `HealthResponse` |
+| `GET` | `/ready` | Public | (inline) | `HealthResponse` |
 
 ### `GET /health`
-Returns application health status.
+Returns application health status (liveness probe).
+- **Response:** `HealthResponse { status: String, timestamp: String }`
+
+### `GET /ready`
+Returns application readiness status (readiness probe).
 - **Response:** `HealthResponse { status: String, timestamp: String }`
 
 ---
@@ -431,6 +436,7 @@ Additional param: `benchmark: String?` -- Benchmark symbol (e.g., `SPY`, `XIU`) 
 
 ### Public Endpoints (no auth required)
 - `GET /health`
+- `GET /ready`
 - `GET /api/v1/version`
 - `GET /auth/google`, `/auth/google/callback`
 - `POST /auth/refresh`, `/auth/logout`
@@ -445,7 +451,7 @@ Additional param: `benchmark: String?` -- Benchmark symbol (e.g., `SPY`, `XIU`) 
 - `/auth/me`, `/auth/change-password`, `/auth/profile`
 
 ### CSRF
-- Disabled for: auth endpoints, `/health`, `/actuator/**`, `/api/**`
+- Disabled for: auth endpoints, `/health`, `/ready`, `/actuator/**`, `/api/**`
 - Enabled for all other endpoints via `CookieCsrfTokenRepository`
 
 ### CORS

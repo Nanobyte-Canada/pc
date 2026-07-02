@@ -40,4 +40,20 @@ class HealthControllerTest {
             .andExpect(jsonPath("$.status").isString)
             .andExpect(jsonPath("$.timestamp").isString)
     }
+
+    @Test
+    fun `ready endpoint returns UP status`() {
+        mockMvc.perform(get("/ready"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.status").value("UP"))
+            .andExpect(jsonPath("$.timestamp").exists())
+    }
+
+    @Test
+    fun `ready endpoint returns valid JSON`() {
+        mockMvc.perform(get("/ready"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.status").isString)
+            .andExpect(jsonPath("$.timestamp").isString)
+    }
 }
