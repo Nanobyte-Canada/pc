@@ -68,6 +68,15 @@ jobs:
       - name: Install opencode
         run: npm install -g opencode-ai
 
+      - name: Install GitHub CLI (gh)
+        run: |
+          which gh >/dev/null 2>&1 && echo "gh already installed" || {
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
+            echo 'deb [signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main' | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            sudo apt-get update -qq && sudo apt-get install -y -qq gh
+          }
+        shell: bash
+
       - name: Configure opencode auth
         run: |
           mkdir -p ~/.local/share/opencode
