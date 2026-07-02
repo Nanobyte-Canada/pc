@@ -18,8 +18,9 @@ jobs:
       - name: Clean up workspace (handle .gradle permission issues)
         run: |
           # Remove problematic .gradle dirs that cause checkout cleanup failures
-          find "${{ github.workspace }}" -name ".gradle" -type d -exec rm -rf {} + 2>/dev/null || true
-          find "${{ github.workspace }}" -name "build" -type d -exec rm -rf {} + 2>/dev/null || true
+          # Use sudo because build artifacts may be owned by root
+          sudo find "${{ github.workspace }}" -name ".gradle" -type d -exec rm -rf {} + 2>/dev/null || true
+          sudo find "${{ github.workspace }}" -name "build" -type d -exec rm -rf {} + 2>/dev/null || true
 
       - name: Checkout repo
         uses: actions/checkout@v4
