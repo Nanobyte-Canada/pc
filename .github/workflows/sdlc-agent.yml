@@ -147,7 +147,7 @@ jobs:
             echo "model=${{ github.event.client_payload.model }}" >> $GITHUB_OUTPUT
             echo "issue_number=${{ github.event.client_payload.issue_number }}" >> $GITHUB_OUTPUT
             echo "phase=${{ github.event.client_payload.phase }}" >> $GITHUB_OUTPUT
-            # Pass through review-loop params for review-fix phase
+            # Pass through reviewer params for review-fix phase
             echo "pr_number=${{ github.event.client_payload.pr_number || '' }}" >> $GITHUB_OUTPUT
             echo "review_round=${{ github.event.client_payload.review_round || '' }}" >> $GITHUB_OUTPUT
             echo "last_reviewed_sha=${{ github.event.client_payload.last_reviewed_sha || '' }}" >> $GITHUB_OUTPUT
