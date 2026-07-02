@@ -84,7 +84,7 @@ jobs:
           PR_NUMBER="${{ steps.pr.outputs.number }}"
           # Read the latest review comment from the PR
           COMMENT=$(gh pr view $PR_NUMBER --json comments --jq '
-            [.comments[] | select(.body | contains("SUMMARY:"))] | last | .body
+            [.comments[] | select(.body | contains("<!-- SUMMARY:"))] | last | .body
           ')
           if [ -z "$COMMENT" ] || [ "$COMMENT" = "null" ]; then
             echo "high_count=0" >> $GITHUB_OUTPUT
@@ -92,7 +92,7 @@ jobs:
             echo "round=1" >> $GITHUB_OUTPUT
             echo "last_reviewed_sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
           else
-            SUMMARY=$(echo "$COMMENT" | grep '^SUMMARY:' | head -1)
+            SUMMARY=$(echo "$COMMENT" | grep '<!-- SUMMARY:' | head -1)
             HIGH=$(echo "$SUMMARY" | grep -oE '[0-9]+ HIGH' | grep -oE '[0-9]+')
             LOW=$(echo "$SUMMARY" | grep -oE '[0-9]+ LOW' | grep -oE '[0-9]+')
             ROUND=$(echo "$COMMENT" | grep -oP '(?<=<!-- review-round: )[0-9]+' || echo "1")

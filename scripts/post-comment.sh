@@ -30,7 +30,7 @@ if [ ! -f "$AGGREGATED_FILE" ]; then
 fi
 
 COMMENT_BODY=$(cat "$AGGREGATED_FILE")
-COMMENT_BODY=$(echo "$COMMENT_BODY" | grep -v '^SUMMARY:')
+COMMENT_BODY=$(echo "$COMMENT_BODY" | sed 's/^SUMMARY:/<!-- SUMMARY:/; s/$/ -->/')
 
 PR_NUMBER="${GITHUB_EVENT_NUMBER:-}"
 if [ -z "$PR_NUMBER" ] && [ -f "${GITHUB_EVENT_PATH:-}" ]; then
