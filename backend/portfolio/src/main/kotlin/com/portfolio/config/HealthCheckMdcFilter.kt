@@ -18,7 +18,7 @@ class HealthCheckMdcFilter : OncePerRequestFilter() {
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        if (request.requestURI == "/health") {
+        if (request.requestURI == "/health" || request.requestURI == "/ready") {
             MDC.put("skipLog", "true")
             try {
                 filterChain.doFilter(request, response)
