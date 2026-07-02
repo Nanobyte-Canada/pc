@@ -15,17 +15,18 @@ jobs:
       actions: write
     if: github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure'
     steps:
-      - name: Clean up workspace (handle .gradle permission issues)
+      - name: Manually clean workspace (handle root-owned build artifacts)
         run: |
-          # Remove problematic .gradle dirs that cause checkout cleanup failures
-          # Use sudo because build artifacts may be owned by root
-          sudo find "${{ github.workspace }}" -name ".gradle" -type d -exec rm -rf {} + 2>/dev/null || true
-          sudo find "${{ github.workspace }}" -name "build" -type d -exec rm -rf {} + 2>/dev/null || true
+          # actions/checkout@v4 fails to clean the workspace when build artifacts
+          # are owned by root (e.g., .gradle, .kotlin dirs). Clean them first with sudo.
+          sudo rm -rf "${{ github.workspace }}"/* 2>/dev/null || true
+          sudo rm -rf "${{ github.workspace }}"/.gitignore 2>/dev/null || true
 
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          clean: false
 
       - name: Bootstrap shared scripts
         env:
