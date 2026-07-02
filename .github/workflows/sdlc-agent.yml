@@ -146,7 +146,7 @@ jobs:
             --dangerously-skip-permissions \
             "Process issue #${{ steps.params.outputs.issue_number }} — phase: ${{ steps.params.outputs.phase }}"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
           ISSUE_NUMBER: ${{ steps.params.outputs.issue_number }}
           PHASE: ${{ steps.params.outputs.phase }}
           PR_NUMBER: ${{ steps.params.outputs.pr_number }}
