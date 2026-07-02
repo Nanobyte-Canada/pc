@@ -19,6 +19,8 @@ on:
       api_key:
         description: 'OpenCode Go API key (from opencode.ai/auth)'
         required: true
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 jobs:
   review:
@@ -26,6 +28,10 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    env:
+      CONFIG_PATH: ${{ inputs.config_path || '.github/review-config.yml' }}
+      FAIL_ON_HIGH: ${{ inputs.fail_on_high || false }}
+      MAX_DIFF_BYTES: ${{ inputs.max_diff_bytes || 30720 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,13 +45,15 @@ jobs:
         run: npm install -g opencode-ai
 
       - name: Configure OpenCode auth
+        env:
+          API_KEY: ${{ secrets.api_key || secrets.OPENCODE_API_KEY }}
         run: |
           mkdir -p ~/.local/share/opencode
           cat > ~/.local/share/opencode/auth.json << EOF
           {
             "opencode-go": {
               "type": "api",
-              "key": "${{ secrets.api_key }}"
+              "key": "${API_KEY}"
             }
           }
           EOF
@@ -58,7 +66,7 @@ jobs:
         run: |
           mkdir -p /tmp/review
           bash scripts/classify.sh --base "$BASE_SHA" --head "$HEAD_SHA" \
-            --config "${{ inputs.config_path }}" 2>&1 | tee /tmp/review/classify-output.txt
+            --config "${{ env.CONFIG_PATH }}" 2>&1 | tee /tmp/review/classify-output.txt
 
           CLASS_JSON=$(cat /tmp/review/classifier-output.json)
           echo "skip_review=$(echo $CLASS_JSON | jq -r '.skip_review')" >> $GITHUB_OUTPUT
@@ -87,7 +95,7 @@ jobs:
           mkdir -p /tmp/review
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-          MAX_SIZE=${{ inputs.max_diff_bytes }}
+          MAX_SIZE=${{ env.MAX_DIFF_BYTES }}
 
           # Read the previous review comment to extract round + last-reviewed-sha
           PREV_COMMENT=$(gh pr view "$PR_NUMBER" --json comments --jq \
@@ -166,7 +174,7 @@ jobs:
           echo "::warning::Review produced 0 findings on a code diff. Consider a manual review."
 
       - name: Fail build on HIGH findings
-        if: steps.classify.outputs.skip_review != 'true' && inputs.fail_on_high && steps.aggregate.outputs.high_count != '0'
+        if: steps.classify.outputs.skip_review != 'true' && env.FAIL_ON_HIGH == 'true' && steps.aggregate.outputs.high_count != '0'
         run: |
           echo "::error::Build failed: ${{ steps.aggregate.outputs.high_count }} HIGH severity findings found."
           exit 1
