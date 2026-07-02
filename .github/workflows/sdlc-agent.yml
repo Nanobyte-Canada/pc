@@ -80,7 +80,12 @@ jobs:
             ISSUE_NUM=${{ github.event.issue.number }}
             LABEL="${{ github.event.label.name }}"
             case "$LABEL" in
-              Triaging|Planning)
+              Triaging)
+                echo "agent=planner" >> $GITHUB_OUTPUT
+                echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+                echo "phase=triaging" >> $GITHUB_OUTPUT
+                ;;
+              Planning)
                 echo "agent=planner" >> $GITHUB_OUTPUT
                 echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
                 echo "phase=planning" >> $GITHUB_OUTPUT
