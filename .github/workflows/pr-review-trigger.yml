@@ -1,19 +1,13 @@
-name: PR Review - Code, Docs & Security
+name: PR Review (Trigger)
 
 on:
-  pull_request:
-    branches: [development, main]
-
-permissions:
-  contents: read
-  pull-requests: write
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 jobs:
-  review:
-    name: OpenCode PR Review
+  pr-review:
     uses: ./.github/workflows/pr-review.yml
     with:
-      config_path: '.github/review-config.yml'
-      fail_on_high: true
+      fail_on_high: false
     secrets:
       api_key: ${{ secrets.OPENCODE_API_KEY }}

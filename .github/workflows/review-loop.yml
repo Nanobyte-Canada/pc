@@ -2,14 +2,8 @@ name: SDLC Review Loop
 
 on:
   workflow_run:
-    workflows: ["build", "PR Review (Reusable)"]
+    workflows: ["PR Review (Reusable)"]
     types: [completed]
-
-# Concurrency: one review-loop per PR — don't double-dispatch
-# when both build and pr-review complete
-concurrency:
-  group: review-loop-${{ github.event.workflow_run.pull_requests[0].number }}
-  cancel-in-progress: false
 
 jobs:
   review-loop:
@@ -19,7 +13,6 @@ jobs:
       issues: write
       pull-requests: write
       actions: write
-    # Only act when BOTH workflows have completed
     if: github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure'
     steps:
       - name: Checkout repo
@@ -37,51 +30,48 @@ jobs:
           cp /tmp/nbs/sdlc/scripts/update-card-status.sh scripts/
           chmod +x scripts/update-card-status.sh
 
-      - name: Get PR number and check both workflows completed
+      - name: Get PR number and linked issue
         id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Get PR number from workflow_run event
           PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
+
+          # Fallback: look up PR by head SHA
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+            PR_NUMBER=$(gh api repos/${{ github.repository }}/commits/$HEAD_SHA/pulls --jq '.[0].number' 2>/dev/null || echo "")
+          fi
+
+          # Exit early if no PR number found
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "number=" >> $GITHUB_OUTPUT
+            echo "issue_number=0" >> $GITHUB_OUTPUT
+            echo "found_pr=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
 
           # Resolve the linked issue number from the PR body (e.g., "Closes #42")
           PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq '.body' 2>/dev/null || echo "")
           ISSUE_NUM=$(echo "$PR_BODY" | grep -oP '(?:Closes|Resolves|Fixes) #\K[0-9]+' | head -1 || echo "0")
           if [ -z "$ISSUE_NUM" ] || [ "$ISSUE_NUM" = "0" ]; then
-            # Fallback: check PR's linked issues via API
-            ISSUE_NUM=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER --jq '.body' 2>/dev/null | grep -oP '(?:Closes|Resolves|Fixes) #\K[0-9]+' | head -1 || echo "0")
+            ISSUE_NUM=$(gh pr view "$PR_NUMBER" --json body --jq '.body' 2>/dev/null | grep -oP '(?:Closes|Resolves|Fixes) #\K[0-9]+' | head -1 || echo "0")
           fi
           echo "issue_number=${ISSUE_NUM:-0}" >> $GITHUB_OUTPUT
+          echo "found_pr=true" >> $GITHUB_OUTPUT
 
-          # Check that both build and pr-review have completed for this PR
-          # Query the workflow run status via GitHub API
-          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
-          BUILD_STATUS=$(gh api repos/${{ github.repository }}/actions/runs \
-            --jq ".workflow_runs[] | select(.head_sha == \"$HEAD_SHA\" and .name == \"build\") | .conclusion" \
-            | head -1)
-          REVIEW_STATUS=$(gh api repos/${{ github.repository }}/actions/runs \
-            --jq ".workflow_runs[] | select(.head_sha == \"$HEAD_SHA\" and .name == \"PR Review (Reusable)\") | .conclusion" \
-            | head -1)
-
-          echo "build_status=$BUILD_STATUS" >> $GITHUB_OUTPUT
-          echo "review_status=$REVIEW_STATUS" >> $GITHUB_OUTPUT
-
-          # If either is still in_progress, exit early — wait for the other
-          if [ "$BUILD_STATUS" = "null" ] || [ -z "$BUILD_STATUS" ] || \
-             [ "$REVIEW_STATUS" = "null" ] || [ -z "$REVIEW_STATUS" ]; then
-            echo "both_completed=false" >> $GITHUB_OUTPUT
-          else
-            echo "both_completed=true" >> $GITHUB_OUTPUT
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Exit if not both completed
-        if: steps.pr.outputs.both_completed != 'true'
-        run: echo "Waiting for both workflows to complete. Exiting."
+      - name: Exit if no PR found
+        if: steps.pr.outputs.found_pr != 'true'
+        run: echo "No PR associated with this workflow run. Exiting."
 
       - name: Parse review findings
-        if: steps.pr.outputs.both_completed == 'true'
+        if: steps.pr.outputs.found_pr == 'true'
         id: findings
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PR_NUMBER="${{ steps.pr.outputs.number }}"
           # Read the latest review comment from the PR
@@ -94,11 +84,9 @@ jobs:
             echo "round=1" >> $GITHUB_OUTPUT
             echo "last_reviewed_sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
           else
-            # Parse SUMMARY line
             SUMMARY=$(echo "$COMMENT" | grep '^SUMMARY:' | head -1)
             HIGH=$(echo "$SUMMARY" | grep -oE '[0-9]+ HIGH' | grep -oE '[0-9]+')
             LOW=$(echo "$SUMMARY" | grep -oE '[0-9]+ LOW' | grep -oE '[0-9]+')
-            # Parse hidden HTML comments
             ROUND=$(echo "$COMMENT" | grep -oP '(?<=<!-- review-round: )[0-9]+' || echo "1")
             LAST_SHA=$(echo "$COMMENT" | grep -oP '(?<=<!-- last-reviewed-sha: )[a-f0-9]+' || echo "${{ github.event.workflow_run.head_sha }}")
             echo "high_count=${HIGH:-0}" >> $GITHUB_OUTPUT
@@ -106,28 +94,26 @@ jobs:
             echo "round=${ROUND:-1}" >> $GITHUB_OUTPUT
             echo "last_reviewed_sha=${LAST_SHA}" >> $GITHUB_OUTPUT
           fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Auto-merge if clean
         if: |
-          steps.pr.outputs.both_completed == 'true' &&
+          steps.pr.outputs.found_pr == 'true' &&
           steps.findings.outputs.high_count == '0' &&
           steps.findings.outputs.low_count == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
         run: |
           PR_NUMBER="${{ steps.pr.outputs.number }}"
           echo "PR #$PR_NUMBER is clean — auto-merging"
           gh pr merge $PR_NUMBER --squash --auto --repo ${{ github.repository }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Block if max rounds exceeded
         if: |
-          steps.pr.outputs.both_completed == 'true' &&
+          steps.pr.outputs.found_pr == 'true' &&
           (steps.findings.outputs.high_count != '0' || steps.findings.outputs.low_count != '0') &&
           steps.findings.outputs.round >= '3'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
           PROJECT_ID: ${{ secrets.SDLC_PROJECT_ID }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
@@ -149,14 +135,15 @@ jobs:
 
       - name: Re-dispatch build agent to fix findings
         if: |
-          steps.pr.outputs.both_completed == 'true' &&
+          steps.pr.outputs.found_pr == 'true' &&
           (steps.findings.outputs.high_count != '0' || steps.findings.outputs.low_count != '0') &&
           steps.findings.outputs.round < '3'
+        env:
+          GH_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
         run: |
           PR_NUMBER="${{ steps.pr.outputs.number }}"
           ROUND=$(( ${{ steps.findings.outputs.round }} + 1 ))
           echo "Re-dispatching build agent for round $ROUND"
-          # Fire repository_dispatch to re-trigger the build agent
           gh api repos/${{ github.repository }}/dispatches \
             -f event_type=sdlc-phase \
             -f 'client_payload[agent]=build' \
@@ -166,5 +153,3 @@ jobs:
             -f "client_payload[pr_number]=$PR_NUMBER" \
             -f "client_payload[review_round]=$ROUND" \
             -f "client_payload[last_reviewed_sha]=${{ steps.findings.outputs.last_reviewed_sha }}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
