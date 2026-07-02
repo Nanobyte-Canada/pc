@@ -136,7 +136,7 @@ jobs:
             echo "phase=review" >> $GITHUB_OUTPUT
             echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
             # Resolve ISSUE_NUMBER from PR body (Implements #N, Closes #N, Fixes #N)
-            PR_BODY="${{ github.event.pull_request.body }}"
+            PR_BODY=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
             ISSUE_NUM=$(echo "$PR_BODY" | grep -oP '(?:Implements|Closes|Resolves|Fixes) #\K[0-9]+' | head -1 || echo "0")
             echo "issue_number=${ISSUE_NUM:-0}" >> $GITHUB_OUTPUT
             # Review round: read from prior review comments, default to 1
