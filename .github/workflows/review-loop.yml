@@ -15,6 +15,12 @@ jobs:
       actions: write
     if: github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure'
     steps:
+      - name: Clean up workspace (handle .gradle permission issues)
+        run: |
+          # Remove problematic .gradle dirs that cause checkout cleanup failures
+          find "${{ github.workspace }}" -name ".gradle" -type d -exec rm -rf {} + 2>/dev/null || true
+          find "${{ github.workspace }}" -name "build" -type d -exec rm -rf {} + 2>/dev/null || true
+
       - name: Checkout repo
         uses: actions/checkout@v4
         with:

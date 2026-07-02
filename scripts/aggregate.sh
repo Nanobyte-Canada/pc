@@ -1,5 +1,7 @@
 #!/bin/bash
-set -euo pipefail
+
+# Explicitly handle errors — don't use set -e because intermediate commands
+# (grep, find) return non-zero for "no match" which is a valid state.
 
 usage() {
   echo "Usage: $0 [--config <path>]"
