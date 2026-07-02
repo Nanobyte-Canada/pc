@@ -3,6 +3,8 @@ name: SDLC Agent
 on:
   issues:
     types: [labeled]
+  pull_request_target:
+    types: [opened, synchronize]
   repository_dispatch:
     types: [sdlc-phase]
   workflow_dispatch:
@@ -40,7 +42,8 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'issues' && contains(fromJson('["Triaging","Planning","Executing","Testing","Bug Fixing","Publishing","agent-ready"]'), github.event.label.name)) ||
-      github.event_name == 'repository_dispatch'
+      github.event_name == 'repository_dispatch' ||
+      github.event_name == 'pull_request_target'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -126,12 +129,25 @@ jobs:
             echo "model=${{ github.event.inputs.model }}" >> $GITHUB_OUTPUT
             echo "issue_number=${{ github.event.inputs.issue_number }}" >> $GITHUB_OUTPUT
             echo "phase=${{ github.event.inputs.phase }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            echo "agent=reviewer" >> $GITHUB_OUTPUT
+            echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+            echo "phase=review" >> $GITHUB_OUTPUT
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            # Resolve ISSUE_NUMBER from PR body (Implements #N, Closes #N, Fixes #N)
+            PR_BODY=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
+            ISSUE_NUM=$(echo "$PR_BODY" | grep -oP '(?:Implements|Closes|Resolves|Fixes) #\K[0-9]+' | head -1 || echo "0")
+            echo "issue_number=${ISSUE_NUM:-0}" >> $GITHUB_OUTPUT
+            # Review round: read from prior review comments, default to 1
+            echo "review_round=1" >> $GITHUB_OUTPUT
+            echo "last_reviewed_sha=" >> $GITHUB_OUTPUT
           else
             echo "agent=${{ github.event.client_payload.agent }}" >> $GITHUB_OUTPUT
             echo "model=${{ github.event.client_payload.model }}" >> $GITHUB_OUTPUT
             echo "issue_number=${{ github.event.client_payload.issue_number }}" >> $GITHUB_OUTPUT
             echo "phase=${{ github.event.client_payload.phase }}" >> $GITHUB_OUTPUT
-            # Pass through review-loop params for review-fix phase
+            # Pass through reviewer params for review-fix phase
             echo "pr_number=${{ github.event.client_payload.pr_number || '' }}" >> $GITHUB_OUTPUT
             echo "review_round=${{ github.event.client_payload.review_round || '' }}" >> $GITHUB_OUTPUT
             echo "last_reviewed_sha=${{ github.event.client_payload.last_reviewed_sha || '' }}" >> $GITHUB_OUTPUT
@@ -154,3 +170,5 @@ jobs:
           LAST_REVIEWED_SHA: ${{ steps.params.outputs.last_reviewed_sha }}
           PROJECT_ID: ${{ secrets.SDLC_PROJECT_ID }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          UAT_API_URL: ${{ vars.UAT_API_URL }}
+          PROD_API_URL: ${{ vars.PROD_API_URL }}

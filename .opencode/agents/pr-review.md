@@ -12,5 +12,4 @@ Follow the pr-review skill to review this PR.
 2. Run `scripts/structural.sh` for deterministic checks (no LLM)
 3. Run `scripts/llm-review.sh --type code` for LLM code review
 4. Run `scripts/llm-review.sh --type docs` for LLM doc review
-5. Run `scripts/aggregate.sh` to deduplicate and format findings
-6. Present the results to the user with the aggregated findings
+5. Present the results to the user with findings from all phases
