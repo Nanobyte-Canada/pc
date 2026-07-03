@@ -297,6 +297,56 @@ git commit -m "feat(workflow): three-tier Vault secret fetch for multi-repo SDLC
 
 ---
 
+---
+
+### Task 5: Create Vault three-tier structure
+
+**Files:**
+- Add: `scripts/setup-sdlc-vault.sh` (in pc repo)
+- Operation: Run against live Vault to create `sdlc/common`, `portfolio/common`, `portfolio/uat`, `portfolio/prod`
+
+- [x] **Step 1: Create the setup script**
+  Script: `pc/scripts/setup-sdlc-vault.sh`
+  Reads existing `sdlc/pc` secrets, splits into three tiers. For env paths (`portfolio/uat`, `portfolio/prod`), merges with existing deploy secrets (doesn't overwrite).
+
+- [ ] **Step 2: Run the script**
+  Requires Vault AppRole credentials (`VAULT_ROLE_ID` + `VAULT_SECRET_ID` env vars).
+  Run from the self-hosted runner (which has these configured) or any machine with Vault access:
+  ```bash
+  export VAULT_ROLE_ID="..." VAULT_SECRET_ID="..."
+  ./scripts/setup-sdlc-vault.sh
+  ```
+  Or directly with a token:
+  ```bash
+  VAULT_TOKEN="hvs.xxx" ./scripts/setup-sdlc-vault.sh
+  ```
+
+---
+
+### Task 6: Write KV entry for pc repo
+
+- [x] **Step 1: Create the setup script**
+  Script: `pc/scripts/setup-sdlc-kv.sh`
+  Writes `repo:Nanobyte-Canada/pc` → `{"project_id":"PVT_kwDOEbgU584Bbxz4"}` to the `DELIVERY_KV` namespace.
+
+- [ ] **Step 2: Run the script**
+  Requires `wrangler` authenticated (Cloudflare API token with KV write permissions).
+  Run from the `nanobyte-services/sdlc/worker` directory:
+  ```bash
+  ./scripts/setup-sdlc-kv.sh
+  ```
+  Or manually:
+  ```bash
+  cd nanobyte-services/sdlc/worker
+  npx wrangler kv key put \
+    "repo:Nanobyte-Canada/pc" \
+    '{"project_id":"PVT_kwDOEbgU584Bbxz4"}' \
+    --binding=DELIVERY_KV --remote
+  ```
+  No Worker redeploy needed — KV is live-read on every invocation.
+
+---
+
 ## Verification
 
 After all tasks are complete:
