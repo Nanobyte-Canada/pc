@@ -1,6 +1,0 @@
-src/controller/AccountController.kt
-docs/api-endpoints.md
-frontend/src/hooks/useAccounts.ts
-backend/portfolio/src/main/resources/db/migration/V73__add_portfolio_metrics.sql
-package-lock.json
-README.md
