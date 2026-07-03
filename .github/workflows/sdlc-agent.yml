@@ -67,18 +67,59 @@ jobs:
           fi
           echo "Vault authentication successful"
 
-          echo "Fetching SDLC pipeline secrets..."
-          SECRETS_JSON=$(curl -sf \
-            --header "X-Vault-Token: ${VAULT_TOKEN}" \
-            "${VAULT_ADDR}/v1/secret/data/sdlc/pc" | jq -r '.data.data')
-
-          if [ -z "$SECRETS_JSON" ] || [ "$SECRETS_JSON" = "null" ]; then
-            echo "::error::Failed to fetch SDLC secrets from Vault"
+          APP_NAME="${{ vars.APP_NAME }}"
+          if [ -z "$APP_NAME" ]; then
+            echo "::error::APP_NAME repository variable is not set — cannot fetch SDLC secrets"
             exit 1
           fi
 
-          echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> "$GITHUB_ENV"
-          echo "SDLC secrets fetched and exported successfully"
+          echo "Fetching SDLC pipeline secrets..."
+
+          # Tier 1: Org-level shared secrets (same for all repos)
+          echo "--- Tier 1: sdlc/common ---"
+          JSON=$(curl -sf \
+            --header "X-Vault-Token: ${VAULT_TOKEN}" \
+            "${VAULT_ADDR}/v1/secret/data/sdlc/common" | jq -r '.data.data // "{}"')
+          if [ "$JSON" != "{}" ]; then
+            echo "$JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> "$GITHUB_ENV"
+            echo "Exported $(echo "$JSON" | jq -r 'keys | length') keys from sdlc/common"
+          else
+            echo "No secrets found at sdlc/common — skipping"
+          fi
+
+          # Tier 2: App-level shared secrets (repo-specific, shared across envs)
+          echo "--- Tier 2: ${APP_NAME}/common ---"
+          JSON=$(curl -sf \
+            --header "X-Vault-Token: ${VAULT_TOKEN}" \
+            "${VAULT_ADDR}/v1/secret/data/${APP_NAME}/common" | jq -r '.data.data // "{}"')
+          if [ "$JSON" != "{}" ]; then
+            echo "$JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> "$GITHUB_ENV"
+            echo "Exported $(echo "$JSON" | jq -r 'keys | length') keys from ${APP_NAME}/common"
+          else
+            echo "No secrets found at ${APP_NAME}/common — skipping"
+          fi
+
+          # Tier 3: Env-specific secrets (only needed for tester/deployer phases)
+          PHASE="${{ steps.params.outputs.phase }}"
+          if [ "$PHASE" = "testing" ] || [ "$PHASE" = "publish" ]; then
+            if [ "$PHASE" = "publish" ]; then
+              VAULT_ENV="prod"
+            else
+              VAULT_ENV="uat"
+            fi
+            echo "--- Tier 3: ${APP_NAME}/${VAULT_ENV} ---"
+            JSON=$(curl -sf \
+              --header "X-Vault-Token: ${VAULT_TOKEN}" \
+              "${VAULT_ADDR}/v1/secret/data/${APP_NAME}/${VAULT_ENV}" | jq -r '.data.data // "{}"')
+            if [ "$JSON" != "{}" ]; then
+              echo "$JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> "$GITHUB_ENV"
+              echo "Exported $(echo "$JSON" | jq -r 'keys | length') keys from ${APP_NAME}/${VAULT_ENV}"
+            else
+              echo "No secrets found at ${APP_NAME}/${VAULT_ENV} — skipping"
+            fi
+          else
+            echo "Phase is '$PHASE' — skipping env-specific secrets"
+          fi
 
       - name: Bootstrap shared opencode config + scripts
         run: |
