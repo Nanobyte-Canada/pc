@@ -30,6 +30,9 @@ on:
         required: true
         default: "opencode-go/glm-5.2"
 
+env:
+  VAULT_ADDR: https://vault.nanobyte.ca
+
 jobs:
   run-agent:
     runs-on: self-hosted
@@ -50,12 +53,37 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch secrets from Vault
+        run: |
+          echo "Authenticating to Vault..."
+          VAULT_TOKEN=$(curl -sf \
+            --request POST \
+            --data "{\"role_id\": \"${{ secrets.VAULT_ROLE_ID }}\", \"secret_id\": \"${{ secrets.VAULT_SECRET_ID }}\"}" \
+            "${VAULT_ADDR}/v1/auth/approle/login" | jq -r '.auth.client_token')
+
+          if [ -z "$VAULT_TOKEN" ] || [ "$VAULT_TOKEN" = "null" ]; then
+            echo "::error::Failed to authenticate to Vault"
+            exit 1
+          fi
+          echo "Vault authentication successful"
+
+          echo "Fetching SDLC pipeline secrets..."
+          SECRETS_JSON=$(curl -sf \
+            --header "X-Vault-Token: ${VAULT_TOKEN}" \
+            "${VAULT_ADDR}/v1/secret/data/sdlc/pc" | jq -r '.data.data')
+
+          if [ -z "$SECRETS_JSON" ] || [ "$SECRETS_JSON" = "null" ]; then
+            echo "::error::Failed to fetch SDLC secrets from Vault"
+            exit 1
+          fi
+
+          echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> "$GITHUB_ENV"
+          echo "SDLC secrets fetched and exported successfully"
+
       - name: Bootstrap shared opencode config + scripts
-        env:
-          NANOBYTE_TOKEN: ${{ secrets.NANOBYTE_SERVICES_TOKEN }}
         run: |
           rm -rf /tmp/nbs
-          git clone --depth 1 https://x-access-token:${NANOBYTE_TOKEN}@github.com/${{ github.repository_owner }}/nanobyte-services /tmp/nbs
+          git clone --depth 1 https://x-access-token:${NANOBYTE_SERVICES_TOKEN}@github.com/${{ github.repository_owner }}/nanobyte-services /tmp/nbs
           # Copy shared config, then let repo-specific .opencode/ override
           cp -r /tmp/nbs/sdlc/opencode/* .opencode/ 2>/dev/null || true
           # Copy shared scripts (update-card-status.sh, etc.)
@@ -83,7 +111,7 @@ jobs:
       - name: Configure opencode auth
         run: |
           mkdir -p ~/.local/share/opencode
-          echo '${{ secrets.OPENCODE_AUTH_JSON }}' > ~/.local/share/opencode/auth.json
+          echo "$OPENCODE_AUTH_JSON" > ~/.local/share/opencode/auth.json
 
       - name: Determine agent + model + issue + phase
         id: params
@@ -162,13 +190,13 @@ jobs:
             --dangerously-skip-permissions \
             "Process issue #${{ steps.params.outputs.issue_number }} — phase: ${{ steps.params.outputs.phase }}"
         env:
-          GH_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
+          GH_TOKEN: ${{ env.GH_PROJECT_TOKEN }}
           ISSUE_NUMBER: ${{ steps.params.outputs.issue_number }}
           PHASE: ${{ steps.params.outputs.phase }}
           PR_NUMBER: ${{ steps.params.outputs.pr_number }}
           REVIEW_ROUND: ${{ steps.params.outputs.review_round }}
           LAST_REVIEWED_SHA: ${{ steps.params.outputs.last_reviewed_sha }}
-          PROJECT_ID: ${{ secrets.SDLC_PROJECT_ID }}
+          PROJECT_ID: ${{ env.SDLC_PROJECT_ID }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          UAT_API_URL: ${{ vars.UAT_API_URL }}
-          PROD_API_URL: ${{ vars.PROD_API_URL }}
+          UAT_API_URL: ${{ env.UAT_API_URL }}
+          PROD_API_URL: ${{ env.PROD_API_URL }}
