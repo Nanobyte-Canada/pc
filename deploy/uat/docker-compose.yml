@@ -52,7 +52,7 @@ services:
       - uat-network
 
   backend:
-    image: ghcr.io/saurabhbilakhia/portfolio-backend:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-backend:${IMAGE_TAG}
     container_name: uat-backend
     environment:
       SPRING_PROFILES_ACTIVE: uat
@@ -100,7 +100,7 @@ services:
       - uat-network
 
   ingestion-service:
-    image: ghcr.io/saurabhbilakhia/portfolio-ingestion:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-ingestion:${IMAGE_TAG}
     container_name: uat-ingestion
     environment:
       SPRING_PROFILES_ACTIVE: uat
@@ -137,7 +137,7 @@ services:
       - uat-network
 
   market-data-service:
-    image: ghcr.io/saurabhbilakhia/portfolio-market-data:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-market-data:${IMAGE_TAG}
     container_name: uat-market-data
     environment:
       SPRING_PROFILES_ACTIVE: uat
@@ -178,7 +178,7 @@ services:
       - uat-network
 
   strategy-service:
-    image: ghcr.io/saurabhbilakhia/portfolio-strategy:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-strategy:${IMAGE_TAG}
     container_name: uat-strategy
     environment:
       SPRING_PROFILES_ACTIVE: uat
@@ -216,7 +216,7 @@ services:
       - uat-network
 
   broker-gateway-service:
-    image: ghcr.io/saurabhbilakhia/portfolio-broker-gateway:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-broker-gateway:${IMAGE_TAG}
     container_name: uat-broker-gateway
     environment:
       SPRING_PROFILES_ACTIVE: uat
@@ -262,7 +262,7 @@ services:
       - uat-network
 
   frontend:
-    image: ghcr.io/saurabhbilakhia/portfolio-frontend-uat:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-frontend-uat:${IMAGE_TAG}
     container_name: uat-frontend
     ports:
       - "20000:80"

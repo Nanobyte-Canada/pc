@@ -52,7 +52,7 @@ services:
       - prod-network
 
   backend:
-    image: ghcr.io/saurabhbilakhia/portfolio-backend:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-backend:${IMAGE_TAG}
     container_name: prod-backend
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -100,7 +100,7 @@ services:
       - prod-network
 
   ingestion-service:
-    image: ghcr.io/saurabhbilakhia/portfolio-ingestion:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-ingestion:${IMAGE_TAG}
     container_name: prod-ingestion
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -137,7 +137,7 @@ services:
       - prod-network
 
   market-data-service:
-    image: ghcr.io/saurabhbilakhia/portfolio-market-data:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-market-data:${IMAGE_TAG}
     container_name: prod-market-data
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -178,7 +178,7 @@ services:
       - prod-network
 
   strategy-service:
-    image: ghcr.io/saurabhbilakhia/portfolio-strategy:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-strategy:${IMAGE_TAG}
     container_name: prod-strategy
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -216,7 +216,7 @@ services:
       - prod-network
 
   broker-gateway-service:
-    image: ghcr.io/saurabhbilakhia/portfolio-broker-gateway:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-broker-gateway:${IMAGE_TAG}
     container_name: prod-broker-gateway
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -262,7 +262,7 @@ services:
       - prod-network
 
   frontend:
-    image: ghcr.io/saurabhbilakhia/portfolio-frontend:${IMAGE_TAG}
+    image: ghcr.io/nanobyte-canada/portfolio-frontend:${IMAGE_TAG}
     container_name: prod-frontend
     ports:
       - "10000:80"
