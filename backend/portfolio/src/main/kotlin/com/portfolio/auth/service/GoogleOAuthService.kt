@@ -16,7 +16,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.BodyInserters
+import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.core.publisher.Mono
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
@@ -204,6 +206,9 @@ class GoogleOAuthService(
                 .with("redirect_uri", redirectUri)
                 .with("grant_type", "authorization_code"))
             .retrieve()
+            .onStatus({ it.isError }) { clientResponse ->
+                throwGoogleOAuthError(clientResponse, "token exchange")
+            }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to exchange authorization code")
 
@@ -218,6 +223,9 @@ class GoogleOAuthService(
             .uri(authConfig.oauth2.google.userinfoUrl)
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
+            .onStatus({ it.isError }) { clientResponse ->
+                throwGoogleOAuthError(clientResponse, "userinfo")
+            }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to fetch user profile")
 
@@ -227,5 +235,31 @@ class GoogleOAuthService(
             name = response["name"] as? String,
             picture = response["picture"] as? String
         )
+    }
+
+    /**
+     * Reads Google's structured error body from a non-2xx response and returns
+     * a Mono that emits [GoogleOAuthException] with a `google_error:<code>` message
+     * so the controller can distinguish Google-side errors from unexpected runtime exceptions.
+     */
+    private fun throwGoogleOAuthError(
+        clientResponse: ClientResponse,
+        endpoint: String
+    ): Mono<out Throwable> {
+        return clientResponse.bodyToMono(Map::class.java)
+            .map { body ->
+                val googleErrorCode = body["error"] as? String
+                val message = if (googleErrorCode != null) {
+                    "google_error:$googleErrorCode"
+                } else {
+                    "google_error:${clientResponse.statusCode().value()}"
+                }
+                logger.error("Google OAuth $endpoint failed (${clientResponse.statusCode()}): ${body["error_description"] ?: body["error"] ?: "no details"}")
+                GoogleOAuthException(message)
+            }
+            .onErrorResume {
+                logger.error("Google OAuth $endpoint failed (${clientResponse.statusCode()}), could not parse error body", it)
+                Mono.just(GoogleOAuthException("google_error:${clientResponse.statusCode().value()}"))
+            }
     }
 }
