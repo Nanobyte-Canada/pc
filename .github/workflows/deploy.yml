@@ -23,6 +23,9 @@ jobs:
   deploy:
     name: Deploy to ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Validate tag format
         run: |
@@ -125,9 +128,16 @@ jobs:
 
             echo "=== Deploying ${TAG} to ${ENV} ==="
 
+            # Authenticate to GHCR to pull private images
+            echo "Logging in to GHCR..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
             # Pull new images
             echo "Pulling images..."
             docker compose pull
+
+            # Logout from GHCR (token is ephemeral, but best practice)
+            docker logout ghcr.io 2>/dev/null || true
 
             # Restart services
             echo "Starting services..."
