@@ -86,6 +86,9 @@ class AuthController(
         } catch (e: GoogleOAuthException) {
             logger.error("Google OAuth callback failed: ${e.message}")
             redirectToFrontend(frontendUrl, "auth_failed")
+        // Defensive: onStatus handlers should already convert non-2xx responses to
+        // GoogleOAuthException; retained in case a future external HTTP call
+        // is added without an onStatus handler.
         } catch (e: WebClientResponseException) {
             logger.error("Google OAuth HTTP error (${e.statusCode}): ${e.responseBodyAsString}", e)
             redirectToFrontend(frontendUrl, "auth_failed")

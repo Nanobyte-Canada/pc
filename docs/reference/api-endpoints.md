@@ -108,7 +108,7 @@ Returns application version and environment.
 | Method | Path | Auth | Service Method | Request Body | Response |
 |---|---|---|---|---|---|
 | `GET` | `/auth/google` | Public | `googleOAuthService.initiateGoogleLogin()` | -- | Redirects to Google consent screen |
-| `GET` | `/auth/google/callback` | Public | `googleOAuthService.handleCallback()` | `?code=String&state=String` | Redirects to frontend after setting auth cookies |
+| `GET` | `/auth/google/callback` | Public | `googleOAuthService.handleCallback()` | `?code=String&state=String` | `302` to frontend on success (sets auth cookies) or `302` to frontend/login?error=auth_failed \| `provider_unavailable` |
 | `POST` | `/auth/logout` | Public | `authenticationService.logout()` | (cookie: refresh_token) | `MessageResponse` |
 | `POST` | `/auth/refresh` | Public | `authenticationService.refreshAccessToken()` | (cookie: refresh_token) | `AuthResponse` (sets cookies) |
 | `GET` | `/auth/me` | Authenticated | `userRepository.findByIdWithIdentities()` | -- | `UserResponse` |
@@ -116,6 +116,7 @@ Returns application version and environment.
 
 ### Notes
 - Google OAuth callback sets `access_token` and `refresh_token` as HttpOnly cookies after successful authentication.
+- On error, the callback redirects to `<frontend>/login?error=auth_failed` for Google-side errors (e.g. `invalid_grant`, `invalid_client`, `redirect_uri_mismatch`) and `GoogleOAuthException`/`WebClientResponseException`, or `?error=provider_unavailable` for unexpected runtime errors.
 - Refresh endpoint rotates tokens and sets new cookies.
 - Logout clears auth cookies.
 - `secure` flag set when `app.environment` is `prod` or `dev`.
