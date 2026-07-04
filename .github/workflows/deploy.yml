@@ -125,6 +125,10 @@ jobs:
 
             echo "=== Deploying ${TAG} to ${ENV} ==="
 
+            # Authenticate to GHCR (org packages are private)
+            echo "Logging in to GHCR..."
+            echo "${{ secrets.GHCR_PULL_TOKEN }}" | docker login ghcr.io -u nanobyte-canada --password-stdin
+
             # Pull new images
             echo "Pulling images..."
             docker compose pull
