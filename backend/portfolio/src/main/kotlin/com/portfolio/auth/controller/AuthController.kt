@@ -85,8 +85,11 @@ class AuthController(
         } catch (e: GoogleOAuthException) {
             logger.error("Google OAuth callback failed: ${e.message}")
             redirectToFrontend(frontendUrl, "auth_failed")
+        } catch (e: org.springframework.web.reactive.function.client.WebClientResponseException) {
+            logger.error("Google OAuth callback failed with HTTP error: ${e.statusCode}", e)
+            redirectToFrontend(frontendUrl, "auth_failed")
         } catch (e: Exception) {
-            logger.error("Unexpected error during Google OAuth callback", e)
+            logger.error("AUTH_CALLBACK_UNEXPECTED: Unexpected error during Google OAuth callback", e)
             redirectToFrontend(frontendUrl, "provider_unavailable")
         }
     }

@@ -26,6 +26,7 @@ import java.time.OffsetDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class GoogleOAuthServiceTest {
 
@@ -337,5 +338,209 @@ class GoogleOAuthServiceTest {
             })
             auditService.logSignup(any(), "192.168.1.1", null)
         }
+    }
+
+    // =========================================================================
+    // #57: Google error surfacing via .onStatus() handlers
+    // =========================================================================
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException with google_error when token endpoint returns 400 redirect_uri_mismatch`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // Google returns a 400 with redirect_uri_mismatch
+        val errorBody = """
+            {
+                "error": "redirect_uri_mismatch",
+                "error_description": "Bad Request"
+            }
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(400)
+            .setBody(errorBody)
+            .addHeader("Content-Type", "application/json"))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+        assertTrue(exception.message!!.contains("google_error:redirect_uri_mismatch"),
+            "Expected 'google_error:redirect_uri_mismatch' but got: '${exception.message}'")
+    }
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException with google_error when token endpoint returns 401 invalid_client`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        val errorBody = """
+            {
+                "error": "invalid_client",
+                "error_description": "The OAuth client was not found."
+            }
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(401)
+            .setBody(errorBody)
+            .addHeader("Content-Type", "application/json"))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+        assertTrue(exception.message!!.contains("google_error:invalid_client"),
+            "Expected 'google_error:invalid_client' but got: '${exception.message}'")
+    }
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException with google_error with status code when token endpoint returns 500 with no JSON body`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // Google returns 500 with empty body
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(500))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+        assertTrue(exception.message!!.contains("google_error:500"),
+            "Expected 'google_error:500' but got: '${exception.message}'")
+    }
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException with google_error when token endpoint returns 400 with malformed body`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // Malformed non-JSON body
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(400)
+            .setBody("<html>Bad Request</html>")
+            .addHeader("Content-Type", "text/html"))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+        // Status code falls back to numeric code when body can't be parsed
+        assertTrue(exception.message!!.contains("google_error:400"),
+            "Expected 'google_error:400' but got: '${exception.message}'")
+    }
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException when userinfo endpoint returns 401 invalid_token`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // Token exchange succeeds
+        val tokenResponse = """
+            {
+                "access_token": "ya29.test-access-token",
+                "expires_in": 3600,
+                "token_type": "Bearer"
+            }
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setBody(tokenResponse)
+            .addHeader("Content-Type", "application/json"))
+
+        // But userinfo returns 401 with invalid_token
+        val errorBody = """
+            {
+                "error": "invalid_token",
+                "error_description": "Invalid Credentials"
+            }
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(401)
+            .setBody(errorBody)
+            .addHeader("Content-Type", "application/json"))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+        assertTrue(exception.message!!.contains("google_error:invalid_token"),
+            "Expected 'google_error:invalid_token' but got: '${exception.message}'")
+    }
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException when userinfo endpoint returns 500 with no JSON body`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // Token exchange succeeds
+        val tokenResponse = """
+            {
+                "access_token": "ya29.test-access-token",
+                "expires_in": 3600,
+                "token_type": "Bearer"
+            }
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setBody(tokenResponse)
+            .addHeader("Content-Type", "application/json"))
+
+        // Userinfo returns 500
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(500))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+        assertTrue(exception.message!!.contains("google_error:500"),
+            "Expected 'google_error:500' but got: '${exception.message}'")
     }
 }

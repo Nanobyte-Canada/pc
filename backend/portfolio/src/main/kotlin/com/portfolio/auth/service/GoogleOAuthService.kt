@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.core.publisher.Mono
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
@@ -190,12 +191,28 @@ class GoogleOAuthService(
         logger.info("Linked Google identity to existing user: ${user.email}")
     }
 
+    /**
+     * Extracts the Google OAuth error code from a JSON error body.
+     * Google error responses follow the format: {"error": "<code>", "error_description": "..."}
+     * Falls back to the numeric HTTP status code if the body cannot be parsed.
+     */
+    private fun extractGoogleErrorCode(statusCodeValue: Int, body: String?): String {
+        if (body.isNullOrBlank()) return statusCodeValue.toString()
+        return try {
+            val regex = """"error"\s*:\s*"([^"]+)"""".toRegex()
+            regex.find(body)?.groupValues?.get(1) ?: statusCodeValue.toString()
+        } catch (ex: Exception) {
+            statusCodeValue.toString()
+        }
+    }
+
     private fun exchangeCodeForTokens(
         code: String,
         clientId: String,
         clientSecret: String,
         redirectUri: String
     ): GoogleTokenResponse {
+        @Suppress("UNCHECKED_CAST")
         val response = webClient.post()
             .uri(authConfig.oauth2.google.tokenUrl)
             .body(BodyInserters.fromFormData("code", code)
@@ -203,8 +220,20 @@ class GoogleOAuthService(
                 .with("client_secret", clientSecret)
                 .with("redirect_uri", redirectUri)
                 .with("grant_type", "authorization_code"))
-            .retrieve()
-            .bodyToMono(Map::class.java)
+            .exchangeToMono { clientResponse ->
+                if (clientResponse.statusCode().isError) {
+                    clientResponse.bodyToMono(String::class.java)
+                        .defaultIfEmpty("")
+                        .map { body ->
+                            val googleError = extractGoogleErrorCode(clientResponse.statusCode().value(), body)
+                            throw GoogleOAuthException("google_error:$googleError")
+                        }
+                        .then(Mono.empty<Map<String, Any>>())
+                } else {
+                    clientResponse.bodyToMono(Map::class.java)
+                        .map { it as Map<String, Any> }
+                }
+            }
             .block() ?: throw GoogleOAuthException("Failed to exchange authorization code")
 
         val accessToken = response["access_token"] as? String
@@ -214,11 +243,24 @@ class GoogleOAuthService(
     }
 
     private fun fetchUserProfile(accessToken: String): GoogleUserProfile {
+        @Suppress("UNCHECKED_CAST")
         val response = webClient.get()
             .uri(authConfig.oauth2.google.userinfoUrl)
             .header("Authorization", "Bearer $accessToken")
-            .retrieve()
-            .bodyToMono(Map::class.java)
+            .exchangeToMono { clientResponse ->
+                if (clientResponse.statusCode().isError) {
+                    clientResponse.bodyToMono(String::class.java)
+                        .defaultIfEmpty("")
+                        .map { body ->
+                            val googleError = extractGoogleErrorCode(clientResponse.statusCode().value(), body)
+                            throw GoogleOAuthException("google_error:$googleError")
+                        }
+                        .then(Mono.empty<Map<String, Any>>())
+                } else {
+                    clientResponse.bodyToMono(Map::class.java)
+                        .map { it as Map<String, Any> }
+                }
+            }
             .block() ?: throw GoogleOAuthException("Failed to fetch user profile")
 
         return GoogleUserProfile(
