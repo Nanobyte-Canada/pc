@@ -116,7 +116,8 @@ jobs:
           rm -rf /tmp/nbs
           git clone --depth 1 https://x-access-token:${NANOBYTE_SERVICES_TOKEN}@github.com/${{ github.repository_owner }}/nanobyte-services /tmp/nbs
           # Copy shared config, then let repo-specific .opencode/ override
-          cp -r /tmp/nbs/sdlc/opencode/agents/* .opencode/agents/ 2>/dev/null || true
+          mkdir -p .opencode/agents
+          cp -r /tmp/nbs/sdlc/opencode/agents/* .opencode/agents/
           cp /tmp/nbs/sdlc/opencode/opencode.json .opencode/ 2>/dev/null || true
           # Verify planner agent was loaded (critical for SDLC)
           if [ ! -f .opencode/agents/planner.md ]; then
