@@ -341,7 +341,7 @@ class GoogleOAuthServiceTest {
     }
 
     // =========================================================================
-    // #57: Google error surfacing via .onStatus() handlers
+    // #39: Google error surfacing via exchangeToMono()
     // =========================================================================
 
     @Test

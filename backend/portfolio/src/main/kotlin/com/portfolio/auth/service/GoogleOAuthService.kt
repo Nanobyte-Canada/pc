@@ -206,13 +206,13 @@ class GoogleOAuthService(
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun exchangeCodeForTokens(
         code: String,
         clientId: String,
         clientSecret: String,
         redirectUri: String
     ): GoogleTokenResponse {
-        @Suppress("UNCHECKED_CAST")
         val response = webClient.post()
             .uri(authConfig.oauth2.google.tokenUrl)
             .body(BodyInserters.fromFormData("code", code)
@@ -224,11 +224,10 @@ class GoogleOAuthService(
                 if (clientResponse.statusCode().isError) {
                     clientResponse.bodyToMono(String::class.java)
                         .defaultIfEmpty("")
-                        .map { body ->
+                        .flatMap { body ->
                             val googleError = extractGoogleErrorCode(clientResponse.statusCode().value(), body)
-                            throw GoogleOAuthException("google_error:$googleError")
+                            Mono.error<Map<String, Any>>(GoogleOAuthException("google_error:$googleError"))
                         }
-                        .then(Mono.empty<Map<String, Any>>())
                 } else {
                     clientResponse.bodyToMono(Map::class.java)
                         .map { it as Map<String, Any> }
@@ -242,8 +241,8 @@ class GoogleOAuthService(
         return GoogleTokenResponse(accessToken = accessToken)
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun fetchUserProfile(accessToken: String): GoogleUserProfile {
-        @Suppress("UNCHECKED_CAST")
         val response = webClient.get()
             .uri(authConfig.oauth2.google.userinfoUrl)
             .header("Authorization", "Bearer $accessToken")
@@ -251,11 +250,10 @@ class GoogleOAuthService(
                 if (clientResponse.statusCode().isError) {
                     clientResponse.bodyToMono(String::class.java)
                         .defaultIfEmpty("")
-                        .map { body ->
+                        .flatMap { body ->
                             val googleError = extractGoogleErrorCode(clientResponse.statusCode().value(), body)
-                            throw GoogleOAuthException("google_error:$googleError")
+                            Mono.error<Map<String, Any>>(GoogleOAuthException("google_error:$googleError"))
                         }
-                        .then(Mono.empty<Map<String, Any>>())
                 } else {
                     clientResponse.bodyToMono(Map::class.java)
                         .map { it as Map<String, Any> }

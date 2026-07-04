@@ -152,6 +152,26 @@ com.portfolio
 | `handleCallback` | `(code: String, state: String, ipAddress: String?, userAgent: String?): AuthTokens` | Validates state token (checks hash match, expiry within 10 minutes, not already used). Exchanges authorization code for Google access token via HTTP POST. Fetches user profile from Google userinfo endpoint. Calls `findOrCreateUser()` to get/create User entity. Generates JWT and refresh token. Returns AuthTokens. |
 | `findOrCreateUser` | `(profile: GoogleUserProfile, ipAddress: String?): User` | Looks up user by Google identity (provider='google', providerUserId=profile.sub). If identity found, updates identity fields (providerEmail, displayName, photoUrl, lastUsedAt) and returns linked user. If not found, checks for existing user with same email. If user with email exists, creates new Identity and links it. If no user exists, creates new User with emailVerified=true, passwordHash=null, assigns USER role, and creates Identity record. Returns User entity. |
 
+#### Google OAuth Error Surfacing
+
+`GoogleOAuthService.handleCallback()` and `AuthController.googleCallback()` surface Google OAuth errors using the following contracts:
+
+**Error codes returned in `GoogleOAuthException` messages (format: `google_error:<code>`):**
+
+| Error Code | Source | Description |
+|---|---|---|
+| `redirect_uri_mismatch` | Google token endpoint | The redirect_uri in the request does not match the registered redirect URI |
+| `invalid_client` | Google token endpoint | OAuth client ID or secret is invalid |
+| `invalid_grant` | Google token endpoint | Authorization code is invalid or expired |
+| `invalid_token` | Google userinfo endpoint | Access token is invalid or expired |
+| `<status_code>` | Fallback | Numeric HTTP status code when the error response body cannot be parsed |
+
+**Log markers emitted by `AuthController`:**
+
+| Log Marker | Log Level | Description |
+|---|---|---|
+| `AUTH_CALLBACK_UNEXPECTED` | ERROR | Unexpected exception during Google OAuth callback (generic catch-all for non-GoogleOAuthException, non-WebClientResponseException errors). Indicates infrastructure or unhandled runtime errors requiring ops investigation. |
+
 ### PasswordService
 
 **File:** `auth/service/PasswordService.kt`
