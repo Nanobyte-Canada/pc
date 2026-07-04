@@ -86,6 +86,20 @@ class AuthController(
         } catch (e: GoogleOAuthException) {
             logger.error("Google OAuth callback failed: ${e.message}")
             redirectToFrontend(frontendUrl, "auth_failed")
+        /**
+         * Defensive catch for raw WebClientResponseException.
+         *
+         * In the current Google OAuth flow, [GoogleOAuthService] intercepts every
+         * 4xx/5xx response from Google via `onStatus` handlers and converts them to
+         * [GoogleOAuthException] before `.block()` returns. Therefore this catch arm
+         * is **not reachable in production** for the Google provider.
+         *
+         * It is retained intentionally as a safeguard: future refactors that introduce
+         * new WebClient calls (or remove the `onStatus` handlers) could otherwise
+         * regress to the generic `provider_unavailable` error message, losing the
+         * `auth_failed` distinction that the frontend relies on for user-friendly
+         * error handling.
+         */
         } catch (e: WebClientResponseException) {
             logger.error("Google OAuth HTTP error (${e.statusCode}): ${e.responseBodyAsString}", e)
             redirectToFrontend(frontendUrl, "auth_failed")
