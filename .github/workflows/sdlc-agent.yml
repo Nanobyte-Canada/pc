@@ -99,14 +99,8 @@ jobs:
             echo "No secrets found at ${APP_NAME}/common — skipping"
           fi
 
-          # Tier 3: Env-specific secrets (only needed for tester/deployer phases)
-          PHASE="${{ steps.params.outputs.phase }}"
-          if [ "$PHASE" = "testing" ] || [ "$PHASE" = "publish" ]; then
-            if [ "$PHASE" = "publish" ]; then
-              VAULT_ENV="prod"
-            else
-              VAULT_ENV="uat"
-            fi
+          # Tier 3: Env-specific secrets (always fetch both — key names differ)
+          for VAULT_ENV in uat prod; do
             echo "--- Tier 3: ${APP_NAME}/${VAULT_ENV} ---"
             JSON=$(curl -sf \
               --header "X-Vault-Token: ${VAULT_TOKEN}" \
@@ -114,12 +108,8 @@ jobs:
             if [ "$JSON" != "{}" ]; then
               echo "$JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> "$GITHUB_ENV"
               echo "Exported $(echo "$JSON" | jq -r 'keys | length') keys from ${APP_NAME}/${VAULT_ENV}"
-            else
-              echo "No secrets found at ${APP_NAME}/${VAULT_ENV} — skipping"
             fi
-          else
-            echo "Phase is '$PHASE' — skipping env-specific secrets"
-          fi
+          done
 
       - name: Bootstrap shared opencode config + scripts
         run: |
