@@ -158,7 +158,7 @@ class AuthControllerTest {
     }
 
     @Test
-    fun `googleCallback returns provider_unavailable for unexpected checked exception`() {
+    fun `googleCallback returns provider_unavailable for unexpected IllegalStateException`() {
         val exception = IllegalStateException("Unexpected internal state")
         every { googleOAuthService.handleCallback(any(), any()) } throws exception
 

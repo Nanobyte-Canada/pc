@@ -17,7 +17,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.core.publisher.Mono
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
@@ -191,6 +193,28 @@ class GoogleOAuthService(
         logger.info("Linked Google identity to existing user: ${user.email}")
     }
 
+    /**
+     * Returns an error-decoding handler for Google API error responses.
+     * Parses Google's structured JSON error body (`error` + `error_description` fields)
+     * and throws a [GoogleOAuthException] with a descriptive message.
+     * Non-JSON and empty bodies fall back to `google_error:unknown`, ensuring
+     * the error still routes through the correct catch block in [AuthController].
+     */
+    private fun googleErrorDecoder(): (ClientResponse) -> Mono<out Throwable> {
+        return { clientResponse ->
+            clientResponse.bodyToMono(object : ParameterizedTypeReference<Map<String, Any>>() {})
+                .onErrorReturn(emptyMap())
+                .defaultIfEmpty(emptyMap())
+                .map { body ->
+                    val googleError = body["error"] as? String ?: "unknown"
+                    val errorDesc = body["error_description"] as? String
+                    val message = if (errorDesc != null) "google_error:$googleError - $errorDesc"
+                                  else "google_error:$googleError"
+                    GoogleOAuthException(message)
+                }
+        }
+    }
+
     private fun exchangeCodeForTokens(
         code: String,
         clientId: String,
@@ -205,17 +229,7 @@ class GoogleOAuthService(
                 .with("redirect_uri", redirectUri)
                 .with("grant_type", "authorization_code"))
             .retrieve()
-            .onStatus({ it.isError }) { clientResponse ->
-                clientResponse.bodyToMono(object : ParameterizedTypeReference<Map<String, Any>>() {})
-                    .defaultIfEmpty(emptyMap())
-                    .map { body ->
-                        val googleError = body["error"] as? String ?: "unknown"
-                        val errorDesc = body["error_description"] as? String
-                        val message = if (errorDesc != null) "google_error:$googleError - $errorDesc"
-                                      else "google_error:$googleError"
-                        GoogleOAuthException(message)
-                    }
-            }
+            .onStatus({ it.isError }, googleErrorDecoder())
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to exchange authorization code")
 
@@ -230,17 +244,7 @@ class GoogleOAuthService(
             .uri(authConfig.oauth2.google.userinfoUrl)
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
-            .onStatus({ it.isError }) { clientResponse ->
-                clientResponse.bodyToMono(object : ParameterizedTypeReference<Map<String, Any>>() {})
-                    .defaultIfEmpty(emptyMap())
-                    .map { body ->
-                        val googleError = body["error"] as? String ?: "unknown"
-                        val errorDesc = body["error_description"] as? String
-                        val message = if (errorDesc != null) "google_error:$googleError - $errorDesc"
-                                      else "google_error:$googleError"
-                        GoogleOAuthException(message)
-                    }
-            }
+            .onStatus({ it.isError }, googleErrorDecoder())
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to fetch user profile")
 
