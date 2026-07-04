@@ -48,10 +48,14 @@ jobs:
       github.event_name == 'repository_dispatch' ||
       github.event_name == 'pull_request_target'
     steps:
+      - name: Clean workspace
+        run: sudo rm -rf ./* ./.??* || true
+
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          clean: false
 
       - name: Fetch secrets from Vault
         run: |
