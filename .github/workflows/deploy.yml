@@ -48,18 +48,28 @@ jobs:
           fi
           echo "Vault authentication successful"
 
-          echo "Fetching secrets for environment: ${ENV}..."
-          SECRETS_JSON=$(curl -sf \
-            --header "X-Vault-Token: ${VAULT_TOKEN}" \
-            "${VAULT_ADDR}/v1/secret/data/portfolio/${ENV}" | jq -r '.data.data')
+          # Generate .env from two Vault tiers: common first, then env-specific (overwrites)
+          > /tmp/deploy.env
 
-          if [ -z "$SECRETS_JSON" ] || [ "$SECRETS_JSON" = "null" ]; then
-            echo "::error::Failed to fetch secrets from Vault — empty response"
-            exit 1
+          # Tier 1: App-level common secrets (shared across envs)
+          echo "Fetching common secrets..."
+          COMMON_JSON=$(curl -sf \
+            --header "X-Vault-Token: ${VAULT_TOKEN}" \
+            "${VAULT_ADDR}/v1/secret/data/portfolio/common" | jq -r '.data.data // "{}"')
+          if [ "$COMMON_JSON" != "{}" ]; then
+            echo "$COMMON_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> /tmp/deploy.env
+            echo "Exported $(echo "$COMMON_JSON" | jq -r 'keys | length') keys from portfolio/common"
           fi
 
-          # Generate .env file from Vault secrets
-          echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' > /tmp/deploy.env
+          # Tier 2: Env-specific secrets
+          echo "Fetching secrets for environment: ${ENV}..."
+          ENV_JSON=$(curl -sf \
+            --header "X-Vault-Token: ${VAULT_TOKEN}" \
+            "${VAULT_ADDR}/v1/secret/data/portfolio/${ENV}" | jq -r '.data.data // "{}"')
+          if [ "$ENV_JSON" != "{}" ]; then
+            echo "$ENV_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> /tmp/deploy.env
+            echo "Exported $(echo "$ENV_JSON" | jq -r 'keys | length') keys from portfolio/${ENV}"
+          fi
 
           # Append IMAGE_TAG
           echo "IMAGE_TAG=${TAG}" >> /tmp/deploy.env
