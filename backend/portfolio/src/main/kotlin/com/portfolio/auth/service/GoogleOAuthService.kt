@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.BodyInserters
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.web.reactive.function.client.WebClient
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -204,6 +205,17 @@ class GoogleOAuthService(
                 .with("redirect_uri", redirectUri)
                 .with("grant_type", "authorization_code"))
             .retrieve()
+            .onStatus({ it.isError }) { clientResponse ->
+                clientResponse.bodyToMono(object : ParameterizedTypeReference<Map<String, Any>>() {})
+                    .defaultIfEmpty(emptyMap())
+                    .map { body ->
+                        val googleError = body["error"] as? String ?: "unknown"
+                        val errorDesc = body["error_description"] as? String
+                        val message = if (errorDesc != null) "google_error:$googleError - $errorDesc"
+                                      else "google_error:$googleError"
+                        GoogleOAuthException(message)
+                    }
+            }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to exchange authorization code")
 
@@ -218,6 +230,17 @@ class GoogleOAuthService(
             .uri(authConfig.oauth2.google.userinfoUrl)
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
+            .onStatus({ it.isError }) { clientResponse ->
+                clientResponse.bodyToMono(object : ParameterizedTypeReference<Map<String, Any>>() {})
+                    .defaultIfEmpty(emptyMap())
+                    .map { body ->
+                        val googleError = body["error"] as? String ?: "unknown"
+                        val errorDesc = body["error_description"] as? String
+                        val message = if (errorDesc != null) "google_error:$googleError - $errorDesc"
+                                      else "google_error:$googleError"
+                        GoogleOAuthException(message)
+                    }
+            }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to fetch user profile")
 
