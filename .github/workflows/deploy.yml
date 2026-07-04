@@ -126,7 +126,7 @@ jobs:
             echo "=== Deploying ${TAG} to ${ENV} ==="
 
             # Authenticate to GHCR using Vault-stored token
-            GH_PROJECT_TOKEN=$(grep '^GH_PROJECT_TOKEN=' .env | cut -d= -f2-)
+            GH_PROJECT_TOKEN=\$(grep '^GH_PROJECT_TOKEN=' .env | cut -d= -f2-)
             echo "Logging in to GHCR..."
             echo "$GH_PROJECT_TOKEN" | docker login ghcr.io -u nanobyte-canada --password-stdin
 
