@@ -116,7 +116,13 @@ jobs:
           rm -rf /tmp/nbs
           git clone --depth 1 https://x-access-token:${NANOBYTE_SERVICES_TOKEN}@github.com/${{ github.repository_owner }}/nanobyte-services /tmp/nbs
           # Copy shared config, then let repo-specific .opencode/ override
-          cp -r /tmp/nbs/sdlc/opencode/* .opencode/ 2>/dev/null || true
+          cp -r /tmp/nbs/sdlc/opencode/agents/* .opencode/agents/ 2>/dev/null || true
+          cp /tmp/nbs/sdlc/opencode/opencode.json .opencode/ 2>/dev/null || true
+          # Verify planner agent was loaded (critical for SDLC)
+          if [ ! -f .opencode/agents/planner.md ]; then
+            echo "::error::planner.md not found after bootstrap — check nanobyte-services clone"
+            exit 1
+          fi
           # Copy shared scripts (update-card-status.sh, etc.)
           mkdir -p scripts
           cp /tmp/nbs/sdlc/scripts/update-card-status.sh scripts/ 2>/dev/null || true
