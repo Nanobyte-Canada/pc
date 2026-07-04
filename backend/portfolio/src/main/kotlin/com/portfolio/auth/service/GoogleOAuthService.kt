@@ -17,9 +17,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.WebClientResponseException
-import org.springframework.web.reactive.function.client.ClientResponse
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import reactor.core.publisher.Mono
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -209,8 +208,9 @@ class GoogleOAuthService(
                 .with("grant_type", "authorization_code"))
             .retrieve()
             .onStatus({ status -> status.is4xxClientError || status.is5xxServerError }) { clientResponse ->
-                val errorDetail = parseGoogleErrorBody(clientResponse)
-                throw GoogleOAuthException("google_error:${clientResponse.statusCode().value()}$errorDetail")
+                clientResponse.bodyToMono(String::class.java)
+                    .map { body -> GoogleOAuthException("google_error:${clientResponse.statusCode().value()}${parseErrorCode(body)}") }
+                    .onErrorResume { Mono.just(GoogleOAuthException("google_error:${clientResponse.statusCode().value()}")) }
             }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to exchange authorization code")
@@ -227,8 +227,9 @@ class GoogleOAuthService(
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
             .onStatus({ status -> status.is4xxClientError || status.is5xxServerError }) { clientResponse ->
-                val errorDetail = parseGoogleErrorBody(clientResponse)
-                throw GoogleOAuthException("google_error:${clientResponse.statusCode().value()}$errorDetail")
+                clientResponse.bodyToMono(String::class.java)
+                    .map { body -> GoogleOAuthException("google_error:${clientResponse.statusCode().value()}${parseErrorCode(body)}") }
+                    .onErrorResume { Mono.just(GoogleOAuthException("google_error:${clientResponse.statusCode().value()}")) }
             }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to fetch user profile")
@@ -247,15 +248,10 @@ class GoogleOAuthService(
      * {"error": "invalid_grant", "error_description": "Malformed auth code."}
      * Returns ":<error_code>" on success, or empty string on parse failure.
      */
-    private fun parseGoogleErrorBody(clientResponse: ClientResponse): String {
+    private fun parseErrorCode(body: String): String {
         return try {
-            val body = clientResponse.bodyToMono(String::class.java).block() ?: ""
-            val mapper = jacksonObjectMapper()
-            val errorMap: Map<String, Any> = mapper.readValue(body)
-            val errorCode = errorMap["error"] as? String ?: ""
-            if (errorCode.isNotEmpty()) ":$errorCode" else ""
-        } catch (e: Exception) {
-            ""
-        }
+            val errorMap: Map<String, Any> = jacksonObjectMapper().readValue(body)
+            (errorMap["error"] as? String)?.takeIf { it.isNotEmpty() }?.let { ":$it" } ?: ""
+        } catch (e: Exception) { "" }
     }
 }

@@ -295,6 +295,107 @@ class GoogleOAuthServiceTest {
     }
 
     @Test
+    fun `handleCallback throws GoogleOAuthException with error code when token endpoint returns 400`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // Token endpoint returns 400 with structured Google error
+        val errorJson = """
+            {"error": "invalid_grant", "error_description": "Malformed auth code."}
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(400)
+            .setBody(errorJson)
+            .addHeader("Content-Type", "application/json"))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+
+        assert(exception.message!!.contains("google_error:400:invalid_grant"))
+    }
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException with error code when userinfo endpoint returns 401`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // Successful token exchange
+        val tokenResponse = """
+            {
+                "access_token": "ya29.test-access-token",
+                "expires_in": 3600,
+                "token_type": "Bearer"
+            }
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setBody(tokenResponse)
+            .addHeader("Content-Type", "application/json"))
+
+        // Userinfo endpoint returns 401 with structured Google error
+        val errorJson = """
+            {"error": "invalid_token", "error_description": "Invalid Credentials."}
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(401)
+            .setBody(errorJson)
+            .addHeader("Content-Type", "application/json"))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+
+        assert(exception.message!!.contains("google_error:401:invalid_token"))
+    }
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException without error code when response body is malformed`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // Token endpoint returns 500 with malformed body (not JSON)
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(500)
+            .setBody("<html>Internal Server Error</html>")
+            .addHeader("Content-Type", "text/html"))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+
+        assert(exception.message!!.contains("google_error:500"))
+        // When body parsing fails, no error code is appended
+        assert(!exception.message!!.contains("google_error:500:"))
+    }
+
+    @Test
     fun `findOrCreateUser creates new user when no match found`() {
         val profile = GoogleUserProfile(
             sub = "google-123",
