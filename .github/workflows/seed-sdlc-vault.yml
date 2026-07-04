@@ -1,0 +1,62 @@
+name: Seed SDLC Vault
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "yes" to write NANOBYTE_SERVICES_TOKEN and OPENCODE_AUTH_JSON to Vault secret/data/sdlc/common'
+        required: true
+        default: "no"
+
+env:
+  VAULT_ADDR: https://vault.nanobyte.ca
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'yes'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Write org-level secrets to Vault
+        run: |
+          echo "Authenticating to Vault..."
+          VAULT_TOKEN=$(curl -sf \
+            --request POST \
+            --data "{\"role_id\": \"${{ secrets.VAULT_ROLE_ID }}\", \"secret_id\": \"${{ secrets.VAULT_SECRET_ID }}\"}" \
+            "${VAULT_ADDR}/v1/auth/approle/login" | jq -r '.auth.client_token')
+
+          if [ -z "$VAULT_TOKEN" ] || [ "$VAULT_TOKEN" = "null" ]; then
+            echo "::error::Vault authentication failed"
+            exit 1
+          fi
+          echo "Vault authentication successful"
+
+          echo "Writing sdlc/common..."
+          PAYLOAD=$(jq -n \
+            --arg ns "${{ secrets.NANOBYTE_SERVICES_TOKEN }}" \
+            --argjson oa '${{ secrets.OPENCODE_AUTH_JSON }}' \
+            '{data: {NANOBYTE_SERVICES_TOKEN: $ns, OPENCODE_AUTH_JSON: $oa}}')
+          
+          curl -sf \
+            --header "X-Vault-Token: ${VAULT_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --request POST \
+            --data "$PAYLOAD" \
+            "${VAULT_ADDR}/v1/secret/data/sdlc/common" > /dev/null
+
+          echo "Done ✓"
+
+      - name: Verify
+        run: |
+          echo "Authenticating to Vault..."
+          VAULT_TOKEN=$(curl -sf \
+            --request POST \
+            --data "{\"role_id\": \"${{ secrets.VAULT_ROLE_ID }}\", \"secret_id\": \"${{ secrets.VAULT_SECRET_ID }}\"}" \
+            "${VAULT_ADDR}/v1/auth/approle/login" | jq -r '.auth.client_token')
+
+          echo "Verifying sdlc/common..."
+          KEYS=$(curl -sf \
+            --header "X-Vault-Token: ${VAULT_TOKEN}" \
+            "${VAULT_ADDR}/v1/secret/data/sdlc/common" | jq -r '.data.data | keys | join(", ")')
+          echo "Keys written: ${KEYS}"
