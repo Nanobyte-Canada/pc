@@ -9,6 +9,7 @@ import com.portfolio.auth.service.ClientInfo
 import com.portfolio.auth.service.GoogleOAuthService
 import com.portfolio.auth.service.GoogleOAuthException
 import com.portfolio.auth.repository.UserRepository
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
@@ -85,8 +86,11 @@ class AuthController(
         } catch (e: GoogleOAuthException) {
             logger.error("Google OAuth callback failed: ${e.message}")
             redirectToFrontend(frontendUrl, "auth_failed")
+        } catch (e: WebClientResponseException) {
+            logger.error("Google OAuth HTTP error (${e.statusCode}): ${e.responseBodyAsString}", e)
+            redirectToFrontend(frontendUrl, "auth_failed")
         } catch (e: Exception) {
-            logger.error("Unexpected error during Google OAuth callback", e)
+            logger.error("AUTH_CALLBACK_UNEXPECTED: Unexpected error during Google OAuth callback", e)
             redirectToFrontend(frontendUrl, "provider_unavailable")
         }
     }
