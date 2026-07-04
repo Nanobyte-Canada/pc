@@ -19,6 +19,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Write org-level secrets to Vault
+        env:
+          NANOBYTE_SERVICES_TOKEN: ${{ secrets.NANOBYTE_SERVICES_TOKEN }}
+          OPENCODE_AUTH_JSON: ${{ secrets.OPENCODE_AUTH_JSON }}
         run: |
           echo "Authenticating to Vault..."
           VAULT_TOKEN=$(curl -sf \
@@ -34,17 +37,22 @@ jobs:
 
           echo "Writing sdlc/common..."
           PAYLOAD=$(jq -n \
-            --arg ns "${{ secrets.NANOBYTE_SERVICES_TOKEN }}" \
-            --argjson oa '${{ secrets.OPENCODE_AUTH_JSON }}' \
-            '{data: {NANOBYTE_SERVICES_TOKEN: $ns, OPENCODE_AUTH_JSON: $oa}}')
-          
-          curl -sf \
+            --arg ns "${NANOBYTE_SERVICES_TOKEN}" \
+            --arg oa "${OPENCODE_AUTH_JSON}" \
+            '{data: {NANOBYTE_SERVICES_TOKEN: $ns, OPENCODE_AUTH_JSON: ($oa | fromjson)}}')
+
+          HTTP_CODE=$(curl -s -o /tmp/vault_response.json -w "%{http_code}" \
             --header "X-Vault-Token: ${VAULT_TOKEN}" \
             --header "Content-Type: application/json" \
             --request POST \
             --data "$PAYLOAD" \
-            "${VAULT_ADDR}/v1/secret/data/sdlc/common" > /dev/null
+            "${VAULT_ADDR}/v1/secret/data/sdlc/common")
 
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Vault write returned HTTP ${HTTP_CODE}"
+            cat /tmp/vault_response.json 2>/dev/null | jq -r '.errors[] // "unknown error"'
+            exit 1
+          fi
           echo "Done ✓"
 
       - name: Verify
