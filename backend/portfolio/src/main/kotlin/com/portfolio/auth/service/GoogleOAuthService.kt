@@ -12,6 +12,7 @@ import com.portfolio.auth.repository.UserIdentityRepository
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.repository.UserRoleRepository
 import com.portfolio.auth.security.SecureTokenGenerator
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -45,6 +46,7 @@ class GoogleOAuthService(
     private val webClient: WebClient
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
+    private val objectMapper = ObjectMapper()
 
     companion object {
         private const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -190,6 +192,36 @@ class GoogleOAuthService(
         logger.info("Linked Google identity to existing user: ${user.email}")
     }
 
+    /**
+     * Parses a Google JSON error body into a [GoogleOAuthException] with a structured message.
+     *
+     * The message format is `google_error:<error_code>` when Google provides an `error` field,
+     * optionally followed by ` — <error_description>`. When the JSON body lacks an `error` field
+     * or cannot be parsed at all, the HTTP status code is included (e.g., `google_error:http_500`).
+     *
+     * @param body the raw response body string (may be empty or non-JSON)
+     * @param statusCode the HTTP status code
+     * @return a [GoogleOAuthException] that will be caught by the controller's `auth_failed` branch
+     */
+    private fun parseGoogleError(body: String, statusCode: Int): GoogleOAuthException {
+        return try {
+            val node = objectMapper.readTree(body)
+            val error = node.get("error")?.asText()
+            if (error != null) {
+                val errorDescription = node.get("error_description")?.asText()
+                val message = buildString {
+                    append("google_error:$error")
+                    if (!errorDescription.isNullOrBlank()) append(" — $errorDescription")
+                }
+                GoogleOAuthException(message)
+            } else {
+                GoogleOAuthException("google_error:http_$statusCode")
+            }
+        } catch (e: Exception) {
+            GoogleOAuthException("google_error:http_$statusCode — unparseable response body")
+        }
+    }
+
     private fun exchangeCodeForTokens(
         code: String,
         clientId: String,
@@ -204,6 +236,11 @@ class GoogleOAuthService(
                 .with("redirect_uri", redirectUri)
                 .with("grant_type", "authorization_code"))
             .retrieve()
+            .onStatus({ it.isError }) { resp ->
+                resp.bodyToMono(String::class.java)
+                    .defaultIfEmpty("")
+                    .map { body -> throw parseGoogleError(body, resp.statusCode().value()) }
+            }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to exchange authorization code")
 
@@ -218,6 +255,11 @@ class GoogleOAuthService(
             .uri(authConfig.oauth2.google.userinfoUrl)
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
+            .onStatus({ it.isError }) { resp ->
+                resp.bodyToMono(String::class.java)
+                    .defaultIfEmpty("")
+                    .map { body -> throw parseGoogleError(body, resp.statusCode().value()) }
+            }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to fetch user profile")
 
