@@ -17,6 +17,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientResponseException
+import org.springframework.web.reactive.function.client.ClientResponse
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
@@ -204,6 +208,10 @@ class GoogleOAuthService(
                 .with("redirect_uri", redirectUri)
                 .with("grant_type", "authorization_code"))
             .retrieve()
+            .onStatus({ status -> status.is4xxClientError || status.is5xxServerError }) { clientResponse ->
+                val errorDetail = parseGoogleErrorBody(clientResponse)
+                throw GoogleOAuthException("google_error:${clientResponse.statusCode().value()}$errorDetail")
+            }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to exchange authorization code")
 
@@ -218,6 +226,10 @@ class GoogleOAuthService(
             .uri(authConfig.oauth2.google.userinfoUrl)
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
+            .onStatus({ status -> status.is4xxClientError || status.is5xxServerError }) { clientResponse ->
+                val errorDetail = parseGoogleErrorBody(clientResponse)
+                throw GoogleOAuthException("google_error:${clientResponse.statusCode().value()}$errorDetail")
+            }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to fetch user profile")
 
@@ -227,5 +239,23 @@ class GoogleOAuthService(
             name = response["name"] as? String,
             picture = response["picture"] as? String
         )
+    }
+
+    /**
+     * Attempts to extract Google's structured error code from a non-2xx response body.
+     * Google error responses contain a JSON body like:
+     * {"error": "invalid_grant", "error_description": "Malformed auth code."}
+     * Returns ":<error_code>" on success, or empty string on parse failure.
+     */
+    private fun parseGoogleErrorBody(clientResponse: ClientResponse): String {
+        return try {
+            val body = clientResponse.bodyToMono(String::class.java).block() ?: ""
+            val mapper = jacksonObjectMapper()
+            val errorMap: Map<String, Any> = mapper.readValue(body)
+            val errorCode = errorMap["error"] as? String ?: ""
+            if (errorCode.isNotEmpty()) ":$errorCode" else ""
+        } catch (e: Exception) {
+            ""
+        }
     }
 }
