@@ -83,6 +83,15 @@ jobs:
             exit 1
           fi
 
+          # Validate required secrets
+          echo "Validating required secrets..."
+          if ! grep -q '^GH_PROJECT_TOKEN=.\+' /tmp/deploy.env; then
+            echo "::error::GH_PROJECT_TOKEN is missing from Vault (portfolio/common or portfolio/uat)"
+            echo "  Add it: vault kv put secret/portfolio/common GH_PROJECT_TOKEN=\"<pat>\""
+            exit 1
+          fi
+          echo "Required secrets validated"
+
           echo "Secrets fetched and validated successfully"
 
       - name: Install cloudflared
@@ -127,8 +136,9 @@ jobs:
 
             # Authenticate to GHCR using Vault-stored token
             GH_PROJECT_TOKEN=\$(grep '^GH_PROJECT_TOKEN=' .env | cut -d= -f2-)
+            [ -n "\$GH_PROJECT_TOKEN" ] || { echo "ERROR: GH_PROJECT_TOKEN is empty in .env"; exit 1; }
             echo "Logging in to GHCR..."
-            echo "$GH_PROJECT_TOKEN" | docker login ghcr.io -u nanobyte-canada --password-stdin
+            echo "\$GH_PROJECT_TOKEN" | docker login ghcr.io -u nanobyte-canada --password-stdin
 
             # Pull new images
             echo "Pulling images..."
