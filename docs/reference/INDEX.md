@@ -32,6 +32,12 @@ Monorepo for a portfolio construction and analysis application using public ETFs
 | [improvements.md](improvements.md) | Improvement recommendations organized by priority and effort. Tracks completed items. |
 | [ingestion-workflow.md](ingestion-workflow.md) | Ingestion microservice pipeline: Exchange Sync, Universe Discovery, Raw Data Fetch with batching and rate limiting. |
 
+## Runbooks
+
+| File | Description |
+|------|-------------|
+| [../runbooks/google-oauth-provider-unavailable.md](../runbooks/google-oauth-provider-unavailable.md) | Diagnose and fix Google OAuth sign-in failures (`provider_unavailable` / `auth_failed`). Covers log markers, Vault credential verification, redirect URI mismatch, and Google Cloud Console configuration. |
+
 ## Quick Reference: Common Agent Tasks
 
 ### Adding a New REST Endpoint

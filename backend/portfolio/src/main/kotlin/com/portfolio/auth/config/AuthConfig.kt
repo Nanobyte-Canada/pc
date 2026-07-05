@@ -1,5 +1,8 @@
 package com.portfolio.auth.config
 
+import jakarta.annotation.PostConstruct
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -15,9 +18,23 @@ class AuthConfig {
     var oauth2: OAuth2Config = OAuth2Config()
     var cors: CorsConfig = CorsConfig()
 
+    @Value("\${app.environment:local}")
+    private lateinit var appEnvironment: String
+
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     @Bean
     fun googleOAuthWebClient(): WebClient {
         return WebClient.builder().build()
+    }
+
+    @PostConstruct
+    fun validateGoogleCredentials() {
+        if (appEnvironment == "local") return
+        val google = oauth2.google
+        if (google.clientId.isBlank() || google.clientSecret.isBlank()) {
+            logger.warn("AUTH_GOOGLE_CREDENTIALS_MISSING: GOOGLE_CLIENT_ID and/or GOOGLE_CLIENT_SECRET are not set. Google OAuth sign-in will fail with auth_failed until configured.")
+        }
     }
 }
 
@@ -50,6 +67,7 @@ class GoogleOAuthConfig {
     var clientSecret: String = ""
     var tokenUrl: String = "https://oauth2.googleapis.com/token"
     var userinfoUrl: String = "https://www.googleapis.com/oauth2/v3/userinfo"
+    var redirectUri: String? = null
 }
 
 class CorsConfig {

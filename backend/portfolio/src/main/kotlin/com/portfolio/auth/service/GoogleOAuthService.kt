@@ -15,8 +15,10 @@ import com.portfolio.auth.security.SecureTokenGenerator
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.http.HttpStatusCode
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.core.publisher.Mono
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
@@ -63,7 +65,7 @@ class GoogleOAuthService(
         oauthStateRepository.save(oauthState)
 
         val googleConfig = authConfig.oauth2.google
-        val redirectUri = authConfig.cors.allowedOrigins.split(",").first().trim() + "/auth/google/callback"
+        val redirectUri = getRedirectUri()
         val params = mapOf(
             "client_id" to googleConfig.clientId,
             "redirect_uri" to redirectUri,
@@ -95,7 +97,7 @@ class GoogleOAuthService(
         oauthStateRepository.save(oauthState)
 
         val googleConfig = authConfig.oauth2.google
-        val redirectUri = authConfig.cors.allowedOrigins.split(",").first().trim() + "/auth/google/callback"
+        val redirectUri = getRedirectUri()
         val tokenResponse = exchangeCodeForTokens(
             code = code,
             clientId = googleConfig.clientId,
@@ -190,6 +192,15 @@ class GoogleOAuthService(
         logger.info("Linked Google identity to existing user: ${user.email}")
     }
 
+    private fun getRedirectUri(): String {
+        val googleConfig = authConfig.oauth2.google
+        val explicitRedirectUri = googleConfig.redirectUri
+        if (!explicitRedirectUri.isNullOrBlank()) {
+            return explicitRedirectUri
+        }
+        return authConfig.cors.allowedOrigins.split(",").first().trim() + "/auth/google/callback"
+    }
+
     private fun exchangeCodeForTokens(
         code: String,
         clientId: String,
@@ -204,6 +215,14 @@ class GoogleOAuthService(
                 .with("redirect_uri", redirectUri)
                 .with("grant_type", "authorization_code"))
             .retrieve()
+            .onStatus(HttpStatusCode::isError) { clientResponse ->
+                clientResponse.bodyToMono(Map::class.java)
+                    .onErrorResume { Mono.just(java.util.HashMap<Any, Any>()) }
+                    .handle<Throwable> { body, sink ->
+                        val errorCode = body["error"] as? String ?: "unknown"
+                        sink.error(GoogleOAuthException("google_error:$errorCode"))
+                    }
+            }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to exchange authorization code")
 
@@ -218,6 +237,14 @@ class GoogleOAuthService(
             .uri(authConfig.oauth2.google.userinfoUrl)
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
+            .onStatus(HttpStatusCode::isError) { clientResponse ->
+                clientResponse.bodyToMono(Map::class.java)
+                    .onErrorResume { Mono.just(java.util.HashMap<Any, Any>()) }
+                    .handle<Throwable> { body, sink ->
+                        val errorCode = body["error"] as? String ?: "unknown"
+                        sink.error(GoogleOAuthException("google_error:$errorCode"))
+                    }
+            }
             .bodyToMono(Map::class.java)
             .block() ?: throw GoogleOAuthException("Failed to fetch user profile")
 

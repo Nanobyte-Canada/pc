@@ -26,6 +26,7 @@ import java.time.OffsetDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class GoogleOAuthServiceTest {
 
@@ -337,5 +338,153 @@ class GoogleOAuthServiceTest {
             })
             auditService.logSignup(any(), "192.168.1.1", null)
         }
+    }
+
+    // =========================================================================
+    // #57: Google API error handling via .onStatus()
+    // =========================================================================
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException with google_error code on 400 from token endpoint`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // Google error response for invalid_grant
+        val errorBody = """{"error":"invalid_grant","error_description":"Malformed auth code."}"""
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(400)
+            .setBody(errorBody)
+            .addHeader("Content-Type", "application/json"))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "bad-code", state = "raw-state")
+        }
+
+        // The exception should carry google_error: prefix — either from parsed body or fallback
+        val msg = exception.message ?: ""
+        assertTrue(msg.contains("google_error:"), "Expected message to contain 'google_error:' but was: $msg")
+    }
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException with google_error code on 401 from userinfo endpoint`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // Successful token exchange
+        val tokenResponse = """{"access_token":"ya29.test","token_type":"Bearer"}"""
+        mockWebServer.enqueue(MockResponse()
+            .setBody(tokenResponse)
+            .addHeader("Content-Type", "application/json"))
+
+        // 401 from userinfo (invalid/expired access token)
+        val errorBody = """{"error":"invalid_token","error_description":"Invalid Credentials"}"""
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(401)
+            .setBody(errorBody)
+            .addHeader("Content-Type", "application/json"))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+
+        assertTrue(exception.message!!.contains("google_error:invalid_token"))
+    }
+
+    @Test
+    fun `handleCallback throws GoogleOAuthException with HTTP status fallback on malformed error body`() {
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        // 500 with non-JSON body (malformed response)
+        mockWebServer.enqueue(MockResponse()
+            .setResponseCode(500)
+            .setBody("<html>Internal Server Error</html>")
+            .addHeader("Content-Type", "text/html"))
+
+        val exception = assertFailsWith<GoogleOAuthException> {
+            service.handleCallback(code = "auth-code", state = "raw-state")
+        }
+
+        val msg = exception.message ?: ""
+        assertTrue(msg.contains("google_error:"), "Expected message to contain 'google_error:' but was: $msg")
+    }
+
+    // =========================================================================
+    // #60: Explicit redirect-uri configuration
+    // =========================================================================
+
+    @Test
+    fun `initiateGoogleLogin uses explicit redirectUri when configured`() {
+        // Create a new service with explicit redirectUri
+        val mockServer = MockWebServer()
+        mockServer.start()
+        val mockBaseUrl = mockServer.url("/").toString().trimEnd('/')
+
+        val googleConfig = GoogleOAuthConfig().apply {
+            clientId = "test-client-id"
+            clientSecret = "test-client-secret"
+            tokenUrl = "$mockBaseUrl/token"
+            userinfoUrl = "$mockBaseUrl/userinfo"
+            redirectUri = "https://portfolio.nanobyte.ca/auth/google/callback"
+        }
+        val oauth2Config = OAuth2Config().apply {
+            google = googleConfig
+        }
+        val corsConfig = CorsConfig().apply {
+            allowedOrigins = "http://localhost:3000"
+        }
+        every { authConfig.oauth2 } returns oauth2Config
+        every { authConfig.cors } returns corsConfig
+
+        val svc = GoogleOAuthService(
+            oauthStateRepository = oauthStateRepository,
+            userIdentityRepository = userIdentityRepository,
+            userRepository = userRepository,
+            roleRepository = roleRepository,
+            userRoleRepository = userRoleRepository,
+            secureTokenGenerator = secureTokenGenerator,
+            auditService = auditService,
+            authConfig = authConfig,
+            webClient = WebClient.builder().build()
+        )
+
+        val tokenPair = TokenPair(token = "raw-state-token", hash = "hashed-state-token")
+        every { secureTokenGenerator.generateStateToken() } returns tokenPair
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        val authUrl = svc.initiateGoogleLogin()
+
+        // Should use the explicit redirectUri, not the CORS-derived one
+        assert(authUrl.contains("redirect_uri=https%3A%2F%2Fportfolio.nanobyte.ca%2Fauth%2Fgoogle%2Fcallback"))
+        assert(!authUrl.contains("localhost"))
+
+        mockServer.shutdown()
     }
 }
