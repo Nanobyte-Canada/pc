@@ -20,6 +20,7 @@ import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.net.URI
 import java.net.URLEncoder
 import java.time.Duration
@@ -85,8 +86,11 @@ class AuthController(
         } catch (e: GoogleOAuthException) {
             logger.error("Google OAuth callback failed: ${e.message}")
             redirectToFrontend(frontendUrl, "auth_failed")
+        } catch (e: WebClientResponseException) {
+            logger.error("AUTH_CALLBACK_GOOGLE_HTTP Google OAuth HTTP error: ${e.message}")
+            redirectToFrontend(frontendUrl, "auth_failed")
         } catch (e: Exception) {
-            logger.error("Unexpected error during Google OAuth callback", e)
+            logger.error("AUTH_CALLBACK_UNEXPECTED Unexpected error during Google OAuth callback", e)
             redirectToFrontend(frontendUrl, "provider_unavailable")
         }
     }
