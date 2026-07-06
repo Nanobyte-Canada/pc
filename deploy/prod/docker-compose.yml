@@ -71,6 +71,7 @@ services:
       JWT_SIGNING_KEY: ${JWT_SIGNING_KEY}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-https://portfolio.nanobyte.ca/auth/google/callback}
       CORS_ALLOWED_ORIGINS: https://portfolio.nanobyte.ca
       GATEWAY_API_KEY: ${GATEWAY_API_KEY}
     ports:

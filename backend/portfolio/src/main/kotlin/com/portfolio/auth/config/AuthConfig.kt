@@ -50,6 +50,9 @@ class GoogleOAuthConfig {
     var clientSecret: String = ""
     var tokenUrl: String = "https://oauth2.googleapis.com/token"
     var userinfoUrl: String = "https://www.googleapis.com/oauth2/v3/userinfo"
+    /** Explicit redirect URI for Google OAuth. When set, this value is used verbatim.
+     * When blank, falls back to CORS-derived URI (cors.allowedOrigins[0] + "/auth/google/callback"). */
+    var redirectUri: String = ""
 }
 
 class CorsConfig {

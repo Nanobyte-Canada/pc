@@ -18,6 +18,7 @@ import com.portfolio.auth.security.TokenPair
 import io.mockk.*
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -26,6 +27,7 @@ import java.time.OffsetDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class GoogleOAuthServiceTest {
 
@@ -337,5 +339,141 @@ class GoogleOAuthServiceTest {
             })
             auditService.logSignup(any(), "192.168.1.1", null)
         }
+    }
+
+    @Test
+    fun `initiateGoogleLogin uses explicit redirectUri when set`() {
+        // Reconfigure with a non-blank redirectUri
+        val tokenPair = TokenPair(token = "raw-state-token", hash = "hashed-state-token")
+        every { secureTokenGenerator.generateStateToken() } returns tokenPair
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        val googleConfig = GoogleOAuthConfig().apply {
+            clientId = "test-client-id"
+            clientSecret = "test-client-secret"
+            tokenUrl = "${mockWebServer.url("/")}token"
+            userinfoUrl = "${mockWebServer.url("/")}userinfo"
+            redirectUri = "https://custom.example.com/oauth/callback"
+        }
+        val oauth2Config = OAuth2Config().apply { google = googleConfig }
+        every { authConfig.oauth2 } returns oauth2Config
+        // cors config still set, but should NOT be consulted
+        every { authConfig.cors } returns CorsConfig().apply {
+            allowedOrigins = "http://different-origin:3000"
+        }
+
+        // Rebuild service with updated config
+        service = GoogleOAuthService(
+            oauthStateRepository = oauthStateRepository,
+            userIdentityRepository = userIdentityRepository,
+            userRepository = userRepository,
+            roleRepository = roleRepository,
+            userRoleRepository = userRoleRepository,
+            secureTokenGenerator = secureTokenGenerator,
+            auditService = auditService,
+            authConfig = authConfig,
+            webClient = webClient
+        )
+
+        val authUrl = service.initiateGoogleLogin()
+
+        assertTrue(authUrl.contains("redirect_uri=https%3A%2F%2Fcustom.example.com%2Foauth%2Fcallback"),
+            "Expected explicit redirect URI in auth URL, got: $authUrl")
+        assertTrue(!authUrl.contains("different-origin"),
+            "CORS-derived origin should NOT appear when explicit redirectUri is set")
+    }
+
+    @Test
+    fun `handleCallback uses explicit redirectUri in token exchange when set`() {
+        // Reconfigure with a non-blank redirectUri
+        val stateHash = "hashed-state"
+        val oauthState = OAuthState(
+            id = 1L,
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
+
+        every { secureTokenGenerator.hashToken("raw-state") } returns stateHash
+        every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        val mockBaseUrl = mockWebServer.url("/").toString().trimEnd('/')
+        val googleConfig = GoogleOAuthConfig().apply {
+            clientId = "test-client-id"
+            clientSecret = "test-client-secret"
+            tokenUrl = "$mockBaseUrl/token"
+            userinfoUrl = "$mockBaseUrl/userinfo"
+            redirectUri = "https://custom.example.com/oauth/callback"
+        }
+        val oauth2Config = OAuth2Config().apply { google = googleConfig }
+        every { authConfig.oauth2 } returns oauth2Config
+        every { authConfig.cors } returns CorsConfig().apply {
+            allowedOrigins = "http://different-origin:3000"
+        }
+
+        // Rebuild service
+        service = GoogleOAuthService(
+            oauthStateRepository = oauthStateRepository,
+            userIdentityRepository = userIdentityRepository,
+            userRepository = userRepository,
+            roleRepository = roleRepository,
+            userRoleRepository = userRoleRepository,
+            secureTokenGenerator = secureTokenGenerator,
+            auditService = auditService,
+            authConfig = authConfig,
+            webClient = webClient
+        )
+
+        // Mock token exchange response
+        val tokenResponse = """
+            {
+                "access_token": "ya29.test-access-token",
+                "expires_in": 3600,
+                "token_type": "Bearer"
+            }
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setBody(tokenResponse)
+            .addHeader("Content-Type", "application/json"))
+
+        // Mock userinfo response
+        val userinfoResponse = """
+            {
+                "sub": "google-user-123",
+                "email": "test@example.com",
+                "name": "Test User",
+                "picture": "https://example.com/avatar.jpg"
+            }
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setBody(userinfoResponse)
+            .addHeader("Content-Type", "application/json"))
+
+        val profile = service.handleCallback(code = "auth-code", state = "raw-state")
+
+        assertEquals("google-user-123", profile.sub)
+        assertEquals("test@example.com", profile.email)
+
+        // Verify the token request body contained the explicit redirect URI
+        val tokenRequest = mockWebServer.takeRequest()
+        val tokenRequestBody = tokenRequest.body.readUtf8()
+        assertTrue(tokenRequestBody.contains("redirect_uri=https%3A%2F%2Fcustom.example.com%2Foauth%2Fcallback"),
+            "Expected explicit redirect URI in token exchange body, got: $tokenRequestBody")
+        assertTrue(!tokenRequestBody.contains("different-origin"),
+            "CORS-derived origin should NOT appear in token exchange body when explicit redirectUri is set")
+    }
+
+    @Test
+    fun `initiateGoogleLogin falls back to CORS-derived URI when redirectUri is blank`() {
+        // redirectUri is empty string by default in setup() → should fall back to CORS-derived
+        val tokenPair = TokenPair(token = "raw-state-token", hash = "hashed-state-token")
+        every { secureTokenGenerator.generateStateToken() } returns tokenPair
+        every { oauthStateRepository.save(any()) } answers { firstArg() }
+
+        val authUrl = service.initiateGoogleLogin()
+
+        assertTrue(authUrl.contains("redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fgoogle%2Fcallback"),
+            "Expected CORS-derived redirect URI when redirectUri is blank, got: $authUrl")
     }
 }
