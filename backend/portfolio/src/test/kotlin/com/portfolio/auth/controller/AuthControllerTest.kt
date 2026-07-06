@@ -7,10 +7,11 @@ import com.portfolio.auth.security.JwtAuthenticationFilter
 import com.portfolio.auth.service.AuthenticationService
 import com.portfolio.auth.service.GoogleOAuthException
 import com.portfolio.auth.service.GoogleOAuthService
-import io.mockk.every
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -24,7 +25,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.web.reactive.function.client.WebClientResponseException
-import org.junit.jupiter.api.extension.ExtendWith
 import java.nio.charset.Charset
 
 @WebMvcTest(controllers = [AuthController::class])
@@ -50,10 +50,13 @@ class AuthControllerTest {
     @MockBean
     private lateinit var googleOAuthService: GoogleOAuthService
 
+    private fun corsConfig(): CorsConfig = CorsConfig().apply { allowedOrigins = "http://localhost:3000" }
+
     @Test
     fun `GoogleOAuthException maps to auth_failed redirect`() {
-        every { authConfig.cors } returns CorsConfig().apply { allowedOrigins = "http://localhost:3000" }
-        every { googleOAuthService.handleCallback("test-code", "test-state") } throws GoogleOAuthException("Invalid state")
+        `when`(authConfig.cors).thenReturn(corsConfig())
+        `when`(googleOAuthService.handleCallback("test-code", "test-state"))
+            .thenThrow(GoogleOAuthException("Invalid state"))
 
         mockMvc.perform(get("/auth/google/callback")
             .param("code", "test-code")
@@ -65,7 +68,7 @@ class AuthControllerTest {
 
     @Test
     fun `WebClientResponseException maps to auth_failed redirect`() {
-        every { authConfig.cors } returns CorsConfig().apply { allowedOrigins = "http://localhost:3000" }
+        `when`(authConfig.cors).thenReturn(corsConfig())
         val webClientException = WebClientResponseException.create(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
             "Internal Server Error",
@@ -73,7 +76,8 @@ class AuthControllerTest {
             byteArrayOf(),
             Charset.defaultCharset()
         )
-        every { googleOAuthService.handleCallback("test-code", "test-state") } throws webClientException
+        `when`(googleOAuthService.handleCallback("test-code", "test-state"))
+            .thenThrow(webClientException)
 
         mockMvc.perform(get("/auth/google/callback")
             .param("code", "test-code")
@@ -85,8 +89,9 @@ class AuthControllerTest {
 
     @Test
     fun `generic RuntimeException maps to provider_unavailable with AUTH_CALLBACK_UNEXPECTED log`(output: CapturedOutput) {
-        every { authConfig.cors } returns CorsConfig().apply { allowedOrigins = "http://localhost:3000" }
-        every { googleOAuthService.handleCallback("test-code", "test-state") } throws RuntimeException("Unexpected failure")
+        `when`(authConfig.cors).thenReturn(corsConfig())
+        `when`(googleOAuthService.handleCallback("test-code", "test-state"))
+            .thenThrow(RuntimeException("Unexpected failure"))
 
         mockMvc.perform(get("/auth/google/callback")
             .param("code", "test-code")
