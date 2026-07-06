@@ -139,7 +139,10 @@ jobs:
           node-version: "20"
 
       - name: Install opencode
-        run: npm install -g opencode-ai --force
+        run: |
+          NPM_GLOBAL="$(npm root -g)"
+          rm -rf "$NPM_GLOBAL/opencode-ai" "$NPM_GLOBAL/.opencode-ai-"*
+          npm install -g opencode-ai
 
       - name: Install GitHub CLI (gh)
         run: |
