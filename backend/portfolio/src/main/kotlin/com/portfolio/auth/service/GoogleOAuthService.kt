@@ -53,6 +53,15 @@ class GoogleOAuthService(
         private const val STATE_EXPIRY_MINUTES = 10L
     }
 
+    /** Resolves the Google OAuth redirect URI. Returns the explicit
+     * [GoogleOAuthConfig.redirectUri] if non-blank, otherwise falls back to
+     * `cors.allowedOrigins[0] + "/auth/google/callback"`. */
+    private fun resolveRedirectUri(): String {
+        val explicit = authConfig.oauth2.google.redirectUri
+        if (explicit.isNotBlank()) return explicit
+        return authConfig.cors.allowedOrigins.split(",").first().trim() + "/auth/google/callback"
+    }
+
     @Transactional
     fun initiateGoogleLogin(): String {
         val tokenPair = secureTokenGenerator.generateStateToken()
@@ -65,7 +74,7 @@ class GoogleOAuthService(
         oauthStateRepository.save(oauthState)
 
         val googleConfig = authConfig.oauth2.google
-        val redirectUri = authConfig.cors.allowedOrigins.split(",").first().trim() + "/auth/google/callback"
+        val redirectUri = resolveRedirectUri()
         val params = mapOf(
             "client_id" to googleConfig.clientId,
             "redirect_uri" to redirectUri,
@@ -97,7 +106,7 @@ class GoogleOAuthService(
         oauthStateRepository.save(oauthState)
 
         val googleConfig = authConfig.oauth2.google
-        val redirectUri = authConfig.cors.allowedOrigins.split(",").first().trim() + "/auth/google/callback"
+        val redirectUri = resolveRedirectUri()
         val tokenResponse = exchangeCodeForTokens(
             code = code,
             clientId = googleConfig.clientId,
