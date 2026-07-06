@@ -93,6 +93,12 @@ The ingestion pipeline has been moved to a separate microservice at `backend/ing
 3. Check [unused-legacy.md](unused-legacy.md) for orphan tables with no JPA entity
 4. Run `docker compose exec backend ./gradlew test` to verify Hibernate validation passes
 
+## Operational Runbooks
+
+| File | Description |
+|------|-------------|
+| [google-oauth-provider-unavailable.md](../runbooks/google-oauth-provider-unavailable.md) | Diagnose and resolve Google OAuth sign-in failures in production and UAT. Covers credential verification (host env + Vault), redirect URI validation in Google Cloud Console, log marker triage (`AUTH_CALLBACK_UNEXPECTED`, `AUTH_CALLBACK_GOOGLE_HTTP`), and UAT repro steps. Cross-references #11, #39, #57, #58. |
+
 ## Key Constraints
 
 - **No local JDK**: All backend compilation/testing must run inside Docker containers
