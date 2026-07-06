@@ -8,6 +8,7 @@ import com.portfolio.auth.service.AuthenticationService
 import com.portfolio.auth.service.GoogleOAuthException
 import com.portfolio.auth.service.GoogleOAuthService
 import io.mockk.every
+import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -59,9 +60,7 @@ class AuthControllerTest {
             .param("state", "test-state")
         )
             .andExpect(status().isFound)
-            .andExpect(header().string("Location") { location ->
-                location.contains("/login?error=auth_failed")
-            })
+            .andExpect(header().string("Location", containsString("/login?error=auth_failed")))
     }
 
     @Test
@@ -81,9 +80,7 @@ class AuthControllerTest {
             .param("state", "test-state")
         )
             .andExpect(status().isFound)
-            .andExpect(header().string("Location") { location ->
-                location.contains("/login?error=auth_failed")
-            })
+            .andExpect(header().string("Location", containsString("/login?error=auth_failed")))
     }
 
     @Test
@@ -96,9 +93,7 @@ class AuthControllerTest {
             .param("state", "test-state")
         )
             .andExpect(status().isFound)
-            .andExpect(header().string("Location") { location ->
-                location.contains("/login?error=provider_unavailable")
-            })
+            .andExpect(header().string("Location", containsString("/login?error=provider_unavailable")))
 
         assertTrue(output.all.contains("AUTH_CALLBACK_UNEXPECTED"),
             "Log should contain AUTH_CALLBACK_UNEXPECTED marker, but got: ${output.all}")
