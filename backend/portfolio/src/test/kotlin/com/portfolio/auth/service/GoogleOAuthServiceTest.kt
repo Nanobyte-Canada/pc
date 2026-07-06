@@ -473,6 +473,11 @@ class GoogleOAuthServiceTest {
 
     private fun enqueueValidState(state: String) {
         val stateHash = "hashed-$state"
+        val oauthState = OAuthState(
+            stateHash = stateHash,
+            provider = UserIdentity.PROVIDER_GOOGLE,
+            expiresAt = OffsetDateTime.now().plusMinutes(10)
+        )
         every { secureTokenGenerator.hashToken(state) } returns stateHash
         every { oauthStateRepository.findByStateHash(stateHash) } returns oauthState
         every { oauthStateRepository.save(any()) } answers { firstArg() }
