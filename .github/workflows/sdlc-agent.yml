@@ -28,7 +28,7 @@ on:
       model:
         description: Model to use
         required: true
-        default: "opencode-go/glm-5.2"
+        default: "opencode/deepseek-v4-flash-free"
 
 env:
   VAULT_ADDR: https://vault.nanobyte.ca
@@ -164,32 +164,32 @@ jobs:
             case "$LABEL" in
               Triaging)
                 echo "agent=planner" >> $GITHUB_OUTPUT
-                echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
                 echo "phase=triaging" >> $GITHUB_OUTPUT
                 ;;
               Planning)
                 echo "agent=planner" >> $GITHUB_OUTPUT
-                echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
                 echo "phase=planning" >> $GITHUB_OUTPUT
                 ;;
               Executing)
                 echo "agent=build" >> $GITHUB_OUTPUT
-                echo "model=opencode-go/deepseek-v4-pro" >> $GITHUB_OUTPUT
+                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
                 echo "phase=execution" >> $GITHUB_OUTPUT
                 ;;
               Testing)
                 echo "agent=tester" >> $GITHUB_OUTPUT
-                echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
                 echo "phase=testing" >> $GITHUB_OUTPUT
                 ;;
               Bug\ Fixing)
                 echo "agent=bugfixer" >> $GITHUB_OUTPUT
-                echo "model=opencode-go/deepseek-v4-pro" >> $GITHUB_OUTPUT
+                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
                 echo "phase=bugfix" >> $GITHUB_OUTPUT
                 ;;
               Publishing)
                 echo "agent=deployer" >> $GITHUB_OUTPUT
-                echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
                 echo "phase=publish" >> $GITHUB_OUTPUT
                 ;;
             esac
@@ -202,7 +202,7 @@ jobs:
           elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
             PR_NUMBER=${{ github.event.pull_request.number }}
             echo "agent=reviewer" >> $GITHUB_OUTPUT
-            echo "model=opencode-go/glm-5.2" >> $GITHUB_OUTPUT
+            echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
             echo "phase=review" >> $GITHUB_OUTPUT
             echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
             # Resolve ISSUE_NUMBER from PR body (Implements #N, Closes #N, Fixes #N)
