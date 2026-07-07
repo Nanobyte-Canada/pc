@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Update a GitHub Projects v2 card's Status field to a new lane.
 # The agent calls this after completing its phase to move the card
-# to the next lane (e.g., planner moves card from "Triaging" to "Scope Review").
+# to the next lane (e.g., planner moves card from "Scoping" to "Scope Review").
 #
 # Requires: GH_TOKEN env var, PROJECT_ID env var
 # Usage: ./update-card-status.sh --issue <NUMBER> --lane <LANE_NAME> [--repo <OWNER/REPO>] [--cascade]
