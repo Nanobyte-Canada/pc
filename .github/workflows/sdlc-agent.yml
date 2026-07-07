@@ -57,6 +57,25 @@ jobs:
           fetch-depth: 0
           clean: false
 
+      - name: Check if this is a child card
+        id: child-check
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          # Child cards have sub-issue links: - [ ] #NNN (issue title)
+          if echo "$ISSUE_BODY" | grep -qE '^\s*-\s*\[[ x]\]\s*#\d+'; then
+            echo "is_child=true" >> $GITHUB_OUTPUT
+            echo "⏭️ This is a child card — parent handles execution"
+          else
+            echo "is_child=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if child card
+        if: steps.child-check.outputs.is_child == 'true'
+        run: |
+          echo "⏭️ Child card detected — skipping. Parent card orchestrates."
+          exit 0
+
       - name: Fetch secrets from Vault
         run: |
           echo "Authenticating to Vault..."
