@@ -44,7 +44,7 @@ jobs:
     # Run on SDLC lane labels (Stage 1/2) or repository_dispatch (Stage 3)
     if: |
       (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'issues' && contains(fromJson('["Triaging","Planning","Executing","Testing","Bug Fixing","Publishing","agent-ready"]'), github.event.label.name)) ||
+      (github.event_name == 'issues' && contains(fromJson('["Scoping","Planning","Executing","Testing","Publish","agent-ready"]'), github.event.label.name)) ||
       github.event_name == 'repository_dispatch' ||
       github.event_name == 'pull_request_target'
     steps:
