@@ -165,10 +165,10 @@ jobs:
             ISSUE_NUM=${{ github.event.issue.number }}
             LABEL="${{ github.event.label.name }}"
             case "$LABEL" in
-              Triaging)
-                echo "agent=planner" >> $GITHUB_OUTPUT
+              Scoping)
+                echo "agent=scoping" >> $GITHUB_OUTPUT
                 echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
-                echo "phase=triaging" >> $GITHUB_OUTPUT
+                echo "phase=scoping" >> $GITHUB_OUTPUT
                 ;;
               Planning)
                 echo "agent=planner" >> $GITHUB_OUTPUT
@@ -185,12 +185,7 @@ jobs:
                 echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
                 echo "phase=testing" >> $GITHUB_OUTPUT
                 ;;
-              Bug\ Fixing)
-                echo "agent=bugfixer" >> $GITHUB_OUTPUT
-                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
-                echo "phase=bugfix" >> $GITHUB_OUTPUT
-                ;;
-              Publishing)
+              Publish)
                 echo "agent=deployer" >> $GITHUB_OUTPUT
                 echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
                 echo "phase=publish" >> $GITHUB_OUTPUT
