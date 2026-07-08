@@ -249,7 +249,9 @@ jobs:
             echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
-            echo "model=$(resolve_model SDLC_MODEL_${{ github.event.inputs.phase | upper }})" >> $GITHUB_OUTPUT
+            # Convert phase to uppercase for Vault key lookup
+            PHASE_UPPER=$(echo "${{ github.event.inputs.phase }}" | tr '[:lower:]' '[:upper:]')
+            echo "model=$(resolve_model SDLC_MODEL_${PHASE_UPPER})" >> $GITHUB_OUTPUT
             echo "issue_number=${{ github.event.inputs.issue_number }}" >> $GITHUB_OUTPUT
             echo "phase=${{ github.event.inputs.phase }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
