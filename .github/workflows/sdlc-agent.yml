@@ -26,9 +26,9 @@ on:
         required: true
         default: "planner"
       model:
-        description: Model to use
-        required: true
-        default: "opencode/deepseek-v4-flash-free"
+        description: Model to use (leave empty to use Vault config)
+        required: false
+        default: ""
 
 env:
   VAULT_ADDR: https://vault.nanobyte.ca
@@ -200,46 +200,62 @@ jobs:
       - name: Determine agent + model + issue + phase
         id: params
         run: |
+          # Model is sourced from Vault (SDLC_MODEL_* env vars) or workflow_dispatch input
+          # Priority: workflow_dispatch input > Vault env var > fallback
+          resolve_model() {
+            local vault_key=$1
+            local input_model="${{ github.event.inputs.model }}"
+            local vault_model="${!vault_key}"
+            if [ -n "$input_model" ]; then
+              echo "$input_model"
+            elif [ -n "$vault_model" ]; then
+              echo "$vault_model"
+            else
+              echo "::error::No model configured for $vault_key — check Vault sdlc/common"
+              exit 1
+            fi
+          }
+
           if [ "${{ github.event_name }}" = "issues" ]; then
             ISSUE_NUM=${{ github.event.issue.number }}
             LABEL="${{ github.event.label.name }}"
             case "$LABEL" in
               Scoping)
                 echo "agent=scoping" >> $GITHUB_OUTPUT
-                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
+                echo "model=$(resolve_model SDLC_MODEL_SCOPING)" >> $GITHUB_OUTPUT
                 echo "phase=scoping" >> $GITHUB_OUTPUT
                 ;;
               Planning)
                 echo "agent=planner" >> $GITHUB_OUTPUT
-                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
+                echo "model=$(resolve_model SDLC_MODEL_PLANNING)" >> $GITHUB_OUTPUT
                 echo "phase=planning" >> $GITHUB_OUTPUT
                 ;;
               Executing)
                 echo "agent=build" >> $GITHUB_OUTPUT
-                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
+                echo "model=$(resolve_model SDLC_MODEL_EXECUTING)" >> $GITHUB_OUTPUT
                 echo "phase=execution" >> $GITHUB_OUTPUT
                 ;;
               Testing)
                 echo "agent=tester" >> $GITHUB_OUTPUT
-                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
+                echo "model=$(resolve_model SDLC_MODEL_TESTING)" >> $GITHUB_OUTPUT
                 echo "phase=testing" >> $GITHUB_OUTPUT
                 ;;
               Publish)
                 echo "agent=deployer" >> $GITHUB_OUTPUT
-                echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
+                echo "model=$(resolve_model SDLC_MODEL_PUBLISH)" >> $GITHUB_OUTPUT
                 echo "phase=publish" >> $GITHUB_OUTPUT
                 ;;
             esac
             echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
-            echo "model=${{ github.event.inputs.model }}" >> $GITHUB_OUTPUT
+            echo "model=$(resolve_model SDLC_MODEL_${{ github.event.inputs.phase | upper }})" >> $GITHUB_OUTPUT
             echo "issue_number=${{ github.event.inputs.issue_number }}" >> $GITHUB_OUTPUT
             echo "phase=${{ github.event.inputs.phase }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
             PR_NUMBER=${{ github.event.pull_request.number }}
             echo "agent=reviewer" >> $GITHUB_OUTPUT
-            echo "model=opencode/deepseek-v4-flash-free" >> $GITHUB_OUTPUT
+            echo "model=$(resolve_model SDLC_MODEL_TESTING)" >> $GITHUB_OUTPUT
             echo "phase=review" >> $GITHUB_OUTPUT
             echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
             # Resolve ISSUE_NUMBER from PR body (Implements #N, Closes #N, Fixes #N)
