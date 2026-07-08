@@ -172,6 +172,26 @@ jobs:
           }
         shell: bash
 
+      - name: Resolve SDLC project board ID
+        env:
+          GH_TOKEN: ${{ env.NANOBYTE_SERVICES_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          BOARD_TITLE_PREFIX="Nanobyte SDLC"
+          OWNER="${{ github.repository_owner }}"
+
+          OWNER_ID=$(gh api graphql \
+            -f query="query { organization(login: \"$OWNER\") { projectsV2(first: 20) { nodes { id title } } } }" \
+            --jq '.data.organization.projectsV2.nodes[] | select(.title | startswith("'"$BOARD_TITLE_PREFIX"'")) | .id' \
+            2>/dev/null || true)
+
+          if [ -n "$OWNER_ID" ]; then
+            FOUND_ID=$(echo "$OWNER_ID" | head -1)
+            echo "Resolved board '$BOARD_TITLE_PREFIX...' to ID: $FOUND_ID"
+            echo "SDLC_PROJECT_ID=$FOUND_ID" >> "$GITHUB_ENV"
+          else
+            echo "No board found matching '$BOARD_TITLE_PREFIX' — using SDLC_PROJECT_ID from Vault"
+          fi
+
       - name: Configure opencode auth
         run: |
           mkdir -p ~/.local/share/opencode
