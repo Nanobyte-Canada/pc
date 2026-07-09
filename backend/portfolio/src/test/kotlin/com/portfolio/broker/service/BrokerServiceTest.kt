@@ -229,12 +229,19 @@ class BrokerServiceTest {
     fun `reconnectConnection propagates GatewayApiException`() {
         val user = createUser(1L)
         val gatewayConnectionId = "gw-conn-reconnect"
+        val connection = BrokerConnection(
+            id = 100L,
+            user = user,
+            gatewayConnectionId = gatewayConnectionId,
+            status = ConnectionStatus.ERROR
+        )
 
         val apiException = GatewayApiException(
             gatewayStatusCode = 401,
             gatewayErrorCode = "BROKER_AUTH_FAILED",
             gatewayDetail = "Invalid refresh token"
         )
+        every { connectionRepository.findByGatewayConnectionId(gatewayConnectionId) } returns listOf(connection)
         every { gatewayClient.reconnectConnection(gatewayConnectionId, any()) } throws apiException
 
         val ex = assertThrows<ExternalServiceException> {
@@ -250,7 +257,14 @@ class BrokerServiceTest {
     fun `reconnectConnection returns generic message when gateway is unreachable`() {
         val user = createUser(1L)
         val gatewayConnectionId = "gw-conn-unreachable"
+        val connection = BrokerConnection(
+            id = 200L,
+            user = user,
+            gatewayConnectionId = gatewayConnectionId,
+            status = ConnectionStatus.ERROR
+        )
 
+        every { connectionRepository.findByGatewayConnectionId(gatewayConnectionId) } returns listOf(connection)
         every { gatewayClient.reconnectConnection(gatewayConnectionId, any()) } throws RuntimeException(
             "Connection refused"
         )
@@ -261,6 +275,26 @@ class BrokerServiceTest {
 
         assertEquals("BROKER_CONNECTION_FAILED", ex.code)
         assertEquals("Failed to reconnect to broker service. Please try again later.", ex.message)
+    }
+
+    @Test
+    fun `reconnectConnection throws when user does not own the connection`() {
+        val user = createUser(1L)
+        val otherUser = createUser(2L)
+        val gatewayConnectionId = "gw-conn-other-user"
+        val connection = BrokerConnection(
+            id = 300L,
+            user = otherUser,
+            gatewayConnectionId = gatewayConnectionId,
+            status = ConnectionStatus.ACTIVE
+        )
+
+        every { connectionRepository.findByGatewayConnectionId(gatewayConnectionId) } returns listOf(connection)
+
+        assertThrows<IllegalArgumentException> {
+            service.reconnectConnection(user, gatewayConnectionId, mapOf("refreshToken" to "token"))
+        }
+        verify(exactly = 0) { gatewayClient.reconnectConnection(any(), any()) }
     }
 
     @Test

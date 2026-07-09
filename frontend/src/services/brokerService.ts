@@ -54,8 +54,8 @@ export async function reconnectBroker(connectionId: string, credentials: Record<
     body: JSON.stringify({ credentials })
   })
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.detail || error.message || 'Failed to reconnect to broker')
+    const error = await parseErrorResponse(response)
+    throw error
   }
   return response.json()
 }

@@ -81,6 +81,11 @@ export function useDisconnectBroker() {
   })
 }
 
+/**
+ * Returns a mutation that re-authenticates an existing broker connection with
+ * updated credentials. On success, invalidates connection, position, and
+ * dashboard queries so the UI reflects the refreshed state.
+ */
 export function useReconnectBroker() {
   const queryClient = useQueryClient()
 

@@ -2,6 +2,9 @@ import { useState } from 'react'
 import type { ConnectBrokerRequest } from '../../types/broker'
 import './ConnectBrokerDialog.css'
 
+/**
+ * Describes a single credential input field rendered in the connect dialog.
+ */
 interface BrokerCredentialField {
   key: string
   label: string
@@ -9,6 +12,11 @@ interface BrokerCredentialField {
   placeholder?: string
 }
 
+/**
+ * Configuration for a specific broker type, including its display name,
+ * step-by-step connection instructions, optional reference links, and
+ * the credential fields required to authenticate.
+ */
 interface BrokerConfig {
   name: string
   instructions: string[]

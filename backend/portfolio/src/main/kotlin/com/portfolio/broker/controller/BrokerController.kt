@@ -21,6 +21,10 @@ data class ConnectBrokerGatewayRequest(
     val credentials: Map<String, Any>
 )
 
+/**
+ * Request body for the reconnect endpoint. Contains the updated credentials
+ * that should be sent to the broker gateway to re-authenticate the connection.
+ */
 data class ReconnectBrokerRequest(
     val credentials: Map<String, Any>
 )
@@ -102,6 +106,12 @@ class BrokerController(
         return ResponseEntity.noContent().build()
     }
 
+    /**
+     * Re-authenticates an existing broker connection with updated credentials.
+     *
+     * Accepts a gateway connection ID and new credentials, verifies ownership,
+     * and delegates to the broker service to update both gateway-level and local state.
+     */
     @PostMapping("/connections/{connectionId}/reconnect")
     fun reconnectBroker(
         @PathVariable connectionId: String,

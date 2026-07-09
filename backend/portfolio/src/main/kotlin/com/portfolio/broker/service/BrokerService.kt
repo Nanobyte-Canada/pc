@@ -168,8 +168,25 @@ class BrokerService(
         return connections
     }
 
+    /**
+     * Reconnects an existing gateway connection with updated credentials.
+     *
+     * Verifies that the user owns at least one connection for the given [gatewayConnectionId]
+     * before calling the gateway, then updates gateway-level credentials and resets local
+     * connection status to ACTIVE.
+     *
+     * @throws IllegalArgumentException if the user does not own any connection for this gateway ID.
+     * @throws ExternalServiceException if the gateway rejects the credentials or is unreachable.
+     */
     @Transactional
     fun reconnectConnection(user: User, gatewayConnectionId: String, credentials: Map<String, Any>) {
+        // Verify ownership BEFORE calling the gateway to prevent unauthorised credential updates
+        val ownedConnections = connectionRepository.findByGatewayConnectionId(gatewayConnectionId)
+            .filter { it.user.id == user.id }
+        if (ownedConnections.isEmpty()) {
+            throw IllegalArgumentException("No connections found for gateway connection: $gatewayConnectionId")
+        }
+
         val response = try {
             gatewayClient.reconnectConnection(gatewayConnectionId, credentials)
         } catch (e: GatewayApiException) {
@@ -201,16 +218,14 @@ class BrokerService(
         }
 
         // Update local connection status to ACTIVE and clear errors
-        val connections = connectionRepository.findByGatewayConnectionId(gatewayConnectionId)
-            .filter { it.user.id == user.id }
-        connections.forEach { connection ->
+        ownedConnections.forEach { connection ->
             connection.status = ConnectionStatus.ACTIVE
             connection.clearError()
             connectionRepository.save(connection)
         }
 
         log.info("Reconnected gateway connection {} for user {} ({} accounts)",
-            gatewayConnectionId, user.id, connections.size)
+            gatewayConnectionId, user.id, ownedConnections.size)
     }
 
     @Transactional

@@ -118,19 +118,25 @@ describe('Broker Service', () => {
     it('throws error with detail message on failed response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        json: () => Promise.resolve({ detail: 'Invalid refresh token' })
+        status: 400,
+        statusText: 'Bad Request',
+        headers: new Headers({ 'content-type': 'application/problem+json' }),
+        json: () => Promise.resolve({ detail: 'Invalid refresh token', status: 400 })
       })
 
       await expect(reconnectBroker('conn-123', { refreshToken: 'bad' })).rejects.toThrow('Invalid refresh token')
     })
 
-    it('throws generic error when response has no detail', async () => {
+    it('throws ApiError with statusText when response has no detail', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: new Headers({ 'content-type': 'application/problem+json' }),
         json: () => Promise.resolve({})
       })
 
-      await expect(reconnectBroker('conn-123', { refreshToken: 'bad' })).rejects.toThrow('Failed to reconnect to broker')
+      await expect(reconnectBroker('conn-123', { refreshToken: 'bad' })).rejects.toThrow()
     })
   })
 

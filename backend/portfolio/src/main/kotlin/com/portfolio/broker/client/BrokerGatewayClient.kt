@@ -48,6 +48,13 @@ class BrokerGatewayClient(
         return post("/api/v1/gateway/connections/$connectionId/refresh", emptyMap<String, Any>())
     }
 
+    /**
+     * Sends updated credentials to the gateway to re-authenticate an existing connection.
+     *
+     * @param connectionId the gateway-level connection identifier.
+     * @param credentials the new credential map (e.g. refreshed token, password).
+     * @return the gateway's JSON response containing at least a `status` field.
+     */
     fun reconnectConnection(connectionId: String, credentials: Map<String, Any>): JsonNode {
         return post("/api/v1/gateway/connections/$connectionId/reconnect", mapOf("credentials" to credentials))
     }
@@ -132,6 +139,8 @@ class BrokerGatewayClient(
     /**
      * Converts a [WebClientResponseException] from the gateway into a [GatewayApiException]
      * that preserves the gateway's error code and detail message from the ProblemDetail response body.
+     * Falls back to the raw response body (truncated to 500 chars) when the body is not valid JSON,
+     * so that error messages remain useful for debugging.
      */
     private fun toGatewayApiException(e: WebClientResponseException): GatewayApiException {
         val body = try {
@@ -140,6 +149,7 @@ class BrokerGatewayClient(
             null
         }
         val detail = body?.get("detail")?.asText()
+            ?: e.responseBodyAsString.takeIf { it.isNotBlank() }?.take(500)
         val code = body?.get("code")?.asText()
         return GatewayApiException(
             gatewayStatusCode = e.statusCode.value(),
