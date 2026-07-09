@@ -36,6 +36,7 @@ dependencies {
 
     // IBKR TWS API (vendored from interactivebrokers.github.io)
     implementation(files("libs/TwsApi.jar"))
+    implementation("com.google.protobuf:protobuf-java:4.29.2")
 
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")

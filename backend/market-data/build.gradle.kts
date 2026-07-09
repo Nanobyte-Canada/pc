@@ -47,6 +47,7 @@ dependencies {
 
     // IBKR TWS API (vendored from interactivebrokers.github.io)
     implementation(files("libs/TwsApi.jar"))
+    implementation("com.google.protobuf:protobuf-java:4.29.2")
 
     // Logging
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")
