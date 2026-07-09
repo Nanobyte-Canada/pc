@@ -30,14 +30,10 @@ class ConnectionController(
         val connectionId = credentialService.createConnection(request.userId, credentials)
 
         // Exchange initial tokens before validation (e.g., Questrade refresh_token → access_token + api_server)
-        try {
-            val refreshed = adapter.refreshAuth(credentials)
-            if (refreshed !== credentials) {
-                credentials = refreshed
-                credentialService.updateCredentials(connectionId, credentials)
-            }
-        } catch (e: Exception) {
-            log.warn("Initial auth refresh failed for {}: {}", request.brokerType, e.message)
+        val refreshed = adapter.refreshAuth(credentials)
+        if (refreshed !== credentials) {
+            credentials = refreshed
+            credentialService.updateCredentials(connectionId, credentials)
         }
 
         val validation = adapter.validateConnection(credentials)
