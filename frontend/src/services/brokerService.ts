@@ -20,7 +20,8 @@ const BROKER_API_BASE = '/api/v1/brokers'
 export async function getAvailableBrokers(): Promise<BrokersResponse> {
   const response = await apiFetch(`${BROKER_API_BASE}`)
   if (!response.ok) {
-    throw new Error('Failed to fetch available brokers')
+    const error = await response.json().catch(() => ({}))
+    throw new Error(error.detail || error.message || 'Failed to fetch available brokers')
   }
   return response.json()
 }

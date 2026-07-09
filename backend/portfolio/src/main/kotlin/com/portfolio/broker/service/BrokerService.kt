@@ -47,6 +47,9 @@ class BrokerService(
                         status = broker.get("status")?.asText()
                     )
                 }
+        } catch (e: GatewayApiException) {
+            log.error("Broker gateway is unreachable or returned error: {} (code={})", e.message, e.gatewayErrorCode)
+            throw e.toExternalServiceException()
         } catch (e: Exception) {
             log.error("Failed to fetch available brokers from gateway", e)
             emptyList()

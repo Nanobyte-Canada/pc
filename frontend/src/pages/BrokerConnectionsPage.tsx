@@ -29,7 +29,7 @@ export function BrokerConnectionsPage() {
   const [connectError, setConnectError] = useState<string | null>(null)
   const syncCalledRef = useRef(false)
 
-  const { data: brokersData, isLoading: brokersLoading } = useAvailableBrokers()
+  const { data: brokersData, isLoading: brokersLoading, error: brokersError } = useAvailableBrokers()
   const { data: connectionsData, isLoading: connectionsLoading, refetch: refetchConnections } = useBrokerConnections()
 
   const connectBroker = useConnectBroker()
@@ -222,7 +222,15 @@ export function BrokerConnectionsPage() {
           </div>
         </div>
 
-        {brokers.length > 0 ? (
+        {brokersError ? (
+          <div className="broker-no-data broker-error">
+            {brokersError.message?.toLowerCase().includes('unreachable') ||
+             brokersError.message?.toLowerCase().includes('gateway') ||
+             brokersError.message?.toLowerCase().includes('bad gateway')
+              ? 'Broker gateway is unreachable. Please check your configuration.'
+              : brokersError.message || 'Failed to load broker list. Please try again.'}
+          </div>
+        ) : brokers.length > 0 ? (
           brokerView === 'cards' ? (
             <div className="broker-cards-grid">
               {brokers.map((broker, index) => (
