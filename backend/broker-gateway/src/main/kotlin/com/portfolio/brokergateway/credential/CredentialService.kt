@@ -149,6 +149,13 @@ class CredentialService(
         repository.save(entity)
     }
 
+    fun clearError(connectionId: String) {
+        val entity = getConnection(connectionId)
+        entity.errorMessage = null
+        entity.updatedAt = OffsetDateTime.now()
+        repository.save(entity)
+    }
+
     fun updateAccountsJson(connectionId: String, accountsJson: String) {
         val entity = getConnection(connectionId)
         entity.accountsJson = accountsJson

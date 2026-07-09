@@ -9,11 +9,13 @@ import {
   useBrokerConnections,
   useConnectBroker,
   useDisconnectBroker,
+  useReconnectBroker,
   useSyncConnections,
   useSyncAll
 } from '../hooks/useBrokerConnections'
 import { syncAllConnectionData } from '../services/brokerService'
 import type { SyncAllResponse } from '../services/brokerService'
+import { ApiError } from '../services/api'
 import type { ConnectBrokerRequest } from '../types/broker'
 import './BrokerConnectionsPage.css'
 
@@ -24,13 +26,15 @@ export function BrokerConnectionsPage() {
   const [isSyncingNewConnection, setIsSyncingNewConnection] = useState(false)
   const [syncStatus, setSyncStatus] = useState('')
   const [connectDialogBroker, setConnectDialogBroker] = useState<string | null>(null)
+  const [connectDialogConnectionId, setConnectDialogConnectionId] = useState<string | undefined>(undefined)
   const [connectError, setConnectError] = useState<string | null>(null)
   const syncCalledRef = useRef(false)
 
-  const { data: brokersData, isLoading: brokersLoading } = useAvailableBrokers()
+  const { data: brokersData, isLoading: brokersLoading, error: brokersError } = useAvailableBrokers()
   const { data: connectionsData, isLoading: connectionsLoading, refetch: refetchConnections } = useBrokerConnections()
 
   const connectBroker = useConnectBroker()
+  const reconnectBroker = useReconnectBroker()
   const disconnectBroker = useDisconnectBroker()
   const sync = useSyncConnections()
   const syncAll = useSyncAll()
@@ -105,8 +109,29 @@ export function BrokerConnectionsPage() {
 
   const handleReconnect = (gatewayConnectionId: string) => {
     setConnectError(null)
+    setConnectDialogConnectionId(gatewayConnectionId)
     const connection = connections?.find(c => c.gatewayConnectionId === gatewayConnectionId)
     setConnectDialogBroker(connection?.broker?.slug || 'questrade')
+  }
+
+  const handleReconnectSubmit = (request: { connectionId: string; credentials: Record<string, unknown> }) => {
+    setConnectError(null)
+    reconnectBroker.mutate(
+      { connectionId: request.connectionId, credentials: request.credentials },
+      {
+        onSuccess: () => {
+          setConnectDialogBroker(null)
+          setConnectDialogConnectionId(undefined)
+          setNotification({
+            type: 'success',
+            message: 'Reconnected successfully!'
+          })
+        },
+        onError: (error) => {
+          setConnectError(error.message || 'Failed to reconnect. Please try again.')
+        }
+      }
+    )
   }
 
   const handleSyncAll = (connectionId: number) => {
@@ -198,7 +223,13 @@ export function BrokerConnectionsPage() {
           </div>
         </div>
 
-        {brokers.length > 0 ? (
+        {brokersError ? (
+          <div className="broker-no-data broker-error">
+            {brokersError instanceof ApiError && (brokersError.status === 502 || brokersError.code === 'BROKER_CONNECTION_FAILED' || brokersError.code === 'GATEWAY_UNREACHABLE')
+              ? 'Broker gateway is unreachable. Please check your configuration.'
+              : brokersError.message || 'Failed to load broker list. Please try again.'}
+          </div>
+        ) : brokers.length > 0 ? (
           brokerView === 'cards' ? (
             <div className="broker-cards-grid">
               {brokers.map((broker, index) => (
@@ -259,9 +290,11 @@ export function BrokerConnectionsPage() {
         <ConnectBrokerDialog
           brokerType={connectDialogBroker}
           onConnect={handleConnectSubmit}
-          onCancel={() => { setConnectDialogBroker(null); setConnectError(null) }}
-          isConnecting={connectBroker.isPending}
+          onReconnect={handleReconnectSubmit}
+          onCancel={() => { setConnectDialogBroker(null); setConnectDialogConnectionId(undefined); setConnectError(null) }}
+          isConnecting={connectBroker.isPending || reconnectBroker.isPending}
           error={connectError}
+          connectionId={connectDialogConnectionId}
         />
       )}
     </div>

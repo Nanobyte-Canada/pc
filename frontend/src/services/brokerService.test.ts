@@ -4,6 +4,7 @@ import {
   getUserConnections,
   getAggregatedPositions,
   connectBroker,
+  reconnectBroker,
   triggerPositionFetch,
   formatCurrency,
   formatPercent,
@@ -91,6 +92,45 @@ describe('Broker Service', () => {
           body: JSON.stringify(request)
         })
       )
+    })
+  })
+
+  describe('reconnectBroker', () => {
+    it('sends POST request to reconnect endpoint with credentials', async () => {
+      const mockResponse = { status: 'RECONNECTED', connectionId: 'conn-123' }
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse)
+      })
+
+      const result = await reconnectBroker('conn-123', { refreshToken: 'new-token' })
+
+      expect(result).toEqual(mockResponse)
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/v1/brokers/connections/conn-123/reconnect',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ credentials: { refreshToken: 'new-token' } })
+        })
+      )
+    })
+
+    it('throws error with detail message on failed response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        json: () => Promise.resolve({ detail: 'Invalid refresh token' })
+      })
+
+      await expect(reconnectBroker('conn-123', { refreshToken: 'bad' })).rejects.toThrow('Invalid refresh token')
+    })
+
+    it('throws generic error when response has no detail', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        json: () => Promise.resolve({})
+      })
+
+      await expect(reconnectBroker('conn-123', { refreshToken: 'bad' })).rejects.toThrow('Failed to reconnect to broker')
     })
   })
 

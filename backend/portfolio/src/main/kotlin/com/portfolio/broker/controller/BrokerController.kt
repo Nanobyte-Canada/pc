@@ -21,6 +21,10 @@ data class ConnectBrokerGatewayRequest(
     val credentials: Map<String, Any>
 )
 
+data class ReconnectBrokerRequest(
+    val credentials: Map<String, Any>
+)
+
 @RestController
 @RequestMapping("/api/v1/brokers")
 @PreAuthorize("isAuthenticated()")
@@ -96,6 +100,18 @@ class BrokerController(
     ): ResponseEntity<Void> {
         brokerService.disconnectBroker(authorizationId, principal.id)
         return ResponseEntity.noContent().build()
+    }
+
+    @PostMapping("/connections/{connectionId}/reconnect")
+    fun reconnectBroker(
+        @PathVariable connectionId: String,
+        @RequestBody request: ReconnectBrokerRequest,
+        @AuthenticationPrincipal principal: UserPrincipal
+    ): ResponseEntity<Map<String, Any>> {
+        val user = userRepository.findById(principal.id)
+            .orElseThrow { IllegalArgumentException("User not found") }
+        brokerService.reconnectConnection(user, connectionId, request.credentials)
+        return ResponseEntity.ok(mapOf("status" to "RECONNECTED", "connectionId" to connectionId))
     }
 
     // ========== Position Fetching ==========

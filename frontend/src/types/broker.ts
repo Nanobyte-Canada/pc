@@ -60,6 +60,10 @@ export interface ConnectBrokerResponse {
   connections: BrokerConnection[]
 }
 
+export interface ReconnectBrokerRequest {
+  credentials: Record<string, unknown>
+}
+
 export interface PositionFetchResponse {
   fetchId: number
   status: string

@@ -7,6 +7,8 @@ import com.portfolio.auth.service.AuditService
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.broker.client.BrokerGatewayClient
+import com.portfolio.broker.client.GatewayApiException
+import com.portfolio.broker.client.toExternalServiceException
 import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
@@ -45,9 +47,16 @@ class BrokerService(
                         status = broker.get("status")?.asText()
                     )
                 }
+        } catch (e: GatewayApiException) {
+            log.error("Broker gateway is unreachable or returned error: {} (code={})", e.message, e.gatewayErrorCode)
+            throw e.toExternalServiceException()
         } catch (e: Exception) {
             log.error("Failed to fetch available brokers from gateway", e)
-            emptyList()
+            throw ExternalServiceException(
+                code = "GATEWAY_UNREACHABLE",
+                message = "Broker gateway is unreachable. Please check your configuration.",
+                cause = e
+            )
         }
     }
 
@@ -79,6 +88,9 @@ class BrokerService(
     fun createGatewayConnection(user: User, brokerType: String, credentials: Map<String, Any>): List<BrokerConnection> {
         val response = try {
             gatewayClient.createConnection(user.id!!, brokerType, credentials)
+        } catch (e: GatewayApiException) {
+            log.error("Gateway API error for user {} connecting brokerType={}: {} (code={})", user.id, brokerType, e.message, e.gatewayErrorCode)
+            throw e.toExternalServiceException()
         } catch (e: Exception) {
             log.error("Gateway API error for user {} connecting brokerType={}: {}", user.id, brokerType, e.message)
             throw ExternalServiceException(
@@ -154,6 +166,51 @@ class BrokerService(
         log.info("Created {} account(s) for gateway connection {} user {} brokerType={}",
             connections.size, gatewayConnectionId, user.id, brokerType)
         return connections
+    }
+
+    @Transactional
+    fun reconnectConnection(user: User, gatewayConnectionId: String, credentials: Map<String, Any>) {
+        val response = try {
+            gatewayClient.reconnectConnection(gatewayConnectionId, credentials)
+        } catch (e: GatewayApiException) {
+            log.error("Gateway reconnect error for user {} connection {}: {} (code={})",
+                user.id, gatewayConnectionId, e.message, e.gatewayErrorCode)
+            throw e.toExternalServiceException()
+        } catch (e: Exception) {
+            log.error("Gateway reconnect error for user {} connection {}: {}",
+                user.id, gatewayConnectionId, e.message)
+            throw ExternalServiceException(
+                code = "BROKER_CONNECTION_FAILED",
+                message = "Failed to reconnect to broker service. Please try again later.",
+                cause = e
+            )
+        }
+
+        // Check the gateway response status — if validation failed, propagate error
+        val responseStatus = response.get("status")?.asText()
+        val errorMessage = response.get("errorMessage")?.asText()
+        if (responseStatus != null && responseStatus != "ACTIVE") {
+            val detail = errorMessage ?: "Gateway returned status: $responseStatus"
+            log.error("Gateway reconnect validation failed for user {} connection {}: {} (status={})",
+                user.id, gatewayConnectionId, detail, responseStatus)
+            throw ExternalServiceException(
+                code = "BROKER_RECONNECT_FAILED",
+                message = detail,
+                cause = null
+            )
+        }
+
+        // Update local connection status to ACTIVE and clear errors
+        val connections = connectionRepository.findByGatewayConnectionId(gatewayConnectionId)
+            .filter { it.user.id == user.id }
+        connections.forEach { connection ->
+            connection.status = ConnectionStatus.ACTIVE
+            connection.clearError()
+            connectionRepository.save(connection)
+        }
+
+        log.info("Reconnected gateway connection {} for user {} ({} accounts)",
+            gatewayConnectionId, user.id, connections.size)
     }
 
     @Transactional
