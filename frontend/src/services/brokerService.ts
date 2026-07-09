@@ -1,4 +1,4 @@
-import { apiFetch } from './api'
+import { apiFetch, parseErrorResponse } from './api'
 import type {
   BrokersResponse,
   BrokerConnectionsResponse,
@@ -20,8 +20,8 @@ const BROKER_API_BASE = '/api/v1/brokers'
 export async function getAvailableBrokers(): Promise<BrokersResponse> {
   const response = await apiFetch(`${BROKER_API_BASE}`)
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.detail || error.message || 'Failed to fetch available brokers')
+    const error = await parseErrorResponse(response)
+    throw error
   }
   return response.json()
 }

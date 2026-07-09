@@ -5,7 +5,7 @@ A full-stack application for constructing and analyzing investment portfolios us
 ## What It Does
 
 - **Portfolio Construction** — Define target allocations using ETFs and mutual funds, then track how your actual holdings compare
-- **Broker Integration** — Connect brokerage accounts via SnapTrade to sync positions automatically
+- **Broker Integration** — Connect brokerage accounts via the broker-gateway service to sync positions automatically
 - **Look-Through Analysis** — Decompose ETFs into underlying stock holdings to see true sector, geographic, and risk exposure
 - **Drift & Rebalancing** — Monitor portfolio drift from targets and generate trade orders to rebalance
 - **Instrument Screener** — Browse and filter 190k+ instruments across stocks, ETFs, mutual funds, preferred stocks, indices, and bonds
@@ -22,24 +22,24 @@ A full-stack application for constructing and analyzing investment portfolios us
 | Frontend | React 18 + TypeScript 5.6 + Vite 5 |
 | Database | PostgreSQL 16 + Flyway migrations |
 | Cache | Redis 7 |
-| Broker SDK | SnapTrade |
+| Broker Gateway | broker-gateway (Spring Boot, multi-adapter for Questrade/Wealthsimple/IBKR) |
 | Market Data | IBKR TWS API (real-time) |
 | Data Sources | EODHD, Alpha Vantage |
 | Containerization | Docker + Docker Compose |
 
 ## Project Structure
 
-```
-backend/common/        — Shared math/domain library (BlackScholes, Greeks, TradingCalendar)
-backend/portfolio/     — Main Spring Boot API (port 8080)
-backend/ingestion/     — Data ingestion microservice (port 8081)
-backend/market-data/   — Market data + IBKR + WebSocket streaming (port 8082)
-backend/strategy/      — Strategy engine + wheel writer (port 8083)
-frontend/              — React SPA (port 3000)
-config/                — Environment template (.env.example)
-docs/reference/        — Technical reference documentation
-docs/business-context.html — Architecture and module overview
-.archive/              — Completed design specs and plans
+backend/common/portfolio/     — Shared math/domain library (BlackScholes, Greeks, TradingCalendar)
+backend/portfolio/            — Main Spring Boot API (port 8080)
+backend/broker-gateway/       — Broker gateway abstraction layer (port 8084)
+backend/ingestion/            — Data ingestion microservice (port 8081)
+backend/market-data/          — Market data + IBKR + WebSocket streaming (port 8082)
+backend/strategy/             — Strategy engine + wheel writer (port 8083)
+frontend/                     — React SPA (port 3000)
+config/                       — Environment template (.env.example)
+docs/reference/               — Technical reference documentation
+docs/business-context.html    — Architecture and module overview
+.archive/                     — Completed design specs and plans
 ```
 
 ## Quick Start
@@ -81,7 +81,7 @@ Copy `config/.env.example` to `.env` at the project root. Key variables:
 
 | Variable | Description |
 |----------|-------------|
-| `SNAPTRADE_CLIENT_ID` / `SNAPTRADE_CONSUMER_KEY` | SnapTrade broker integration |
+| `BROKER_GATEWAY_URL` / `BROKER_GATEWAY_API_KEY` | Broker gateway service connection |
 | `EODHD_API_KEY` | Market data provider |
 | `IBKR_HOST` / `IBKR_PORT` | Interactive Brokers TWS/Gateway connection |
 | `BROKER_ENCRYPTION_KEY` | AES-256 key for token encryption |

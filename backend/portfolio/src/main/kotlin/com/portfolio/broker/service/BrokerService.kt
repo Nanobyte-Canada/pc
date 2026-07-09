@@ -52,7 +52,11 @@ class BrokerService(
             throw e.toExternalServiceException()
         } catch (e: Exception) {
             log.error("Failed to fetch available brokers from gateway", e)
-            emptyList()
+            throw ExternalServiceException(
+                code = "GATEWAY_UNREACHABLE",
+                message = "Broker gateway is unreachable. Please check your configuration.",
+                cause = e
+            )
         }
     }
 
@@ -166,7 +170,7 @@ class BrokerService(
 
     @Transactional
     fun reconnectConnection(user: User, gatewayConnectionId: String, credentials: Map<String, Any>) {
-        try {
+        val response = try {
             gatewayClient.reconnectConnection(gatewayConnectionId, credentials)
         } catch (e: GatewayApiException) {
             log.error("Gateway reconnect error for user {} connection {}: {} (code={})",
@@ -179,6 +183,20 @@ class BrokerService(
                 code = "BROKER_CONNECTION_FAILED",
                 message = "Failed to reconnect to broker service. Please try again later.",
                 cause = e
+            )
+        }
+
+        // Check the gateway response status — if validation failed, propagate error
+        val responseStatus = response.get("status")?.asText()
+        val errorMessage = response.get("errorMessage")?.asText()
+        if (responseStatus != null && responseStatus != "ACTIVE") {
+            val detail = errorMessage ?: "Gateway returned status: $responseStatus"
+            log.error("Gateway reconnect validation failed for user {} connection {}: {} (status={})",
+                user.id, gatewayConnectionId, detail, responseStatus)
+            throw ExternalServiceException(
+                code = "BROKER_RECONNECT_FAILED",
+                message = detail,
+                cause = null
             )
         }
 

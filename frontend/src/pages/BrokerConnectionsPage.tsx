@@ -15,6 +15,7 @@ import {
 } from '../hooks/useBrokerConnections'
 import { syncAllConnectionData } from '../services/brokerService'
 import type { SyncAllResponse } from '../services/brokerService'
+import { ApiError } from '../services/api'
 import type { ConnectBrokerRequest } from '../types/broker'
 import './BrokerConnectionsPage.css'
 
@@ -224,9 +225,7 @@ export function BrokerConnectionsPage() {
 
         {brokersError ? (
           <div className="broker-no-data broker-error">
-            {brokersError.message?.toLowerCase().includes('unreachable') ||
-             brokersError.message?.toLowerCase().includes('gateway') ||
-             brokersError.message?.toLowerCase().includes('bad gateway')
+            {brokersError instanceof ApiError && (brokersError.status === 502 || brokersError.code === 'BROKER_CONNECTION_FAILED' || brokersError.code === 'GATEWAY_UNREACHABLE')
               ? 'Broker gateway is unreachable. Please check your configuration.'
               : brokersError.message || 'Failed to load broker list. Please try again.'}
           </div>
