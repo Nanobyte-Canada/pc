@@ -4,6 +4,7 @@ import {
   getUserConnections,
   connectBroker,
   disconnectBroker,
+  reconnectBroker,
   triggerPositionFetch,
   getConnectionPositions,
   getAggregatedPositions,
@@ -72,6 +73,20 @@ export function useDisconnectBroker() {
 
   return useMutation({
     mutationFn: (authorizationId: string) => disconnectBroker(authorizationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: brokerKeys.connections() })
+      queryClient.invalidateQueries({ queryKey: brokerKeys.positions() })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
+    }
+  })
+}
+
+export function useReconnectBroker() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ connectionId, credentials }: { connectionId: string; credentials: Record<string, unknown> }) =>
+      reconnectBroker(connectionId, credentials),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brokerKeys.connections() })
       queryClient.invalidateQueries({ queryKey: brokerKeys.positions() })

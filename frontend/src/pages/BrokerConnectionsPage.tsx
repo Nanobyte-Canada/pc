@@ -9,6 +9,7 @@ import {
   useBrokerConnections,
   useConnectBroker,
   useDisconnectBroker,
+  useReconnectBroker,
   useSyncConnections,
   useSyncAll
 } from '../hooks/useBrokerConnections'
@@ -24,6 +25,7 @@ export function BrokerConnectionsPage() {
   const [isSyncingNewConnection, setIsSyncingNewConnection] = useState(false)
   const [syncStatus, setSyncStatus] = useState('')
   const [connectDialogBroker, setConnectDialogBroker] = useState<string | null>(null)
+  const [connectDialogConnectionId, setConnectDialogConnectionId] = useState<string | undefined>(undefined)
   const [connectError, setConnectError] = useState<string | null>(null)
   const syncCalledRef = useRef(false)
 
@@ -31,6 +33,7 @@ export function BrokerConnectionsPage() {
   const { data: connectionsData, isLoading: connectionsLoading, refetch: refetchConnections } = useBrokerConnections()
 
   const connectBroker = useConnectBroker()
+  const reconnectBroker = useReconnectBroker()
   const disconnectBroker = useDisconnectBroker()
   const sync = useSyncConnections()
   const syncAll = useSyncAll()
@@ -105,8 +108,29 @@ export function BrokerConnectionsPage() {
 
   const handleReconnect = (gatewayConnectionId: string) => {
     setConnectError(null)
+    setConnectDialogConnectionId(gatewayConnectionId)
     const connection = connections?.find(c => c.gatewayConnectionId === gatewayConnectionId)
     setConnectDialogBroker(connection?.broker?.slug || 'questrade')
+  }
+
+  const handleReconnectSubmit = (request: { connectionId: string; credentials: Record<string, unknown> }) => {
+    setConnectError(null)
+    reconnectBroker.mutate(
+      { connectionId: request.connectionId, credentials: request.credentials },
+      {
+        onSuccess: () => {
+          setConnectDialogBroker(null)
+          setConnectDialogConnectionId(undefined)
+          setNotification({
+            type: 'success',
+            message: 'Reconnected successfully!'
+          })
+        },
+        onError: (error) => {
+          setConnectError(error.message || 'Failed to reconnect. Please try again.')
+        }
+      }
+    )
   }
 
   const handleSyncAll = (connectionId: number) => {
@@ -259,9 +283,11 @@ export function BrokerConnectionsPage() {
         <ConnectBrokerDialog
           brokerType={connectDialogBroker}
           onConnect={handleConnectSubmit}
-          onCancel={() => { setConnectDialogBroker(null); setConnectError(null) }}
-          isConnecting={connectBroker.isPending}
+          onReconnect={handleReconnectSubmit}
+          onCancel={() => { setConnectDialogBroker(null); setConnectDialogConnectionId(undefined); setConnectError(null) }}
+          isConnecting={connectBroker.isPending || reconnectBroker.isPending}
           error={connectError}
+          connectionId={connectDialogConnectionId}
         />
       )}
     </div>

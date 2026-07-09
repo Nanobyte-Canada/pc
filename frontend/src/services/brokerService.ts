@@ -47,6 +47,18 @@ export async function connectBroker(request: ConnectBrokerRequest): Promise<Conn
   return response.json()
 }
 
+export async function reconnectBroker(connectionId: string, credentials: Record<string, unknown>): Promise<{ status: string; connectionId: string }> {
+  const response = await apiFetch(`${BROKER_API_BASE}/connections/${connectionId}/reconnect`, {
+    method: 'POST',
+    body: JSON.stringify({ credentials })
+  })
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}))
+    throw new Error(error.detail || error.message || 'Failed to reconnect to broker')
+  }
+  return response.json()
+}
+
 export async function disconnectBroker(authorizationId: string): Promise<void> {
   const response = await apiFetch(`${BROKER_API_BASE}/connections/${authorizationId}`, {
     method: 'DELETE'
