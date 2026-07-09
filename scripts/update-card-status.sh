@@ -3,25 +3,23 @@ set -euo pipefail
 
 # Update a GitHub Projects v2 card's Status field to a new lane.
 # The agent calls this after completing its phase to move the card
-# to the next lane (e.g., planner moves card from "Scoping" to "Scope Review").
+# to the next lane (e.g., planner moves card from "Triaging" to "Scope Review").
 #
 # Requires: GH_TOKEN env var, PROJECT_ID env var
-# Usage: ./update-card-status.sh --issue <NUMBER> --lane <LANE_NAME> [--repo <OWNER/REPO>] [--cascade]
+# Usage: ./update-card-status.sh --issue <NUMBER> --lane <LANE_NAME> [--repo <OWNER/REPO>]
 #
 # Example: ./update-card-status.sh --issue 38 --lane "Scope Review" --repo saurabhbilakhia/pc
-#
-#   --cascade   Also move child cards (issues with "Parent: #<NUMBER>" in body)
-#               to the same lane. Only meaningful for parent (non-child) issues.
 
 usage() {
-  echo "Usage: $0 --issue <NUMBER> --lane <LANE_NAME> [--repo <OWNER/REPO>] [--cascade]"
+  echo "Usage: $0 --issue <NUMBER> --lane <LANE_NAME> [--repo <OWNER/REPO>]"
+  echo "       $0 --all-children-of <PARENT_NUMBER> --lane <LANE_NAME> [--repo <OWNER/REPO>]"
   echo ""
   echo "Move a GitHub Projects v2 card to a new Status lane."
   echo ""
-  echo "  --issue   GitHub issue number linked to the card"
-  echo "  --lane    Target lane name (e.g., 'Scope Review', 'Planning', 'Executing')"
-  echo "  --repo    Repository in OWNER/REPO format (default: from GITHUB_REPOSITORY env var)"
-  echo "  --cascade Also move child cards (issues with 'Parent: #<NUMBER>' in body)"
+  echo "  --issue            GitHub issue number linked to the card"
+  echo "  --all-children-of  Move ALL child cards of a parent issue to the lane"
+  echo "  --lane             Target lane name (e.g., 'Scope Review', 'Planning')"
+  echo "  --repo             Repository in OWNER/REPO format (default: from GITHUB_REPOSITORY env)"
   echo ""
   echo "Required env vars:"
   echo "  GH_TOKEN      GitHub token with project:write scope"
@@ -31,28 +29,60 @@ usage() {
 die() { usage; exit 1; }
 
 ISSUE=""
+ALL_CHILDREN_OF=""
 LANE=""
 REPO="${GITHUB_REPOSITORY:-}"
-CASCADE=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --issue) ISSUE="$2"; shift 2 ;;
     --lane) LANE="$2"; shift 2 ;;
     --repo) REPO="$2"; shift 2 ;;
-    --cascade) CASCADE=true; shift ;;
+    --all-children-of) ALL_CHILDREN_OF="$2"; shift 2 ;;
     --help) usage; exit 0 ;;
     *) echo "Unknown: $1"; die ;;
   esac
 done
 
-[ -z "$ISSUE" ] && { echo "Error: --issue is required"; die; }
+if [ -z "$ALL_CHILDREN_OF" ] && [ -z "$ISSUE" ]; then
+  echo "Error: --issue is required (or use --all-children-of)"
+  die
+fi
 [ -z "$LANE" ] && { echo "Error: --lane is required"; die; }
 [ -z "$REPO" ] && { echo "Error: --repo is required (or set GITHUB_REPOSITORY env var)"; die; }
 [ -z "${GH_TOKEN:-}" ] && { echo "Error: GH_TOKEN env var is required"; die; }
 [ -z "${PROJECT_ID:-}" ] && { echo "Error: PROJECT_ID env var is required"; die; }
 
-OWNER=$(echo "$REPO" | cut -d'/' -f1)
+if [ -n "$ALL_CHILDREN_OF" ] && [ -n "$ISSUE" ]; then
+  echo "Error: --issue and --all-children-of are mutually exclusive"
+  die
+fi
+
+if [ -n "$ALL_CHILDREN_OF" ]; then
+  echo "Moving all children of parent issue #$ALL_CHILDREN_OF to '$LANE'"
+  # Query project items to find children linked to this parent
+  # Children are issues whose body contains "Parent: #<ALL_CHILDREN_OF>"
+  PARENT_ISSUE="$ALL_CHILDREN_OF"
+  # Look up all issues in the repo with Parent: #<N> in body
+  CHILD_ISSUES=$(gh issue list --repo "$REPO" --state all --limit 100 --json number,body --jq "
+    .[] | select(.body | test(\"Parent: #$PARENT_ISSUE\\\\b\")) | .number
+  ")
+  
+  if [ -z "$CHILD_ISSUES" ]; then
+    echo "No child issues found for parent #$PARENT_ISSUE"
+    exit 0
+  fi
+  
+  echo "Found child issues: $(echo "$CHILD_ISSUES" | tr '\n' ' ')"
+  
+  for CHILD in $CHILD_ISSUES; do
+    echo "Moving child #$CHILD..."
+    "$0" --issue "$CHILD" --lane "$LANE" --repo "$REPO"
+  done
+  
+  echo "✓ All child cards moved to '$LANE'"
+  exit 0
+fi
 
 # Step 1: Find the project item (card) linked to this issue
 # Query the project for items, find the one whose content matches our issue
@@ -72,25 +102,10 @@ query {
   }
 }" --jq ".data.node.items.nodes[] | select(.content.number == $ISSUE and .content.repository.nameWithOwner == \"$REPO\") | .id" 2>/dev/null || echo "")
 
-# Step 1a: If the issue is not on the board, add it automatically
 if [ -z "$ITEM_ID" ]; then
-  echo "Issue #$ISSUE not found on project board — adding it..."
-  ISSUE_NODE_ID=$(gh api "repos/$REPO/issues/$ISSUE" --jq '.node_id' 2>/dev/null || echo "")
-  if [ -z "$ISSUE_NODE_ID" ]; then
-    echo "Error: Could not resolve node_id for issue #$ISSUE"
-    exit 1
-  fi
-  ITEM_ID=$(gh api graphql -f query="
-mutation {
-  addProjectV2ItemById(input: {projectId: \"$PROJECT_ID\", contentId: \"$ISSUE_NODE_ID\"}) {
-    item { id }
-  }
-}" --jq '.data.addProjectV2ItemById.item.id' 2>/dev/null || echo "")
-  if [ -z "$ITEM_ID" ]; then
-    echo "Error: Failed to add issue #$ISSUE to project board"
-    exit 1
-  fi
-  echo "Added issue #$ISSUE to project board (item: $ITEM_ID)"
+  echo "Error: No project card found for issue #$ISSUE in repo $REPO"
+  echo "Make sure the issue is added to the Projects board."
+  exit 1
 fi
 
 echo "Found card: $ITEM_ID for issue #$ISSUE"
@@ -145,68 +160,3 @@ mutation {
 }" > /dev/null
 
 echo "✓ Card moved to '$LANE'"
-
-# Step 4: Cascade to child cards (if --cascade flag is set)
-if [ "$CASCADE" = true ]; then
-  echo "Looking for child cards (issues with 'Parent: #$ISSUE' in body)..."
-  CHILDREN=$(gh issue list --repo "$REPO" --search "\"Parent: #$ISSUE\" in:body" --state all --json number --jq '.[].number' 2>/dev/null || echo "")
-  if [ -z "$CHILDREN" ]; then
-    echo "No child cards found"
-  else
-    for CHILD in $CHILDREN; do
-      echo "  Moving child #$CHILD to '$LANE'..."
-
-      # Check if child is already on the board
-      CHILD_ITEM_ID=$(gh api graphql -f query="
-query {
-  node(id: \"$PROJECT_ID\") {
-    ... on ProjectV2 {
-      items(first: 100) {
-        nodes {
-          id
-          content {
-            ... on Issue { number repository { nameWithOwner } }
-          }
-        }
-      }
-    }
-  }
-}" --jq ".data.node.items.nodes[] | select(.content.number == $CHILD and .content.repository.nameWithOwner == \"$REPO\") | .id" 2>/dev/null || echo "")
-
-      if [ -z "$CHILD_ITEM_ID" ]; then
-        # Add child to board
-        CHILD_NODE_ID=$(gh api "repos/$REPO/issues/$CHILD" --jq '.node_id' 2>/dev/null || echo "")
-        if [ -z "$CHILD_NODE_ID" ]; then
-          echo "  ⚠ Could not resolve node_id for #$CHILD — skipping"
-          continue
-        fi
-        CHILD_ITEM_ID=$(gh api graphql -f query="
-mutation {
-  addProjectV2ItemById(input: {projectId: \"$PROJECT_ID\", contentId: \"$CHILD_NODE_ID\"}) {
-    item { id }
-  }
-}" --jq '.data.addProjectV2ItemById.item.id' 2>/dev/null || echo "")
-        if [ -z "$CHILD_ITEM_ID" ]; then
-          echo "  ⚠ Failed to add #$CHILD to board — skipping"
-          continue
-        fi
-        echo "  Added #$CHILD to project board"
-      fi
-
-      # Move child to same lane
-      gh api graphql -f query="
-mutation {
-  updateProjectV2ItemFieldValue(input: {
-    projectId: \"$PROJECT_ID\"
-    itemId: \"$CHILD_ITEM_ID\"
-    fieldId: \"$STATUS_FIELD_ID\"
-    value: { singleSelectOptionId: \"$OPTION_ID\" }
-  }) {
-    projectV2Item { id }
-  }
-}" > /dev/null
-
-      echo "  ✓ Child #$CHILD moved to '$LANE'"
-    done
-  fi
-fi
