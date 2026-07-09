@@ -7,6 +7,8 @@ import com.portfolio.auth.service.AuditService
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.portfolio.broker.client.BrokerGatewayClient
+import com.portfolio.broker.client.GatewayApiException
+import com.portfolio.broker.client.toExternalServiceException
 import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
@@ -79,6 +81,9 @@ class BrokerService(
     fun createGatewayConnection(user: User, brokerType: String, credentials: Map<String, Any>): List<BrokerConnection> {
         val response = try {
             gatewayClient.createConnection(user.id!!, brokerType, credentials)
+        } catch (e: GatewayApiException) {
+            log.error("Gateway API error for user {} connecting brokerType={}: {} (code={})", user.id, brokerType, e.message, e.gatewayErrorCode)
+            throw e.toExternalServiceException()
         } catch (e: Exception) {
             log.error("Gateway API error for user {} connecting brokerType={}: {}", user.id, brokerType, e.message)
             throw ExternalServiceException(

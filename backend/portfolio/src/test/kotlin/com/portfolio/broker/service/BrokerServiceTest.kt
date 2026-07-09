@@ -6,13 +6,16 @@ import com.portfolio.auth.entity.User
 import com.portfolio.auth.repository.UserRepository
 import com.portfolio.auth.service.AuditService
 import com.portfolio.broker.client.BrokerGatewayClient
+import com.portfolio.broker.client.GatewayApiException
 import com.portfolio.broker.dto.*
 import com.portfolio.broker.entity.*
 import com.portfolio.broker.repository.*
+import com.portfolio.exception.ExternalServiceException
 import io.mockk.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -143,6 +146,92 @@ class BrokerServiceTest {
 
         verify { connectionRepository.save(match { it.status == ConnectionStatus.DISCONNECTED }) }
         verify { gatewayClient.deleteConnection("gw-conn-123") }
+    }
+
+    // ========== Error Propagation Tests ==========
+
+    @Test
+    fun `createGatewayConnection propagates gateway error message on 401`() {
+        val user = createUser(1L)
+        val gatewayErrorBody = """{
+            "type": "about:blank",
+            "title": "Unauthorized",
+            "status": 401,
+            "detail": "Questrade rejected the token: invalid refresh token",
+            "instance": "/api/v1/gateway/connections",
+            "code": "BROKER_AUTH_FAILED",
+            "timestamp": "2026-07-08T05:00:00Z"
+        }"""
+
+        val rawBytes = gatewayErrorBody.toByteArray(Charsets.UTF_8)
+        val gatewayException = WebClientResponseException.create(
+            401, "Unauthorized", org.springframework.http.HttpHeaders.EMPTY, rawBytes, Charsets.UTF_8, null
+        )
+        val apiException = GatewayApiException(
+            gatewayStatusCode = 401,
+            gatewayErrorCode = "BROKER_AUTH_FAILED",
+            gatewayDetail = "Questrade rejected the token: invalid refresh token",
+            cause = gatewayException
+        )
+
+        every { gatewayClient.createConnection(1L, "QUESTRADE", any()) } throws apiException
+
+        val ex = assertThrows<ExternalServiceException> {
+            service.createGatewayConnection(user, "QUESTRADE", mapOf("refreshToken" to "invalid"))
+        }
+
+        assertEquals("BROKER_AUTH_FAILED", ex.code)
+        assertEquals("Questrade rejected the token: invalid refresh token", ex.message)
+    }
+
+    @Test
+    fun `createGatewayConnection returns generic message when gateway is unreachable`() {
+        val user = createUser(1L)
+
+        every { gatewayClient.createConnection(1L, "QUESTRADE", any()) } throws RuntimeException(
+            "Connection refused"
+        )
+
+        val ex = assertThrows<ExternalServiceException> {
+            service.createGatewayConnection(user, "QUESTRADE", mapOf("refreshToken" to "some_token"))
+        }
+
+        assertEquals("BROKER_CONNECTION_FAILED", ex.code)
+        assertEquals("Failed to connect to broker service. Please try again later.", ex.message)
+    }
+
+    @Test
+    fun `createGatewayConnection propagates gateway error message on 502`() {
+        val user = createUser(1L)
+        val gatewayErrorBody = """{
+            "type": "about:blank",
+            "title": "Bad Gateway",
+            "status": 502,
+            "detail": "Broker gateway is unreachable",
+            "instance": "/api/v1/gateway/connections",
+            "code": "BROKER_CONNECTION_FAILED",
+            "timestamp": "2026-07-08T05:00:00Z"
+        }"""
+
+        val rawBytes = gatewayErrorBody.toByteArray(Charsets.UTF_8)
+        val gatewayException = WebClientResponseException.create(
+            502, "Bad Gateway", org.springframework.http.HttpHeaders.EMPTY, rawBytes, Charsets.UTF_8, null
+        )
+        val apiException = GatewayApiException(
+            gatewayStatusCode = 502,
+            gatewayErrorCode = "BROKER_CONNECTION_FAILED",
+            gatewayDetail = "Broker gateway is unreachable",
+            cause = gatewayException
+        )
+
+        every { gatewayClient.createConnection(1L, "QUESTRADE", any()) } throws apiException
+
+        val ex = assertThrows<ExternalServiceException> {
+            service.createGatewayConnection(user, "QUESTRADE", mapOf("refreshToken" to "some_token"))
+        }
+
+        assertEquals("BROKER_CONNECTION_FAILED", ex.code)
+        assertEquals("Broker gateway is unreachable", ex.message)
     }
 
     // ========== Helper Methods ==========

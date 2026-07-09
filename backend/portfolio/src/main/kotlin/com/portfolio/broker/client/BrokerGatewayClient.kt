@@ -96,7 +96,7 @@ class BrokerGatewayClient(
                 .block(timeout) ?: objectMapper.createObjectNode()
         } catch (e: WebClientResponseException) {
             log.error("Gateway GET {} failed: {} {}", path, e.statusCode, e.responseBodyAsString)
-            throw e
+            throw toGatewayApiException(e)
         }
     }
 
@@ -109,7 +109,7 @@ class BrokerGatewayClient(
                 .block(timeout) ?: objectMapper.createObjectNode()
         } catch (e: WebClientResponseException) {
             log.error("Gateway POST {} failed: {} {}", path, e.statusCode, e.responseBodyAsString)
-            throw e
+            throw toGatewayApiException(e)
         }
     }
 
@@ -121,7 +121,27 @@ class BrokerGatewayClient(
                 .block(timeout)
         } catch (e: WebClientResponseException) {
             log.error("Gateway DELETE {} failed: {} {}", path, e.statusCode, e.responseBodyAsString)
-            throw e
+            throw toGatewayApiException(e)
         }
+    }
+
+    /**
+     * Converts a [WebClientResponseException] from the gateway into a [GatewayApiException]
+     * that preserves the gateway's error code and detail message from the ProblemDetail response body.
+     */
+    private fun toGatewayApiException(e: WebClientResponseException): GatewayApiException {
+        val body = try {
+            objectMapper.readTree(e.responseBodyAsString)
+        } catch (_: Exception) {
+            null
+        }
+        val detail = body?.get("detail")?.asText()
+        val code = body?.get("code")?.asText()
+        return GatewayApiException(
+            gatewayStatusCode = e.statusCode.value(),
+            gatewayErrorCode = code,
+            gatewayDetail = detail,
+            cause = e
+        )
     }
 }
