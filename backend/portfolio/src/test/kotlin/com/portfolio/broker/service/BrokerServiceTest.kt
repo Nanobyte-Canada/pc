@@ -201,6 +201,69 @@ class BrokerServiceTest {
     }
 
     @Test
+    fun `reconnectConnection updates local connection status on success`() {
+        val user = createUser(1L)
+        val gatewayConnectionId = "gw-conn-reconnect"
+        val connection = BrokerConnection(
+            id = 100L,
+            user = user,
+            gatewayConnectionId = gatewayConnectionId,
+            accountIdExternal = "acc-ext-1",
+            accountNumber = "12345",
+            accountType = "TFSA",
+            accountName = "Test Account",
+            status = ConnectionStatus.ERROR
+        )
+
+        every { gatewayClient.reconnectConnection(gatewayConnectionId, any()) } returns objectMapper.createObjectNode()
+        every { connectionRepository.findByGatewayConnectionId(gatewayConnectionId) } returns listOf(connection)
+        every { connectionRepository.save(any()) } answers { firstArg() }
+
+        service.reconnectConnection(user, gatewayConnectionId, mapOf("refreshToken" to "new_token"))
+
+        verify { gatewayClient.reconnectConnection(gatewayConnectionId, any()) }
+        verify { connectionRepository.save(match { it.status == ConnectionStatus.ACTIVE }) }
+    }
+
+    @Test
+    fun `reconnectConnection propagates GatewayApiException`() {
+        val user = createUser(1L)
+        val gatewayConnectionId = "gw-conn-reconnect"
+
+        val apiException = GatewayApiException(
+            gatewayStatusCode = 401,
+            gatewayErrorCode = "BROKER_AUTH_FAILED",
+            gatewayDetail = "Invalid refresh token"
+        )
+        every { gatewayClient.reconnectConnection(gatewayConnectionId, any()) } throws apiException
+
+        val ex = assertThrows<ExternalServiceException> {
+            service.reconnectConnection(user, gatewayConnectionId, mapOf("refreshToken" to "invalid"))
+        }
+
+        assertEquals("BROKER_AUTH_FAILED", ex.code)
+        assertEquals("Invalid refresh token", ex.message)
+        verify(exactly = 0) { connectionRepository.save(any()) }
+    }
+
+    @Test
+    fun `reconnectConnection returns generic message when gateway is unreachable`() {
+        val user = createUser(1L)
+        val gatewayConnectionId = "gw-conn-unreachable"
+
+        every { gatewayClient.reconnectConnection(gatewayConnectionId, any()) } throws RuntimeException(
+            "Connection refused"
+        )
+
+        val ex = assertThrows<ExternalServiceException> {
+            service.reconnectConnection(user, gatewayConnectionId, mapOf("refreshToken" to "some_token"))
+        }
+
+        assertEquals("BROKER_CONNECTION_FAILED", ex.code)
+        assertEquals("Failed to reconnect to broker service. Please try again later.", ex.message)
+    }
+
+    @Test
     fun `createGatewayConnection propagates gateway error message on 502`() {
         val user = createUser(1L)
         val gatewayErrorBody = """{

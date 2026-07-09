@@ -48,6 +48,10 @@ class BrokerGatewayClient(
         return post("/api/v1/gateway/connections/$connectionId/refresh", emptyMap<String, Any>())
     }
 
+    fun reconnectConnection(connectionId: String, credentials: Map<String, Any>): JsonNode {
+        return post("/api/v1/gateway/connections/$connectionId/reconnect", mapOf("credentials" to credentials))
+    }
+
     fun listAccounts(connectionId: String): JsonNode {
         return get("/api/v1/gateway/connections/$connectionId/accounts")
     }

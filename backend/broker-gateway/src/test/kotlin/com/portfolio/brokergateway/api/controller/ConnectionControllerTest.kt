@@ -9,6 +9,7 @@ import com.portfolio.brokergateway.adapter.BrokerType
 import com.portfolio.brokergateway.adapter.dto.ConnectionValidationResult
 import com.portfolio.brokergateway.api.dto.ConnectionResponse
 import com.portfolio.brokergateway.api.dto.CreateConnectionRequest
+import com.portfolio.brokergateway.api.dto.ReconnectRequest
 import com.portfolio.brokergateway.config.AdapterRegistry
 import com.portfolio.brokergateway.credential.CredentialService
 import com.portfolio.brokergateway.credential.GatewayConnection
@@ -197,6 +198,94 @@ class ConnectionControllerTest {
         val response = controller.createConnection(request)
 
         assertEquals(HttpStatus.CREATED, response.statusCode)
+        val body = response.body
+        assertNotNull(body)
+        assertEquals("ERROR", body!!.status)
+        assertEquals("Invalid API server", body.errorMessage)
+
+        verify { credentialService.updateStatus(testConnectionId, "ERROR", "Invalid API server") }
+    }
+
+    @Test
+    fun `reconnectConnection updates credentials and returns 200`() {
+        val request = ReconnectRequest(
+            credentials = mapOf("refreshToken" to "new_refresh_token")
+        )
+        val existingConnection = createTestGatewayConnection("ACTIVE")
+
+        every { credentialService.getConnection(testConnectionId) } returns existingConnection
+        every { adapterRegistry.getAdapter(BrokerType.QUESTRADE) } returns adapter
+        every { credentialService.updateCredentials(testConnectionId, any()) } returns Unit
+        every { adapter.refreshAuth(any()) } returns refreshedCredentials
+        every { adapter.validateConnection(refreshedCredentials) } returns ConnectionValidationResult(connected = true)
+        every { adapter.listAccounts(refreshedCredentials) } returns emptyList()
+        every { credentialService.updateStatus(testConnectionId, "ACTIVE", null) } returns Unit
+        every { credentialService.updateAccountsJson(testConnectionId, "[]") } returns Unit
+        every { credentialService.clearError(testConnectionId) } returns Unit
+
+        val response = controller.reconnectConnection(testConnectionId, request)
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+        val body = response.body
+        assertNotNull(body)
+        assertEquals(testConnectionId, body.connectionId)
+        assertEquals(BrokerType.QUESTRADE, body.brokerType)
+
+        verify { credentialService.updateCredentials(testConnectionId, any()) }
+        verify { adapter.refreshAuth(any()) }
+        verify { adapter.validateConnection(any()) }
+        verify { credentialService.clearError(testConnectionId) }
+    }
+
+    @Test
+    fun `reconnectConnection propagates BrokerAuthenticationException`() {
+        val request = ReconnectRequest(
+            credentials = mapOf("refreshToken" to "invalid_token")
+        )
+        val existingConnection = createTestGatewayConnection("ACTIVE")
+
+        every { credentialService.getConnection(testConnectionId) } returns existingConnection
+        every { adapterRegistry.getAdapter(BrokerType.QUESTRADE) } returns adapter
+        every { credentialService.updateCredentials(testConnectionId, any()) } returns Unit
+        every { adapter.refreshAuth(any()) } throws BrokerAuthenticationException(
+            message = "Questrade rejected the token",
+            brokerType = BrokerType.QUESTRADE
+        )
+
+        try {
+            controller.reconnectConnection(testConnectionId, request)
+            throw AssertionError("Expected BrokerAuthenticationException to propagate")
+        } catch (e: BrokerAuthenticationException) {
+            assertEquals("Questrade rejected the token", e.message)
+        }
+
+        verify { credentialService.updateCredentials(testConnectionId, any()) }
+        verify { adapter.refreshAuth(any()) }
+        verify(exactly = 0) { adapter.validateConnection(any()) }
+    }
+
+    @Test
+    fun `reconnectConnection returns 200 with ERROR status when validation fails`() {
+        val request = ReconnectRequest(
+            credentials = mapOf("refreshToken" to "new_refresh_token")
+        )
+        val existingConnection = createTestGatewayConnection("ACTIVE")
+
+        every { credentialService.getConnection(testConnectionId) } returns existingConnection
+        every { adapterRegistry.getAdapter(BrokerType.QUESTRADE) } returns adapter
+        every { credentialService.updateCredentials(testConnectionId, any()) } returns Unit
+        every { adapter.refreshAuth(any()) } returns refreshedCredentials
+        every { credentialService.updateCredentials(testConnectionId, refreshedCredentials) } returns Unit
+        every { adapter.validateConnection(refreshedCredentials) } returns ConnectionValidationResult(
+            connected = false,
+            message = "Invalid API server"
+        )
+        every { credentialService.updateStatus(testConnectionId, "ERROR", "Invalid API server") } returns Unit
+        every { credentialService.getConnection(testConnectionId) } returns createTestGatewayConnection("ERROR", "Invalid API server")
+
+        val response = controller.reconnectConnection(testConnectionId, request)
+
+        assertEquals(HttpStatus.OK, response.statusCode)
         val body = response.body
         assertNotNull(body)
         assertEquals("ERROR", body!!.status)

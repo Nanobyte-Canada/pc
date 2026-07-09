@@ -6,6 +6,7 @@ import com.portfolio.brokergateway.adapter.BrokerType
 import com.portfolio.brokergateway.api.dto.ConnectionListResponse
 import com.portfolio.brokergateway.api.dto.ConnectionResponse
 import com.portfolio.brokergateway.api.dto.CreateConnectionRequest
+import com.portfolio.brokergateway.api.dto.ReconnectRequest
 import com.portfolio.brokergateway.config.AdapterRegistry
 import com.portfolio.brokergateway.credential.CredentialService
 import com.portfolio.brokergateway.credential.GatewayConnection
@@ -100,9 +101,45 @@ class ConnectionController(
         return ResponseEntity.ok(mapOf("status" to "REFRESHED"))
     }
 
-    private fun parseCredentials(request: CreateConnectionRequest): BrokerCredentials {
+    @PostMapping("/{connectionId}/reconnect")
+    fun reconnectConnection(
+        @PathVariable connectionId: String,
+        @RequestBody request: ReconnectRequest
+    ): ResponseEntity<ConnectionResponse> {
+        val existing = credentialService.getConnection(connectionId)
+        val adapter = adapterRegistry.getAdapter(BrokerType.valueOf(existing.brokerType))
+        var credentials = parseCredentialsFromMap(existing.brokerType, request.credentials)
+
+        // Update stored credentials
+        credentialService.updateCredentials(connectionId, credentials)
+
+        // Validate the new credentials by refreshing
+        val refreshed = adapter.refreshAuth(credentials)
+        if (refreshed !== credentials) {
+            credentials = refreshed
+            credentialService.updateCredentials(connectionId, credentials)
+        }
+
+        val validation = adapter.validateConnection(credentials)
+        if (!validation.connected) {
+            credentialService.updateStatus(connectionId, "ERROR", validation.message)
+        } else {
+            credentialService.updateStatus(connectionId, "ACTIVE")
+            credentialService.clearError(connectionId)
+            val accounts = adapter.listAccounts(credentials)
+            credentialService.updateAccountsJson(connectionId, objectMapper.writeValueAsString(accounts))
+        }
+
+        val updated = credentialService.getConnection(connectionId)
+        return ResponseEntity.ok(toResponse(updated))
+    }
+
+    private fun parseCredentials(request: CreateConnectionRequest): BrokerCredentials =
+        parseCredentialsFromMap(request.brokerType.name, request.credentials)
+
+    private fun parseCredentialsFromMap(brokerTypeName: String, credentialsMap: Map<String, Any>): BrokerCredentials {
         val json = objectMapper.writeValueAsString(
-            request.credentials + ("brokerType" to request.brokerType.name)
+            credentialsMap + ("brokerType" to brokerTypeName)
         )
         return objectMapper.readValue(json, BrokerCredentials::class.java)
     }

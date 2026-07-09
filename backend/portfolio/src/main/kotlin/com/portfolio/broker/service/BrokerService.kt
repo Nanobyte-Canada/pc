@@ -162,6 +162,37 @@ class BrokerService(
     }
 
     @Transactional
+    fun reconnectConnection(user: User, gatewayConnectionId: String, credentials: Map<String, Any>) {
+        try {
+            gatewayClient.reconnectConnection(gatewayConnectionId, credentials)
+        } catch (e: GatewayApiException) {
+            log.error("Gateway reconnect error for user {} connection {}: {} (code={})",
+                user.id, gatewayConnectionId, e.message, e.gatewayErrorCode)
+            throw e.toExternalServiceException()
+        } catch (e: Exception) {
+            log.error("Gateway reconnect error for user {} connection {}: {}",
+                user.id, gatewayConnectionId, e.message)
+            throw ExternalServiceException(
+                code = "BROKER_CONNECTION_FAILED",
+                message = "Failed to reconnect to broker service. Please try again later.",
+                cause = e
+            )
+        }
+
+        // Update local connection status to ACTIVE and clear errors
+        val connections = connectionRepository.findByGatewayConnectionId(gatewayConnectionId)
+            .filter { it.user.id == user.id }
+        connections.forEach { connection ->
+            connection.status = ConnectionStatus.ACTIVE
+            connection.clearError()
+            connectionRepository.save(connection)
+        }
+
+        log.info("Reconnected gateway connection {} for user {} ({} accounts)",
+            gatewayConnectionId, user.id, connections.size)
+    }
+
+    @Transactional
     fun syncConnections(userId: Long) {
         userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
         log.info("Starting connection sync for user {}: validating gateway connections...", userId)

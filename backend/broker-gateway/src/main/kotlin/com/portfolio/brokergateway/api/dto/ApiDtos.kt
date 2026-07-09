@@ -13,6 +13,10 @@ data class CreateConnectionRequest(
     val credentials: Map<String, Any>
 )
 
+data class ReconnectRequest(
+    val credentials: Map<String, Any>
+)
+
 data class ConnectionResponse(
     val connectionId: String,
     val brokerType: BrokerType,
