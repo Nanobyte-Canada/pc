@@ -1,0 +1,213 @@
+/* ====== BrokerStatusCard — Verdant Dark ====== */
+
+.broker-status-section {
+  margin-bottom: 32px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+}
+
+.broker-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.broker-status-header h2 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.broker-status-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.broker-status-refresh-btn:hover {
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+}
+
+.broker-status-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.broker-status-refresh-btn .spinning {
+  animation: broker-status-spin 1s linear infinite;
+}
+
+@keyframes broker-status-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* -- Loading state -- */
+.broker-status-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.broker-status-loading .spinning {
+  animation: broker-status-spin 1s linear infinite;
+}
+
+/* -- Error state -- */
+.broker-status-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 0;
+  color: var(--error);
+}
+
+.broker-status-error-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.broker-status-error-title {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.broker-status-error-detail {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* -- Gateway status banner -- */
+.broker-status-gateway {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.broker-status-gateway.up {
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--success);
+}
+
+.broker-status-gateway.down {
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--error);
+}
+
+/* -- Broker status list -- */
+.broker-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.broker-status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+}
+
+.broker-status-item.enabled {
+  border-left: 3px solid var(--success);
+}
+
+.broker-status-item.disabled {
+  border-left: 3px solid var(--text-muted);
+  opacity: 0.7;
+}
+
+.broker-status-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.broker-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.broker-status-dot.dot-enabled {
+  background: var(--success);
+}
+
+.broker-status-dot.dot-disabled {
+  background: var(--text-muted);
+}
+
+.broker-status-item-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.broker-status-item-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.broker-status-item-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.badge-enabled {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success);
+}
+
+.badge-disabled {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text-muted);
+}
+
+.broker-status-item-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: monospace;
+  background: var(--bg-tertiary);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.broker-status-empty {
+  padding: 12px 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}

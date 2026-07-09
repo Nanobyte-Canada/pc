@@ -68,11 +68,16 @@ export function BrokerCard({ broker, onConnect, isConnecting, hasExistingConnect
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick() }}
       title={
         broker.maintenanceMode ? `${broker.name} is in maintenance`
+        : broker.enabled === false ? `${broker.name} is disabled (gateway configuration required)`
         : isConnecting ? 'Connecting...'
         : hasExistingConnection ? `Add another ${broker.name} account`
         : `Connect to ${broker.name}`
       }
     >
+      {broker.enabled === false && (
+        <span className="broker-card-status-badge disabled">Disabled</span>
+      )}
+
       {broker.maintenanceMode && (
         <span className="broker-card-status-badge maintenance">Maintenance</span>
       )}

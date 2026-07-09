@@ -6,7 +6,8 @@ export const brokerKeys = {
   connectionPositions: (id: number) => [...brokerKeys.positions(), id] as const,
   aggregatedPositions: () => [...brokerKeys.positions(), 'aggregated'] as const,
   activities: (id: number) => [...brokerKeys.all, 'activities', id] as const,
-  balanceHistory: (id: number) => [...brokerKeys.all, 'balance-history', id] as const
+  balanceHistory: (id: number) => [...brokerKeys.all, 'balance-history', id] as const,
+  gatewayHealth: () => [...brokerKeys.all, 'gateway-health'] as const
 }
 
 export const dashboardKeys = {

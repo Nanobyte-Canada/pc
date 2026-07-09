@@ -26,6 +26,27 @@ export async function getAvailableBrokers(): Promise<BrokersResponse> {
   return response.json()
 }
 
+// ========== Gateway Health ==========
+
+export interface GatewayBrokerHealth {
+  brokerType: string
+  enabled: boolean
+  status: string
+}
+
+export interface GatewayHealthResponse {
+  status: string
+  brokers: GatewayBrokerHealth[]
+}
+
+export async function getGatewayHealth(): Promise<GatewayHealthResponse> {
+  const response = await apiFetch(`${BROKER_API_BASE}/gateway/health`)
+  if (!response.ok) {
+    throw new Error('Failed to fetch gateway health')
+  }
+  return response.json()
+}
+
 // ========== Connection Management ==========
 
 export async function getUserConnections(): Promise<BrokerConnectionsResponse> {

@@ -81,6 +81,11 @@
   color: var(--warning);
 }
 
+.broker-card-status-badge.disabled {
+  background-color: rgba(148, 163, 184, 0.15);
+  color: var(--text-muted);
+}
+
 /* -- Broker icon (colored letter badge) -- */
 .broker-card-icon {
   width: 48px;

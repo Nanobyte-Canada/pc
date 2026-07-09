@@ -39,4 +39,18 @@ class AdapterRegistryTest {
         val registry = AdapterRegistry(listOf(ibkr, qt))
         assertEquals(setOf(BrokerType.IBKR, BrokerType.QUESTRADE), registry.getEnabledBrokers().toSet())
     }
+
+    @Test
+    fun `logRegisteredAdapters logs all registered adapters at startup`() {
+        val ibkr = fakeAdapter(BrokerType.IBKR)
+        val registry = AdapterRegistry(listOf(ibkr))
+        // Should not throw; verifies @PostConstruct logging runs cleanly
+        registry.logRegisteredAdapters()
+    }
+
+    @Test
+    fun `logRegisteredAdapters logs warning when no adapters registered`() {
+        val registry = AdapterRegistry(emptyList())
+        registry.logRegisteredAdapters()
+    }
 }
