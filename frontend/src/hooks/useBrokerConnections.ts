@@ -12,7 +12,8 @@ import {
   getConnectionActivities,
   syncConnectionActivities,
   syncAllConnectionData,
-  getBalanceHistory
+  getBalanceHistory,
+  getGatewayHealth
 } from '../services/brokerService'
 import type { ConnectBrokerRequest } from '../types/broker'
 import { brokerKeys, dashboardKeys } from './queryKeys'
@@ -155,6 +156,14 @@ export function useSyncAll() {
       queryClient.invalidateQueries({ queryKey: brokerKeys.all })
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
     }
+  })
+}
+
+export function useGatewayHealth() {
+  return useQuery({
+    queryKey: brokerKeys.gatewayHealth(),
+    queryFn: getGatewayHealth,
+    staleTime: 30 * 1000 // 30 seconds
   })
 }
 

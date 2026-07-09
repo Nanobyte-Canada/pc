@@ -4,12 +4,14 @@ import { BrokerCard } from '../components/broker/BrokerCard'
 import { BrokerageMatrix } from '../components/broker/BrokerageMatrix'
 import { BrokerConnectionCard } from '../components/broker/BrokerConnectionCard'
 import { ConnectBrokerDialog } from '../components/broker/ConnectBrokerDialog'
+import { BrokerStatusCard } from '../components/broker/BrokerStatusCard'
 import {
   useAvailableBrokers,
   useBrokerConnections,
   useConnectBroker,
   useDisconnectBroker,
   useReconnectBroker,
+  useGatewayHealth,
   useSyncConnections,
   useSyncAll
 } from '../hooks/useBrokerConnections'
@@ -32,6 +34,7 @@ export function BrokerConnectionsPage() {
 
   const { data: brokersData, isLoading: brokersLoading, error: brokersError } = useAvailableBrokers()
   const { data: connectionsData, isLoading: connectionsLoading, refetch: refetchConnections } = useBrokerConnections()
+  const { data: gatewayHealth, isLoading: gatewayLoading, error: gatewayError, refetch: refetchGateway } = useGatewayHealth()
 
   const connectBroker = useConnectBroker()
   const reconnectBroker = useReconnectBroker()
@@ -201,6 +204,14 @@ export function BrokerConnectionsPage() {
         </div>
       )}
 
+      {/* Gateway Status — shows gateway health and per-broker status */}
+      <BrokerStatusCard
+        health={gatewayHealth}
+        isLoading={gatewayLoading}
+        error={gatewayError}
+        onRefresh={refetchGateway}
+      />
+
       {/* Available Brokers — primary section, above connected accounts */}
       <section className="broker-section">
         <div className="broker-section-header">
@@ -230,27 +241,34 @@ export function BrokerConnectionsPage() {
               : brokersError.message || 'Failed to load broker list. Please try again.'}
           </div>
         ) : brokers.length > 0 ? (
-          brokerView === 'cards' ? (
-            <div className="broker-cards-grid">
-              {brokers.map((broker, index) => (
-                <BrokerCard
-                  key={broker.slug || index}
-                  broker={broker}
-                  onConnect={handleConnect}
-                  isConnecting={connectBroker.isPending}
-                  hasExistingConnection={connectedBrokerSlugs.has(broker.slug || '')}
-                  connections={connections}
-                />
-              ))}
-            </div>
-          ) : (
-            <BrokerageMatrix
-              brokers={brokers}
-              onConnect={handleConnect}
-              connectedSlugs={connectedBrokerSlugs}
-              isConnecting={connectBroker.isPending}
-            />
-          )
+          <>
+            {brokers.every(b => b.enabled === false) && (
+              <div className="broker-info-banner">
+                No brokers are currently enabled. Check your broker gateway configuration (environment variables) to enable brokers.
+              </div>
+            )}
+            {brokerView === 'cards' ? (
+              <div className="broker-cards-grid">
+                {brokers.map((broker, index) => (
+                  <BrokerCard
+                    key={broker.slug || index}
+                    broker={broker}
+                    onConnect={handleConnect}
+                    isConnecting={connectBroker.isPending}
+                    hasExistingConnection={connectedBrokerSlugs.has(broker.slug || '')}
+                    connections={connections}
+                  />
+                ))}
+              </div>
+            ) : (
+              <BrokerageMatrix
+                brokers={brokers}
+                onConnect={handleConnect}
+                connectedSlugs={connectedBrokerSlugs}
+                isConnecting={connectBroker.isPending}
+              />
+            )}
+          </>
         ) : (
           <div className="broker-no-data">
             No brokerages available. Check your broker gateway configuration.

@@ -165,6 +165,18 @@
   }
 }
 
+/* -- Info banner (all brokers disabled) -- */
+.broker-info-banner {
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.12);
+  color: var(--warning);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
 /* -- No data / Empty -- */
 .broker-no-data {
   color: var(--text-muted);

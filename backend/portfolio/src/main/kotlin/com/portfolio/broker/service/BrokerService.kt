@@ -36,17 +36,36 @@ class BrokerService(
     fun getAvailableBrokers(): List<BrokerDto> {
         return try {
             val health = gatewayClient.getHealth()
-            val brokersNode = health.get("brokers") ?: return emptyList()
+            val gatewayStatus = health.get("status")?.asText() ?: "UNKNOWN"
+            val brokersNode = health.get("brokers")
 
-            brokersNode.filter { it.get("enabled")?.asBoolean() == true }
-                .map { broker ->
-                    BrokerDto(
-                        name = broker.get("brokerType")?.asText() ?: "Unknown",
-                        slug = broker.get("brokerType")?.asText()?.lowercase(),
-                        enabled = broker.get("enabled")?.asBoolean(),
-                        status = broker.get("status")?.asText()
-                    )
-                }
+            if (brokersNode == null || !brokersNode.isArray) {
+                log.warn("Gateway health response missing brokers array. Gateway status: {}. Full response: {}", gatewayStatus, health)
+                return emptyList()
+            }
+
+            val allBrokers = brokersNode.map { broker ->
+                BrokerDto(
+                    name = broker.get("brokerType")?.asText() ?: "Unknown",
+                    slug = broker.get("brokerType")?.asText()?.lowercase(),
+                    enabled = broker.get("enabled")?.asBoolean(),
+                    status = broker.get("status")?.asText()
+                )
+            }
+
+            val total = allBrokers.size
+            val enabledCount = allBrokers.count { it.enabled == true }
+            val disabledCount = allBrokers.count { it.enabled == false }
+
+            if (total == 0 || enabledCount == 0) {
+                log.warn("No enabled brokers available. Total brokers from gateway: {}, enabled: {}, disabled: {}. Gateway status: {}. Full health response: {}",
+                    total, enabledCount, disabledCount, gatewayStatus, health)
+            } else {
+                log.info("Broker listing: {} brokers from gateway ({} enabled, {} disabled). Gateway status: {}",
+                    total, enabledCount, disabledCount, gatewayStatus)
+            }
+
+            allBrokers
         } catch (e: GatewayApiException) {
             log.error("Broker gateway is unreachable or returned error: {} (code={})", e.message, e.gatewayErrorCode)
             throw e.toExternalServiceException()

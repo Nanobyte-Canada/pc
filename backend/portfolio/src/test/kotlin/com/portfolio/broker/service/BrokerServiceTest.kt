@@ -52,6 +52,96 @@ class BrokerServiceTest {
         )
     }
 
+    // ========== Broker Listing Tests ==========
+
+    @Test
+    fun `getAvailableBrokers returns all brokers from gateway including disabled`() {
+        val healthResponse = objectMapper.createObjectNode()
+        healthResponse.put("status", "UP")
+        val brokersArray = healthResponse.putArray("brokers")
+        val ibkr = brokersArray.addObject()
+        ibkr.put("brokerType", "IBKR")
+        ibkr.put("enabled", true)
+        ibkr.put("status", "OK")
+        val questrade = brokersArray.addObject()
+        questrade.put("brokerType", "QUESTRADE")
+        questrade.put("enabled", false)
+        questrade.put("status", "DISABLED")
+        val wealthsimple = brokersArray.addObject()
+        wealthsimple.put("brokerType", "WEALTHSIMPLE")
+        wealthsimple.put("enabled", false)
+        wealthsimple.put("status", "DISABLED")
+
+        every { gatewayClient.getHealth() } returns healthResponse
+
+        val result = service.getAvailableBrokers()
+
+        assertEquals(3, result.size)
+        assertEquals("IBKR", result[0].name)
+        assertEquals(true, result[0].enabled)
+        assertEquals("QUESTRADE", result[1].name)
+        assertEquals(false, result[1].enabled)
+        assertEquals("WEALTHSIMPLE", result[2].name)
+        assertEquals(false, result[2].enabled)
+    }
+
+    @Test
+    fun `getAvailableBrokers returns all brokers when all are disabled`() {
+        val healthResponse = objectMapper.createObjectNode()
+        healthResponse.put("status", "UP")
+        val brokersArray = healthResponse.putArray("brokers")
+        val ibkr = brokersArray.addObject()
+        ibkr.put("brokerType", "IBKR")
+        ibkr.put("enabled", false)
+        ibkr.put("status", "DISABLED")
+
+        every { gatewayClient.getHealth() } returns healthResponse
+
+        val result = service.getAvailableBrokers()
+
+        assertEquals(1, result.size)
+        assertEquals(false, result[0].enabled)
+    }
+
+    @Test
+    fun `getAvailableBrokers returns empty list when brokers array missing`() {
+        val healthResponse = objectMapper.createObjectNode()
+        healthResponse.put("status", "UP")
+
+        every { gatewayClient.getHealth() } returns healthResponse
+
+        val result = service.getAvailableBrokers()
+
+        assertEquals(0, result.size)
+    }
+
+    @Test
+    fun `getAvailableBrokers throws GATEWAY_UNREACHABLE on generic exception`() {
+        every { gatewayClient.getHealth() } throws RuntimeException("Connection refused")
+
+        val ex = assertThrows<ExternalServiceException> {
+            service.getAvailableBrokers()
+        }
+
+        assertEquals("GATEWAY_UNREACHABLE", ex.code)
+    }
+
+    @Test
+    fun `getAvailableBrokers throws when gateway is unreachable`() {
+        val apiException = GatewayApiException(
+            gatewayStatusCode = 502,
+            gatewayErrorCode = "BROKER_CONNECTION_FAILED",
+            gatewayDetail = "Broker gateway is unreachable"
+        )
+        every { gatewayClient.getHealth() } throws apiException
+
+        val ex = assertThrows<ExternalServiceException> {
+            service.getAvailableBrokers()
+        }
+
+        assertEquals("BROKER_CONNECTION_FAILED", ex.code)
+    }
+
     // ========== Connection Management Tests ==========
 
     @Test
