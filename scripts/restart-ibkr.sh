@@ -69,14 +69,16 @@ Usage: $(basename "$0") [OPTIONS]
 Restart IBKR TWS API connection services (IB Gateway and market-data).
 
 Options:
-  --env <env>    Target environment: uat, prod, or all (default: all)
-  --help         Display this help message and exit
+  --env <env>        Target environment: uat, prod, or all (default: all)
+  --skip-gateway     Skip IB Gateway restart (useful when only market-data needs restarting)
+  --help             Display this help message and exit
 
 Examples:
-  $(basename "$0") --env uat     # Restart IB Gateway + UAT market-data
-  $(basename "$0") --env prod    # Restart IB Gateway + Production market-data
-  $(basename "$0") --env all     # Restart IB Gateway + both market-data services
-  $(basename "$0")               # Same as --env all
+  $(basename "$0") --env uat              # Restart IB Gateway + UAT market-data
+  $(basename "$0") --env prod             # Restart IB Gateway + Production market-data
+  $(basename "$0") --env all              # Restart IB Gateway + both market-data services
+  $(basename "$0") --env uat --skip-gateway  # Restart only UAT market-data (no IB Gateway)
+  $(basename "$0")                        # Same as --env all
 
 Health Checks:
   IB Gateway:    TCP port ${IB_GATEWAY_PORT} (timeout: ${IB_GATEWAY_HEALTH_TIMEOUT}s)
@@ -85,31 +87,35 @@ Health Checks:
 EOF
 }
 
-# Check if a TCP port is listening
+# Check if a TCP port is listening, with a configurable timeout.
+# Uses the `timeout` command to prevent indefinite blocking when the host is
+# reachable but the port is not open.
 check_tcp_port() {
   local host="$1"
   local port="$2"
   local timeout="${3:-5}"
 
-  (echo > /dev/tcp/"$host"/"$port") 2>/dev/null
+  timeout "$timeout" bash -c "echo > /dev/tcp/$host/$port" 2>/dev/null
   return $?
 }
 
 # Check if an HTTP endpoint returns 200 with expected body
+# Uses a single curl call to capture both status code and response body.
 check_http_health() {
   local url="$1"
   local timeout="${2:-5}"
 
-  local http_code
-  http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$timeout" "$url" 2>/dev/null || echo "000")
+  local response http_code body
+  response=$(curl -s -w "\n%{http_code}" --max-time "$timeout" "$url" 2>/dev/null) || response=$'\n000'
+
+  # Split response into body and status code (last line is the HTTP code)
+  http_code="${response##*$'\n'}"
+  body="${response%$'\n'*}"
 
   if [ "$http_code" = "200" ]; then
-    # Verify the response contains "UP" status
-    local response
-    response=$(curl -s --max-time "$timeout" "$url" 2>/dev/null || echo "")
-    if echo "$response" | grep -q '"status":"UP"'; then
+    if echo "$body" | grep -q '"status":"UP"'; then
       return 0
-    elif echo "$response" | grep -q '"status":"DOWN"'; then
+    elif echo "$body" | grep -q '"status":"DOWN"'; then
       return 1
     fi
     # HTTP 200 but no clear UP/DOWN status - treat as healthy
@@ -167,20 +173,29 @@ wait_for_http_health() {
   return 1
 }
 
-# Restart a Docker container via docker compose
+# Restart a Docker container via docker compose.
+# Uses `down` + `up -d` instead of `restart` to ensure a fresh container is
+# created, which provides more robust recovery from corrupted states.
 restart_container() {
   local compose_file="$1"
   local service_name="$2"
   local container_name="$3"
 
-  log_info "Restarting $container_name ($service_name)..."
+  log_info "Stopping $container_name ($service_name)..."
 
-  if ! docker compose -f "$compose_file" restart "$service_name" 2>&1; then
-    log_error "Failed to restart $container_name via docker compose"
+  if ! docker compose -f "$compose_file" down "$service_name" 2>&1; then
+    log_error "Failed to stop $container_name via docker compose"
     return 1
   fi
 
-  log_success "$container_name restarted"
+  log_info "Starting $container_name ($service_name)..."
+
+  if ! docker compose -f "$compose_file" up -d "$service_name" 2>&1; then
+    log_error "Failed to start $container_name via docker compose"
+    return 1
+  fi
+
+  log_success "$container_name restarted (recreated)"
   return 0
 }
 
@@ -283,6 +298,7 @@ verify_all_health() {
 
 main() {
   local env="all"
+  local skip_gateway=false
   local exit_code=0
 
   # Parse arguments
@@ -296,6 +312,10 @@ main() {
           exit 1
         fi
         shift 2
+        ;;
+      --skip-gateway)
+        skip_gateway=true
+        shift
         ;;
       --help|-h)
         usage
@@ -313,12 +333,17 @@ main() {
   echo "=========================================="
   echo "  IBKR Restart Script"
   echo "  Environment: ${env^^}"
+  echo "  Skip Gateway: $skip_gateway"
   echo "  Started: $(timestamp)"
   echo "=========================================="
 
   # Step 1: Restart IB Gateway (shared between environments)
-  if ! restart_ib_gateway; then
-    exit_code=1
+  if [ "$skip_gateway" = false ]; then
+    if ! restart_ib_gateway; then
+      exit_code=1
+    fi
+  else
+    log_info "Skipping IB Gateway restart (--skip-gateway)"
   fi
 
   # Step 2: Restart market-data for target environment(s)
