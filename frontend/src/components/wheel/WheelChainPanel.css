@@ -165,3 +165,50 @@
   background: rgba(255,255,255,0.1);
   color: var(--text-primary);
 }
+
+/* Banner: error/warning notifications */
+.wcp2-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.wcp2-banner--warning {
+  background: rgba(251, 146, 60, 0.1);
+  border-bottom: 1px solid rgba(251, 146, 60, 0.2);
+  color: var(--orange-text, #fb923c);
+}
+.wcp2-banner--error {
+  background: rgba(248, 113, 113, 0.1);
+  border-bottom: 1px solid rgba(248, 113, 113, 0.2);
+  color: var(--danger-text, #f87171);
+}
+.wcp2-banner__retry {
+  margin-left: auto;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text-primary);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.wcp2-banner__retry:hover {
+  background: rgba(255,255,255,0.15);
+}
+.wcp2-banner__dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+.wcp2-banner__dismiss:hover {
+  background: rgba(255,255,255,0.1);
+}

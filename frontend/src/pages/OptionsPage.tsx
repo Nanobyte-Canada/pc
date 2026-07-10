@@ -23,6 +23,7 @@ export function OptionsPage() {
 
   const [isLoadingChain, setIsLoadingChain] = useState(false)
   const [chainError, setChainError] = useState<string | null>(null)
+  const [expiryError, setExpiryError] = useState<string | null>(null)
   const [calcResult, setCalcResult] = useState<CalculationResult | null>(null)
   const [calcWarnings, setCalcWarnings] = useState<string[]>([])
   const [strategiesLoaded, setStrategiesLoaded] = useState(false)
@@ -79,6 +80,7 @@ export function OptionsPage() {
 
   const handleExpiryChange = useCallback(async (expiry: string) => {
     if (!selectedUnderlying) return
+    setExpiryError(null)
     try {
       const expiryData = await getOptionsChainForExpiry(selectedUnderlying, expiry, { strikesPerSide })
       const existingChain = chains[selectedUnderlying]
@@ -88,9 +90,13 @@ export function OptionsPage() {
       }
       switchChainExpiry(selectedUnderlying, expiry)
     } catch (err) {
-      console.error('Failed to load expiry data:', err)
+      const msg = err instanceof Error && err.message.includes('503')
+        ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
+        : 'Failed to load expiry data. Please try again.'
+      setExpiryError(msg)
+      toast.error(msg)
     }
-  }, [selectedUnderlying, chains, setChain, switchChainExpiry, strikesPerSide])
+  }, [selectedUnderlying, chains, setChain, switchChainExpiry, strikesPerSide, toast])
 
   const handleStrikesPerSideChange = useCallback(async (newStrikes: number) => {
     setStrikesPerSide(newStrikes)
@@ -164,6 +170,16 @@ export function OptionsPage() {
         <div className="options-page__error">
           <p className="options-page__error-message">{chainError}</p>
           <button className="options-page__error-retry" onClick={() => setChainError(null)}>
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* ── Expiry switch error ── */}
+      {expiryError && (
+        <div className="options-page__error">
+          <p className="options-page__error-message">{expiryError}</p>
+          <button className="options-page__error-retry" onClick={() => setExpiryError(null)}>
             Dismiss
           </button>
         </div>

@@ -3,9 +3,10 @@ import { useQuoteStore } from '@/stores/quoteStore'
 import { useMarketDataWebSocket } from '@/hooks/useMarketDataWebSocket'
 import { getOptionExpirations, getOptionsChainForExpiry } from '@/services/marketDataService'
 import { formatCurrency } from '@/services/brokerService'
+import { useToast } from '@/stores/toastStore'
 import { WheelChainRow } from './WheelChainRow'
 import type { ChainPanelContext, WheelChainStrike } from '@/types/wheel'
-import { X, ChevronDown } from 'lucide-react'
+import { X, ChevronDown, AlertTriangle } from 'lucide-react'
 import './WheelChainPanel.css'
 
 interface WheelChainPanelProps {
@@ -21,10 +22,14 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   const [selectedExpiry, setSelectedExpiry] = useState(context.expiryDate)
   const [loadingExpiry, setLoadingExpiry] = useState(false)
   const [strikesPerSide, setStrikesPerSide] = useState(25)
+  const [chainError, setChainError] = useState<string | null>(null)
+  const [ibkrDisconnected, setIbkrDisconnected] = useState(false)
 
   const chain = useQuoteStore(s => s.chains[context.ticker])
   const quote = useQuoteStore(s => s.quotes[context.ticker])
   const setChain = useQuoteStore(s => s.setChain)
+  const ibkrConnected = useQuoteStore(s => s.ibkrConnected)
+  const toast = useToast()
   const { subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, switchChainExpiry } = useMarketDataWebSocket()
 
   const spotPrice = quote?.last ?? quote?.mid ?? initialSpotPrice
@@ -64,10 +69,18 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         if (cancelled) return
         setChain(context.ticker, chainData)
         setLoading(false)
+        setChainError(null)
 
         subscribeChainExpiry(context.ticker, chosenExpiry, side)
-      } catch {
-        if (!cancelled) setLoading(false)
+      } catch (err) {
+        if (!cancelled) {
+          setLoading(false)
+          const msg = err instanceof Error && err.message.includes('503')
+            ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
+            : 'Failed to load options chain. Please try again.'
+          setChainError(msg)
+          toast.error(msg)
+        }
       }
     }
     init()
@@ -77,11 +90,17 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       unsubscribe(context.ticker)
       unsubscribeChain(context.ticker)
     }
-  }, [context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain, strikesPerSide, side])
+  }, [context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain, strikesPerSide, side, toast])
+
+  // Track IBKR connection status via WebSocket
+  useEffect(() => {
+    setIbkrDisconnected(ibkrConnected === false)
+  }, [ibkrConnected])
 
   const handleExpiryChange = useCallback(async (newExpiry: string) => {
     setSelectedExpiry(newExpiry)
     setLoadingExpiry(true)
+    setChainError(null)
     try {
       const chainData = await getOptionsChainForExpiry(context.ticker, newExpiry, { strikesPerSide, side })
       const existing = chain
@@ -92,24 +111,38 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       }
       switchChainExpiry(context.ticker, newExpiry, side)
     } catch (err) {
-      console.error('Failed to load expiry:', err)
+      const msg = err instanceof Error && err.message.includes('503')
+        ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
+        : 'Failed to load expiry data. Please try again.'
+      setChainError(msg)
+      toast.error(msg)
     } finally {
       setLoadingExpiry(false)
     }
-  }, [context.ticker, chain, setChain, switchChainExpiry, strikesPerSide, side])
+  }, [context.ticker, chain, setChain, switchChainExpiry, strikesPerSide, side, toast])
 
   const handleStrikesChange = useCallback(async (newStrikes: number) => {
     setStrikesPerSide(newStrikes)
     setLoadingExpiry(true)
+    setChainError(null)
     try {
       const chainData = await getOptionsChainForExpiry(context.ticker, selectedExpiry, { strikesPerSide: newStrikes, side })
-      setChain(context.ticker, chainData)
+      const existing = chain
+      if (existing && chainData.expirations) {
+        setChain(context.ticker, { ...existing, expirations: { ...existing.expirations, ...chainData.expirations } })
+      } else {
+        setChain(context.ticker, chainData)
+      }
     } catch (err) {
-      console.error('Failed to reload chain:', err)
+      const msg = err instanceof Error && err.message.includes('503')
+        ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
+        : 'Failed to reload chain. Please try again.'
+      setChainError(msg)
+      toast.error(msg)
     } finally {
       setLoadingExpiry(false)
     }
-  }, [context.ticker, selectedExpiry, side, setChain])
+  }, [context.ticker, selectedExpiry, side, setChain, chain, toast])
 
   const strikes: WheelChainStrike[] = useMemo(() => {
     if (!chain?.expirations) return []
@@ -157,6 +190,26 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         <span className={`wcp2-type ${isCsp ? 'wcp2-type--csp' : 'wcp2-type--cc'}`}>{typeLabelShort}</span>
         <button className="wcp2-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
       </div>
+
+      {ibkrDisconnected && (
+        <div className="wcp2-banner wcp2-banner--warning">
+          <AlertTriangle size={14} />
+          <span>IBKR Gateway is disconnected. Data may be stale or unavailable.</span>
+        </div>
+      )}
+
+      {chainError && (
+        <div className="wcp2-banner wcp2-banner--error">
+          <AlertTriangle size={14} />
+          <span>{chainError}</span>
+          <button className="wcp2-banner__retry" onClick={() => handleExpiryChange(selectedExpiry)}>
+            Retry
+          </button>
+          <button className="wcp2-banner__dismiss" onClick={() => setChainError(null)} aria-label="Dismiss">
+            <X size={12} />
+          </button>
+        </div>
+      )}
 
       <div className="wcp2-quote">
         <span className="wcp2-quote__price">{formatCurrency(spotPrice, 'USD')}</span>
