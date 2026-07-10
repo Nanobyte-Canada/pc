@@ -13,6 +13,7 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
   const reconnectDelayRef = useRef(1000)
   const subscribedSymbolsRef = useRef<Set<string>>(new Set())
   const subscribedChainsRef = useRef<Set<string>>(new Set())
+  const expirySubscriptionsRef = useRef<Map<string, { expiry: string; side?: 'put' | 'call' }>>(new Map())
   const [isConnected, setIsConnected] = useState(false)
   const setQuote = useQuoteStore((state) => state.setQuote)
   const updateChainQuote = useQuoteStore((state) => state.updateChainQuote)
@@ -32,8 +33,17 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
       subscribedSymbolsRef.current.forEach((symbol) => {
         ws.send(JSON.stringify({ action: 'subscribe', symbol }))
       })
+      // Re-send expiry-level chain subscriptions (preferred over generic subscribe_chain)
+      expirySubscriptionsRef.current.forEach((info, underlying) => {
+        const msg: Record<string, string> = { action: 'subscribe_chain_expiry', underlying, expiry: info.expiry }
+        if (info.side) msg.side = info.side
+        ws.send(JSON.stringify(msg))
+      })
+      // Re-send generic chain subscriptions for any underlyings without expiry-level subscriptions
       subscribedChainsRef.current.forEach((underlying) => {
-        ws.send(JSON.stringify({ action: 'subscribe_chain', underlying }))
+        if (!expirySubscriptionsRef.current.has(underlying)) {
+          ws.send(JSON.stringify({ action: 'subscribe_chain', underlying }))
+        }
       })
     }
 
@@ -106,6 +116,7 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
 
   const unsubscribeChain = useCallback((underlying: string) => {
     subscribedChainsRef.current.delete(underlying)
+    expirySubscriptionsRef.current.delete(underlying)
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ action: 'unsubscribe_chain', underlying }))
     }
@@ -113,6 +124,7 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
 
   const subscribeChainExpiry = useCallback((underlying: string, expiry: string, side?: 'put' | 'call') => {
     subscribedChainsRef.current.add(underlying)
+    expirySubscriptionsRef.current.set(underlying, { expiry, side })
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       const msg: Record<string, string> = { action: 'subscribe_chain_expiry', underlying, expiry }
       if (side) msg.side = side
@@ -121,6 +133,8 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
   }, [])
 
   const switchChainExpiry = useCallback((underlying: string, expiry: string, side?: 'put' | 'call') => {
+    // Update stored expiry+side for reconnect
+    expirySubscriptionsRef.current.set(underlying, { expiry, side })
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       const msg: Record<string, string> = { action: 'switch_chain_expiry', underlying, expiry }
       if (side) msg.side = side

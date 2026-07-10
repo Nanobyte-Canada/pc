@@ -14,6 +14,20 @@ interface QuoteState {
   clearQuotes: () => void
 }
 
+/**
+ * Normalize a strike value to a consistent string key for chain lookups.
+ * Handles number inputs (150, 150.5) and string inputs ("150", "150.0", "150.0000").
+ * Strips trailing zeros after the decimal point and uses at most 4 decimal places.
+ */
+function normalizeStrikeKey(strike: number | string): string {
+  const num = typeof strike === 'number' ? strike : parseFloat(strike)
+  if (isNaN(num)) return String(strike)
+  // Use toFixed(4) then strip trailing zeros to match backend BigDecimal serialization
+  const fixed = num.toFixed(4)
+  // Remove trailing zeros after decimal, but keep at least one digit after decimal if present
+  return fixed.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '.0')
+}
+
 export const useQuoteStore = create<QuoteState>()((set) => ({
   quotes: {},
   chains: {},
@@ -33,12 +47,35 @@ export const useQuoteStore = create<QuoteState>()((set) => ({
       const expiryKey = Array.isArray(rawExpiry)
         ? `${rawExpiry[0]}-${String(rawExpiry[1]).padStart(2, '0')}-${String(rawExpiry[2]).padStart(2, '0')}`
         : String(rawExpiry)
-      const strikeKey = String(optionQuote.strike) + (String(optionQuote.strike).includes('.') ? '' : '.0')
+
+      const strikeKey = normalizeStrikeKey(optionQuote.strike)
       const expiryData = chain.expirations[expiryKey]
       if (!expiryData) return state
 
-      const strikeData = expiryData[strikeKey]
-      if (!strikeData) return state
+      // Try direct match first, then fallback strategies
+      let strikeData = expiryData[strikeKey]
+      if (!strikeData) {
+        // Fallback: try matching with different decimal precision
+        const numStrike = typeof optionQuote.strike === 'number' ? optionQuote.strike : parseFloat(String(optionQuote.strike))
+        const candidates = [
+          String(numStrike),
+          numStrike.toFixed(1),
+          numStrike.toFixed(2),
+          numStrike.toFixed(4),
+          `${numStrike}.0`,
+          `${numStrike}.00`,
+        ]
+        for (const candidate of candidates) {
+          if (expiryData[candidate]) {
+            strikeData = expiryData[candidate]
+            break
+          }
+        }
+        if (!strikeData) {
+          console.warn(`[quoteStore] Strike key "${strikeKey}" not found in chain for ${underlying}/${expiryKey}. Available keys:`, Object.keys(expiryData))
+          return state
+        }
+      }
 
       const side = optionQuote.optionType === 'CALL' ? 'call' : 'put'
       const updatedStrikeData = { ...strikeData, [side]: optionQuote }
