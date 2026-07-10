@@ -213,15 +213,7 @@ class ChainController(
         }
         // Cache the expiry-specific chain to avoid redundant IBKR fetches.
         // Merge into existing cached chain if available to preserve other expiry data.
-        val existingCached = quoteCacheService.getChain(underlying)
-        if (existingCached != null) {
-            val merged = existingCached.copy(
-                expirations = existingCached.expirations + chain.expirations
-            )
-            quoteCacheService.cacheChain(underlying, merged)
-        } else {
-            quoteCacheService.cacheChain(underlying, chain)
-        }
+        quoteCacheService.mergeChain(underlying, chain)
         return ResponseEntity.ok(OptionsChainResponse.fromDomain(chain))
     }
 

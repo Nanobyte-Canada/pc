@@ -51,6 +51,24 @@ class QuoteCacheService(
         return try { objectMapper.readValue(json, OptionsChain::class.java) } catch (e: Exception) { null }
     }
 
+    /**
+     * Atomically merges a newly built chain into the existing cached chain for the given underlying.
+     * If no cached chain exists, caches the new chain directly.
+     * This avoids the race condition of separate get-then-merge-then-set calls in the controller.
+     */
+    @Synchronized
+    fun mergeChain(underlying: String, newChain: OptionsChain) {
+        val existing = getChain(underlying)
+        if (existing != null) {
+            val merged = existing.copy(
+                expirations = existing.expirations + newChain.expirations
+            )
+            cacheChain(underlying, merged)
+        } else {
+            cacheChain(underlying, newChain)
+        }
+    }
+
     fun cacheExpirations(symbol: String, expirations: List<LocalDate>) {
         val key = EXPIRATION_PREFIX + symbol
         redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(expirations), EXPIRATION_TTL_HOURS, TimeUnit.HOURS)

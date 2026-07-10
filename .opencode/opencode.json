@@ -1,0 +1,13 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "opencode-go": {
+      "type": "api",
+      "url": "https://api.opencode.ai"
+    },
+    "opencode": {
+      "type": "api",
+      "url": "https://api.opencode.ai"
+    }
+  }
+}

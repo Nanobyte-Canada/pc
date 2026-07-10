@@ -4,10 +4,28 @@ import { useMarketDataWebSocket } from '@/hooks/useMarketDataWebSocket'
 import { getOptionExpirations, getOptionsChainForExpiry } from '@/services/marketDataService'
 import { formatCurrency } from '@/services/brokerService'
 import { useToast } from '@/stores/toastStore'
+import { ApiError } from '@/services/api'
 import { WheelChainRow } from './WheelChainRow'
 import type { ChainPanelContext, WheelChainStrike } from '@/types/wheel'
 import { X, ChevronDown, AlertTriangle } from 'lucide-react'
 import './WheelChainPanel.css'
+
+/**
+ * Maps a chain-loading error to a user-friendly message.
+ * Detects IBKR Gateway 503 errors via ApiError status code to show a specific
+ * unavailable message, falling back to a generic retry message otherwise.
+ */
+function getChainErrorMessage(err: unknown, context: 'initial' | 'expiry' | 'strikes' = 'initial'): string {
+  const isGatewayUnavailable = err instanceof ApiError && err.status === 503
+  if (isGatewayUnavailable) {
+    return 'IBKR Gateway may be unavailable. Please check the connection and try again.'
+  }
+  switch (context) {
+    case 'expiry': return 'Failed to load expiry data. Please try again.'
+    case 'strikes': return 'Failed to reload chain. Please try again.'
+    default: return 'Failed to load options chain. Please try again.'
+  }
+}
 
 interface WheelChainPanelProps {
   context: ChainPanelContext
@@ -75,9 +93,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       } catch (err) {
         if (!cancelled) {
           setLoading(false)
-          const msg = err instanceof Error && err.message.includes('503')
-            ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
-            : 'Failed to load options chain. Please try again.'
+          const msg = getChainErrorMessage(err, 'initial')
           setChainError(msg)
           toast.error(msg)
         }
@@ -111,9 +127,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       }
       switchChainExpiry(context.ticker, newExpiry, side)
     } catch (err) {
-      const msg = err instanceof Error && err.message.includes('503')
-        ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
-        : 'Failed to load expiry data. Please try again.'
+      const msg = getChainErrorMessage(err, 'expiry')
       setChainError(msg)
       toast.error(msg)
     } finally {
@@ -134,9 +148,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         setChain(context.ticker, chainData)
       }
     } catch (err) {
-      const msg = err instanceof Error && err.message.includes('503')
-        ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
-        : 'Failed to reload chain. Please try again.'
+      const msg = getChainErrorMessage(err, 'strikes')
       setChainError(msg)
       toast.error(msg)
     } finally {

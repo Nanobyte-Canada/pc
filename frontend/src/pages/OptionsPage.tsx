@@ -12,6 +12,7 @@ import { OptionsChainTable } from '@/components/options/OptionsChainTable'
 import { LegBuilder } from '@/components/options/LegBuilder'
 import { PnlChart } from '@/components/options/PnlChart'
 import { useToast } from '@/stores/toastStore'
+import { ApiError } from '@/services/api'
 import type { CalculationResult } from '@/types/options'
 import './OptionsPage.css'
 
@@ -90,7 +91,8 @@ export function OptionsPage() {
       }
       switchChainExpiry(selectedUnderlying, expiry)
     } catch (err) {
-      const msg = err instanceof Error && err.message.includes('503')
+      const isGatewayUnavailable = err instanceof ApiError && err.status === 503
+      const msg = isGatewayUnavailable
         ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
         : 'Failed to load expiry data. Please try again.'
       setExpiryError(msg)
