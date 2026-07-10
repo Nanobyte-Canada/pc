@@ -246,6 +246,29 @@ assert_output_contains "test-12d: log_warn function" "log_warn()" "$SCRIPT_CONTE
 assert_output_contains "test-12e: log_healthy function" "log_healthy()" "$SCRIPT_CONTENT"
 assert_output_contains "test-12f: log_unhealthy function" "log_unhealthy()" "$SCRIPT_CONTENT"
 
+# test-13: TCP check uses timeout to prevent hanging
+echo ""
+echo -e "${YELLOW}test-13: TCP check has timeout${NC}"
+assert_output_contains "test-13a: Uses timeout command for TCP" "timeout.*bash -c.*dev/tcp" "$SCRIPT_CONTENT"
+
+# test-14: HTTP health check uses single curl call
+echo ""
+echo -e "${YELLOW}test-14: Single curl call in HTTP health check${NC}"
+TOTAL=$((TOTAL + 1))
+CURL_COUNT=$(echo "$SCRIPT_CONTENT" | sed -n '/^check_http_health()/,/^}/p' | grep -c 'curl ' || true)
+if [ "$CURL_COUNT" -eq 1 ]; then
+  echo -e "  ${GREEN}PASS${NC} test-14a: Single curl call in check_http_health (count=$CURL_COUNT)"
+  PASS=$((PASS + 1))
+else
+  echo -e "  ${RED}FAIL${NC} test-14a: Expected 1 curl call in check_http_health, got $CURL_COUNT"
+  FAIL=$((FAIL + 1))
+fi
+
+# test-15: Market-data restart uses --skip-gateway to avoid cross-environment disruption
+echo ""
+echo -e "${YELLOW}test-15: Market-data restart uses --skip-gateway${NC}"
+assert_output_contains "test-15a: Passes --skip-gateway to restart script" "skip-gateway" "$SCRIPT_CONTENT"
+
 # Summary
 echo ""
 echo "=========================================="

@@ -39,6 +39,7 @@ frontend/                     — React SPA (port 3000)
 config/                       — Environment template (.env.example)
 docs/reference/               — Technical reference documentation
 docs/business-context.html    — Architecture and module overview
+scripts/                      — Operational scripts (IBKR restart, SDLC automation)
 .archive/                     — Completed design specs and plans
 ```
 
@@ -86,6 +87,40 @@ Copy `config/.env.example` to `.env` at the project root. Key variables:
 | `IBKR_HOST` / `IBKR_PORT` | Interactive Brokers TWS/Gateway connection |
 | `BROKER_ENCRYPTION_KEY` | AES-256 key for token encryption |
 | `JWT_SIGNING_KEY` | HS512 signing key (min 64 chars) |
+
+## Operational Scripts
+
+### IBKR Service Restart (`scripts/restart-ibkr.sh`)
+
+On-demand restart for IB Gateway and market-data containers across UAT and Production environments.
+
+```bash
+# Restart all services (IB Gateway + both market-data)
+./scripts/restart-ibkr.sh --env all
+
+# Restart only UAT market-data (skip IB Gateway to avoid disrupting Prod)
+./scripts/restart-ibkr.sh --env uat --skip-gateway
+
+# Restart only Production market-data
+./scripts/restart-ibkr.sh --env prod --skip-gateway
+```
+
+### IBKR Auto-Restart Monitor (`scripts/auto-restart-ibkr.sh`)
+
+Automated health monitoring with automatic restart for unhealthy services. Designed to run via cron.
+
+```bash
+# Interactive mode (verbose output)
+./scripts/auto-restart-ibkr.sh
+
+# Cron mode (quiet, suitable for scheduled execution)
+*/5 * * * * /opt/portfolio/scripts/auto-restart-ibkr.sh --quiet
+```
+
+Features:
+- Checks IB Gateway TCP connectivity (port 14001) and market-data HTTP health endpoints
+- Auto-restarts unhealthy services with a 5-minute cooldown to prevent restart loops
+- Uses `--skip-gateway` when only market-data needs restarting to avoid cross-environment disruption
 
 ## License
 

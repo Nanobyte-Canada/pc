@@ -84,6 +84,7 @@ assert_output_contains "test-2c: Mentions uat" "uat" "$OUTPUT"
 assert_output_contains "test-2d: Mentions prod" "prod" "$OUTPUT"
 assert_output_contains "test-2e: Mentions all" "all" "$OUTPUT"
 assert_output_contains "test-2f: Mentions IB Gateway port" "14001" "$OUTPUT"
+assert_output_contains "test-2g: Mentions --skip-gateway flag" "skip-gateway" "$OUTPUT"
 
 # test-3: Script parses --env flag correctly
 echo ""
@@ -156,6 +157,45 @@ if [ -x "$RESTART_SCRIPT" ]; then
   PASS=$((PASS + 1))
 else
   echo -e "  ${RED}FAIL${NC} test-11a: Script is not executable"
+  FAIL=$((FAIL + 1))
+fi
+
+# test-12: --skip-gateway flag support
+echo ""
+echo -e "${YELLOW}test-12: --skip-gateway flag${NC}"
+assert_output_contains "test-12a: skip_gateway variable" "skip_gateway" "$SCRIPT_CONTENT"
+TOTAL=$((TOTAL + 1))
+if echo "$SCRIPT_CONTENT" | grep -F -- '--skip-gateway)' > /dev/null 2>&1; then
+  echo -e "  ${GREEN}PASS${NC} test-12b: --skip-gateway case pattern (found: --skip-gateway))"
+  PASS=$((PASS + 1))
+else
+  echo -e "  ${RED}FAIL${NC} test-12b: --skip-gateway case pattern (pattern not found: --skip-gateway))"
+  FAIL=$((FAIL + 1))
+fi
+
+# test-13: Robust restart uses down+up instead of restart
+echo ""
+echo -e "${YELLOW}test-13: Robust restart pattern (down+up)${NC}"
+assert_output_contains "test-13a: Uses docker compose down" "docker compose -f.*down" "$SCRIPT_CONTENT"
+assert_output_contains "test-13b: Uses docker compose up -d" "docker compose -f.*up -d" "$SCRIPT_CONTENT"
+
+# test-14: TCP check uses timeout to prevent hanging
+echo ""
+echo -e "${YELLOW}test-14: TCP check has timeout${NC}"
+assert_output_contains "test-14a: Uses timeout command for TCP" "timeout.*bash -c.*dev/tcp" "$SCRIPT_CONTENT"
+
+# test-15: HTTP health check uses single curl call
+echo ""
+echo -e "${YELLOW}test-15: Single curl call in HTTP health check${NC}"
+TOTAL=$((TOTAL + 1))
+# Count the number of curl calls in check_http_health function
+# Extract the function and count curl invocations
+CURL_COUNT=$(echo "$SCRIPT_CONTENT" | sed -n '/^check_http_health()/,/^}/p' | grep -c 'curl ' || true)
+if [ "$CURL_COUNT" -eq 1 ]; then
+  echo -e "  ${GREEN}PASS${NC} test-15a: Single curl call in check_http_health (count=$CURL_COUNT)"
+  PASS=$((PASS + 1))
+else
+  echo -e "  ${RED}FAIL${NC} test-15a: Expected 1 curl call in check_http_health, got $CURL_COUNT"
   FAIL=$((FAIL + 1))
 fi
 

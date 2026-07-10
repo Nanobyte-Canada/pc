@@ -85,29 +85,34 @@ log_unhealthy() {
 
 # --- Health check functions ------------------------------------------------
 
-# Check if a TCP port is listening
+# Check if a TCP port is listening, with a configurable timeout.
+# Uses the `timeout` command to prevent indefinite blocking when the host is
+# reachable but the port is not open.
 check_tcp_port() {
   local host="$1"
   local port="$2"
+  local timeout="${3:-$HEALTH_CHECK_TIMEOUT}"
 
-  (echo > /dev/tcp/"$host"/"$port") 2>/dev/null
+  timeout "$timeout" bash -c "echo > /dev/tcp/$host/$port" 2>/dev/null
   return $?
 }
 
 # Check if an HTTP endpoint returns 200 with expected body
+# Uses a single curl call to capture both status code and response body.
 check_http_health() {
   local url="$1"
 
-  local http_code
-  http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$HEALTH_CHECK_TIMEOUT" "$url" 2>/dev/null || echo "000")
+  local response http_code body
+  response=$(curl -s -w "\n%{http_code}" --max-time "$HEALTH_CHECK_TIMEOUT" "$url" 2>/dev/null) || response=$'\n000'
+
+  # Split response into body and status code (last line is the HTTP code)
+  http_code="${response##*$'\n'}"
+  body="${response%$'\n'*}"
 
   if [ "$http_code" = "200" ]; then
-    # Verify the response contains "UP" status
-    local response
-    response=$(curl -s --max-time "$HEALTH_CHECK_TIMEOUT" "$url" 2>/dev/null || echo "")
-    if echo "$response" | grep -q '"status":"UP"'; then
+    if echo "$body" | grep -q '"status":"UP"'; then
       return 0
-    elif echo "$response" | grep -q '"status":"DOWN"'; then
+    elif echo "$body" | grep -q '"status":"DOWN"'; then
       return 1
     fi
     # HTTP 200 but no clear UP/DOWN status - treat as healthy
@@ -223,7 +228,9 @@ restart_market_data_env() {
     return 1
   fi
 
-  if "$RESTART_SCRIPT" --env "$env" 2>&1; then
+  # Use --skip-gateway to avoid restarting the shared IB Gateway, which would
+  # temporarily disrupt the other environment's market-data service.
+  if "$RESTART_SCRIPT" --env "$env" --skip-gateway 2>&1; then
     log_success "${env^^} market-data restart completed"
     set_cooldown
     return 0
