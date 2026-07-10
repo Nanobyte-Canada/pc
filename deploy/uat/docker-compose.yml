@@ -147,13 +147,11 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      IBKR_HOST: host.docker.internal
-      IBKR_PORT: "14001"
-      IBKR_CLIENT_ID: ${IBKR_CLIENT_ID:-1}
+      IBKR_HOST: ib-gateway-paper
+      IBKR_PORT: "4004"
+      IBKR_CLIENT_ID: ${IBKR_CLIENT_ID:-10}
     ports:
       - "20082:8082"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
@@ -177,6 +175,7 @@ services:
         max-file: "5"
     networks:
       - uat-network
+      - shared-network
 
   strategy-service:
     image: ghcr.io/nanobyte-canada/portfolio-strategy:${IMAGE_TAG}
@@ -229,15 +228,13 @@ services:
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY}
       GATEWAY_API_KEY: ${GATEWAY_API_KEY}
       IBKR_GATEWAY_ENABLED: "true"
-      IBKR_HOST: host.docker.internal
-      IBKR_PORT: "14001"
-      IBKR_GATEWAY_CLIENT_ID: ${IBKR_GATEWAY_CLIENT_ID:-2}
+      IBKR_HOST: ib-gateway-paper
+      IBKR_PORT: "4004"
+      IBKR_GATEWAY_CLIENT_ID: ${IBKR_GATEWAY_CLIENT_ID:-11}
       QUESTRADE_ENABLED: "true"
       WEALTHSIMPLE_ENABLED: "true"
     ports:
       - "20084:8084"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
@@ -261,6 +258,7 @@ services:
         max-file: "5"
     networks:
       - uat-network
+      - shared-network
 
   frontend:
     image: ghcr.io/nanobyte-canada/portfolio-frontend-uat:${IMAGE_TAG}
@@ -289,3 +287,6 @@ volumes:
 networks:
   uat-network:
     driver: bridge
+  shared-network:
+    external: true
+    name: shared_shared-network
