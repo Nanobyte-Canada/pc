@@ -38,6 +38,7 @@ class SecurityConfig(
                     .csrfTokenRequestHandler(csrfTokenRequestHandler)
                     .ignoringRequestMatchers(
                         "/auth/refresh",
+                        "/auth/login",
                         "/auth/google",
                         "/auth/google/callback",
                         "/health",
@@ -60,6 +61,7 @@ class SecurityConfig(
                     .requestMatchers("/health", "/ready", "/api/v1/version").permitAll()
                     .requestMatchers(
                         "/auth/refresh",
+                        "/auth/login",
                         "/auth/google",
                         "/auth/google/callback",
                         "/auth/logout",
