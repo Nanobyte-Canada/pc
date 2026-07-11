@@ -185,11 +185,13 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
 
   const panelContent = (
     <>
-      <div className="wcp2-header">
-        <span className="wcp2-ticker">{context.ticker}</span>
-        <span className={`wcp2-type ${isCsp ? 'wcp2-type--csp' : 'wcp2-type--cc'}`}>{typeLabelShort}</span>
-        <button className="wcp2-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
-      </div>
+      {(!context.searchMode || !!context.ticker) && (
+        <div className="wcp2-header">
+          <span className="wcp2-ticker">{context.ticker}</span>
+          <span className={`wcp2-type ${isCsp ? 'wcp2-type--csp' : 'wcp2-type--cc'}`}>{typeLabelShort}</span>
+          <button className="wcp2-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
+        </div>
+      )}
 
       {ibkrDisconnected && (
         <div className="wcp2-banner wcp2-banner--warning">
@@ -211,15 +213,17 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         </div>
       )}
 
-      <div className="wcp2-quote">
-        <span className="wcp2-quote__price">{formatCurrency(spotPrice, 'USD')}</span>
-        {hasChange && (
-          <span className={`wcp2-quote__change ${priceChange >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
-            {priceChange >= 0 ? '+' : ''}{formatCurrency(Math.abs(priceChange), 'USD')} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%)
-          </span>
-        )}
-        <span className="wcp2-quote__live"><span className="wcp2-quote__dot" /> Live</span>
-      </div>
+      {(!context.searchMode || !!context.ticker) && (
+        <div className="wcp2-quote">
+          <span className="wcp2-quote__price">{formatCurrency(spotPrice, 'USD')}</span>
+          {hasChange && (
+            <span className={`wcp2-quote__change ${priceChange >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
+              {priceChange >= 0 ? '+' : ''}{formatCurrency(Math.abs(priceChange), 'USD')} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%)
+            </span>
+          )}
+          <span className="wcp2-quote__live"><span className="wcp2-quote__dot" /> Live</span>
+        </div>
+      )}
 
       <div className="wcp2-expiry">
         <span className="wcp2-expiry__label">Expiry</span>
