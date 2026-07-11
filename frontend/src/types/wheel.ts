@@ -115,4 +115,6 @@ export interface ChainPanelContext {
   ticker: string
   expiryDate: string
   optionSide: 'put' | 'call'
+  /** When true, the panel is in search mode with no ticker selected yet. */
+  searchMode?: boolean
 }

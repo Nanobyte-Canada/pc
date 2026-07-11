@@ -6,7 +6,7 @@ import { formatCurrency } from '@/services/brokerService'
 import { useToast } from '@/stores/toastStore'
 import { WheelChainRow } from './WheelChainRow'
 import type { ChainPanelContext, WheelChainStrike } from '@/types/wheel'
-import { X, ChevronDown, AlertTriangle } from 'lucide-react'
+import { X, ChevronDown, AlertTriangle, Search } from 'lucide-react'
 import './WheelChainPanel.css'
 
 interface WheelChainPanelProps {
@@ -221,84 +221,93 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         <span className="wcp2-quote__live"><span className="wcp2-quote__dot" /> Live</span>
       </div>
 
-      <div className="wcp2-expiry">
-        <span className="wcp2-expiry__label">Expiry</span>
-        <div className="wcp2-expiry__desktop">
-          <select
-            className="wcp2-expiry__select"
-            value={selectedExpiry}
-            onChange={e => handleExpiryChange(e.target.value)}
-          >
-            {availableExpiries.map(exp => {
-              const d = new Date(exp + 'T00:00:00')
-              const expiryDte = Math.max(0, Math.round((d.getTime() - Date.now()) / 86400000))
-              const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-              return <option key={exp} value={exp}>{label} — {expiryDte} DTE</option>
-            })}
-          </select>
-          <ChevronDown size={12} className="wcp2-expiry__chevron" />
+      {context.searchMode && !context.ticker ? (
+        <div className="wcp2-empty">
+          <Search size={32} className="wcp2-empty__icon" />
+          <span className="wcp2-empty__text">Select a ticker from the watchlist</span>
         </div>
-        <div className="wcp2-expiry__mobile">
-          <button className="wcp2-expiry__trigger" onClick={() => {
-            const idx = availableExpiries.indexOf(selectedExpiry)
-            const next = (idx + 1) % availableExpiries.length
-            if (availableExpiries.length > 0) handleExpiryChange(availableExpiries[next])
-          }}>
-            <span className="wcp2-expiry__trigger-label">
-              {new Date(selectedExpiry + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            </span>
-            <span className="wcp2-expiry__trigger-dte">{dte} DTE</span>
-            <ChevronDown size={10} className="wcp2-expiry__trigger-chevron" />
-          </button>
-          <div className="wcp2-expiry__dots">
-            {availableExpiries.map(exp => (
-              <span
-                key={exp}
-                className={`wcp2-expiry__dot ${exp === selectedExpiry ? 'wcp2-expiry__dot--active' : ''}`}
-                onClick={() => handleExpiryChange(exp)}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="wcp2-strikes">
-          <span className="wcp2-strikes__label">Strikes</span>
-          <div className="wcp2-strikes__options">
-            {[25, 50, 60].map(n => (
-              <button
-                key={n}
-                className={`wcp2-strikes__btn ${strikesPerSide === n ? 'wcp2-strikes__btn--active' : ''}`}
-                onClick={() => handleStrikesChange(n)}
+      ) : (
+        <>
+          <div className="wcp2-expiry">
+            <span className="wcp2-expiry__label">Expiry</span>
+            <div className="wcp2-expiry__desktop">
+              <select
+                className="wcp2-expiry__select"
+                value={selectedExpiry}
+                onChange={e => handleExpiryChange(e.target.value)}
               >
-                {n}
+                {availableExpiries.map(exp => {
+                  const d = new Date(exp + 'T00:00:00')
+                  const expiryDte = Math.max(0, Math.round((d.getTime() - Date.now()) / 86400000))
+                  const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  return <option key={exp} value={exp}>{label} — {expiryDte} DTE</option>
+                })}
+              </select>
+              <ChevronDown size={12} className="wcp2-expiry__chevron" />
+            </div>
+            <div className="wcp2-expiry__mobile">
+              <button className="wcp2-expiry__trigger" onClick={() => {
+                const idx = availableExpiries.indexOf(selectedExpiry)
+                const next = (idx + 1) % availableExpiries.length
+                if (availableExpiries.length > 0) handleExpiryChange(availableExpiries[next])
+              }}>
+                <span className="wcp2-expiry__trigger-label">
+                  {new Date(selectedExpiry + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+                <span className="wcp2-expiry__trigger-dte">{dte} DTE</span>
+                <ChevronDown size={10} className="wcp2-expiry__trigger-chevron" />
               </button>
-            ))}
+              <div className="wcp2-expiry__dots">
+                {availableExpiries.map(exp => (
+                  <span
+                    key={exp}
+                    className={`wcp2-expiry__dot ${exp === selectedExpiry ? 'wcp2-expiry__dot--active' : ''}`}
+                    onClick={() => handleExpiryChange(exp)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="wcp2-strikes">
+              <span className="wcp2-strikes__label">Strikes</span>
+              <div className="wcp2-strikes__options">
+                {[25, 50, 60].map(n => (
+                  <button
+                    key={n}
+                    className={`wcp2-strikes__btn ${strikesPerSide === n ? 'wcp2-strikes__btn--active' : ''}`}
+                    onClick={() => handleStrikesChange(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div className="wcp2-cols">
-        <div className="wcp2-col wcp2-col--strike">Strike<div className="wcp2-col-sub">Delta</div></div>
-        <div className="wcp2-col wcp2-col--bid">Bid<div className="wcp2-col-sub">Disc · Yield</div></div>
-        <div className="wcp2-col wcp2-col--ask">Ask<div className="wcp2-col-sub">Disc · Yield</div></div>
-      </div>
+          <div className="wcp2-cols">
+            <div className="wcp2-col wcp2-col--strike">Strike<div className="wcp2-col-sub">Delta</div></div>
+            <div className="wcp2-col wcp2-col--bid">Bid<div className="wcp2-col-sub">Disc · Yield</div></div>
+            <div className="wcp2-col wcp2-col--ask">Ask<div className="wcp2-col-sub">Disc · Yield</div></div>
+          </div>
 
-      <div className="wcp2-scroll">
-        {loading || loadingExpiry ? (
-          <div className="wcp2-loading">Loading chain...</div>
-        ) : strikes.length === 0 ? (
-          <div className="wcp2-loading">No data for this expiry</div>
-        ) : (
-          <table className="wcp2-table">
-            <tbody>
-              {strikes.map(s => (
-                <WheelChainRow key={s.strike} strike={s} onClick={handleStrikeClick} />
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+          <div className="wcp2-scroll">
+            {loading || loadingExpiry ? (
+              <div className="wcp2-loading">Loading chain...</div>
+            ) : strikes.length === 0 ? (
+              <div className="wcp2-loading">No data for this expiry</div>
+            ) : (
+              <table className="wcp2-table">
+                <tbody>
+                  {strikes.map(s => (
+                    <WheelChainRow key={s.strike} strike={s} onClick={handleStrikeClick} />
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
 
-      <div className="wcp2-footer">Tap a strike to place order</div>
+      <div className="wcp2-footer">{context.searchMode ? 'Search for a ticker to get started' : 'Tap a strike to place order'}</div>
     </>
   )
 
