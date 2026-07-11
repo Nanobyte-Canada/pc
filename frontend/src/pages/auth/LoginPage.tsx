@@ -46,8 +46,9 @@ export function LoginPage() {
     try {
       await login(email, password);
       navigate('/', { replace: true });
-    } catch (err: any) {
-      setLoginError(err.message || 'Login failed. Please try again.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed. Please try again.';
+      setLoginError(message);
     } finally {
       setIsLoggingIn(false);
     }
