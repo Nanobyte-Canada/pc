@@ -229,11 +229,6 @@ export function WheelPage() {
     setSelectedPosition(null)
   }, [])
 
-  const handleCCSlotClick = useCallback((ticker: string, expiryDate: string) => {
-    setChainPanel({ ticker, expiryDate, optionSide: 'call' })
-    setSelectedPosition(null)
-  }, [])
-
   const handleStrikeSelect = useCallback((ticker: string, expiry: string, strike: number, optionSide: 'put' | 'call') => {
     setChainPanel(null)
     setSelectedPosition({
@@ -295,7 +290,6 @@ export function WheelPage() {
               onToday={() => setCalendarOffset(0)}
               onPositionClick={handlePositionClick}
               onEmptySlotClick={handleEmptySlotClick}
-              onCCSlotClick={handleCCSlotClick}
               onAddTicker={() => { /* TODO: future - open ticker search */ }}
             />
           )}
