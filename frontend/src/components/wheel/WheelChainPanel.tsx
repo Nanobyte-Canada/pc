@@ -46,6 +46,12 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   }, [selectedExpiry])
 
   useEffect(() => {
+    // In search mode with no ticker selected, skip data loading
+    if (context.searchMode && !context.ticker) {
+      setLoading(false)
+      return
+    }
+
     let cancelled = false
     async function init() {
       try {
