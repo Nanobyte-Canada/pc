@@ -212,3 +212,28 @@
 .wcp2-banner__dismiss:hover {
   background: rgba(255,255,255,0.1);
 }
+
+/* Empty state placeholder (search mode with no ticker) */
+.wcp2-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 200px;
+  padding: 48px 24px;
+  gap: 16px;
+}
+.wcp2-empty__icon {
+  width: 48px;
+  height: 48px;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+.wcp2-empty__text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}

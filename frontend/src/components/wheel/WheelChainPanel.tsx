@@ -6,7 +6,7 @@ import { formatCurrency } from '@/services/brokerService'
 import { useToast } from '@/stores/toastStore'
 import { WheelChainRow } from './WheelChainRow'
 import type { ChainPanelContext, WheelChainStrike } from '@/types/wheel'
-import { X, ChevronDown, AlertTriangle } from 'lucide-react'
+import { X, ChevronDown, AlertTriangle, Search } from 'lucide-react'
 import './WheelChainPanel.css'
 
 interface WheelChainPanelProps {
@@ -183,122 +183,135 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   const priceChangePct = quote && quote.bid > 0 ? ((quote.last / quote.bid - 1) * 100) : 0
   const hasChange = quote != null && Math.abs(priceChange) > 0.001
 
+  const isEmptyState = context.searchMode && !context.ticker
+
   const panelContent = (
     <>
       <div className="wcp2-header">
-        <span className="wcp2-ticker">{context.ticker}</span>
-        <span className={`wcp2-type ${isCsp ? 'wcp2-type--csp' : 'wcp2-type--cc'}`}>{typeLabelShort}</span>
+        <span className="wcp2-ticker">{context.ticker || 'Search'}</span>
+        {context.ticker && (
+          <span className={`wcp2-type ${isCsp ? 'wcp2-type--csp' : 'wcp2-type--cc'}`}>{typeLabelShort}</span>
+        )}
         <button className="wcp2-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
       </div>
 
-      {ibkrDisconnected && (
-        <div className="wcp2-banner wcp2-banner--warning">
-          <AlertTriangle size={14} />
-          <span>IBKR Gateway is disconnected. Data may be stale or unavailable.</span>
+      {isEmptyState ? (
+        <div className="wcp2-empty">
+          <Search size={48} className="wcp2-empty__icon" />
+          <p className="wcp2-empty__text">Select a ticker to view options chain</p>
         </div>
-      )}
+      ) : (
+        <>
+          {ibkrDisconnected && (
+            <div className="wcp2-banner wcp2-banner--warning">
+              <AlertTriangle size={14} />
+              <span>IBKR Gateway is disconnected. Data may be stale or unavailable.</span>
+            </div>
+          )}
 
-      {chainError && (
-        <div className="wcp2-banner wcp2-banner--error">
-          <AlertTriangle size={14} />
-          <span>{chainError}</span>
-          <button className="wcp2-banner__retry" onClick={() => handleExpiryChange(selectedExpiry)}>
-            Retry
-          </button>
-          <button className="wcp2-banner__dismiss" onClick={() => setChainError(null)} aria-label="Dismiss">
-            <X size={12} />
-          </button>
-        </div>
-      )}
-
-      <div className="wcp2-quote">
-        <span className="wcp2-quote__price">{formatCurrency(spotPrice, 'USD')}</span>
-        {hasChange && (
-          <span className={`wcp2-quote__change ${priceChange >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
-            {priceChange >= 0 ? '+' : ''}{formatCurrency(Math.abs(priceChange), 'USD')} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%)
-          </span>
-        )}
-        <span className="wcp2-quote__live"><span className="wcp2-quote__dot" /> Live</span>
-      </div>
-
-      <div className="wcp2-expiry">
-        <span className="wcp2-expiry__label">Expiry</span>
-        <div className="wcp2-expiry__desktop">
-          <select
-            className="wcp2-expiry__select"
-            value={selectedExpiry}
-            onChange={e => handleExpiryChange(e.target.value)}
-          >
-            {availableExpiries.map(exp => {
-              const d = new Date(exp + 'T00:00:00')
-              const expiryDte = Math.max(0, Math.round((d.getTime() - Date.now()) / 86400000))
-              const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-              return <option key={exp} value={exp}>{label} — {expiryDte} DTE</option>
-            })}
-          </select>
-          <ChevronDown size={12} className="wcp2-expiry__chevron" />
-        </div>
-        <div className="wcp2-expiry__mobile">
-          <button className="wcp2-expiry__trigger" onClick={() => {
-            const idx = availableExpiries.indexOf(selectedExpiry)
-            const next = (idx + 1) % availableExpiries.length
-            if (availableExpiries.length > 0) handleExpiryChange(availableExpiries[next])
-          }}>
-            <span className="wcp2-expiry__trigger-label">
-              {new Date(selectedExpiry + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            </span>
-            <span className="wcp2-expiry__trigger-dte">{dte} DTE</span>
-            <ChevronDown size={10} className="wcp2-expiry__trigger-chevron" />
-          </button>
-          <div className="wcp2-expiry__dots">
-            {availableExpiries.map(exp => (
-              <span
-                key={exp}
-                className={`wcp2-expiry__dot ${exp === selectedExpiry ? 'wcp2-expiry__dot--active' : ''}`}
-                onClick={() => handleExpiryChange(exp)}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="wcp2-strikes">
-          <span className="wcp2-strikes__label">Strikes</span>
-          <div className="wcp2-strikes__options">
-            {[25, 50, 60].map(n => (
-              <button
-                key={n}
-                className={`wcp2-strikes__btn ${strikesPerSide === n ? 'wcp2-strikes__btn--active' : ''}`}
-                onClick={() => handleStrikesChange(n)}
-              >
-                {n}
+          {chainError && (
+            <div className="wcp2-banner wcp2-banner--error">
+              <AlertTriangle size={14} />
+              <span>{chainError}</span>
+              <button className="wcp2-banner__retry" onClick={() => handleExpiryChange(selectedExpiry)}>
+                Retry
               </button>
-            ))}
+              <button className="wcp2-banner__dismiss" onClick={() => setChainError(null)} aria-label="Dismiss">
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
+          <div className="wcp2-quote">
+            <span className="wcp2-quote__price">{formatCurrency(spotPrice, 'USD')}</span>
+            {hasChange && (
+              <span className={`wcp2-quote__change ${priceChange >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
+                {priceChange >= 0 ? '+' : ''}{formatCurrency(Math.abs(priceChange), 'USD')} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%)
+              </span>
+            )}
+            <span className="wcp2-quote__live"><span className="wcp2-quote__dot" /> Live</span>
           </div>
-        </div>
-      </div>
 
-      <div className="wcp2-cols">
-        <div className="wcp2-col wcp2-col--strike">Strike<div className="wcp2-col-sub">Delta</div></div>
-        <div className="wcp2-col wcp2-col--bid">Bid<div className="wcp2-col-sub">Disc · Yield</div></div>
-        <div className="wcp2-col wcp2-col--ask">Ask<div className="wcp2-col-sub">Disc · Yield</div></div>
-      </div>
+          <div className="wcp2-expiry">
+            <span className="wcp2-expiry__label">Expiry</span>
+            <div className="wcp2-expiry__desktop">
+              <select
+                className="wcp2-expiry__select"
+                value={selectedExpiry}
+                onChange={e => handleExpiryChange(e.target.value)}
+              >
+                {availableExpiries.map(exp => {
+                  const d = new Date(exp + 'T00:00:00')
+                  const expiryDte = Math.max(0, Math.round((d.getTime() - Date.now()) / 86400000))
+                  const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  return <option key={exp} value={exp}>{label} — {expiryDte} DTE</option>
+                })}
+              </select>
+              <ChevronDown size={12} className="wcp2-expiry__chevron" />
+            </div>
+            <div className="wcp2-expiry__mobile">
+              <button className="wcp2-expiry__trigger" onClick={() => {
+                const idx = availableExpiries.indexOf(selectedExpiry)
+                const next = (idx + 1) % availableExpiries.length
+                if (availableExpiries.length > 0) handleExpiryChange(availableExpiries[next])
+              }}>
+                <span className="wcp2-expiry__trigger-label">
+                  {new Date(selectedExpiry + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+                <span className="wcp2-expiry__trigger-dte">{dte} DTE</span>
+                <ChevronDown size={10} className="wcp2-expiry__trigger-chevron" />
+              </button>
+              <div className="wcp2-expiry__dots">
+                {availableExpiries.map(exp => (
+                  <span
+                    key={exp}
+                    className={`wcp2-expiry__dot ${exp === selectedExpiry ? 'wcp2-expiry__dot--active' : ''}`}
+                    onClick={() => handleExpiryChange(exp)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="wcp2-strikes">
+              <span className="wcp2-strikes__label">Strikes</span>
+              <div className="wcp2-strikes__options">
+                {[25, 50, 60].map(n => (
+                  <button
+                    key={n}
+                    className={`wcp2-strikes__btn ${strikesPerSide === n ? 'wcp2-strikes__btn--active' : ''}`}
+                    onClick={() => handleStrikesChange(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
-      <div className="wcp2-scroll">
-        {loading || loadingExpiry ? (
-          <div className="wcp2-loading">Loading chain...</div>
-        ) : strikes.length === 0 ? (
-          <div className="wcp2-loading">No data for this expiry</div>
-        ) : (
-          <table className="wcp2-table">
-            <tbody>
-              {strikes.map(s => (
-                <WheelChainRow key={s.strike} strike={s} onClick={handleStrikeClick} />
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+          <div className="wcp2-cols">
+            <div className="wcp2-col wcp2-col--strike">Strike<div className="wcp2-col-sub">Delta</div></div>
+            <div className="wcp2-col wcp2-col--bid">Bid<div className="wcp2-col-sub">Disc · Yield</div></div>
+            <div className="wcp2-col wcp2-col--ask">Ask<div className="wcp2-col-sub">Disc · Yield</div></div>
+          </div>
 
-      <div className="wcp2-footer">Tap a strike to place order</div>
+          <div className="wcp2-scroll">
+            {loading || loadingExpiry ? (
+              <div className="wcp2-loading">Loading chain...</div>
+            ) : strikes.length === 0 ? (
+              <div className="wcp2-loading">No data for this expiry</div>
+            ) : (
+              <table className="wcp2-table">
+                <tbody>
+                  {strikes.map(s => (
+                    <WheelChainRow key={s.strike} strike={s} onClick={handleStrikeClick} />
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className="wcp2-footer">Tap a strike to place order</div>
+        </>
+      )}
     </>
   )
 
