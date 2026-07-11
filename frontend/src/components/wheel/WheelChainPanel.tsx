@@ -46,6 +46,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   }, [selectedExpiry])
 
   useEffect(() => {
+    if (!context.ticker) return
     let cancelled = false
     async function init() {
       try {
