@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { initiateGoogleLogin } from '../../services/authService';
+import { initiateGoogleLogin, login } from '../../services/authService';
 import { useIsAuthenticated } from '../../stores/authStore';
 import './AuthPages.css';
 
@@ -9,11 +9,17 @@ const ERROR_MESSAGES: Record<string, string> = {
   provider_unavailable: 'Google sign-in is temporarily unavailable. Please try again later.',
 };
 
+const AUTH_METHOD = import.meta.env.VITE_AUTH_METHOD || 'google';
+
 export function LoginPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isAuthenticated = useIsAuthenticated();
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -30,6 +36,21 @@ export function LoginPage() {
 
   const handleGoogleLogin = () => {
     initiateGoogleLogin();
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setIsLoggingIn(true);
+
+    try {
+      await login(email, password);
+      navigate('/', { replace: true });
+    } catch (err: any) {
+      setLoginError(err.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   return (
@@ -84,6 +105,36 @@ export function LoginPage() {
               </svg>
               Continue with Google
             </button>
+
+            {AUTH_METHOD !== 'google' && (
+              <>
+                <div className="login-divider">
+                  <span>or</span>
+                </div>
+                <form onSubmit={handleEmailLogin} className="login-form">
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="login-input"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="login-input"
+                  />
+                  {loginError && <div className="login-error">{loginError}</div>}
+                  <button type="submit" disabled={isLoggingIn} className="login-email-btn">
+                    {isLoggingIn ? 'Signing in...' : 'Sign in with Email'}
+                  </button>
+                </form>
+              </>
+            )}
 
             <div className="login-footer">
               By continuing, you agree to our{' '}
