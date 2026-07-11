@@ -265,6 +265,8 @@ services:
     container_name: uat-frontend
     ports:
       - "20000:80"
+    environment:
+      - VITE_AUTH_METHOD=both
     depends_on:
       backend:
         condition: service_healthy
