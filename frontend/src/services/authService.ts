@@ -61,6 +61,21 @@ export function initiateGoogleLogin(): void {
   window.location.href = `${API_URL}/auth/google`;
 }
 
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  const response = await apiFetch('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!response.ok) {
+    await handleAuthError(response);
+  }
+
+  const data: AuthResponse = await response.json();
+  useAuthStore.getState().setUser(data.user);
+  return data;
+}
+
 export interface UpdateProfileData {
   name?: string;
   avatarUrl?: string;
