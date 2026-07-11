@@ -123,6 +123,9 @@ tmpclaude-*-cwd
 [Cc][Ll][Aa][Uu][Dd][Ee].[Mm][Dd]
 .archive/
 
+# OpenCode (SDLC agent config)
+.opencode/
+
 # Temporary output files
 gradle-out.txt
 *_output.txt

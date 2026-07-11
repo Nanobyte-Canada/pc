@@ -211,15 +211,17 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         </div>
       )}
 
-      <div className="wcp2-quote">
-        <span className="wcp2-quote__price">{formatCurrency(spotPrice, 'USD')}</span>
-        {hasChange && (
-          <span className={`wcp2-quote__change ${priceChange >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
-            {priceChange >= 0 ? '+' : ''}{formatCurrency(Math.abs(priceChange), 'USD')} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%)
-          </span>
-        )}
-        <span className="wcp2-quote__live"><span className="wcp2-quote__dot" /> Live</span>
-      </div>
+      {context.searchMode && !context.ticker ? null : (
+        <div className="wcp2-quote">
+          <span className="wcp2-quote__price">{formatCurrency(spotPrice, 'USD')}</span>
+          {hasChange && (
+            <span className={`wcp2-quote__change ${priceChange >= 0 ? 'wcp2-quote__change--up' : 'wcp2-quote__change--down'}`}>
+              {priceChange >= 0 ? '+' : ''}{formatCurrency(Math.abs(priceChange), 'USD')} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%)
+            </span>
+          )}
+          <span className="wcp2-quote__live"><span className="wcp2-quote__dot" /> Live</span>
+        </div>
+      )}
 
       {context.searchMode && !context.ticker ? (
         <div className="wcp2-empty">
