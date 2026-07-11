@@ -95,6 +95,22 @@ class AuthController(
         }
     }
 
+    @PostMapping("/login")
+    fun login(
+        @Valid @RequestBody request: LoginRequest,
+        httpRequest: HttpServletRequest,
+        httpResponse: HttpServletResponse
+    ): ResponseEntity<AuthResponse> {
+        val clientInfo = extractClientInfo(httpRequest)
+        val authTokens = authenticationService.login(request, clientInfo)
+        val roles = userRepository.findRoleNamesByUserId(authTokens.user.id)
+
+        setAuthCookies(httpResponse, authTokens.accessToken, authTokens.refreshToken)
+
+        val userResponse = UserResponse.from(authTokens.user, roles)
+        return ResponseEntity.ok(AuthResponse(user = userResponse))
+    }
+
     @PostMapping("/logout")
     fun logout(
         @CookieValue(REFRESH_TOKEN_COOKIE, required = false) refreshToken: String?,
