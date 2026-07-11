@@ -47,6 +47,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   }, [selectedExpiry])
 
   useEffect(() => {
+    if (searchMode && !context.ticker) return
     let cancelled = false
     async function init() {
       try {
@@ -91,7 +92,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       unsubscribe(context.ticker)
       unsubscribeChain(context.ticker)
     }
-  }, [context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain, strikesPerSide, side, toast])
+  }, [searchMode, context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain, strikesPerSide, side, toast])
 
   // Track IBKR connection status via WebSocket
   useEffect(() => {
