@@ -30,9 +30,12 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build argument for API URL
+# Build arguments for Vite env vars
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+
+ARG VITE_AUTH_METHOD=google
+ENV VITE_AUTH_METHOD=$VITE_AUTH_METHOD
 
 # Build the application
 RUN npm run build

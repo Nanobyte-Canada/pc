@@ -192,6 +192,7 @@ jobs:
             ${{ env.IMAGE_PREFIX }}/portfolio-frontend-uat:latest
           build-args: |
             VITE_API_URL=https://uatportfolio.nanobyte.ca
+            VITE_AUTH_METHOD=both
           cache-from: type=gha,scope=portfolio-frontend-uat
           cache-to: type=gha,mode=max,scope=portfolio-frontend-uat
 
