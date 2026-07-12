@@ -7,6 +7,11 @@ interface PositionCardProps {
   onClick: (position: WheelPosition) => void
 }
 
+/**
+ * Renders a single option position in the calendar grid.
+ *
+ * Displays strike, type (Put/CC), OTM%, P&L, and collected premium.
+ */
 export function PositionCard({ position, onClick }: PositionCardProps) {
   const typeClass = position.type === 'CSP' ? 'wpc--csp' : 'wpc--cc'
   const strikeClass = position.type === 'CSP' ? 'wpc__strike--csp' : 'wpc__strike--cc'
@@ -36,6 +41,13 @@ export function PositionCard({ position, onClick }: PositionCardProps) {
             : '--'}
         </span>
       </div>
+      {position.collectedPremium != null && position.collectedPremium > 0 && (
+        <div className="wpc__row">
+          <span className="wpc__premium">
+            Prem: {formatCurrency(position.collectedPremium, 'USD')}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

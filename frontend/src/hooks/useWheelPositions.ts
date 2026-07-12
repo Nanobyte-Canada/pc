@@ -79,6 +79,7 @@ function toWheelPosition(
     type: fields.optionType === 'CALL' ? 'CC' : 'CSP',
     strike: fields.strikePrice,
     premium,
+    collectedPremium: premium,
     currentPrice: p.currentPrice,
     pnl: p.totalPnl,
     otmPercent: null,

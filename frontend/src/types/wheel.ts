@@ -8,6 +8,8 @@ export interface WheelPosition {
   type: 'CSP' | 'CC'
   strike: number
   premium: number | null
+  /** Premium collected when the option was sold (same as premium for short options). */
+  collectedPremium: number | null
   currentPrice: number | null
   pnl: number | null
   otmPercent: number | null

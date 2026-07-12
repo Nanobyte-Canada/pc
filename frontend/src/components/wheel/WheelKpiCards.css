@@ -86,8 +86,7 @@
     font-size: 14px;
   }
 
-  .wheel-kpi-card:nth-child(3) .wheel-kpi__divider,
-  .wheel-kpi-card:nth-child(3) .wheel-kpi__breakdown-row {
+  .wheel-kpi-card:nth-child(3) .wheel-kpi__divider {
     display: none;
   }
 }

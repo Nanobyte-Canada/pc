@@ -156,6 +156,13 @@ export function WheelPage() {
         cells,
       }
     })
+    // Only include tickers that have at least one active option position
+    .filter(row => {
+      const positionCount = Object.values(row.cells).reduce(
+        (sum, cell) => sum + cell.positions.length, 0
+      )
+      return positionCount > 0
+    })
   }, [allTickers, rawPositions, expiries, underlyingPrices, premiumMap, fxRate, ccEligible, accountName, accountNumber, connId])
 
   // 7. Compute capital metrics
@@ -239,6 +246,7 @@ export function WheelPage() {
         type: optionSide === 'put' ? 'CSP' : 'CC',
         strike,
         premium: null,
+        collectedPremium: null,
         currentPrice: null,
         pnl: null,
         otmPercent: null,
@@ -270,6 +278,7 @@ export function WheelPage() {
             buyingPower={cashData?.buyingPower ?? []}
             ccEligible={ccEligible}
             positionCounts={positionCounts}
+            fxRate={fxRate}
           />
 
           {isLoading && (
