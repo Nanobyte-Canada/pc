@@ -212,3 +212,200 @@
 .wcp2-banner__dismiss:hover {
   background: rgba(255,255,255,0.1);
 }
+
+/* Search mode */
+.wcp2-search {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+}
+.wcp2-search__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  transition: border-color var(--transition-fast, 0.15s);
+}
+.wcp2-search__input-wrap:focus-within {
+  border-color: var(--accent);
+}
+.wcp2-search__icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.wcp2-search__input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+}
+.wcp2-search__input::placeholder {
+  color: var(--text-muted);
+}
+.wcp2-search__clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.wcp2-search__clear:hover {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.08);
+}
+
+.wcp2-search__results {
+  margin-top: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.wcp2-search__loading,
+.wcp2-search__empty,
+.wcp2-search__error {
+  padding: 12px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.wcp2-search__error {
+  color: var(--danger-text, #f87171);
+}
+
+.wcp2-search__result {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast, 0.15s);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.025);
+}
+.wcp2-search__result:hover {
+  background: rgba(99, 102, 241, 0.06);
+}
+.wcp2-search__result-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.wcp2-search__result-ticker {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.wcp2-search__result-name {
+  font-size: 11px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wcp2-search__result-quote {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 3px;
+}
+.wcp2-search__result-price {
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+.wcp2-search__result-bidask {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+/* CSP/CC option selection after search */
+.wcp2-search__option-select {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.wcp2-search__option-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.wcp2-search__option-ticker {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.wcp2-search__option-name {
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wcp2-search__option-back {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.wcp2-search__option-back:hover {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.08);
+}
+
+.wcp2-search__option-buttons {
+  display: flex;
+  gap: 8px;
+}
+.wcp2-search__option-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition-fast, 0.15s);
+}
+.wcp2-search__option-btn--csp {
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: var(--indigo-text, #818cf8);
+}
+.wcp2-search__option-btn--csp:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+.wcp2-search__option-btn--cc {
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  color: var(--orange-text, #fb923c);
+}
+.wcp2-search__option-btn--cc:hover {
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.35);
+}
+.wcp2-search__option-btn-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+.wcp2-search__option-btn-sub {
+  font-size: 10px;
+  opacity: 0.7;
+}

@@ -229,6 +229,15 @@ export function WheelPage() {
     setSelectedPosition(null)
   }, [])
 
+  const handleAddTicker = useCallback(() => {
+    setChainPanel({ ticker: '', expiryDate: new Date().toISOString().split('T')[0], optionSide: 'put', searchMode: true })
+    setSelectedPosition(null)
+  }, [])
+
+  const handleChainTickerSelect = useCallback((ticker: string, optionSide: 'put' | 'call') => {
+    setChainPanel(prev => prev ? { ...prev, ticker, optionSide, searchMode: false } : null)
+  }, [])
+
   const handleStrikeSelect = useCallback((ticker: string, expiry: string, strike: number, optionSide: 'put' | 'call') => {
     setChainPanel(null)
     setSelectedPosition({
@@ -290,7 +299,7 @@ export function WheelPage() {
               onToday={() => setCalendarOffset(0)}
               onPositionClick={handlePositionClick}
               onEmptySlotClick={handleEmptySlotClick}
-              onAddTicker={() => { /* TODO: future - open ticker search */ }}
+              onAddTicker={handleAddTicker}
             />
           )}
         </div>
@@ -303,6 +312,7 @@ export function WheelPage() {
                 spotPrice={underlyingPrices[chainPanel.ticker] ?? 0}
                 onClose={() => setChainPanel(null)}
                 onStrikeSelect={handleStrikeSelect}
+                onTickerSelect={handleChainTickerSelect}
               />
             )}
             {selectedPosition && (

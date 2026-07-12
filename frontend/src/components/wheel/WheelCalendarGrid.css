@@ -162,9 +162,10 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-height: 48px;
 }
 
-.wcg-empty-slot {
+.wcg-empty-cell {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,43 +178,13 @@
   background: none;
   font-family: inherit;
   transition: border-color var(--transition-fast), color var(--transition-fast);
+  width: 100%;
+  min-height: 48px;
 }
-.wcg-empty-slot:hover {
+.wcg-empty-cell:hover {
   border-color: rgba(99, 102, 241, 0.3);
   color: var(--indigo-text, #818cf8);
-}
-.wcg-empty-slot--compact { padding: 6px; font-size: 9px; }
-
-/* Side-by-side CSP + CC slot row */
-.wcg-slot-row {
-  display: flex;
-  gap: 3px;
-}
-.wcg-slot-row .wcg-empty-slot,
-.wcg-slot-row .wcg-cc-slot {
-  flex: 1;
-  padding: 5px 2px;
-  font-size: 9px;
-}
-
-.wcg-cc-slot {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px dashed rgba(249, 115, 22, 0.15);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  cursor: pointer;
-  color: rgba(249, 115, 22, 0.4);
-  font-size: 10px;
-  background: none;
-  font-family: inherit;
-  transition: all var(--transition-fast);
-}
-.wcg-cc-slot:hover {
-  border-color: rgba(249, 115, 22, 0.4);
-  color: var(--orange-text, #fb923c);
-  background: rgba(249, 115, 22, 0.04);
+  background: rgba(99, 102, 241, 0.04);
 }
 
 .wcg-add-ticker {
@@ -266,10 +237,4 @@
   /* Hide 3rd and 4th expiry columns on mobile — show only 2 */
   .wcg-th-expiry:nth-child(n+4),
   .wcg-td-cell:nth-child(n+4) { display: none; }
-
-  .wcg-slot-row .wcg-empty-slot,
-  .wcg-slot-row .wcg-cc-slot {
-    padding: 4px 2px;
-    font-size: 8px;
-  }
 }

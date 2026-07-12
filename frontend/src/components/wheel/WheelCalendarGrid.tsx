@@ -30,15 +30,13 @@ interface WheelCalendarGridProps {
   onToday: () => void
   onPositionClick: (position: WheelPosition, ticker: string, expiryDate: string) => void
   onEmptySlotClick: (ticker: string, expiryDate: string) => void
-  /** @deprecated Dead code — CSP/CC selection now lives in WheelChainPanel. Remove when #134 completes. */
-  onCCSlotClick?: (ticker: string, expiryDate: string) => void
   onAddTicker: () => void
 }
 
 export function WheelCalendarGrid({
   tickerRows, expiries, dateRange,
   onPrev, onNext, onToday,
-  onPositionClick, onEmptySlotClick, onCCSlotClick,
+  onPositionClick, onEmptySlotClick,
   onAddTicker,
 }: WheelCalendarGridProps) {
   const today = new Date().toISOString().split('T')[0]
@@ -117,14 +115,11 @@ export function WheelCalendarGrid({
                               onClick={p => onPositionClick(p, row.symbol, exp.date)}
                             />
                           ))}
-                          <div className="wcg-slot-row">
-                            <button className="wcg-empty-slot" onClick={() => onEmptySlotClick(row.symbol, exp.date)}>
-                              + CSP
+                          {positions.length === 0 && (
+                            <button className="wcg-empty-cell" onClick={() => onEmptySlotClick(row.symbol, exp.date)}>
+                              + CSP / CC
                             </button>
-                            <button className="wcg-cc-slot" onClick={() => onCCSlotClick?.(row.symbol, exp.date)}>
-                              + CC
-                            </button>
-                          </div>
+                          )}
                         </div>
                       </td>
                     )
