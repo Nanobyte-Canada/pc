@@ -8,7 +8,7 @@ interface WheelKpiCardsProps {
   metrics: CapitalMetrics | null
   buyingPower: CurrencyAmount[]
   ccEligible: Map<string, { sharesOwned: number; contractsAvailable: number }>
-  positionCounts: { csp: number; cc: number; expiring: number; total: number }
+  positionCounts: { csp: number; cc: number; total: number }
   fxRate: number
 }
 

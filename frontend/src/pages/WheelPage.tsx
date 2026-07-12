@@ -207,21 +207,15 @@ export function WheelPage() {
   const positionCounts = useMemo(() => {
     let csp = 0
     let cc = 0
-    let expiring = 0
-    const now = new Date()
     tickerRows.forEach(row => {
-      Object.entries(row.cells).forEach(([expiryDate, cell]) => {
+      Object.entries(row.cells).forEach(([, cell]) => {
         cell.positions.forEach(pos => {
           if (pos.type === 'CSP') csp++
           else cc++
-          const expDate = new Date(expiryDate + 'T00:00:00')
-          const msPerDay = 86400000
-          const dte = Math.round((expDate.getTime() - now.getTime()) / msPerDay)
-          if (dte <= 5) expiring++
         })
       })
     })
-    return { csp, cc, expiring, total: csp + cc }
+    return { csp, cc, total: csp + cc }
   }, [tickerRows])
 
   const isLoading = positionsQuery.isLoading || activitiesLoading

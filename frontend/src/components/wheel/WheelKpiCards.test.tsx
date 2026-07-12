@@ -24,7 +24,7 @@ function makeBuyingPower(amounts: Array<{ currency: string; amount: number }> = 
 
 const defaultCcEligible = new Map<string, { sharesOwned: number; contractsAvailable: number }>()
 
-const defaultPositionCounts = { csp: 2, cc: 1, expiring: 0, total: 3 }
+const defaultPositionCounts = { csp: 2, cc: 1, total: 3 }
 
 describe('WheelKpiCards', () => {
   describe('Capital Available', () => {
@@ -196,7 +196,7 @@ describe('WheelKpiCards', () => {
 
   describe('Positions', () => {
     it('renders total with CSP and CC counts above the total', () => {
-      const positionCounts = { csp: 2, cc: 3, expiring: 1, total: 5 }
+      const positionCounts = { csp: 2, cc: 3, total: 5 }
       render(
         <WheelKpiCards
           metrics={makeMetrics()}
@@ -212,7 +212,7 @@ describe('WheelKpiCards', () => {
     })
 
     it('does not render Expiring breakdown', () => {
-      const positionCounts = { csp: 2, cc: 1, expiring: 1, total: 3 }
+      const positionCounts = { csp: 2, cc: 1, total: 3 }
       render(
         <WheelKpiCards
           metrics={makeMetrics()}
