@@ -30,16 +30,12 @@ interface WheelCalendarGridProps {
   onToday: () => void
   onPositionClick: (position: WheelPosition, ticker: string, expiryDate: string) => void
   onEmptySlotClick: (ticker: string, expiryDate: string) => void
-  /** @deprecated Dead code — CSP/CC selection now lives in WheelChainPanel. Remove when #134 completes. */
-  onCCSlotClick?: (ticker: string, expiryDate: string) => void
-  onAddTicker: () => void
 }
 
 export function WheelCalendarGrid({
   tickerRows, expiries, dateRange,
   onPrev, onNext, onToday,
-  onPositionClick, onEmptySlotClick, onCCSlotClick,
-  onAddTicker,
+  onPositionClick, onEmptySlotClick,
 }: WheelCalendarGridProps) {
   const today = new Date().toISOString().split('T')[0]
 
@@ -106,9 +102,17 @@ export function WheelCalendarGrid({
                     const cell = row.cells[exp.date]
                     const positions = cell?.positions ?? []
                     const isToday = exp.date === today
+                    const isEmpty = positions.length === 0
 
                     return (
-                      <td key={exp.date} className={`wcg-td-cell ${isToday ? 'wcg-td-cell--today' : ''}`}>
+                      <td
+                        key={exp.date}
+                        className={`wcg-td-cell ${isToday ? 'wcg-td-cell--today' : ''} ${isEmpty ? 'wcg-td-cell--empty' : ''}`}
+                        onClick={isEmpty ? () => onEmptySlotClick(row.symbol, exp.date) : undefined}
+                        role={isEmpty ? 'button' : undefined}
+                        tabIndex={isEmpty ? 0 : undefined}
+                        onKeyDown={isEmpty ? (e) => { if (e.key === 'Enter') onEmptySlotClick(row.symbol, exp.date) } : undefined}
+                      >
                         <div className="wcg-cell-content">
                           {positions.map(pos => (
                             <PositionCard
@@ -117,14 +121,11 @@ export function WheelCalendarGrid({
                               onClick={p => onPositionClick(p, row.symbol, exp.date)}
                             />
                           ))}
-                          <div className="wcg-slot-row">
-                            <button className="wcg-empty-slot" onClick={() => onEmptySlotClick(row.symbol, exp.date)}>
-                              + CSP
-                            </button>
-                            <button className="wcg-cc-slot" onClick={() => onCCSlotClick?.(row.symbol, exp.date)}>
-                              + CC
-                            </button>
-                          </div>
+                          {isEmpty && (
+                            <div className="wcg-empty-hint">
+                              <span className="wcg-empty-hint__text">+ Add</span>
+                            </div>
+                          )}
                         </div>
                       </td>
                     )
@@ -134,7 +135,6 @@ export function WheelCalendarGrid({
             </tbody>
           </table>
         </div>
-        <button className="wcg-add-ticker" onClick={onAddTicker}>+ Add Ticker</button>
       </div>
 
       <div className="wcg-legend">

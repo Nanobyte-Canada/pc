@@ -1,0 +1,116 @@
+.wtt {
+  margin-bottom: 12px;
+}
+
+.wtt__scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 2px 0;
+}
+
+.wtt__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.wtt__ticker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wtt__ticker:hover {
+  border-color: var(--primary-border, rgba(99, 102, 241, 0.5));
+  background: var(--bg-tertiary, rgba(99, 102, 241, 0.05));
+}
+
+.wtt__symbol {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.wtt__price {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.wtt__change {
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+
+.wtt__change--up { color: var(--success-text); }
+.wtt__change--down { color: var(--danger-text); }
+
+.wtt__add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.wtt__add-btn:hover {
+  border-color: var(--primary-border, rgba(99, 102, 241, 0.5));
+  color: var(--text-primary);
+}
+
+.wtt__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.wtt__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.wtt__dot--active {
+  background: var(--primary-text, #818cf8);
+}
+
+@media (max-width: 768px) {
+  .wtt__scroll {
+    scroll-snap-type: x mandatory;
+    gap: 6px;
+  }
+
+  .wtt__ticker {
+    scroll-snap-align: center;
+    min-width: 80px;
+    padding: 6px 10px;
+  }
+
+  .wtt__add-btn {
+    min-width: 80px;
+    justify-content: center;
+  }
+}

@@ -13,6 +13,7 @@ import { getQuote } from '@/services/marketDataService'
 import { AccountNavBar } from '@/components/layout/AccountNavBar'
 import { WheelKpiCards } from '@/components/wheel/WheelKpiCards'
 import { WheelCalendarGrid } from '@/components/wheel/WheelCalendarGrid'
+import { WheelTopTickers } from '@/components/wheel/WheelTopTickers'
 import { OrderPanel } from '@/components/wheel/OrderPanel'
 import { WheelChainPanel } from '@/components/wheel/WheelChainPanel'
 import type { WheelPosition, CapitalMetrics, TickerRowData, ChainPanelContext } from '@/types/wheel'
@@ -73,10 +74,10 @@ export function WheelPage() {
   // 3. Discover tickers from option positions and detect CC-eligible stock holdings
   const optionTickers = useMemo(() => discoverTickers(rawPositions), [rawPositions])
   const ccEligible = useMemo(() => detectCCEligible(rawPositions), [rawPositions])
+  // Only show tickers that have current option positions (CSP or CC) in the grid
   const allTickers = useMemo(() => {
-    const set = new Set([...optionTickers, ...ccEligible.keys()])
-    return Array.from(set).sort()
-  }, [optionTickers, ccEligible])
+    return Array.from(new Set(optionTickers)).sort()
+  }, [optionTickers])
 
   // 4. Fetch quotes for discovered tickers
   const quotesQuery = useQueries({
@@ -270,6 +271,7 @@ export function WheelPage() {
             buyingPower={cashData?.buyingPower ?? []}
             ccEligible={ccEligible}
             positionCounts={positionCounts}
+            fxRateToCAD={fxRate}
           />
 
           {isLoading && (
@@ -281,17 +283,29 @@ export function WheelPage() {
           )}
 
           {!isLoading && !positionsQuery.error && (
-            <WheelCalendarGrid
-              tickerRows={tickerRows}
-              expiries={expiries}
-              dateRange={dateRange}
-              onPrev={() => setCalendarOffset(o => o - DESKTOP_COLUMNS)}
-              onNext={() => setCalendarOffset(o => o + DESKTOP_COLUMNS)}
-              onToday={() => setCalendarOffset(0)}
-              onPositionClick={handlePositionClick}
-              onEmptySlotClick={handleEmptySlotClick}
-              onAddTicker={() => { /* TODO: future - open ticker search */ }}
-            />
+            <>
+              <WheelTopTickers
+                onTickerClick={(ticker) => {
+                  setChainPanel({ ticker, expiryDate: expiries[0]?.date ?? new Date().toISOString().split('T')[0], optionSide: 'put' })
+                  setSelectedPosition(null)
+                }}
+                onAddTicker={() => {
+                  setChainPanel({ ticker: '', expiryDate: expiries[0]?.date ?? new Date().toISOString().split('T')[0], optionSide: 'put', searchMode: true })
+                  setSelectedPosition(null)
+                }}
+              />
+
+              <WheelCalendarGrid
+                tickerRows={tickerRows}
+                expiries={expiries}
+                dateRange={dateRange}
+                onPrev={() => setCalendarOffset(o => o - DESKTOP_COLUMNS)}
+                onNext={() => setCalendarOffset(o => o + DESKTOP_COLUMNS)}
+                onToday={() => setCalendarOffset(0)}
+                onPositionClick={handlePositionClick}
+                onEmptySlotClick={handleEmptySlotClick}
+              />
+            </>
           )}
         </div>
 
@@ -303,6 +317,9 @@ export function WheelPage() {
                 spotPrice={underlyingPrices[chainPanel.ticker] ?? 0}
                 onClose={() => setChainPanel(null)}
                 onStrikeSelect={handleStrikeSelect}
+                onTickerSelect={(ticker) => {
+                  setChainPanel(prev => prev ? { ...prev, ticker, searchMode: false } : null)
+                }}
               />
             )}
             {selectedPosition && (
