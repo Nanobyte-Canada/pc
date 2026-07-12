@@ -35,6 +35,11 @@ export function PositionCard({ position, onClick }: PositionCardProps) {
             ? `${position.pnl >= 0 ? '+' : ''}${formatCurrency(position.pnl, 'USD')}`
             : '--'}
         </span>
+        {position.premium != null && (
+          <span className="wpc__premium">
+            {formatCurrency(position.premium, 'USD')}
+          </span>
+        )}
       </div>
     </div>
   )
