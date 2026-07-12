@@ -317,8 +317,8 @@ export function WheelPage() {
                 spotPrice={underlyingPrices[chainPanel.ticker] ?? 0}
                 onClose={() => setChainPanel(null)}
                 onStrikeSelect={handleStrikeSelect}
-                onTickerSelect={(ticker) => {
-                  setChainPanel(prev => prev ? { ...prev, ticker, searchMode: false } : null)
+                onTickerSelect={(ticker, optionSide) => {
+                  setChainPanel(prev => prev ? { ...prev, ticker, optionSide, searchMode: false } : null)
                 }}
               />
             )}
