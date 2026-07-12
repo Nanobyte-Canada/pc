@@ -136,20 +136,6 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
     return () => { cancelled = true }
   }, [searchResults])
 
-  // Close search dropdown on outside click
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target as Node)
-      ) {
-        // Don't close if clicking inside the chain panel
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
   // Initialize chain data when ticker is selected
   useEffect(() => {
     if (!isTickerSelected) return
@@ -296,6 +282,8 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
     if (onTickerSelect) {
       onTickerSelect(ticker, optionSide)
     }
+    setSelectedSearchResult(null)
+    setSearchQuery('')
     setIsSearchMode(false)
   }, [onTickerSelect])
 
