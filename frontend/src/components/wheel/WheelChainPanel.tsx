@@ -124,7 +124,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   }, [fetchQuoteForTicker])
 
   // Handle CSP/CC selection from search result
-  const handleOptionTypeSelect = useCallback((ticker: string, _optionSide: 'put' | 'call') => {
+  const handleOptionTypeSelect = useCallback((ticker: string) => {
     if (onTickerSelect) {
       onTickerSelect(ticker)
     }
@@ -362,13 +362,13 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
               <div className="wcp2-search-selected__actions">
                 <button
                   className="wcp2-search-selected__btn wcp2-search-selected__btn--csp"
-                  onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker, 'put')}
+                  onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker)}
                 >
                   CSP
                 </button>
                 <button
                   className="wcp2-search-selected__btn wcp2-search-selected__btn--cc"
-                  onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker, 'call')}
+                  onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker)}
                 >
                   CC
                 </button>
@@ -440,13 +440,13 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
                 <div className="wcp2-search-selected__actions">
                   <button
                     className="wcp2-search-selected__btn wcp2-search-selected__btn--csp"
-                    onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker, 'put')}
+                    onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker)}
                   >
                     CSP
                   </button>
                   <button
                     className="wcp2-search-selected__btn wcp2-search-selected__btn--cc"
-                    onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker, 'call')}
+                    onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker)}
                   >
                     CC
                   </button>
