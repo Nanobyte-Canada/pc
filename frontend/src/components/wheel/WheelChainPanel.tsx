@@ -17,7 +17,7 @@ interface WheelChainPanelProps {
   onClose: () => void
   onStrikeSelect: (ticker: string, expiry: string, strike: number, optionSide: 'put' | 'call') => void
   /** Called when user selects a ticker from search results in search-first mode. */
-  onTickerSelect?: (ticker: string) => void
+  onTickerSelect?: (ticker: string, optionSide: 'put' | 'call') => void
 }
 
 /**
@@ -92,7 +92,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         searchInputRef.current &&
         !searchInputRef.current.contains(event.target as Node)
       ) {
-        // Don't close if clicking on a result
+        setSelectedSearchIndex(-1)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -124,9 +124,9 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   }, [fetchQuoteForTicker])
 
   // Handle CSP/CC selection from search result
-  const handleOptionTypeSelect = useCallback((ticker: string) => {
+  const handleOptionTypeSelect = useCallback((ticker: string, optionSide: 'put' | 'call') => {
     if (onTickerSelect) {
-      onTickerSelect(ticker)
+      onTickerSelect(ticker, optionSide)
     }
   }, [onTickerSelect])
 
@@ -298,163 +298,95 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
 
   // ─── Search-first mode ───────────────────────────────────────────────
   if (isSearchMode && !hasTicker) {
-    return (
+    const searchContent = (
       <>
-        <div className="wcp2 wcp2--desktop">
-          <div className="wcp2-header">
-            <span className="wcp2-ticker">Search Ticker</span>
-            <button className="wcp2-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
-          </div>
-
-          <div className="wcp2-search">
-            <div className="wcp2-search__input-wrap">
-              <Search size={14} className="wcp2-search__icon" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                className="wcp2-search__input"
-                placeholder="Search by ticker or name..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setSelectedSearchIndex(-1)
-                  setSelectedSearchResult(null)
-                }}
-                onKeyDown={handleSearchKeyDown}
-                onFocus={() => { /* keep open */ }}
-              />
-            </div>
-
-            {searchQuery.length >= 1 && (
-              <div ref={searchDropdownRef} className="wcp2-search__dropdown">
-                {searchLoading && (
-                  <div className="wcp2-search__loading">Searching...</div>
-                )}
-                {!searchLoading && searchResults.length === 0 && (
-                  <div className="wcp2-search__empty">No results found</div>
-                )}
-                {!searchLoading && searchResults.map((result, index) => (
-                  <div
-                    key={result.id}
-                    className={`wcp2-search__result ${index === selectedSearchIndex ? 'wcp2-search__result--selected' : ''}`}
-                    onClick={() => handleSearchResultSelect(result)}
-                  >
-                    <span className="wcp2-search__result-ticker">{result.ticker}</span>
-                    <span className="wcp2-search__result-name">{result.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Selected search result — show quote and CSP/CC buttons */}
-          {selectedSearchResult && (
-            <div className="wcp2-search-selected">
-              <div className="wcp2-search-selected__header">
-                <span className="wcp2-search-selected__ticker">{selectedSearchResult.ticker}</span>
-                <span className="wcp2-search-selected__name">{selectedSearchResult.name}</span>
-                {selectedSearchResult.quote && (
-                  <span className="wcp2-search-selected__price">
-                    {formatCurrency(selectedSearchResult.quote.last, 'USD')}
-                  </span>
-                )}
-              </div>
-              <div className="wcp2-search-selected__actions">
-                <button
-                  className="wcp2-search-selected__btn wcp2-search-selected__btn--csp"
-                  onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker)}
-                >
-                  CSP
-                </button>
-                <button
-                  className="wcp2-search-selected__btn wcp2-search-selected__btn--cc"
-                  onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker)}
-                >
-                  CC
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="wcp2-footer">Select a ticker to view options chain</div>
+        <div className="wcp2-header">
+          <span className="wcp2-ticker">Search Ticker</span>
+          <button className="wcp2-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
         </div>
 
+        <div className="wcp2-search">
+          <div className="wcp2-search__input-wrap">
+            <Search size={14} className="wcp2-search__icon" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="wcp2-search__input"
+              placeholder="Search by ticker or name..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setSelectedSearchIndex(-1)
+                setSelectedSearchResult(null)
+              }}
+              onKeyDown={handleSearchKeyDown}
+              onFocus={() => { /* keep open */ }}
+            />
+          </div>
+
+          {searchQuery.length >= 1 && (
+            <div ref={searchDropdownRef} className="wcp2-search__dropdown">
+              {searchLoading && (
+                <div className="wcp2-search__loading">Searching...</div>
+              )}
+              {!searchLoading && searchResults.length === 0 && (
+                <div className="wcp2-search__empty">No results found</div>
+              )}
+              {!searchLoading && searchResults.map((result, index) => (
+                <div
+                  key={result.id}
+                  className={`wcp2-search__result ${index === selectedSearchIndex ? 'wcp2-search__result--selected' : ''}`}
+                  onClick={() => handleSearchResultSelect(result)}
+                >
+                  <span className="wcp2-search__result-ticker">{result.ticker}</span>
+                  <span className="wcp2-search__result-name">{result.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Selected search result — show quote and CSP/CC buttons */}
+        {selectedSearchResult && (
+          <div className="wcp2-search-selected">
+            <div className="wcp2-search-selected__header">
+              <span className="wcp2-search-selected__ticker">{selectedSearchResult.ticker}</span>
+              <span className="wcp2-search-selected__name">{selectedSearchResult.name}</span>
+              {selectedSearchResult.quote && (
+                <span className="wcp2-search-selected__price">
+                  {formatCurrency(selectedSearchResult.quote.last, 'USD')}
+                </span>
+              )}
+            </div>
+            <div className="wcp2-search-selected__actions">
+              <button
+                className="wcp2-search-selected__btn wcp2-search-selected__btn--csp"
+                onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker, 'put')}
+              >
+                CSP
+              </button>
+              <button
+                className="wcp2-search-selected__btn wcp2-search-selected__btn--cc"
+                onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker, 'call')}
+              >
+                CC
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="wcp2-footer">Select a ticker to view options chain</div>
+      </>
+    )
+
+    return (
+      <>
+        <div className="wcp2 wcp2--desktop">{searchContent}</div>
         {/* Mobile bottom sheet */}
         <div className="wcp2-sheet-overlay" onClick={onClose}>
           <div className="wcp2-sheet" onClick={e => e.stopPropagation()}>
             <div className="wcp2-sheet__handle" />
-            <div className="wcp2-header">
-              <span className="wcp2-ticker">Search Ticker</span>
-              <button className="wcp2-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
-            </div>
-
-            <div className="wcp2-search">
-              <div className="wcp2-search__input-wrap">
-                <Search size={14} className="wcp2-search__icon" />
-                <input
-                  type="text"
-                  className="wcp2-search__input"
-                  placeholder="Search by ticker or name..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value)
-                    setSelectedSearchIndex(-1)
-                    setSelectedSearchResult(null)
-                  }}
-                />
-              </div>
-
-              {searchQuery.length >= 1 && (
-                <div className="wcp2-search__dropdown">
-                  {searchLoading && (
-                    <div className="wcp2-search__loading">Searching...</div>
-                  )}
-                  {!searchLoading && searchResults.length === 0 && (
-                    <div className="wcp2-search__empty">No results found</div>
-                  )}
-                  {!searchLoading && searchResults.map((result, index) => (
-                    <div
-                      key={result.id}
-                      className={`wcp2-search__result ${index === selectedSearchIndex ? 'wcp2-search__result--selected' : ''}`}
-                      onClick={() => handleSearchResultSelect(result)}
-                    >
-                      <span className="wcp2-search__result-ticker">{result.ticker}</span>
-                      <span className="wcp2-search__result-name">{result.name}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {selectedSearchResult && (
-              <div className="wcp2-search-selected">
-                <div className="wcp2-search-selected__header">
-                  <span className="wcp2-search-selected__ticker">{selectedSearchResult.ticker}</span>
-                  <span className="wcp2-search-selected__name">{selectedSearchResult.name}</span>
-                  {selectedSearchResult.quote && (
-                    <span className="wcp2-search-selected__price">
-                      {formatCurrency(selectedSearchResult.quote.last, 'USD')}
-                    </span>
-                  )}
-                </div>
-                <div className="wcp2-search-selected__actions">
-                  <button
-                    className="wcp2-search-selected__btn wcp2-search-selected__btn--csp"
-                    onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker)}
-                  >
-                    CSP
-                  </button>
-                  <button
-                    className="wcp2-search-selected__btn wcp2-search-selected__btn--cc"
-                    onClick={() => handleOptionTypeSelect(selectedSearchResult.ticker)}
-                  >
-                    CC
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div className="wcp2-footer">Select a ticker to view options chain</div>
+            {searchContent}
           </div>
         </div>
       </>
