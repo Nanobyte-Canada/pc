@@ -47,6 +47,7 @@ class TwsIbkrClient(
 
     @Volatile private var initialConnectComplete = false
     private val reconnectHandlers = CopyOnWriteArrayList<Runnable>()
+    private val dataFarmErrorHandlers = CopyOnWriteArrayList<Runnable>()
 
     override fun registerReconnectHandler(handler: Runnable) {
         reconnectHandlers.add(handler)
@@ -55,6 +56,10 @@ class TwsIbkrClient(
     @Deprecated("Use registerReconnectHandler instead", ReplaceWith("registerReconnectHandler(handler)"))
     fun setReconnectHandler(handler: Runnable) {
         registerReconnectHandler(handler)
+    }
+
+    override fun registerDataFarmErrorHandler(handler: Runnable) {
+        dataFarmErrorHandlers.add(handler)
     }
 
     data class GreeksData(
@@ -106,10 +111,10 @@ class TwsIbkrClient(
             log.warn("TwsIbkrClient: timed out waiting for nextValidId callback")
         }
 
-        // Request delayed data as fallback if real-time API subscription not available
+        // Request real-time market data (type 1). Falls back to delayed if subscription doesn't support it.
         if (connected.get()) {
-            client.reqMarketDataType(3)
-            log.info("TwsIbkrClient: requested delayed market data type (fallback)")
+            client.reqMarketDataType(1)
+            log.info("TwsIbkrClient: requested real-time market data type")
         }
     }
 
@@ -517,6 +522,22 @@ class TwsIbkrClient(
             }
             // Market data farm messages (informational)
             2104, 2106, 2158 -> log.info("TwsIbkrClient: [{}] {}", errorCode, errorMsg)
+            // Data farm status updates — log at info level
+            2107 -> log.info("TwsIbkrClient: [{}] {} (reqId={})", errorCode, errorMsg, id)
+            2119 -> log.info("TwsIbkrClient: [{}] {} (reqId={})", errorCode, errorMsg, id)
+            // Data farm inactive — trigger reconnect to re-establish data farm
+            2108 -> {
+                log.warn("TwsIbkrClient: Data farm inactive [{}]: {} — triggering reconnect", errorCode, errorMsg)
+                connected.set(false)
+                pendingRequests.values.forEach { it.completeExceptionally(RuntimeException("Data farm inactive: $errorMsg")) }
+                pendingRequests.clear()
+                contractAccumulators.clear()
+                optionChainParamAccumulators.clear()
+                snapshotAccumulators.clear()
+                for (handler in dataFarmErrorHandlers) {
+                    try { handler.run() } catch (e: Exception) { log.debug("Data farm error handler failed", e) }
+                }
+            }
             // Market data subscription warning — delayed data may follow
             10089, 10090 -> log.info("TwsIbkrClient: [{}] {} (reqId={})", errorCode, errorMsg, id)
             // No security definition found

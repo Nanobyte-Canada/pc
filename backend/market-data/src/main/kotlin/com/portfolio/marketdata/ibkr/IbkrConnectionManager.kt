@@ -29,6 +29,12 @@ class IbkrConnectionManager(
 
     override fun run(args: ApplicationArguments?) {
         logger.info("IbkrConnectionManager: Starting...")
+        ibkrClient.registerDataFarmErrorHandler(Runnable {
+            logger.warn("IbkrConnectionManager: Data farm error detected, triggering reconnect")
+            ibkrClient.disconnect()
+            reconnectDelayMs = 5000L
+            scheduleReconnect()
+        })
         connectWithRetry()
         executor.scheduleWithFixedDelay(
             { checkHealth() },

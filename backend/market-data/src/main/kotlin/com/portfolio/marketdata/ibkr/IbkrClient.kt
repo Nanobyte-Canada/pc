@@ -10,6 +10,9 @@ interface IbkrClient {
     /** Register a callback invoked after reconnection. Implementations must store and invoke handlers
      *  on reconnect (e.g. in the `nextValidId` TWS callback after the initial connection). */
     fun registerReconnectHandler(handler: Runnable) {}
+    /** Register a callback invoked when a data farm error (2108) occurs, indicating the market data
+     *  farm is inactive. The handler should trigger a reconnect to re-establish the data farm. */
+    fun registerDataFarmErrorHandler(handler: Runnable) {}
     fun requestMarketData(conId: Int, callback: (tickType: Int, value: Double) -> Unit)
     fun cancelMarketData(conId: Int)
     fun requestOptionChain(underlying: String): List<OptionContractDetails>

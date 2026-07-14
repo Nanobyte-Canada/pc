@@ -8,6 +8,7 @@ import { getStrategies, calculateStrategy } from '@/services/optionsStrategyServ
 import { UnderlyingSearch } from '@/components/options/UnderlyingSearch'
 import { QuoteBar } from '@/components/options/QuoteBar'
 import { StrategySelector } from '@/components/options/StrategySelector'
+import { ApiError } from '@/services/api'
 import { OptionsChainTable } from '@/components/options/OptionsChainTable'
 import { LegBuilder } from '@/components/options/LegBuilder'
 import { PnlChart } from '@/components/options/PnlChart'
@@ -90,7 +91,8 @@ export function OptionsPage() {
       }
       switchChainExpiry(selectedUnderlying, expiry)
     } catch (err) {
-      const msg = err instanceof Error && err.message.includes('503')
+      console.error('Failed to load expiry data:', err)
+      const msg = err instanceof ApiError && err.status === 503
         ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
         : 'Failed to load expiry data. Please try again.'
       setExpiryError(msg)
