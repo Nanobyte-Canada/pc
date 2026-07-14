@@ -534,6 +534,10 @@ class TwsIbkrClient(
                 contractAccumulators.clear()
                 optionChainParamAccumulators.clear()
                 snapshotAccumulators.clear()
+                tickCallbacks.clear()
+                reqIdToConId.clear()
+                conIdToReqId.clear()
+                greeksStore.clear()
                 for (handler in dataFarmErrorHandlers) {
                     try { handler.run() } catch (e: Exception) { log.debug("Data farm error handler failed", e) }
                 }
