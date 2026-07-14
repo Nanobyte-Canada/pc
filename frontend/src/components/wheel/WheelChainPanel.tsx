@@ -7,6 +7,7 @@ import { useToast } from '@/stores/toastStore'
 import { useNewInstrumentSearch } from '@/hooks/useNewScreener'
 import { getQuote } from '@/services/marketDataService'
 import { WheelChainRow } from './WheelChainRow'
+import { ApiError } from '@/services/api'
 import type { ChainPanelContext, WheelChainStrike } from '@/types/wheel'
 import { X, ChevronDown, AlertTriangle, Search } from 'lucide-react'
 import './WheelChainPanel.css'
@@ -163,7 +164,8 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       } catch (err) {
         if (!cancelled) {
           setLoading(false)
-          const msg = err instanceof Error && err.message.includes('503')
+          console.error('[WheelChainPanel] Failed to load options chain:', err)
+          const msg = err instanceof ApiError && err.status === 503
             ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
             : 'Failed to load options chain. Please try again.'
           setChainError(msg)
@@ -199,7 +201,8 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       }
       switchChainExpiry(context.ticker, newExpiry, side)
     } catch (err) {
-      const msg = err instanceof Error && err.message.includes('503')
+      console.error('[WheelChainPanel] Failed to load expiry data:', err)
+      const msg = err instanceof ApiError && err.status === 503
         ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
         : 'Failed to load expiry data. Please try again.'
       setChainError(msg)
@@ -222,7 +225,8 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         setChain(context.ticker, chainData)
       }
     } catch (err) {
-      const msg = err instanceof Error && err.message.includes('503')
+      console.error('[WheelChainPanel] Failed to reload chain:', err)
+      const msg = err instanceof ApiError && err.status === 503
         ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
         : 'Failed to reload chain. Please try again.'
       setChainError(msg)
