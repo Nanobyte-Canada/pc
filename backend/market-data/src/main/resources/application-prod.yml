@@ -8,4 +8,5 @@ spring:
 logging:
   level:
     com.portfolio: WARN
+    com.portfolio.marketdata.ibkr: INFO
     org.springframework.web: WARN

@@ -14,6 +14,8 @@ interface IbkrClient {
      *  as informational (log-only) and handlers are not invoked — the infrastructure is retained for
      *  future use when active farm management may be needed. */
     fun registerDataFarmErrorHandler(handler: Runnable) {}
+    /** Returns true if data farms are healthy (no recent critical errors like 2103). */
+    fun isDataFarmHealthy(): Boolean = true
     fun requestMarketData(conId: Int, callback: (tickType: Int, value: Double) -> Unit)
     fun cancelMarketData(conId: Int)
     fun requestOptionChain(underlying: String): List<OptionContractDetails>
