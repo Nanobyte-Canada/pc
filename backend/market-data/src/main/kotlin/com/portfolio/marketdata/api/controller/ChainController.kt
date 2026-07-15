@@ -40,7 +40,7 @@ class ChainController(
     private val greeksCalculator: GreeksCalculator,
     private val ibkrClient: IbkrClient,
     private val properties: AppProperties,
-    @Value("\${chain.build-timeout-seconds:15}") private val buildTimeoutSeconds: Long,
+    @Value("\${chain.build-timeout-seconds:25}") private val buildTimeoutSeconds: Long,
     @Value("\${chain.build-max-threads:4}") private val buildMaxThreads: Int
 ) : DisposableBean {
 
