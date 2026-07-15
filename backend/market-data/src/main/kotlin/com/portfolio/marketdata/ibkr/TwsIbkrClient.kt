@@ -111,10 +111,11 @@ class TwsIbkrClient(
             log.warn("TwsIbkrClient: timed out waiting for nextValidId callback")
         }
 
-        // Request real-time market data (type 1). Falls back to delayed if subscription doesn't support it.
+        // Request delayed market data (type 3) so data is available outside market hours.
+        // Real-time (type 1) keeps the USOPT data farm inactive after hours causing chain timeouts.
         if (connected.get()) {
-            client.reqMarketDataType(1)
-            log.info("TwsIbkrClient: requested real-time market data type")
+            client.reqMarketDataType(3)
+            log.info("TwsIbkrClient: requested delayed market data type (always available)")
         }
     }
 
@@ -525,19 +526,9 @@ class TwsIbkrClient(
             // Data farm status updates — log at info level
             2107 -> log.info("TwsIbkrClient: [{}] {} (reqId={})", errorCode, errorMsg, id)
             2119 -> log.info("TwsIbkrClient: [{}] {} (reqId={})", errorCode, errorMsg, id)
-            // Data farm inactive — trigger reconnect to re-establish data farm
-            2108 -> {
-                log.warn("TwsIbkrClient: Data farm inactive [{}]: {} — triggering reconnect", errorCode, errorMsg)
-                connected.set(false)
-                pendingRequests.values.forEach { it.completeExceptionally(RuntimeException("Data farm inactive: $errorMsg")) }
-                pendingRequests.clear()
-                contractAccumulators.clear()
-                optionChainParamAccumulators.clear()
-                snapshotAccumulators.clear()
-                for (handler in dataFarmErrorHandlers) {
-                    try { handler.run() } catch (e: Exception) { log.debug("Data farm error handler failed", e) }
-                }
-            }
+            // Data farm inactive — informational; IBKR activates the farm on demand when data is requested.
+            // Do NOT disconnect or reconnect — causes infinite loop after market hours.
+            2108 -> log.info("TwsIbkrClient: [{}] {} (reqId={}) — farm will activate on demand", errorCode, errorMsg, id)
             // Market data subscription warning — delayed data may follow
             10089, 10090 -> log.info("TwsIbkrClient: [{}] {} (reqId={})", errorCode, errorMsg, id)
             // No security definition found
