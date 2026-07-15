@@ -43,9 +43,11 @@ class TwsIbkrClient(
     }
 
     private val requestTimeout = properties.reconnectDelayMs.coerceAtLeast(10000)
-    private val chainRequestTimeout = 30000L
+    private val chainRequestTimeout = 12000L
 
     @Volatile private var initialConnectComplete = false
+    @Volatile private var lastDataFarmError: Int? = null
+    @Volatile private var lastDataFarmErrorTime: Long = 0L
     private val reconnectHandlers = CopyOnWriteArrayList<Runnable>()
     private val dataFarmErrorHandlers = CopyOnWriteArrayList<Runnable>()
 
@@ -136,6 +138,12 @@ class TwsIbkrClient(
     }
 
     override fun isConnected(): Boolean = connected.get() && (::client.isInitialized && client.isConnected)
+
+    override fun isDataFarmHealthy(): Boolean {
+        val error = lastDataFarmError ?: return true
+        // Consider data farm healthy again after 5 minutes without errors
+        return System.currentTimeMillis() - lastDataFarmErrorTime > 5 * 60 * 1000
+    }
 
     override fun requestMarketData(conId: Int, callback: (tickType: Int, value: Double) -> Unit) {
         val reqId = nextReqId.getAndIncrement()
@@ -515,6 +523,10 @@ class TwsIbkrClient(
     }
 
     override fun error(id: Int, errorTime: Long, errorCode: Int, errorMsg: String?, advancedOrderRejectJson: String?) {
+        if (errorCode in setOf(2103, 2107, 2108)) {
+            lastDataFarmError = errorCode
+            lastDataFarmErrorTime = System.currentTimeMillis()
+        }
         when (errorCode) {
             // Connection-level errors
             502, 504 -> {
