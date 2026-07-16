@@ -25,6 +25,7 @@ EOSQL
 
 # Set GUC parameters from environment variables
 # These will be available to Flyway migrations via current_setting()
+set_guc "app.environment" "uat"
 set_guc "app.test_admin_email" "${APP_TEST_ADMIN_EMAIL}"
 set_guc "app.test_admin_password_hash" "${APP_TEST_ADMIN_PASSWORD}"
 
