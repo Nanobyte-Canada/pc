@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { create } from 'zustand'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
@@ -30,11 +31,14 @@ export const useToastStore = create<ToastState>((set) => ({
 }))
 
 export function useToast() {
-  const { addToast } = useToastStore()
-  return {
-    success: (message: string) => addToast('success', message),
-    error: (message: string) => addToast('error', message),
-    warning: (message: string) => addToast('warning', message),
-    info: (message: string) => addToast('info', message),
-  }
+  const addToast = useToastStore((s) => s.addToast)
+  return useMemo(
+    () => ({
+      success: (message: string) => addToast('success', message),
+      error: (message: string) => addToast('error', message),
+      warning: (message: string) => addToast('warning', message),
+      info: (message: string) => addToast('info', message),
+    }),
+    [addToast]
+  )
 }
