@@ -43,7 +43,7 @@ class TwsIbkrClient(
     }
 
     private val requestTimeout = properties.reconnectDelayMs.coerceAtLeast(10000)
-    private val chainRequestTimeout = 6000L
+    private val chainRequestTimeout = 15000L
 
     @Volatile private var initialConnectComplete = false
     @Volatile private var lastDataFarmError: Int? = null

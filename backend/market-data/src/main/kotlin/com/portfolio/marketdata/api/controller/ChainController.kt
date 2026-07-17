@@ -329,7 +329,7 @@ class ChainController(
             val contracts = try {
                 ibkrClient.requestContractDetails(underlying, "OPT", expiry).filter { c ->
                     c.tradingClass == null || c.tradingClass == underlying
-                }.ifEmpty { ibkrClient.requestContractDetails(underlying, "OPT", expiry) }
+                }
             } catch (e: Exception) {
                 log.error("Failed to load contracts for {} expiry {}", underlying, expiry, e)
                 return@supplyAsync null
