@@ -4,6 +4,7 @@ import com.portfolio.common.domain.*
 import com.portfolio.marketdata.api.dto.OptionExpirationsResponse
 import com.portfolio.marketdata.api.dto.OptionsChainResponse
 import com.portfolio.marketdata.config.AppProperties
+import com.portfolio.marketdata.distribution.ExpiryCacheService
 import com.portfolio.marketdata.distribution.QuoteCacheService
 import com.portfolio.marketdata.ibkr.IbkrClient
 import com.portfolio.marketdata.processing.GreeksCalculator
@@ -41,7 +42,8 @@ class ChainController(
     private val ibkrClient: IbkrClient,
     private val properties: AppProperties,
     @Value("\${chain.build-timeout-seconds:25}") private val buildTimeoutSeconds: Long,
-    @Value("\${chain.build-max-threads:4}") private val buildMaxThreads: Int
+    @Value("\${chain.build-max-threads:4}") private val buildMaxThreads: Int,
+    private val expiryCacheService: ExpiryCacheService
 ) : DisposableBean {
 
     // Per-contract snapshot fetch timeout in seconds. Used by fetchSnapshots for parallel snapshot requests.
@@ -119,66 +121,40 @@ class ChainController(
         @PathVariable underlying: String,
         @RequestParam(required = false) maxDte: Int?
     ): ResponseEntity<OptionExpirationsResponse> {
-        val cachedChain = quoteCacheService.getChain(underlying)
-        if (cachedChain != null) {
-            if (!ibkrClient.isConnected()) {
-                log.warn("Serving stale expirations from cache for {} because IBKR is disconnected", underlying)
-            }
-            val expirations = cachedChain.expirations.keys.toList().sorted()
-            val filtered = filterByDte(expirations, maxDte)
-            return ResponseEntity.ok(OptionExpirationsResponse(underlying, cachedChain.spotPrice, filtered))
+        val spotPrice = quoteCacheService.getQuote(underlying)?.last
+
+        // Tier 1: Check ExpiryCacheService (90-day cache)
+        val cachedExpiry = expiryCacheService.getExpiry(underlying)
+        if (cachedExpiry != null) {
+            val filtered = filterByDte(cachedExpiry, maxDte)
+            return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice ?: BigDecimal.ZERO, filtered))
         }
 
-        if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        // Tier 2: Check full chain cache
+        val cachedChain = quoteCacheService.getChain(underlying)
+        if (cachedChain != null) {
+            val expirations = cachedChain.expirations.keys.toList().sorted()
+            val filtered = filterByDte(expirations, maxDte)
+            return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice ?: cachedChain.spotPrice, filtered))
+        }
 
-        val future = CompletableFuture.supplyAsync({
-            if (Thread.interrupted()) throw InterruptedException()
-            if (!ibkrClient.isConnected()) {
-                log.warn("IBKR disconnected before async expirations fetch for {}", underlying)
-                throw ChainBuildUnavailableException(underlying)
-            }
-            val spotPrice = resolveSpotPrice(underlying) ?: return@supplyAsync null
-            if (Thread.interrupted()) throw InterruptedException()
-            val allExpirations = quoteCacheService.getExpirations(underlying)
-                ?: run {
-                    if (Thread.interrupted()) throw InterruptedException()
-                    ibkrClient.requestOptionExpirations(underlying)
-                }.also { exps ->
-                    if (exps.isNotEmpty()) quoteCacheService.cacheExpirations(underlying, exps)
-                }
-            if (allExpirations.isEmpty()) return@supplyAsync null
-            Pair(spotPrice, allExpirations)
-        }, chainBuildExecutor)
+        // Tier 3: Check IBKR connection
+        if (!ibkrClient.isConnected()) {
+            log.warn("IBKR not connected, returning empty expirations for {}", underlying)
+            return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice ?: BigDecimal.ZERO, emptyList()))
+        }
 
-        val result = try {
-            future.get(effectiveBuildTimeoutSeconds, TimeUnit.SECONDS)
-        } catch (e: TimeoutException) {
-            future.cancel(false)
-            log.warn("Expirations fetch timed out for {}", underlying)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        } catch (e: CancellationException) {
-            log.warn("Expirations fetch cancelled for {}", underlying, e)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            log.warn("Expirations fetch interrupted for {}", underlying)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        } catch (e: ExecutionException) {
-            val cause = e.cause
-            if (cause is ChainBuildUnavailableException) {
-                log.warn("IBKR unavailable during expirations fetch for {}", underlying)
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-            }
-            log.error("Failed to fetch expirations for {}", underlying, e)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        // Tier 4: Fetch from IBKR (on-demand fallback)
+        return try {
+            val expirations = ibkrClient.requestOptionExpirations(underlying)
+            expiryCacheService.cacheExpiry(underlying, expirations)
+            log.info("Fetched and cached {} expirations for {} from IBKR", expirations.size, underlying)
+            val filtered = filterByDte(expirations, maxDte)
+            ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice ?: BigDecimal.ZERO, filtered))
         } catch (e: Exception) {
-            log.error("Failed to fetch expirations for {}", underlying, e)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        } ?: return ResponseEntity.notFound().build()
-
-        val (spotPrice, allExpirations) = result
-        val filtered = filterByDte(allExpirations, maxDte)
-        return ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice, filtered))
+            log.error("Failed to fetch expirations for {} from IBKR: {}", underlying, e.message)
+            ResponseEntity.ok(OptionExpirationsResponse(underlying, spotPrice ?: BigDecimal.ZERO, emptyList()))
+        }
     }
 
     @GetMapping("/{underlying}/expiry/{expiry}")

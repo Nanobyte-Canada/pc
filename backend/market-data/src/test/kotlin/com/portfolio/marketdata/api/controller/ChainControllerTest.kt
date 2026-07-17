@@ -7,6 +7,7 @@ import com.portfolio.common.domain.OptionType
 import com.portfolio.common.domain.OptionsChain
 import com.portfolio.common.domain.StrikeData
 import com.portfolio.marketdata.config.AppProperties
+import com.portfolio.marketdata.distribution.ExpiryCacheService
 import com.portfolio.marketdata.distribution.QuoteCacheService
 import com.portfolio.marketdata.ibkr.IbkrClient
 import com.portfolio.marketdata.ibkr.MarketDataSnapshot
@@ -31,6 +32,7 @@ class ChainControllerTest {
     private val chainBuilder = mockk<OptionsChainBuilder>(relaxed = true)
     private val greeksCalculator = mockk<GreeksCalculator>(relaxed = true)
     private val ibkrClient = mockk<IbkrClient>(relaxed = true)
+    private val expiryCacheService = mockk<ExpiryCacheService>(relaxed = true)
     private val properties = AppProperties(maxDteDefault = 90)
 
     private lateinit var controller: ChainController
@@ -42,8 +44,8 @@ class ChainControllerTest {
             vega = BigDecimal.ZERO, rho = BigDecimal.ZERO, source = GreeksSource.BLACK_SCHOLES
         )
         every { quoteCacheService.getChain(any()) } returns null
-        every { quoteCacheService.getExpirations(any()) } returns null
-        controller = ChainController(quoteCacheService, chainBuilder, greeksCalculator, ibkrClient, properties, 15, 2)
+        every { expiryCacheService.getExpiry(any()) } returns null
+        controller = ChainController(quoteCacheService, chainBuilder, greeksCalculator, ibkrClient, properties, 15, 2, expiryCacheService)
     }
 
     @Test
@@ -67,13 +69,14 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getExpirations returns 503 when IBKR not connected`() {
+    fun `getExpirations returns 200 with empty list when IBKR not connected`() {
         every { ibkrClient.isConnected() } returns false
         every { quoteCacheService.getChain("SPY") } returns null
 
         val response = controller.getExpirations("SPY", null)
 
-        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertEquals(emptyList<java.time.LocalDate>(), response.body!!.expirations)
     }
 
     @Test
@@ -109,9 +112,8 @@ class ChainControllerTest {
         val allExpirations = listOf(within90, beyond90)
 
         every { quoteCacheService.getChain("AAPL") } returns null
-        every { quoteCacheService.getExpirations("AAPL") } returns allExpirations
+        every { expiryCacheService.getExpiry("AAPL") } returns allExpirations
         every { quoteCacheService.getQuote("AAPL") } returns mockk { every { last } returns BigDecimal("150.00") }
-        every { ibkrClient.isConnected() } returns true
 
         val response = controller.getExpirations("AAPL", null)
 
@@ -127,7 +129,6 @@ class ChainControllerTest {
         val beyond90 = today.plusDays(180)
 
         every { quoteCacheService.getChain("SPY") } returns null
-        every { quoteCacheService.getExpirations("SPY") } returns null
         every { ibkrClient.requestOptionExpirations("SPY") } returns listOf(within90, beyond90)
         every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
         every { ibkrClient.isConnected() } returns true
@@ -146,9 +147,8 @@ class ChainControllerTest {
         val in120 = today.plusDays(120)
 
         every { quoteCacheService.getChain("QQQ") } returns null
-        every { quoteCacheService.getExpirations("QQQ") } returns listOf(in30, in60, in120)
+        every { expiryCacheService.getExpiry("QQQ") } returns listOf(in30, in60, in120)
         every { quoteCacheService.getQuote("QQQ") } returns mockk { every { last } returns BigDecimal("400.00") }
-        every { ibkrClient.isConnected() } returns true
 
         val response = controller.getExpirations("QQQ", 45)
 
@@ -157,16 +157,16 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getExpirations returns 404 when IBKR returns empty`() {
+    fun `getExpirations returns 200 with empty list when IBKR returns empty`() {
         every { quoteCacheService.getChain("XYZ") } returns null
-        every { quoteCacheService.getExpirations("XYZ") } returns null
         every { ibkrClient.requestOptionExpirations("XYZ") } returns emptyList()
         every { quoteCacheService.getQuote("XYZ") } returns mockk { every { last } returns BigDecimal("10.00") }
         every { ibkrClient.isConnected() } returns true
 
         val response = controller.getExpirations("XYZ", null)
 
-        assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertEquals(emptyList<java.time.LocalDate>(), response.body!!.expirations)
     }
 
     @Test
@@ -284,29 +284,14 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getExpirations fetches from IBKR on cache miss with async timeout`() {
-        val today = LocalDate.now()
-        val within90 = today.plusDays(30)
-        val beyond90 = today.plusDays(180)
-
-        every { quoteCacheService.getExpirations("SPY") } returns null
-        every { ibkrClient.requestOptionExpirations("SPY") } returns listOf(within90, beyond90)
-        every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
+    fun `getExpirations returns 200 with empty list when IBKR disconnects mid-fetch`() {
+        every { quoteCacheService.getChain("SPY") } returns null
         every { ibkrClient.isConnected() } returns true
+        every { ibkrClient.requestOptionExpirations("SPY") } throws RuntimeException("IBKR disconnected")
 
         val response = controller.getExpirations("SPY", null)
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        assertEquals(listOf(within90), response.body!!.expirations)
-    }
-
-    @Test
-    fun `getExpirations returns 503 when IBKR disconnects mid-fetch`() {
-        every { quoteCacheService.getExpirations("SPY") } returns null
-        every { ibkrClient.isConnected() } returnsMany listOf(true, false)
-
-        val response = controller.getExpirations("SPY", null)
-
-        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
+        assertEquals(emptyList<java.time.LocalDate>(), response.body!!.expirations)
     }
 }
