@@ -3,6 +3,8 @@ package com.portfolio.marketdata.distribution
 import com.portfolio.marketdata.config.ExpiryProperties
 import com.portfolio.marketdata.ibkr.IbkrClient
 import org.slf4j.LoggerFactory
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 
@@ -13,6 +15,28 @@ class ExpiryRefreshService(
     private val properties: ExpiryProperties
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * Refresh expiry dates on application startup so the cache is populated
+     * immediately rather than waiting for the first scheduled Monday run.
+     * Runs with a short delay to let IBKR connection stabilize.
+     */
+    @EventListener(ApplicationReadyEvent::class)
+    fun onStartup() {
+        Thread {
+            try {
+                Thread.sleep(10_000) // Wait 10s for IBKR connection to stabilize
+                log.info("Startup expiry refresh triggered")
+                refreshAll()
+            } catch (e: Exception) {
+                log.warn("Startup expiry refresh failed (will retry on schedule): {}", e.message)
+            }
+        }.apply {
+            isDaemon = true
+            name = "expiry-startup-refresh"
+            start()
+        }
+    }
 
     @Scheduled(cron = "\${expiry.refresh.cron:0 0 8 ? * MON}")
     fun refreshAll() {

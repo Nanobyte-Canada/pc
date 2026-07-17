@@ -89,4 +89,11 @@ class ExpiryCacheServiceTest {
 
         assertNull(result)
     }
+
+    @Test
+    fun `cacheExpiry skips empty list to avoid poisoning cache`() {
+        service.cacheExpiry("SOXL", emptyList())
+
+        verify(exactly = 0) { opsForValue.set(any(), any(), any(), any()) }
+    }
 }

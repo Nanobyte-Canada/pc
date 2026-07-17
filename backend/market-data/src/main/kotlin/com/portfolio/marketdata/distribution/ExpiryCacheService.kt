@@ -21,6 +21,10 @@ class ExpiryCacheService(
     }
 
     fun cacheExpiry(symbol: String, expirations: List<LocalDate>) {
+        if (expirations.isEmpty()) {
+            log.debug("Skipping cache for {} — empty expiry list (will retry on next request)", symbol)
+            return
+        }
         val key = "$KEY_PREFIX$symbol"
         val json = objectMapper.writeValueAsString(expirations)
         val ttlDays = properties.cache.ttlDays
