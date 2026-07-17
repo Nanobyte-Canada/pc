@@ -6,7 +6,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.portfolio.marketdata.config.ExpiryProperties
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -32,6 +34,7 @@ class ExpiryCacheServiceTest {
     @BeforeEach
     fun setup() {
         every { redisTemplate.opsForValue() } returns opsForValue
+        every { opsForValue.set(any(), any(), any(), any()) } just runs
         service = ExpiryCacheService(redisTemplate, objectMapper, properties)
     }
 
