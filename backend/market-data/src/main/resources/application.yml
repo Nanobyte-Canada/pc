@@ -50,3 +50,10 @@ ibkr:
   host: ${IBKR_HOST:}
   port: ${IBKR_PORT:4002}
   client-id: ${IBKR_CLIENT_ID:1}
+
+expiry:
+  refresh:
+    cron: ${EXPIRY_REFRESH_CRON:0 0 8 ? * MON}
+    symbols: ${EXPIRY_REFRESH_SYMBOLS:SOXL,TECL,TQQQ,SPXU,SPY,QQQ,XLF,NVDA,AVGO}
+  cache:
+    ttl-days: ${EXPIRY_CACHE_TTL_DAYS:90}
