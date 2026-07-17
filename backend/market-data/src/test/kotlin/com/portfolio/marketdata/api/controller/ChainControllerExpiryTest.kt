@@ -23,7 +23,6 @@ class ChainControllerExpiryTest {
     @BeforeEach
     fun setup() {
         every { quoteCacheService.getChain(any()) } returns null
-        every { quoteCacheService.getExpirations(any()) } returns null
         controller = ChainController(
             quoteCacheService = quoteCacheService,
             chainBuilder = mockk(relaxed = true),

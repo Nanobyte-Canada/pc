@@ -146,7 +146,7 @@ class ChainController(
 
         // Tier 4: Fetch from IBKR (on-demand fallback)
         return try {
-            val expirations = ibkrClient.requestOptionExpirations(underlying)
+            val expirations = ibkrClient.requestOptionExpirations(underlying).sorted()
             expiryCacheService.cacheExpiry(underlying, expirations)
             log.info("Fetched and cached {} expirations for {} from IBKR", expirations.size, underlying)
             val filtered = filterByDte(expirations, maxDte)
