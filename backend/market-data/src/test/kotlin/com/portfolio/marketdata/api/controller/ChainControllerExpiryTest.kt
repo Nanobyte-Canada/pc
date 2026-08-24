@@ -37,7 +37,9 @@ class ChainControllerExpiryTest {
 
     @Test
     fun `getExpirations uses ExpiryCacheService first`() {
-        val cachedExpirations = listOf(LocalDate.of(2026, 7, 18), LocalDate.of(2026, 7, 25))
+        // Relative to now: filterByDte drops past-dated expirations, so hardcoded
+        // dates age into failures (this exact bug broke CI in Aug 2026).
+        val cachedExpirations = listOf(LocalDate.now().plusDays(7), LocalDate.now().plusDays(14))
         every { expiryCacheService.getExpiry("SOXL") } returns cachedExpirations
         every { quoteCacheService.getQuote("SOXL") } returns mockk { every { last } returns BigDecimal("50.00") }
 
@@ -50,7 +52,7 @@ class ChainControllerExpiryTest {
 
     @Test
     fun `getExpirations falls back to IBKR on cache miss`() {
-        val ibkrExpirations = listOf(LocalDate.of(2026, 8, 1))
+        val ibkrExpirations = listOf(LocalDate.now().plusDays(10))
         every { expiryCacheService.getExpiry("SOXL") } returns null
         every { ibkrClient.isConnected() } returns true
         every { ibkrClient.requestOptionExpirations("SOXL") } returns ibkrExpirations
