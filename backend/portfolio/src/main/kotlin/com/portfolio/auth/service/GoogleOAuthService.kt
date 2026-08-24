@@ -16,8 +16,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.netty.http.client.PrematureCloseException
+import java.net.ConnectException
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
@@ -43,7 +46,14 @@ class GoogleOAuthService(
     private val secureTokenGenerator: SecureTokenGenerator,
     private val auditService: AuditService,
     private val authConfig: AuthConfig,
-    private val webClient: WebClient
+    private val webClient: WebClient,
+    /**
+     * Programmatic transaction boundary for the state validate+consume unit. Nullable so
+     * plain unit tests can construct the service without Spring; in production Spring Boot
+     * auto-configures a TransactionTemplate and injects it (nullable constructor params are
+     * optional dependencies for Spring's Kotlin support).
+     */
+    private val transactionTemplate: TransactionTemplate? = null
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val objectMapper = ObjectMapper()
@@ -51,6 +61,13 @@ class GoogleOAuthService(
     companion object {
         private const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
         private const val STATE_EXPIRY_MINUTES = 10L
+
+        /**
+         * Total attempts per external HTTP call: initial attempt + 1 retry
+         * (marker: GOOGLE_OAUTH_RETRY). Never more — the auth code is single-use.
+         */
+        private const val MAX_HTTP_ATTEMPTS = 2
+        private const val RETRY_BACKOFF_MS = 250L
     }
 
     /** Resolves the Google OAuth redirect URI. Returns the explicit
@@ -92,18 +109,20 @@ class GoogleOAuthService(
         return "$GOOGLE_AUTH_URL?$queryString"
     }
 
-    @Transactional
+    /**
+     * Handles the OAuth callback WITHOUT holding a database transaction across the
+     * external Google HTTP calls (marker: GOOGLE_OAUTH_TX_SPLIT).
+     *
+     * Deliberate phase separation:
+     * 1. [consumeStateForCallback] — validate + consume the state token in its own short
+     *    transactional unit (no external I/O inside).
+     * 2. Token exchange + userinfo fetch — run OUTSIDE any transaction so a DB connection
+     *    is never pinned across slow/unreachable upstream calls (root cause of recurring
+     *    provider_unavailable sign-in failures under pool exhaustion).
+     * 3. [findOrCreateUser] keeps its own @Transactional unit.
+     */
     fun handleCallback(code: String, state: String): GoogleUserProfile {
-        val stateHash = secureTokenGenerator.hashToken(state)
-        val oauthState = oauthStateRepository.findByStateHash(stateHash)
-            ?: throw GoogleOAuthException("Invalid state token")
-
-        if (!oauthState.isValid()) {
-            throw GoogleOAuthException("State token has expired or already been used")
-        }
-
-        oauthState.markUsed()
-        oauthStateRepository.save(oauthState)
+        consumeStateForCallback(state)
 
         val googleConfig = authConfig.oauth2.google
         val redirectUri = resolveRedirectUri()
@@ -115,6 +134,27 @@ class GoogleOAuthService(
         )
 
         return fetchUserProfile(tokenResponse.accessToken)
+    }
+
+    /**
+     * Validates and consumes the OAuth state token in a single short transaction.
+     * Exception semantics preserved: [GoogleOAuthException] for invalid/expired/used states,
+     * which rolls the unit back and maps to `auth_failed` in the controller.
+     */
+    private fun consumeStateForCallback(state: String) {
+        val consumeUnit = {
+            val stateHash = secureTokenGenerator.hashToken(state)
+            val oauthState = oauthStateRepository.findByStateHash(stateHash)
+                ?: throw GoogleOAuthException("Invalid state token")
+
+            if (!oauthState.isValid()) {
+                throw GoogleOAuthException("State token has expired or already been used")
+            }
+
+            oauthState.markUsed()
+            oauthStateRepository.save(oauthState)
+        }
+        transactionTemplate?.execute { consumeUnit() } ?: consumeUnit()
     }
 
     @Transactional
@@ -231,27 +271,66 @@ class GoogleOAuthService(
         }
     }
 
+    /**
+     * Runs [action] with at most one retry (marker: GOOGLE_OAUTH_RETRY), and ONLY for
+     * connect-phase/transient failures: [WebClientRequestException] whose cause chain
+     * contains [ConnectException] (this includes io.netty.channel.ConnectTimeoutException,
+     * which extends it) or [PrematureCloseException].
+     *
+     * Conservative by design: once ANY HTTP response has been received the request is never
+     * retried — response errors surface as GoogleOAuthException/WebClientResponseException,
+     * which are not retryable here, so the single-use authorization code can never be
+     * replayed against Google.
+     */
+    private fun <T> withConnectRetry(action: () -> T): T {
+        var attempt = 1
+        while (true) {
+            try {
+                return action()
+            } catch (e: RuntimeException) {
+                if (attempt >= MAX_HTTP_ATTEMPTS || !isTransientConnectFailure(e)) throw e
+                logger.warn(
+                    "GOOGLE_OAUTH_RETRY: transient connect failure on attempt {}/{} ({}), retrying in {}ms",
+                    attempt, MAX_HTTP_ATTEMPTS, e.javaClass.simpleName, RETRY_BACKOFF_MS, e
+                )
+                Thread.sleep(RETRY_BACKOFF_MS)
+                attempt++
+            }
+        }
+    }
+
+    private fun isTransientConnectFailure(e: Throwable): Boolean {
+        var current: Throwable? = e
+        while (current != null) {
+            if (current is ConnectException || current is PrematureCloseException) return true
+            current = current.cause
+        }
+        return false
+    }
+
     private fun exchangeCodeForTokens(
         code: String,
         clientId: String,
         clientSecret: String,
         redirectUri: String
     ): GoogleTokenResponse {
-        val response = webClient.post()
-            .uri(authConfig.oauth2.google.tokenUrl)
-            .body(BodyInserters.fromFormData("code", code)
-                .with("client_id", clientId)
-                .with("client_secret", clientSecret)
-                .with("redirect_uri", redirectUri)
-                .with("grant_type", "authorization_code"))
-            .retrieve()
-            .onStatus({ it.isError }) { resp ->
-                resp.bodyToMono(String::class.java)
-                    .defaultIfEmpty("")
-                    .map { body -> throw parseGoogleError(body, resp.statusCode().value()) }
-            }
-            .bodyToMono(Map::class.java)
-            .block() ?: throw GoogleOAuthException("Failed to exchange authorization code")
+        val response = withConnectRetry {
+            webClient.post()
+                .uri(authConfig.oauth2.google.tokenUrl)
+                .body(BodyInserters.fromFormData("code", code)
+                    .with("client_id", clientId)
+                    .with("client_secret", clientSecret)
+                    .with("redirect_uri", redirectUri)
+                    .with("grant_type", "authorization_code"))
+                .retrieve()
+                .onStatus({ it.isError }) { resp ->
+                    resp.bodyToMono(String::class.java)
+                        .defaultIfEmpty("")
+                        .map { body -> throw parseGoogleError(body, resp.statusCode().value()) }
+                }
+                .bodyToMono(Map::class.java)
+                .block()
+        } ?: throw GoogleOAuthException("Failed to exchange authorization code")
 
         val accessToken = response["access_token"] as? String
             ?: throw GoogleOAuthException("No access token in response")
@@ -260,17 +339,19 @@ class GoogleOAuthService(
     }
 
     private fun fetchUserProfile(accessToken: String): GoogleUserProfile {
-        val response = webClient.get()
-            .uri(authConfig.oauth2.google.userinfoUrl)
-            .header("Authorization", "Bearer $accessToken")
-            .retrieve()
-            .onStatus({ it.isError }) { resp ->
-                resp.bodyToMono(String::class.java)
-                    .defaultIfEmpty("")
-                    .map { body -> throw parseGoogleError(body, resp.statusCode().value()) }
-            }
-            .bodyToMono(Map::class.java)
-            .block() ?: throw GoogleOAuthException("Failed to fetch user profile")
+        val response = withConnectRetry {
+            webClient.get()
+                .uri(authConfig.oauth2.google.userinfoUrl)
+                .header("Authorization", "Bearer $accessToken")
+                .retrieve()
+                .onStatus({ it.isError }) { resp ->
+                    resp.bodyToMono(String::class.java)
+                        .defaultIfEmpty("")
+                        .map { body -> throw parseGoogleError(body, resp.statusCode().value()) }
+                }
+                .bodyToMono(Map::class.java)
+                .block()
+        } ?: throw GoogleOAuthException("Failed to fetch user profile")
 
         return GoogleUserProfile(
             sub = response["sub"] as? String ?: throw GoogleOAuthException("No sub in Google profile"),

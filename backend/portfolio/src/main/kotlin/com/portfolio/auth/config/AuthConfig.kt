@@ -1,12 +1,16 @@
 package com.portfolio.auth.config
 
+import io.netty.channel.ChannelOption
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.netty.http.client.HttpClient
+import reactor.netty.resources.ConnectionProvider
 import java.time.Duration
 
 @Configuration
@@ -46,9 +50,38 @@ class AuthConfig {
         }
     }
 
+    companion object {
+        /** TCP connect timeout for Google OAuth endpoints (marker: GOOGLE_OAUTH_HTTP_CLIENT). */
+        private const val GOOGLE_OAUTH_CONNECT_TIMEOUT_MS = 5000
+        private val GOOGLE_OAUTH_RESPONSE_TIMEOUT: Duration = Duration.ofSeconds(10)
+    }
+
+    /**
+     * Dedicated WebClient for Google OAuth token/userinfo calls (singleton bean).
+     *
+     * Uses a named connection pool ("google-oauth") with bounded idle/lifetime so stale
+     * or half-open connections to accounts.google.com / oauth2.googleapis.com are evicted
+     * instead of failing sign-in (RCA marker: GOOGLE_OAUTH_HTTP_CLIENT):
+     * - maxIdleTime 45s < Google's ~60s idle keep-alive window, avoiding reused dead sockets
+     * - maxLifeTime 5min bounds long-lived connections behind NAT/LB churn
+     * - evictInBackground 60s removes expired connections without waiting for a request
+     * Explicit connect (5s) and response (10s) timeouts prevent callbacks from hanging.
+     */
     @Bean
     fun googleOAuthWebClient(): WebClient {
-        return WebClient.builder().build()
+        val connectionProvider = ConnectionProvider.builder("google-oauth")
+            .maxIdleTime(Duration.ofSeconds(45))
+            .maxLifeTime(Duration.ofMinutes(5))
+            .evictInBackground(Duration.ofSeconds(60))
+            .build()
+
+        val httpClient = HttpClient.create(connectionProvider)
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, GOOGLE_OAUTH_CONNECT_TIMEOUT_MS)
+            .responseTimeout(GOOGLE_OAUTH_RESPONSE_TIMEOUT)
+
+        return WebClient.builder()
+            .clientConnector(ReactorClientHttpConnector(httpClient))
+            .build()
     }
 }
 

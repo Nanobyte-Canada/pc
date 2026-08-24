@@ -18,13 +18,17 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
+import org.springframework.dao.QueryTimeoutException
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import java.net.URI
 import java.nio.charset.Charset
 
 @WebMvcTest(controllers = [AuthController::class])
@@ -102,5 +106,42 @@ class AuthControllerTest {
 
         assertTrue(output.all.contains("AUTH_CALLBACK_UNEXPECTED"),
             "Log should contain AUTH_CALLBACK_UNEXPECTED marker, but got: ${output.all}")
+    }
+
+    @Test
+    fun `DataAccessException maps to provider_unavailable with AUTH_CALLBACK_DB log`(output: CapturedOutput) {
+        `when`(authConfig.cors).thenReturn(corsConfig())
+        `when`(googleOAuthService.handleCallback("test-code", "test-state"))
+            .thenThrow(QueryTimeoutException("Database connection timed out"))
+
+        mockMvc.perform(get("/auth/google/callback")
+            .param("code", "test-code")
+            .param("state", "test-state")
+        )
+            .andExpect(status().isFound)
+            .andExpect(header().string("Location", containsString("/login?error=provider_unavailable")))
+
+        assertTrue(output.all.contains("AUTH_CALLBACK_DB Database error"),
+            "Log should contain the AUTH_CALLBACK_DB log line, but got: ${output.all}")
+    }
+
+    @Test
+    fun `WebClientRequestException (network failure) maps to provider_unavailable redirect`() {
+        `when`(authConfig.cors).thenReturn(corsConfig())
+        val connectFailure = WebClientRequestException(
+            RuntimeException("Connection prematurely closed BEFORE response"),
+            HttpMethod.POST,
+            URI.create("https://oauth2.googleapis.com/token"),
+            HttpHeaders.EMPTY
+        )
+        `when`(googleOAuthService.handleCallback("test-code", "test-state"))
+            .thenThrow(connectFailure)
+
+        mockMvc.perform(get("/auth/google/callback")
+            .param("code", "test-code")
+            .param("state", "test-state")
+        )
+            .andExpect(status().isFound)
+            .andExpect(header().string("Location", containsString("/login?error=provider_unavailable")))
     }
 }

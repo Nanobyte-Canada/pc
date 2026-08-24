@@ -197,3 +197,67 @@ groups:
         annotations:
           summary: "Container {{ $labels.name }} in restart loop"
           description: "Container {{ $labels.name }} has restarted more than 3 times in the last 5 minutes. Total restarts: {{ $value }}"
+
+      - uid: auth-callback-unexpected-errors
+        title: Auth Callback Unexpected Errors
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: loki
+            model:
+              expr: 'count_over_time({container_name=~"(prod|uat)-.*"} |= "AUTH_CALLBACK_UNEXPECTED" [5m])'
+              intervalMs: 15000
+              maxDataPoints: 43200
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Unexpected auth callback errors in {{ $labels.container_name }}"
+          description: "Container {{ $labels.container_name }} logged AUTH_CALLBACK_UNEXPECTED {{ $value }} times in the last 5 minutes. Google sign-in is likely failing — check OAuth credentials in Vault (secret/data/portfolio/common) and callback URL configuration."
+
+      - uid: auth-google-credentials-missing
+        title: Auth Google Credentials Missing
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: loki
+            model:
+              expr: 'count_over_time({container_name=~"(prod|uat)-.*"} |= "AUTH_GOOGLE_CREDENTIALS_MISSING" [5m])'
+              intervalMs: 15000
+              maxDataPoints: 43200
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Google credentials missing at boot in {{ $labels.container_name }}"
+          description: "Container {{ $labels.container_name }} started without complete Google OAuth credentials (AUTH_GOOGLE_CREDENTIALS_MISSING logged {{ $value }} times in the last 5 minutes). Verify GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET in Vault (secret/data/portfolio/common and secret/data/portfolio/<env>)."

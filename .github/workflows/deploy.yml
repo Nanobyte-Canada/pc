@@ -90,6 +90,18 @@ jobs:
             echo "  Add it: vault kv put secret/portfolio/common GH_PROJECT_TOKEN=\"<pat>\""
             exit 1
           fi
+
+          # Validate Google OAuth credentials — blank creds silently break Google sign-in
+          if ! grep -Eq '^GOOGLE_CLIENT_ID=.+' /tmp/deploy.env; then
+            echo "::error::GOOGLE_CLIENT_ID is missing or empty in Vault (check secret/data/portfolio/common and secret/data/portfolio/${ENV})"
+            echo "  Add it: vault kv put secret/portfolio/common GOOGLE_CLIENT_ID=\"<client-id>\""
+            exit 1
+          fi
+          if ! grep -Eq '^GOOGLE_CLIENT_SECRET=.+' /tmp/deploy.env; then
+            echo "::error::GOOGLE_CLIENT_SECRET is missing or empty in Vault (check secret/data/portfolio/common and secret/data/portfolio/${ENV})"
+            echo "  Add it: vault kv put secret/portfolio/common GOOGLE_CLIENT_SECRET=\"<client-secret>\""
+            exit 1
+          fi
           echo "Required secrets validated"
 
           echo "Secrets fetched and validated successfully"

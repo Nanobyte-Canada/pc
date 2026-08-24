@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.dao.DataAccessException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseCookie
@@ -89,6 +90,11 @@ class AuthController(
         } catch (e: WebClientResponseException) {
             logger.error("AUTH_CALLBACK_GOOGLE_HTTP Google OAuth HTTP error: ${e.message}")
             redirectToFrontend(frontendUrl, "auth_failed")
+        } catch (e: DataAccessException) {
+            // Classified separately from generic failures so DB-level callback errors are
+            // greppable (marker: AUTH_CALLBACK_DB); still surfaced as provider_unavailable.
+            logger.error("AUTH_CALLBACK_DB Database error during Google OAuth callback: ${e.message}")
+            redirectToFrontend(frontendUrl, "provider_unavailable")
         } catch (e: Exception) {
             logger.error("AUTH_CALLBACK_UNEXPECTED Unexpected error during Google OAuth callback", e)
             redirectToFrontend(frontendUrl, "provider_unavailable")

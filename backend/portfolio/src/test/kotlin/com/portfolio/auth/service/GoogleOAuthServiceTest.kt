@@ -19,10 +19,12 @@ import io.mockk.*
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientRequestException
 import java.time.OffsetDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -620,5 +622,68 @@ class GoogleOAuthServiceTest {
 
         assertTrue(ex.message!!.contains("google_error:http_400"),
             "Expected message to contain 'google_error:http_400' but was: ${ex.message}")
+    }
+
+    // ── Transient connect-failure retry ─────────────────────────────────
+
+    @Test
+    fun `premature close on first attempt is retried and callback succeeds`() {
+        enqueueValidState("state-token")
+
+        // First attempt: server accepts the connection, reads the request,
+        // then closes the socket abruptly before responding (premature close).
+        mockWebServer.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
+
+        // Retry succeeds for token exchange, then userinfo succeeds.
+        val tokenBody = """{"access_token":"ya29.test","expires_in":3600,"token_type":"Bearer"}"""
+        mockWebServer.enqueue(MockResponse()
+            .setBody(tokenBody)
+            .addHeader("Content-Type", "application/json"))
+
+        val userinfoBody = """
+            {
+                "sub": "google-user-123",
+                "email": "test@example.com",
+                "name": "Test User",
+                "picture": "https://example.com/avatar.jpg"
+            }
+        """.trimIndent()
+        mockWebServer.enqueue(MockResponse()
+            .setBody(userinfoBody)
+            .addHeader("Content-Type", "application/json"))
+
+        val profile = service.handleCallback(code = "auth-code", state = "state-token")
+
+        assertEquals("google-user-123", profile.sub)
+        assertEquals("test@example.com", profile.email)
+
+        // Exactly 2 attempts against the failing (token) endpoint: 1 dropped + 1 retried.
+        val requests = mutableListOf<RecordedRequest>()
+        while (mockWebServer.requestCount > requests.size) {
+            requests.add(mockWebServer.takeRequest())
+        }
+        assertEquals(3, requests.size, "Expected 3 total HTTP requests (2 token + 1 userinfo)")
+        assertEquals(2, requests.count { it.path == "/token" },
+            "Token endpoint should be attempted exactly twice")
+        assertEquals(1, requests.count { it.path == "/userinfo" },
+            "Userinfo endpoint should be attempted exactly once")
+    }
+
+    @Test
+    fun `persistent connect failure exhausts retries and propagates network exception`() {
+        enqueueValidState("state-token")
+        mockWebServer.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
+        mockWebServer.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
+
+        val ex = assertFailsWith<WebClientRequestException> {
+            service.handleCallback(code = "auth-code", state = "state-token")
+        }
+
+        // Must NOT be converted into GoogleOAuthException: the controller relies
+        // on network-level exceptions to classify the failure as provider_unavailable.
+        assertTrue(ex.message!!.contains("Prematurely closed") || ex.cause != null,
+            "Expected a wrapped network failure, got: ${ex.javaClass.simpleName}: ${ex.message}")
+        assertEquals(2, mockWebServer.requestCount,
+            "Must stop after initial attempt + 1 retry (no more than 2 attempts)")
     }
 }
