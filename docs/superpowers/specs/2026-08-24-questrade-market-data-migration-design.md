@@ -25,6 +25,24 @@ Researched against official Questrade docs + community sources (Aug 2026):
 
 **Verdict:** Feasible for all required data domains. Phase 0 live smoke test confirms before migration code is written.
 
+### Phase 0 Live Smoke Test Results (2026-08-24) — ALL PASS
+
+| Check | Result | Evidence |
+|---|---|---|
+| Token exchange | ✅ | 30-min access token, rotating refresh token, `api01.iq.questrade.com` |
+| Symbol search | ✅ | `SPY` → `symbolId=34987`, `hasOptions=true`, ARCA/USD |
+| Options chain | ✅ | 32 expiries, ~178 strikes each, multiplier 100, American |
+| Option quotes + greeks | ✅ | delta/gamma/theta/vega/rho/IV/openInterest present, `delay=0` |
+| Stock snapshot real-time | ✅ | SPY bid/ask/last, `delay=0` (paid package confirmed active) |
+| Stock streaming | ✅ | negotiate → `streamPort`, WS auth via raw token → `{"success":true}` + quote frames |
+| Options streaming | ✅ | same socket pattern; streams `optionQuotes` **and** underlying `quotes` frames |
+
+**Docs-vs-reality corrections (implementation must follow actual API):**
+- Chain endpoint returns top-level key `optionChain` (not `options` as documented); per-root field is `optionRoot` (not `root`).
+- Option quotes response key is `optionQuotes`; option symbol format observed: `SPY28Aug26C600.00`.
+- Stock and options stream negotiation return the **same** `streamPort`; one connection carries both `quotes` and `optionQuotes` frames — confirms single-socket multiplexing design.
+- Access tokens can be invalidated mid-session (code 1017 observed once); re-exchange + retry resolved it.
+
 ## 2. Decisions
 
 1. **Approach A — provider-neutral port swap.** Rename `IbkrClient` → `MarketDataProvider`, implement `QuestradeProvider`. No dual-provider toggle (cleanup goal makes it YAGNI).
@@ -92,6 +110,7 @@ Frontend protocol untouched: REST `/market-data-api/api/v1/chains*`, `/quotes`; 
 - Socket drop → auto-reconnect + resubscribe.
 - Always use `api_server` URL returned by token exchange (prevents practice/live mismatch).
 - 429 → honor reset header, exponential backoff.
+- Code 1017 (invalid access token mid-session, observed live) → transparent re-exchange of refresh token + single retry of the failed call.
 
 ## 7. Testing & Rollout
 
