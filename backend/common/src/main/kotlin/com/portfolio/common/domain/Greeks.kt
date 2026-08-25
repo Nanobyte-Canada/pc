@@ -3,7 +3,8 @@ package com.portfolio.common.domain
 import java.math.BigDecimal
 
 enum class GreeksSource {
-    IBKR,
+    IBKR,          // legacy cached values; removed in Task 10
+    QUESTRADE,
     BLACK_SCHOLES
 }
 
