@@ -46,10 +46,9 @@ management:
       show-details: when-authorized
       show-components: when-authorized
 
-ibkr:
-  host: ${IBKR_HOST:}
-  port: ${IBKR_PORT:4002}
-  client-id: ${IBKR_CLIENT_ID:1}
+questrade:
+  refresh-token: ${QUESTRADE_REFRESH_TOKEN:}
+  use-practice: ${QUESTRADE_USE_PRACTICE:false}
 
 expiry:
   refresh:

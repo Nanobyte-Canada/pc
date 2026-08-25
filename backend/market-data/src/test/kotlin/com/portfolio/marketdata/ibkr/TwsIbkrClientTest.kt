@@ -7,7 +7,7 @@ import kotlin.test.assertFalse
 
 class TwsIbkrClientTest {
 
-    private val properties = AppProperties(host = "", port = 4002, clientId = 1, maxChainExpirations = 12)
+    private val properties = AppProperties(maxChainExpirations = 12)
 
     @Test
     fun `isConnected returns false before connect`() {
@@ -17,7 +17,7 @@ class TwsIbkrClientTest {
 
     @Test
     fun `connect with blank host does nothing`() {
-        val client = TwsIbkrClient(AppProperties(host = "", port = 4002, clientId = 1))
+        val client = TwsIbkrClient(AppProperties())
         client.connect()
         assertFalse(client.isConnected())
     }
@@ -33,7 +33,7 @@ class TwsIbkrClientTest {
 
     @Test
     fun `requestOptionChain returns empty for blank host`() {
-        val client = TwsIbkrClient(AppProperties(host = "", port = 4002, clientId = 1))
+        val client = TwsIbkrClient(AppProperties())
         client.connect()
         val chain = client.requestOptionChain("SPY")
         assertEquals(emptyList(), chain)

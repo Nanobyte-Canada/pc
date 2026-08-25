@@ -57,7 +57,7 @@ class TwsIbkrClient(
         Thread(r, "chain-resolve").apply { isDaemon = true }
     }
 
-    private val requestTimeout = properties.reconnectDelayMs.coerceAtLeast(10000)
+    private val requestTimeout = 10000L
     private val chainRequestTimeout = 15000L
 
     @Volatile private var initialConnectComplete = false
@@ -85,17 +85,12 @@ class TwsIbkrClient(
     // === MarketDataProvider interface ===
 
     override fun connect() {
-        log.info("TwsIbkrClient: connecting to {}:{} clientId={}", properties.host, properties.port, properties.clientId)
-
-        if (properties.host.isBlank()) {
-            log.warn("TwsIbkrClient: IBKR_HOST is blank, skipping connection")
-            return
-        }
+        log.info("TwsIbkrClient: connecting to {}:{} clientId={}", "127.0.0.1", 4002, 1)
 
         connectionReady = CountDownLatch(1)
         signal = EJavaSignal()
         client = EClientSocket(this, signal)
-        client.eConnect(properties.host, properties.port, properties.clientId)
+        client.eConnect("127.0.0.1", 4002, 1)
 
         if (!client.isConnected) {
             log.error("TwsIbkrClient: eConnect returned but not connected")
