@@ -1,4 +1,4 @@
-package com.portfolio.marketdata.ibkr
+package com.portfolio.marketdata.provider
 
 import com.portfolio.marketdata.db.entity.ContractCacheEntity
 import com.portfolio.marketdata.db.repository.ContractCacheRepository
@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class ContractResolver(
-    private val ibkrClient: MarketDataProvider,
+    private val provider: MarketDataProvider,
     private val contractCacheRepository: ContractCacheRepository,
     private val redisTemplate: RedisTemplate<String, String>
 ) {
@@ -42,7 +42,7 @@ class ContractResolver(
             cacheInRedis(cacheKey, it)
             return it
         }
-        getFromIbkr(symbol, secType, expiry, strike, right)?.let {
+        getFromProvider(symbol, secType, expiry, strike, right)?.let {
             cacheInDatabase(it)
             cacheInRedis(cacheKey, it)
             return it
@@ -56,7 +56,7 @@ class ContractResolver(
         return when (secType) {
             "OPT" -> {
                 try {
-                    ibkrClient.requestOptionChain(symbol).also { contracts ->
+                    provider.requestOptionChain(symbol).also { contracts ->
                         contracts.filter { it.conId > 0 }.forEach { contract ->
                             val key = buildCacheKey(contract.symbol, contract.secType, contract.expiry, contract.strike, contract.right)
                             cacheInDatabase(contract)
@@ -94,11 +94,11 @@ class ContractResolver(
         }
     }
 
-    private fun getFromIbkr(symbol: String, secType: String, expiry: LocalDate?, strike: BigDecimal?, right: String?): OptionContractDetails? {
+    private fun getFromProvider(symbol: String, secType: String, expiry: LocalDate?, strike: BigDecimal?, right: String?): OptionContractDetails? {
         return try {
-            ibkrClient.requestContractDetails(symbol, secType, expiry, strike, right).firstOrNull()
+            provider.requestContractDetails(symbol, secType, expiry, strike, right).firstOrNull()
         } catch (e: Exception) {
-            logger.error("IBKR contract request failed", e)
+            logger.error("Provider contract request failed", e)
             null
         }
     }

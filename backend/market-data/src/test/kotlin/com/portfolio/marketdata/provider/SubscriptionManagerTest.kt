@@ -1,6 +1,5 @@
-package com.portfolio.marketdata.ibkr
+package com.portfolio.marketdata.provider
 
-import com.portfolio.marketdata.provider.MarketDataProvider
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -12,31 +11,31 @@ import java.util.concurrent.TimeUnit
 
 class SubscriptionManagerTest {
 
-    private val ibkrClient = mockk<MarketDataProvider>(relaxed = true)
+    private val provider = mockk<MarketDataProvider>(relaxed = true)
 
     @Test
     fun `resubscribeAll re-requests market data for all active subscriptions`() {
-        val manager = SubscriptionManager(ibkrClient, 100)
+        val manager = SubscriptionManager(provider, 100)
 
         manager.subscribe(1001) { _, _ -> }
         manager.subscribe(1002) { _, _ -> }
 
         manager.resubscribeAll()
 
-        verify(exactly = 2) { ibkrClient.requestMarketData(1001, any()) }
-        verify(exactly = 2) { ibkrClient.requestMarketData(1002, any()) }
+        verify(exactly = 2) { provider.requestMarketData(1001, any()) }
+        verify(exactly = 2) { provider.requestMarketData(1002, any()) }
     }
 
     @Test
     fun `resubscribeAll is no-op when no active subscriptions`() {
-        val manager = SubscriptionManager(ibkrClient, 100)
+        val manager = SubscriptionManager(provider, 100)
         manager.resubscribeAll()
-        verify(exactly = 0) { ibkrClient.requestMarketData(any(), any()) }
+        verify(exactly = 0) { provider.requestMarketData(any(), any()) }
     }
 
     @Test
     fun `resubscribeAll does not resubscribe unsubscribed contracts`() {
-        val manager = SubscriptionManager(ibkrClient, 100)
+        val manager = SubscriptionManager(provider, 100)
 
         manager.subscribe(1001) { _, _ -> }
         manager.subscribe(1002) { _, _ -> }
@@ -44,44 +43,44 @@ class SubscriptionManagerTest {
 
         manager.resubscribeAll()
 
-        verify(exactly = 1) { ibkrClient.requestMarketData(1001, any()) }
-        verify(exactly = 2) { ibkrClient.requestMarketData(1002, any()) }
+        verify(exactly = 1) { provider.requestMarketData(1001, any()) }
+        verify(exactly = 2) { provider.requestMarketData(1002, any()) }
     }
 
     @Test
     fun `resubscribeAll handles exception and continues`() {
-        val manager = SubscriptionManager(ibkrClient, 100)
+        val manager = SubscriptionManager(provider, 100)
 
         manager.subscribe(1001) { _, _ -> }
         manager.subscribe(1002) { _, _ -> }
 
-        every { ibkrClient.requestMarketData(1001, any()) } throws RuntimeException("network error")
-        every { ibkrClient.requestMarketData(1002, any()) } returns Unit
+        every { provider.requestMarketData(1001, any()) } throws RuntimeException("network error")
+        every { provider.requestMarketData(1002, any()) } returns Unit
 
         manager.resubscribeAll()
 
-        verify(exactly = 2) { ibkrClient.requestMarketData(1001, any()) }
-        verify(exactly = 2) { ibkrClient.requestMarketData(1002, any()) }
+        verify(exactly = 2) { provider.requestMarketData(1001, any()) }
+        verify(exactly = 2) { provider.requestMarketData(1002, any()) }
     }
 
     @Test
     fun `resubscribeAll retries on repeated failures`() {
-        val manager = SubscriptionManager(ibkrClient, 100)
+        val manager = SubscriptionManager(provider, 100)
 
         manager.subscribe(1001) { _, _ -> }
 
-        every { ibkrClient.requestMarketData(1001, any()) } throws RuntimeException("network error")
+        every { provider.requestMarketData(1001, any()) } throws RuntimeException("network error")
 
         manager.resubscribeAll()
         manager.resubscribeAll()
         manager.resubscribeAll()
 
-        verify(exactly = 4) { ibkrClient.requestMarketData(1001, any()) }
+        verify(exactly = 4) { provider.requestMarketData(1001, any()) }
     }
 
     @RepeatedTest(5)
     fun `resubscribeAll is safe under concurrent execution`() {
-        val manager = SubscriptionManager(ibkrClient, 100)
+        val manager = SubscriptionManager(provider, 100)
         manager.subscribe(1001) { _, _ -> }
 
         val latch = CountDownLatch(1)
@@ -96,6 +95,6 @@ class SubscriptionManagerTest {
         futures.forEach { it.get(5, TimeUnit.SECONDS) }
         executor.shutdown()
 
-        verify(exactly = 4) { ibkrClient.requestMarketData(1001, any()) }
+        verify(exactly = 4) { provider.requestMarketData(1001, any()) }
     }
 }

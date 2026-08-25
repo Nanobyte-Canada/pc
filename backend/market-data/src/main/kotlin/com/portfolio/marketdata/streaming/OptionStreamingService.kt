@@ -3,10 +3,10 @@ package com.portfolio.marketdata.streaming
 import com.portfolio.common.domain.OptionType
 import com.portfolio.marketdata.distribution.QuoteCacheService
 import com.portfolio.marketdata.distribution.QuoteWebSocketHandler
-import com.portfolio.marketdata.ibkr.ContractResolver
-import com.portfolio.marketdata.ibkr.SubscriptionManager
+import com.portfolio.marketdata.provider.ContractResolver
 import com.portfolio.marketdata.provider.MarketDataProvider
 import com.portfolio.marketdata.provider.OptionContractDetails
+import com.portfolio.marketdata.provider.SubscriptionManager
 import com.portfolio.marketdata.processing.GreeksCalculator
 import com.portfolio.marketdata.processing.OptionQuoteNormalizer
 import com.portfolio.marketdata.processing.TickType

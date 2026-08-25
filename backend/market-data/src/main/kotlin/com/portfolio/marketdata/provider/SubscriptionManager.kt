@@ -1,6 +1,5 @@
-package com.portfolio.marketdata.ibkr
+package com.portfolio.marketdata.provider
 
-import com.portfolio.marketdata.provider.MarketDataProvider
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -8,8 +7,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class SubscriptionManager(
-    private val ibkrClient: MarketDataProvider,
-    @Value("\${ibkr.max-subscriptions:100}") private val maxSubscriptions: Int
+    private val provider: MarketDataProvider,
+    @Value("\${provider.max-subscriptions:100}") private val maxSubscriptions: Int
 ) {
 
     private val logger = LoggerFactory.getLogger(SubscriptionManager::class.java)
@@ -20,7 +19,7 @@ class SubscriptionManager(
 
     @PostConstruct
     fun init() {
-        ibkrClient.registerReconnectHandler { resubscribeAll() }
+        provider.registerReconnectHandler { resubscribeAll() }
     }
 
     fun subscribe(conId: Int, callback: (tickType: Int, value: Double) -> Unit) {
@@ -32,7 +31,7 @@ class SubscriptionManager(
             if (activeSubscriptions.size >= maxSubscriptions) evictLRU()
             activeSubscriptions[conId] = Subscription(conId, callback, pinnedConIds.contains(conId))
             try {
-                ibkrClient.requestMarketData(conId, callback)
+                provider.requestMarketData(conId, callback)
             } catch (e: Exception) {
                 logger.error("Failed to request market data for conId={}", conId, e)
                 activeSubscriptions.remove(conId)
@@ -46,7 +45,7 @@ class SubscriptionManager(
         synchronized(subscriptionLock) {
             val subscription = activeSubscriptions.remove(conId)
             if (subscription != null) {
-                try { ibkrClient.cancelMarketData(conId) } catch (e: Exception) {
+                try { provider.cancelMarketData(conId) } catch (e: Exception) {
                     logger.error("Failed to cancel market data for conId={}", conId, e)
                 }
             }
@@ -88,7 +87,7 @@ class SubscriptionManager(
             logger.info("Resubscribing {} active subscriptions after reconnect", snapshot.size)
             for ((conId, callback) in snapshot) {
                 try {
-                    ibkrClient.requestMarketData(conId, callback)
+                    provider.requestMarketData(conId, callback)
                     resubscribeFailures.remove(conId)
                 } catch (e: Exception) {
                     val failures = resubscribeFailures.merge(conId, 1, Int::plus)!!
@@ -115,7 +114,7 @@ class SubscriptionManager(
     fun unsubscribeAll() {
         synchronized(subscriptionLock) {
             activeSubscriptions.keys.toList().forEach { conId ->
-                try { ibkrClient.cancelMarketData(conId) } catch (e: Exception) {
+                try { provider.cancelMarketData(conId) } catch (e: Exception) {
                     logger.error("Error canceling subscription for conId={}", conId, e)
                 }
             }

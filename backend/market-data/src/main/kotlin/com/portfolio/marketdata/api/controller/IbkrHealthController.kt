@@ -1,8 +1,8 @@
 package com.portfolio.marketdata.api.controller
 
 import com.portfolio.marketdata.ibkr.IbkrConnectionManager
-import com.portfolio.marketdata.ibkr.SubscriptionManager
 import com.portfolio.marketdata.provider.MarketDataProvider
+import com.portfolio.marketdata.provider.SubscriptionManager
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
