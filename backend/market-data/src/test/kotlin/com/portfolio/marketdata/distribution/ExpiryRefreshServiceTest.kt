@@ -1,7 +1,7 @@
 package com.portfolio.marketdata.distribution
 
 import com.portfolio.marketdata.config.ExpiryProperties
-import com.portfolio.marketdata.ibkr.IbkrClient
+import com.portfolio.marketdata.provider.MarketDataProvider
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -11,7 +11,7 @@ import java.time.LocalDate
 
 class ExpiryRefreshServiceTest {
 
-    private val ibkrClient = mockk<IbkrClient>()
+    private val ibkrClient = mockk<MarketDataProvider>()
     private val expiryCacheService = mockk<ExpiryCacheService>(relaxed = true)
     private val properties = ExpiryProperties(
         refresh = ExpiryProperties.Refresh(

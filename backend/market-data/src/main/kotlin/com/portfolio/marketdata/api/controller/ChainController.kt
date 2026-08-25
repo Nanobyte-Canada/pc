@@ -6,7 +6,7 @@ import com.portfolio.marketdata.api.dto.OptionsChainResponse
 import com.portfolio.marketdata.config.AppProperties
 import com.portfolio.marketdata.distribution.ExpiryCacheService
 import com.portfolio.marketdata.distribution.QuoteCacheService
-import com.portfolio.marketdata.ibkr.IbkrClient
+import com.portfolio.marketdata.provider.MarketDataProvider
 import com.portfolio.marketdata.processing.GreeksCalculator
 import com.portfolio.marketdata.processing.OptionsChainBuilder
 import org.slf4j.LoggerFactory
@@ -39,7 +39,7 @@ class ChainController(
     private val quoteCacheService: QuoteCacheService,
     private val chainBuilder: OptionsChainBuilder,
     private val greeksCalculator: GreeksCalculator,
-    private val ibkrClient: IbkrClient,
+    private val ibkrClient: MarketDataProvider,
     private val properties: AppProperties,
     @Value("\${chain.build-timeout-seconds:25}") private val buildTimeoutSeconds: Long,
     @Value("\${chain.build-max-threads:4}") private val buildMaxThreads: Int,
@@ -362,9 +362,9 @@ class ChainController(
     }
 
     private fun filterByStrikeCount(
-        contracts: List<com.portfolio.marketdata.ibkr.OptionContractDetails>,
+        contracts: List<com.portfolio.marketdata.provider.OptionContractDetails>,
         spotPrice: BigDecimal, targetExpiry: LocalDate, strikesPerSide: Int
-    ): List<com.portfolio.marketdata.ibkr.OptionContractDetails> {
+    ): List<com.portfolio.marketdata.provider.OptionContractDetails> {
         val eligible = contracts.filter { c ->
             c.conId > 0 && c.strike != null && c.expiry == targetExpiry && c.right != null
         }
@@ -384,9 +384,9 @@ class ChainController(
     }
 
     private fun filterByDelta(
-        contracts: List<com.portfolio.marketdata.ibkr.OptionContractDetails>,
+        contracts: List<com.portfolio.marketdata.provider.OptionContractDetails>,
         spotPrice: BigDecimal, targetExpiry: LocalDate?, maxDelta: Double
-    ): List<com.portfolio.marketdata.ibkr.OptionContractDetails> {
+    ): List<com.portfolio.marketdata.provider.OptionContractDetails> {
         val eligible = contracts.filter { c ->
             c.conId > 0 && c.strike != null && c.expiry != null && c.right != null &&
             (targetExpiry == null || c.expiry == targetExpiry)
@@ -405,7 +405,7 @@ class ChainController(
         return eligible.filter { "${it.expiry}:${it.strike}" in validStrikes }
     }
 
-    private fun fetchSnapshots(contracts: List<com.portfolio.marketdata.ibkr.OptionContractDetails>): Map<Int, com.portfolio.marketdata.ibkr.MarketDataSnapshot> {
+    private fun fetchSnapshots(contracts: List<com.portfolio.marketdata.provider.OptionContractDetails>): Map<Int, com.portfolio.marketdata.provider.MarketDataSnapshot> {
         if (contracts.isEmpty()) return emptyMap()
 
         val startTime = System.currentTimeMillis()
@@ -443,9 +443,9 @@ class ChainController(
 
     private fun buildOptionQuote(
         underlying: String,
-        contract: com.portfolio.marketdata.ibkr.OptionContractDetails,
+        contract: com.portfolio.marketdata.provider.OptionContractDetails,
         spotPrice: BigDecimal,
-        snapshots: Map<Int, com.portfolio.marketdata.ibkr.MarketDataSnapshot>
+        snapshots: Map<Int, com.portfolio.marketdata.provider.MarketDataSnapshot>
     ): OptionQuote? {
         if (contract.expiry == null || contract.strike == null || contract.right == null) return null
         val optionType = if (isCall(contract.right)) OptionType.CALL else OptionType.PUT

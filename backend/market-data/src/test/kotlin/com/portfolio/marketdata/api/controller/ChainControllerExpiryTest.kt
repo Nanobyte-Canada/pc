@@ -2,7 +2,7 @@ package com.portfolio.marketdata.api.controller
 
 import com.portfolio.marketdata.config.AppProperties
 import com.portfolio.marketdata.distribution.ExpiryCacheService
-import com.portfolio.marketdata.ibkr.IbkrClient
+import com.portfolio.marketdata.provider.MarketDataProvider
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 class ChainControllerExpiryTest {
 
     private val quoteCacheService = mockk<com.portfolio.marketdata.distribution.QuoteCacheService>(relaxed = true)
-    private val ibkrClient = mockk<IbkrClient>()
+    private val ibkrClient = mockk<MarketDataProvider>()
     private val expiryCacheService = mockk<ExpiryCacheService>(relaxed = true)
     private val properties = AppProperties(maxDteDefault = 90)
     private lateinit var controller: ChainController

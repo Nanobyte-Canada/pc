@@ -1,6 +1,6 @@
 package com.portfolio.marketdata.health
 
-import com.portfolio.marketdata.ibkr.IbkrClient
+import com.portfolio.marketdata.provider.MarketDataProvider
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
@@ -10,7 +10,7 @@ class IbkrHealthIndicatorTest {
 
     @Test
     fun `health returns DOWN when IBKR is disconnected`() {
-        val ibkrClient = mockk<IbkrClient>()
+        val ibkrClient = mockk<MarketDataProvider>()
         every { ibkrClient.isConnected() } returns false
 
         val indicator = IbkrHealthIndicator(ibkrClient)
@@ -21,7 +21,7 @@ class IbkrHealthIndicatorTest {
 
     @Test
     fun `health returns UP when IBKR is connected`() {
-        val ibkrClient = mockk<IbkrClient>()
+        val ibkrClient = mockk<MarketDataProvider>()
         every { ibkrClient.isConnected() } returns true
 
         val indicator = IbkrHealthIndicator(ibkrClient)

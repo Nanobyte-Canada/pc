@@ -1,7 +1,7 @@
 package com.portfolio.marketdata.distribution
 
 import com.portfolio.marketdata.config.ExpiryProperties
-import com.portfolio.marketdata.ibkr.IbkrClient
+import com.portfolio.marketdata.provider.MarketDataProvider
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class ExpiryRefreshService(
-    private val ibkrClient: IbkrClient,
+    private val ibkrClient: MarketDataProvider,
     private val expiryCacheService: ExpiryCacheService,
     private val properties: ExpiryProperties
 ) {

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.portfolio.marketdata.config.ExpiryProperties
 import com.portfolio.marketdata.distribution.ExpiryCacheService
 import com.portfolio.marketdata.distribution.ExpiryRefreshService
-import com.portfolio.marketdata.ibkr.IbkrClient
+import com.portfolio.marketdata.provider.MarketDataProvider
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -23,7 +23,7 @@ class ExpiryCacheIntegrationTest {
 
     private val redisTemplate = mockk<RedisTemplate<String, String>>()
     private val opsForValue = mockk<ValueOperations<String, String>>()
-    private val ibkrClient = mockk<IbkrClient>()
+    private val ibkrClient = mockk<MarketDataProvider>()
     private val objectMapper: ObjectMapper = jacksonObjectMapper().apply {
         registerModule(JavaTimeModule())
         registerModule(kotlinModule())

@@ -1,8 +1,8 @@
 package com.portfolio.marketdata.api.controller
 
-import com.portfolio.marketdata.ibkr.IbkrClient
 import com.portfolio.marketdata.ibkr.IbkrConnectionManager
 import com.portfolio.marketdata.ibkr.SubscriptionManager
+import com.portfolio.marketdata.provider.MarketDataProvider
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController
 class IbkrHealthController(
     private val connectionManager: IbkrConnectionManager,
     private val subscriptionManager: SubscriptionManager,
-    private val ibkrClient: IbkrClient
+    private val ibkrClient: MarketDataProvider
 ) {
 
     @GetMapping("/ibkr")
@@ -22,7 +22,6 @@ class IbkrHealthController(
             "connected" to (state == IbkrConnectionManager.ConnectionState.CONNECTED),
             "service" to "market-data",
             "connectionState" to state.name,
-            "dataFarmHealthy" to ibkrClient.isDataFarmHealthy(),
             "activeSubscriptions" to subscriptionManager.getActiveCount(),
             "pinnedSubscriptions" to subscriptionManager.getPinnedCount()
         )

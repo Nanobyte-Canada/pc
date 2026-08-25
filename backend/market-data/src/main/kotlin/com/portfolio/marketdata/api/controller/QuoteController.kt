@@ -4,7 +4,7 @@ import com.portfolio.common.domain.Quote
 import com.portfolio.marketdata.api.dto.QuoteResponse
 import com.portfolio.marketdata.db.repository.UnderlyingPriceRepository
 import com.portfolio.marketdata.distribution.QuoteCacheService
-import com.portfolio.marketdata.ibkr.IbkrClient
+import com.portfolio.marketdata.provider.MarketDataProvider
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,7 +20,7 @@ import java.time.Instant
 class QuoteController(
     private val quoteCacheService: QuoteCacheService,
     private val underlyingPriceRepository: UnderlyingPriceRepository,
-    private val ibkrClient: IbkrClient
+    private val ibkrClient: MarketDataProvider
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)

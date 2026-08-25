@@ -4,9 +4,9 @@ import com.portfolio.common.domain.OptionType
 import com.portfolio.marketdata.distribution.QuoteCacheService
 import com.portfolio.marketdata.distribution.QuoteWebSocketHandler
 import com.portfolio.marketdata.ibkr.ContractResolver
-import com.portfolio.marketdata.ibkr.IbkrClient
-import com.portfolio.marketdata.ibkr.OptionContractDetails
 import com.portfolio.marketdata.ibkr.SubscriptionManager
+import com.portfolio.marketdata.provider.MarketDataProvider
+import com.portfolio.marketdata.provider.OptionContractDetails
 import com.portfolio.marketdata.processing.GreeksCalculator
 import com.portfolio.marketdata.processing.OptionQuoteNormalizer
 import com.portfolio.marketdata.processing.TickType
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class OptionStreamingService(
     private val subscriptionManager: SubscriptionManager,
     private val contractResolver: ContractResolver,
-    private val ibkrClient: IbkrClient,
+    private val ibkrClient: MarketDataProvider,
     private val optionQuoteNormalizer: OptionQuoteNormalizer,
     private val greeksCalculator: GreeksCalculator,
     private val quoteWebSocketHandler: QuoteWebSocketHandler,

@@ -1,6 +1,7 @@
 package com.portfolio.marketdata.ibkr
 
 import com.portfolio.marketdata.distribution.QuoteWebSocketHandler
+import com.portfolio.marketdata.provider.MarketDataProvider
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
@@ -12,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Component
 class IbkrConnectionManager(
-    private val ibkrClient: IbkrClient,
+    private val ibkrClient: MarketDataProvider,
     @Lazy private val webSocketHandler: QuoteWebSocketHandler
 ) : ApplicationRunner {
 
@@ -29,12 +30,6 @@ class IbkrConnectionManager(
 
     override fun run(args: ApplicationArguments?) {
         logger.info("IbkrConnectionManager: Starting...")
-        ibkrClient.registerDataFarmErrorHandler(Runnable {
-            logger.warn("IbkrConnectionManager: Data farm error detected, triggering reconnect")
-            ibkrClient.disconnect()
-            reconnectDelayMs = 5000L
-            scheduleReconnect()
-        })
         connectWithRetry()
         executor.scheduleWithFixedDelay(
             { checkHealth() },

@@ -9,11 +9,11 @@ import com.portfolio.common.domain.StrikeData
 import com.portfolio.marketdata.config.AppProperties
 import com.portfolio.marketdata.distribution.ExpiryCacheService
 import com.portfolio.marketdata.distribution.QuoteCacheService
-import com.portfolio.marketdata.ibkr.IbkrClient
-import com.portfolio.marketdata.ibkr.MarketDataSnapshot
-import com.portfolio.marketdata.ibkr.OptionContractDetails
 import com.portfolio.marketdata.processing.GreeksCalculator
 import com.portfolio.marketdata.processing.OptionsChainBuilder
+import com.portfolio.marketdata.provider.MarketDataProvider
+import com.portfolio.marketdata.provider.MarketDataSnapshot
+import com.portfolio.marketdata.provider.OptionContractDetails
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -31,7 +31,7 @@ class ChainControllerTest {
     private val quoteCacheService = mockk<QuoteCacheService>(relaxed = true)
     private val chainBuilder = mockk<OptionsChainBuilder>(relaxed = true)
     private val greeksCalculator = mockk<GreeksCalculator>(relaxed = true)
-    private val ibkrClient = mockk<IbkrClient>(relaxed = true)
+    private val ibkrClient = mockk<MarketDataProvider>(relaxed = true)
     private val expiryCacheService = mockk<ExpiryCacheService>(relaxed = true)
     private val properties = AppProperties(maxDteDefault = 90)
 

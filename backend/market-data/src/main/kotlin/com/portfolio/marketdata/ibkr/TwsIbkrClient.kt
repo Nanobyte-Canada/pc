@@ -2,6 +2,9 @@ package com.portfolio.marketdata.ibkr
 
 import com.ib.client.*
 import com.portfolio.marketdata.config.AppProperties
+import com.portfolio.marketdata.provider.MarketDataProvider
+import com.portfolio.marketdata.provider.MarketDataSnapshot
+import com.portfolio.marketdata.provider.OptionContractDetails
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -11,10 +14,22 @@ import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
+/**
+ * IBKR-specific chain parameter set returned by TWS `reqSecDefOptParams`.
+ * Internal to the ibkr package; not part of the provider-neutral interface.
+ */
+data class OptionChainParams(
+    val exchange: String,
+    val underlyingConId: Int,
+    val tradingClass: String?,
+    val multiplier: String?,
+    val expirations: Set<LocalDate>
+)
+
 @Component
 class TwsIbkrClient(
     private val properties: AppProperties
-) : DefaultEWrapper(), IbkrClient {
+) : DefaultEWrapper(), MarketDataProvider {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -46,10 +61,7 @@ class TwsIbkrClient(
     private val chainRequestTimeout = 15000L
 
     @Volatile private var initialConnectComplete = false
-    @Volatile private var lastDataFarmError: Int? = null
-    @Volatile private var lastDataFarmErrorTime: Long = 0L
     private val reconnectHandlers = CopyOnWriteArrayList<Runnable>()
-    private val dataFarmErrorHandlers = CopyOnWriteArrayList<Runnable>()
 
     override fun registerReconnectHandler(handler: Runnable) {
         reconnectHandlers.add(handler)
@@ -58,10 +70,6 @@ class TwsIbkrClient(
     @Deprecated("Use registerReconnectHandler instead", ReplaceWith("registerReconnectHandler(handler)"))
     fun setReconnectHandler(handler: Runnable) {
         registerReconnectHandler(handler)
-    }
-
-    override fun registerDataFarmErrorHandler(handler: Runnable) {
-        dataFarmErrorHandlers.add(handler)
     }
 
     data class GreeksData(
@@ -74,7 +82,7 @@ class TwsIbkrClient(
 
     fun getGreeks(conId: Int): GreeksData? = greeksStore[conId]
 
-    // === IbkrClient interface ===
+    // === MarketDataProvider interface ===
 
     override fun connect() {
         log.info("TwsIbkrClient: connecting to {}:{} clientId={}", properties.host, properties.port, properties.clientId)
@@ -138,12 +146,6 @@ class TwsIbkrClient(
     }
 
     override fun isConnected(): Boolean = connected.get() && (::client.isInitialized && client.isConnected)
-
-    override fun isDataFarmHealthy(): Boolean {
-        val error = lastDataFarmError ?: return true
-        // Consider data farm healthy again after 5 minutes without errors
-        return System.currentTimeMillis() - lastDataFarmErrorTime > 5 * 60 * 1000
-    }
 
     override fun requestMarketData(conId: Int, callback: (tickType: Int, value: Double) -> Unit) {
         val reqId = nextReqId.getAndIncrement()
@@ -215,6 +217,12 @@ class TwsIbkrClient(
             snapshotAccumulators.remove(reqId)
             reqIdToConId.remove(reqId)
         }
+    }
+
+    override fun requestOptionSnapshots(conIds: List<Int>): Map<Int, MarketDataSnapshot> {
+        // TWS has no batched snapshot request; fetch sequentially. Replaced by a true
+        // batched call in the QuestradeProvider implementation.
+        return conIds.mapNotNull { conId -> requestMarketDataSnapshot(conId)?.let { conId to it } }.toMap()
     }
 
     override fun requestOptionChain(underlying: String): List<OptionContractDetails> {
@@ -523,10 +531,6 @@ class TwsIbkrClient(
     }
 
     override fun error(id: Int, errorTime: Long, errorCode: Int, errorMsg: String?, advancedOrderRejectJson: String?) {
-        if (errorCode in setOf(2103, 2107, 2108)) {
-            lastDataFarmError = errorCode
-            lastDataFarmErrorTime = System.currentTimeMillis()
-        }
         when (errorCode) {
             // Connection-level errors
             502, 504 -> {

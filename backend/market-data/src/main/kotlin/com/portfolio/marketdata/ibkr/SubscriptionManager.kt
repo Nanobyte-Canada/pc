@@ -1,5 +1,6 @@
 package com.portfolio.marketdata.ibkr
 
+import com.portfolio.marketdata.provider.MarketDataProvider
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -7,7 +8,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class SubscriptionManager(
-    private val ibkrClient: IbkrClient,
+    private val ibkrClient: MarketDataProvider,
     @Value("\${ibkr.max-subscriptions:100}") private val maxSubscriptions: Int
 ) {
 

@@ -2,6 +2,8 @@ package com.portfolio.marketdata.ibkr
 
 import com.portfolio.marketdata.db.entity.ContractCacheEntity
 import com.portfolio.marketdata.db.repository.ContractCacheRepository
+import com.portfolio.marketdata.provider.MarketDataProvider
+import com.portfolio.marketdata.provider.OptionContractDetails
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
@@ -13,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class ContractResolver(
-    private val ibkrClient: IbkrClient,
+    private val ibkrClient: MarketDataProvider,
     private val contractCacheRepository: ContractCacheRepository,
     private val redisTemplate: RedisTemplate<String, String>
 ) {

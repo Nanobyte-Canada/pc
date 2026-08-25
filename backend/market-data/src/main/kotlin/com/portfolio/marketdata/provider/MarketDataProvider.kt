@@ -1,21 +1,20 @@
-package com.portfolio.marketdata.ibkr
+package com.portfolio.marketdata.provider
 
 import java.math.BigDecimal
 import java.time.LocalDate
 
-interface IbkrClient {
+/**
+ * Provider-neutral market data facade. Implementation: QuestradeProvider.
+ * NOTE: `conId` parameters/fields carry the provider's opaque instrument id
+ * (Questrade numeric symbolId after migration). Names kept for compatibility
+ * with ContractResolver serialization and the contract_cache table.
+ */
+interface MarketDataProvider {
     fun connect()
     fun disconnect()
     fun isConnected(): Boolean
-    /** Register a callback invoked after reconnection. Implementations must store and invoke handlers
-     *  on reconnect (e.g. in the `nextValidId` TWS callback after the initial connection). */
+    /** Invoked after the underlying transport reconnects; subscribers re-register. */
     fun registerReconnectHandler(handler: Runnable) {}
-    /** Register a callback for data farm error (2108) notifications. Currently, error 2108 is treated
-     *  as informational (log-only) and handlers are not invoked — the infrastructure is retained for
-     *  future use when active farm management may be needed. */
-    fun registerDataFarmErrorHandler(handler: Runnable) {}
-    /** Returns true if data farms are healthy (no recent critical errors like 2103). */
-    fun isDataFarmHealthy(): Boolean = true
     fun requestMarketData(conId: Int, callback: (tickType: Int, value: Double) -> Unit)
     fun cancelMarketData(conId: Int)
     fun requestOptionChain(underlying: String): List<OptionContractDetails>
@@ -27,6 +26,8 @@ interface IbkrClient {
         right: String? = null
     ): List<OptionContractDetails>
     fun requestMarketDataSnapshot(conId: Int): MarketDataSnapshot?
+    /** Batched snapshot fetch used by chain building. Missing ids absent from map. */
+    fun requestOptionSnapshots(conIds: List<Int>): Map<Int, MarketDataSnapshot>
     fun requestOptionExpirations(underlying: String): List<LocalDate>
 }
 
@@ -40,14 +41,6 @@ data class OptionContractDetails(
     val right: String?,
     val tradingClass: String? = null,
     val multiplier: String? = null
-)
-
-data class OptionChainParams(
-    val exchange: String,
-    val underlyingConId: Int,
-    val tradingClass: String?,
-    val multiplier: String?,
-    val expirations: Set<LocalDate>
 )
 
 data class MarketDataSnapshot(

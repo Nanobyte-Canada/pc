@@ -1,5 +1,6 @@
 package com.portfolio.marketdata.ibkr
 
+import com.portfolio.marketdata.provider.MarketDataProvider
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -11,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 class SubscriptionManagerTest {
 
-    private val ibkrClient = mockk<IbkrClient>(relaxed = true)
+    private val ibkrClient = mockk<MarketDataProvider>(relaxed = true)
 
     @Test
     fun `resubscribeAll re-requests market data for all active subscriptions`() {

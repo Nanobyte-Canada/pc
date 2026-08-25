@@ -2,7 +2,7 @@ package com.portfolio.marketdata.api.controller
 
 import com.portfolio.marketdata.db.repository.UnderlyingPriceRepository
 import com.portfolio.marketdata.distribution.QuoteCacheService
-import com.portfolio.marketdata.ibkr.IbkrClient
+import com.portfolio.marketdata.provider.MarketDataProvider
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
@@ -13,7 +13,7 @@ class QuoteControllerTest {
 
     private val quoteCacheService = mockk<QuoteCacheService>(relaxed = true)
     private val underlyingPriceRepository = mockk<UnderlyingPriceRepository>(relaxed = true)
-    private val ibkrClient = mockk<IbkrClient>(relaxed = true)
+    private val ibkrClient = mockk<MarketDataProvider>(relaxed = true)
 
     private val controller = QuoteController(quoteCacheService, underlyingPriceRepository, ibkrClient)
 
