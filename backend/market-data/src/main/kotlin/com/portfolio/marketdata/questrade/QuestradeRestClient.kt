@@ -73,14 +73,14 @@ class QuestradeRestClient(
     private val restClient = builder.build()
     private val objectMapper = ObjectMapper()
 
-    fun searchSymbol(prefix: String): List<QuestradeSymbol> = withApi { base ->
+    fun searchSymbol(prefix: String): List<QuestradeSymbol> = withApi { base, token ->
         val encoded = UriUtils.encodeQueryParam(prefix, Charsets.UTF_8)
-        val node = fetchJson(HttpMethod.GET, "$base/v1/symbols/search?prefix=$encoded")
+        val node = fetchJson(token, HttpMethod.GET, "$base/v1/symbols/search?prefix=$encoded")
         node.path("symbols").map { toSymbol(it) }
     }
 
-    fun getOptionChain(underlyingId: Int): List<QuestradeExpiry> = withApi { base ->
-        val node = fetchJson(HttpMethod.GET, "$base/v1/symbols/$underlyingId/options")
+    fun getOptionChain(underlyingId: Int): List<QuestradeExpiry> = withApi { base, token ->
+        val node = fetchJson(token, HttpMethod.GET, "$base/v1/symbols/$underlyingId/options")
         node.path("optionChain").map { expiry ->
             QuestradeExpiry(
                 expiryDate = expiry.path("expiryDate").asText(),
@@ -105,15 +105,15 @@ class QuestradeRestClient(
 
     fun getOptionQuotes(optionIds: List<Int>): List<QuestradeOptionQuote> =
         optionIds.chunked(OPTION_QUOTE_CHUNK_SIZE).flatMap { chunk ->
-            withApi { base ->
+            withApi { base, token ->
                 val body = "{\"optionIds\":[${chunk.joinToString(",")}]}"
-                val node = fetchJson(HttpMethod.POST, "$base/v1/markets/quotes/options", body)
+                val node = fetchJson(token, HttpMethod.POST, "$base/v1/markets/quotes/options", body)
                 node.path("optionQuotes").map { toOptionQuote(it) }
             }
         }
 
-    fun getStockQuotes(symbolIds: List<Int>): List<QuestradeStockQuote> = withApi { base ->
-        val node = fetchJson(HttpMethod.GET, "$base/v1/markets/quotes?ids=${symbolIds.joinToString(",")}")
+    fun getStockQuotes(symbolIds: List<Int>): List<QuestradeStockQuote> = withApi { base, token ->
+        val node = fetchJson(token, HttpMethod.GET, "$base/v1/markets/quotes?ids=${symbolIds.joinToString(",")}")
         node.path("quotes").map { quote ->
             QuestradeStockQuote(
                 symbolId = quote.path("symbolId").asInt(0),
@@ -126,18 +126,18 @@ class QuestradeRestClient(
         }
     }
 
-    fun negotiateStockStream(symbolIds: List<Int>): Int = withApi { base ->
+    fun negotiateStockStream(symbolIds: List<Int>): Int = withApi { base, token ->
         val url = "$base/v1/markets/stream?stream=true&mode=WebSocket&symbolIds=${symbolIds.joinToString(",")}"
-        fetchJson(HttpMethod.GET, url).path("streamPort").asInt(-1)
+        fetchJson(token, HttpMethod.GET, url).path("streamPort").asInt(-1)
     }
 
-    fun negotiateOptionStream(optionIds: List<Int>): Int = withApi { base ->
+    fun negotiateOptionStream(optionIds: List<Int>): Int = withApi { base, token ->
         val body = "{\"stream\":true,\"mode\":\"WebSocket\",\"optionIds\":[${optionIds.joinToString(",")}]}"
-        fetchJson(HttpMethod.POST, "$base/v1/markets/stream", body).path("streamPort").asInt(-1)
+        fetchJson(token, HttpMethod.POST, "$base/v1/markets/stream", body).path("streamPort").asInt(-1)
     }
 
-    fun serverTime(): Instant = withApi { base ->
-        val node = fetchJson(HttpMethod.GET, "$base/v1/time")
+    fun serverTime(): Instant = withApi { base, token ->
+        val node = fetchJson(token, HttpMethod.GET, "$base/v1/time")
         parseTimestamp(node.path("time").asText())
     }
 
@@ -145,29 +145,29 @@ class QuestradeRestClient(
      * Runs [block] against the current access token's API server; retries ONCE with a
      * freshly exchanged token when the call fails with Questrade error code 1017.
      */
-    private inline fun <T> withApi(crossinline block: (String) -> T): T {
+    private inline fun <T> withApi(crossinline block: (String, String) -> T): T {
         val token = tokenManager.getValidAccessToken()
         return try {
-            block(token.apiServer.trimEnd('/'))
+            block(token.apiServer.trimEnd('/'), token.token)
         } catch (e: RestCallFailedWith1017) {
             log.warn("Questrade API rejected access token (1017); forcing refresh and retrying once")
             val fresh = tokenManager.forceRefresh()
-            block(fresh.apiServer.trimEnd('/'))
+            block(fresh.apiServer.trimEnd('/'), fresh.token)
         }
     }
 
     /** Executes the request and parses the JSON body, detecting the 1017 invalid-token envelope. */
-    private fun fetchJson(method: HttpMethod, url: String, jsonBody: String? = null): JsonNode {
-        val raw = executeRaw(method, url, jsonBody)
+    private fun fetchJson(bearerToken: String, method: HttpMethod, url: String, jsonBody: String? = null): JsonNode {
+        val raw = executeRaw(bearerToken, method, url, jsonBody)
         if (raw.contains("\"code\":1017")) throw RestCallFailedWith1017()
         return objectMapper.readTree(raw)
     }
 
     /** Executes the request, retrying once after sleeping when HTTP 429 is returned. */
-    private fun executeRaw(method: HttpMethod, url: String, jsonBody: String?): String {
+    private fun executeRaw(bearerToken: String, method: HttpMethod, url: String, jsonBody: String?): String {
         repeat(2) { attempt ->
             try {
-                return doExecute(method, url, jsonBody)
+                return doExecute(bearerToken, method, url, jsonBody)
             } catch (e: RestClientResponseException) {
                 if (e.statusCode.value() == 429 && attempt == 0) {
                     sleepForRateLimit(e)
@@ -179,11 +179,13 @@ class QuestradeRestClient(
         throw IllegalStateException("unreachable")
     }
 
-    private fun doExecute(method: HttpMethod, url: String, jsonBody: String?): String {
+    private fun doExecute(bearerToken: String, method: HttpMethod, url: String, jsonBody: String?): String {
         val spec = when (method) {
-            HttpMethod.GET -> restClient.get().uri(url)
+            HttpMethod.GET -> restClient.get().uri(url).header(AUTHORIZATION_HEADER, bearer(bearerToken))
             HttpMethod.POST -> {
-                val post = restClient.post().uri(url).contentType(MediaType.APPLICATION_JSON)
+                val post = restClient.post().uri(url)
+                    .header(AUTHORIZATION_HEADER, bearer(bearerToken))
+                    .contentType(MediaType.APPLICATION_JSON)
                 if (jsonBody != null) post.body(jsonBody) else post
             }
             else -> throw IllegalArgumentException("Unsupported HTTP method: $method")
@@ -246,5 +248,7 @@ class QuestradeRestClient(
         const val OPTION_QUOTE_CHUNK_SIZE = 100
         private const val MAX_RATE_LIMIT_SLEEP_SECONDS = 60L
         private const val DEFAULT_RATE_LIMIT_SLEEP_SECONDS = 1L
+        private const val AUTHORIZATION_HEADER = "Authorization"
+        private fun bearer(token: String) = "Bearer $token"
     }
 }

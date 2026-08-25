@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.ValueOperations
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.MockRestServiceServer
+import org.springframework.test.web.client.match.MockRestRequestMatchers.header
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
@@ -25,6 +26,7 @@ class QuestradeRestClientTest {
     private val redisStore = HashMap<String, String>()
 
     private val tokenBody = "{\"access_token\":\"AT\",\"expires_in\":1800,\"refresh_token\":\"R2\",\"api_server\":\"https://api01.iq.questrade.com/\"}"
+    private val tokenBodyRotated = "{\"access_token\":\"AT2\",\"expires_in\":1800,\"refresh_token\":\"R3\",\"api_server\":\"https://api01.iq.questrade.com/\"}"
     private val searchBody = "{\"symbols\":[{\"symbolId\":34987,\"symbol\":\"SPY\",\"description\":\"SPDR S&P 500 ETF\",\"securityType\":\"Stock\",\"listingExchange\":\"ARCA\",\"isQuotable\":true,\"currency\":\"USD\",\"hasOptions\":true}]}"
     private val chainBody = "{\"optionChain\":[{\"expiryDate\":\"2026-08-28T00:00:00.000000-04:00\",\"description\":\"SPY\",\"listingExchange\":\"OPRA\",\"optionExerciseType\":\"American\",\"chainPerRoot\":[{\"optionRoot\":\"SPY\",\"multiplier\":100,\"chainPerStrikePrice\":[{\"strikePrice\":600,\"callSymbolId\":76915281,\"putSymbolId\":76915626}]}]}]}"
     private val optQuotesBody = "{\"optionQuotes\":[{\"underlying\":\"SPY\",\"underlyingId\":34987,\"symbol\":\"SPY28Aug26C600.00\",\"symbolId\":76915281,\"bidPrice\":162.65,\"askPrice\":165.37,\"lastTradePrice\":166.75,\"volume\":0,\"openInterest\":26,\"volatility\":93.08136,\"delta\":0.988226,\"gamma\":0.000366,\"theta\":-0.252878,\"vega\":0.027186,\"rho\":0.080913,\"delay\":0}]}"
@@ -61,6 +63,7 @@ class QuestradeRestClientTest {
     fun `search parses symbol`() {
         expectAuth()
         server.expect(requestTo("https://api01.iq.questrade.com/v1/symbols/search?prefix=SPY"))
+            .andExpect(header("Authorization", "Bearer AT"))
             .andRespond(withSuccess(searchBody, MediaType.APPLICATION_JSON))
         val r = client.searchSymbol("SPY")
         assertEquals(34987, r.first().symbolId)
@@ -101,10 +104,12 @@ class QuestradeRestClientTest {
     fun `invalid token retries once after re-exchange`() {
         expectAuth()
         server.expect(requestTo("https://api01.iq.questrade.com/v1/markets/quotes?ids=34987"))
+            .andExpect(header("Authorization", "Bearer AT"))
             .andRespond(withSuccess("{\"code\":1017,\"message\":\"Access token is invalid\"}", MediaType.APPLICATION_JSON))
         server.expect(requestTo("https://login.questrade.com/oauth2/token?grant_type=refresh_token&refresh_token=R2"))
-            .andRespond(withSuccess(tokenBody, MediaType.APPLICATION_JSON))
+            .andRespond(withSuccess(tokenBodyRotated, MediaType.APPLICATION_JSON))
         server.expect(requestTo("https://api01.iq.questrade.com/v1/markets/quotes?ids=34987"))
+            .andExpect(header("Authorization", "Bearer AT2"))
             .andRespond(withSuccess(stockQuotesBody, MediaType.APPLICATION_JSON))
         val q = client.getStockQuotes(listOf(34987)).first()
         assertEquals(34987, q.symbolId)
