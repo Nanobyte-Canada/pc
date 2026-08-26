@@ -17,7 +17,7 @@ export interface Greeks {
   theta: number
   vega: number
   rho: number
-  source: 'IBKR' | 'BLACK_SCHOLES'
+  source: 'QUESTRADE' | 'BLACK_SCHOLES'
 }
 
 export interface OptionQuoteData {
