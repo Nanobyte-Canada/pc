@@ -18,7 +18,7 @@ class QuoteControllerTest {
     private val controller = QuoteController(quoteCacheService, underlyingPriceRepository, provider)
 
     @Test
-    fun `getQuote returns 503 when IBKR not connected and no cached data`() {
+    fun `getQuote returns 503 when provider not connected and no cached data`() {
         every { quoteCacheService.getQuote("SPY") } returns null
         every { underlyingPriceRepository.findByTickerOrderByObservedAtDesc("SPY") } returns emptyList()
         every { provider.isConnected() } returns false
@@ -29,7 +29,7 @@ class QuoteControllerTest {
     }
 
     @Test
-    fun `getQuote returns 200 from cache when IBKR not connected`() {
+    fun `getQuote returns 200 from cache when provider not connected`() {
         val cachedQuote = com.portfolio.common.domain.Quote(
             symbol = "SPY",
             bid = java.math.BigDecimal("450.0"),

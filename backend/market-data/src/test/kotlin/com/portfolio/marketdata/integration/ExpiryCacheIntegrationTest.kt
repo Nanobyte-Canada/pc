@@ -23,7 +23,7 @@ class ExpiryCacheIntegrationTest {
 
     private val redisTemplate = mockk<RedisTemplate<String, String>>()
     private val opsForValue = mockk<ValueOperations<String, String>>()
-    private val ibkrClient = mockk<MarketDataProvider>()
+    private val provider = mockk<MarketDataProvider>()
     private val objectMapper: ObjectMapper = jacksonObjectMapper().apply {
         registerModule(JavaTimeModule())
         registerModule(kotlinModule())
@@ -42,16 +42,16 @@ class ExpiryCacheIntegrationTest {
         every { redisTemplate.opsForValue() } returns opsForValue
         every { opsForValue.set(any<String>(), any<String>(), any<Long>(), any()) } just runs
         cacheService = ExpiryCacheService(redisTemplate, objectMapper, properties)
-        refreshService = ExpiryRefreshService(ibkrClient, cacheService, properties)
+        refreshService = ExpiryRefreshService(provider, cacheService, properties)
     }
 
     @Test
     fun `end-to-end - refresh populates cache, subsequent request reads from cache`() {
-        // Arrange: IBKR returns expirations
+        // Arrange: provider returns expirations
         val soxlExpirations = listOf(LocalDate.of(2026, 7, 18), LocalDate.of(2026, 7, 25))
         val teclExpirations = listOf(LocalDate.of(2026, 8, 1))
-        every { ibkrClient.requestOptionExpirations("SOXL") } returns soxlExpirations
-        every { ibkrClient.requestOptionExpirations("TECL") } returns teclExpirations
+        every { provider.requestOptionExpirations("SOXL") } returns soxlExpirations
+        every { provider.requestOptionExpirations("TECL") } returns teclExpirations
 
         // Act: Trigger refresh
         refreshService.refreshAll()
@@ -71,17 +71,17 @@ class ExpiryCacheIntegrationTest {
     }
 
     @Test
-    fun `on-demand fallback - cache miss triggers IBKR fetch and populates cache`() {
+    fun `on-demand fallback - cache miss triggers provider fetch and populates cache`() {
         // Arrange: Cache is empty
         every { opsForValue.get("expiry:SOXL") } returns null
-        // IBKR returns expirations
+        // Provider returns expirations
         val expirations = listOf(LocalDate.of(2026, 7, 18))
-        every { ibkrClient.requestOptionExpirations("SOXL") } returns expirations
+        every { provider.requestOptionExpirations("SOXL") } returns expirations
 
         // Act: Simulate on-demand fetch (as done in ChainController)
         var cachedExpiry = cacheService.getExpiry("SOXL")
         if (cachedExpiry == null) {
-            cachedExpiry = ibkrClient.requestOptionExpirations("SOXL")
+            cachedExpiry = provider.requestOptionExpirations("SOXL")
             cacheService.cacheExpiry("SOXL", cachedExpiry)
         }
 

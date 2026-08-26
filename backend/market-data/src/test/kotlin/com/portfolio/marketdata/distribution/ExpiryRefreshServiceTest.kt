@@ -53,8 +53,8 @@ class ExpiryRefreshServiceTest {
     }
 
     @Test
-    fun `refreshSymbol handles IBKR failure gracefully`() {
-        every { provider.requestOptionExpirations("SOXL") } throws RuntimeException("IBKR disconnected")
+    fun `refreshSymbol handles provider failure gracefully`() {
+        every { provider.requestOptionExpirations("SOXL") } throws RuntimeException("provider disconnected")
 
         service.refreshSymbol("SOXL")
 
@@ -63,7 +63,7 @@ class ExpiryRefreshServiceTest {
 
     @Test
     fun `refreshAll continues when one symbol fails`() {
-        every { provider.requestOptionExpirations("SOXL") } throws RuntimeException("IBKR disconnected")
+        every { provider.requestOptionExpirations("SOXL") } throws RuntimeException("provider disconnected")
         every { provider.requestOptionExpirations("TECL") } returns listOf(LocalDate.of(2026, 7, 25))
         every { provider.requestOptionExpirations("TQQQ") } returns listOf(LocalDate.of(2026, 8, 1))
 

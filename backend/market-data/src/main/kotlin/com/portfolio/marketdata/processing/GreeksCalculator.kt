@@ -21,9 +21,9 @@ class GreeksCalculator(
         expiry: LocalDate,
         optionType: OptionType,
         iv: Double?,
-        ibkrGreeks: Greeks?
+        providerGreeks: Greeks?
     ): Greeks {
-        if (ibkrGreeks != null) return ibkrGreeks
+        if (providerGreeks != null) return providerGreeks
 
         val tte = ChronoUnit.DAYS.between(LocalDate.now(), expiry) / 365.0
         if (tte <= 0.0) return zeroGreeks()

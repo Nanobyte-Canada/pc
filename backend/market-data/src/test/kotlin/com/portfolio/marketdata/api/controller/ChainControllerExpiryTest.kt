@@ -51,18 +51,18 @@ class ChainControllerExpiryTest {
     }
 
     @Test
-    fun `getExpirations falls back to IBKR on cache miss`() {
-        val ibkrExpirations = listOf(LocalDate.now().plusDays(10))
+    fun `getExpirations falls back to provider on cache miss`() {
+        val providerExpirations = listOf(LocalDate.now().plusDays(10))
         every { expiryCacheService.getExpiry("SOXL") } returns null
         every { provider.isConnected() } returns true
-        every { provider.requestOptionExpirations("SOXL") } returns ibkrExpirations
+        every { provider.requestOptionExpirations("SOXL") } returns providerExpirations
         every { quoteCacheService.getQuote("SOXL") } returns mockk { every { last } returns BigDecimal("50.00") }
 
         val response = controller.getExpirations("SOXL", null)
 
         assertEquals(200, response.statusCode.value())
         assertEquals(1, response.body?.expirations?.size)
-        verify { expiryCacheService.cacheExpiry("SOXL", ibkrExpirations) }
+        verify { expiryCacheService.cacheExpiry("SOXL", providerExpirations) }
     }
 
     @Test

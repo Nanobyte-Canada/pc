@@ -49,7 +49,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getChain returns 503 when IBKR not connected`() {
+    fun `getChain returns 503 when provider not connected`() {
         every { provider.isConnected() } returns false
         every { quoteCacheService.getChain("SPY") } returns null
 
@@ -59,7 +59,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getChainWithGreeks returns 503 when IBKR not connected`() {
+    fun `getChainWithGreeks returns 503 when provider not connected`() {
         every { provider.isConnected() } returns false
         every { quoteCacheService.getChain("SPY") } returns null
 
@@ -69,7 +69,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getExpirations returns 200 with empty list when IBKR not connected`() {
+    fun `getExpirations returns 200 with empty list when provider not connected`() {
         every { provider.isConnected() } returns false
         every { quoteCacheService.getChain("SPY") } returns null
 
@@ -80,7 +80,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getChainForExpiry returns 503 when IBKR not connected`() {
+    fun `getChainForExpiry returns 503 when provider not connected`() {
         every { provider.isConnected() } returns false
 
         val response = controller.getChainForExpiry("SPY", "20260618", 0.45, 25, "both")
@@ -89,7 +89,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getChain returns 200 from cache without IBKR call`() {
+    fun `getChain returns 200 from cache without provider call`() {
         val cachedChain = OptionsChain(
             underlying = "SPY",
             spotPrice = BigDecimal.valueOf(400),
@@ -123,7 +123,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getExpirations fetches from IBKR on cache miss and filters`() {
+    fun `getExpirations fetches from provider on cache miss and filters`() {
         val today = LocalDate.now()
         val within90 = today.plusDays(30)
         val beyond90 = today.plusDays(180)
@@ -157,7 +157,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getExpirations returns 200 with empty list when IBKR returns empty`() {
+    fun `getExpirations returns 200 with empty list when provider returns empty`() {
         every { quoteCacheService.getChain("XYZ") } returns null
         every { provider.requestOptionExpirations("XYZ") } returns emptyList()
         every { quoteCacheService.getQuote("XYZ") } returns mockk { every { last } returns BigDecimal("10.00") }
@@ -231,7 +231,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getChainForExpiry returns 200 from cache without heavy IBKR calls`() {
+    fun `getChainForExpiry returns 200 from cache without heavy provider calls`() {
         val expiry = LocalDate.now().plusDays(30)
         val cachedChain = OptionsChain(
             underlying = "SPY",
@@ -248,7 +248,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getChainForExpiry returns 503 when cache miss and IBKR not connected`() {
+    fun `getChainForExpiry returns 503 when cache miss and provider not connected`() {
         val expiry = LocalDate.now().plusDays(30)
         every { quoteCacheService.getChain("SPY") } returns null
         every { provider.isConnected() } returns false
@@ -259,7 +259,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getChain returns 503 when IBKR disconnects mid-build`() {
+    fun `getChain returns 503 when provider disconnects mid-build`() {
         every { quoteCacheService.getChain("SPY") } returns null
         every { provider.isConnected() } returnsMany listOf(true, false)
         every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
@@ -271,7 +271,7 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getChainForExpiry returns 503 when IBKR disconnects mid-build`() {
+    fun `getChainForExpiry returns 503 when provider disconnects mid-build`() {
         val expiry = LocalDate.now().plusDays(30)
         every { quoteCacheService.getChain("SPY") } returns null
         every { provider.isConnected() } returnsMany listOf(true, false)
@@ -284,10 +284,10 @@ class ChainControllerTest {
     }
 
     @Test
-    fun `getExpirations returns 200 with empty list when IBKR disconnects mid-fetch`() {
+    fun `getExpirations returns 200 with empty list when provider disconnects mid-fetch`() {
         every { quoteCacheService.getChain("SPY") } returns null
         every { provider.isConnected() } returns true
-        every { provider.requestOptionExpirations("SPY") } throws RuntimeException("IBKR disconnected")
+        every { provider.requestOptionExpirations("SPY") } throws RuntimeException("provider disconnected")
 
         val response = controller.getExpirations("SPY", null)
 

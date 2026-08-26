@@ -15,7 +15,7 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
-// Tick-type codes of the IBKR-compatible protocol consumed by QuoteStreamingService/OptionStreamingService.
+// Tick-type codes of the streaming protocol consumed by QuoteStreamingService/OptionStreamingService.
 private const val TICK_BID = 1
 private const val TICK_ASK = 2
 private const val TICK_LAST = 4

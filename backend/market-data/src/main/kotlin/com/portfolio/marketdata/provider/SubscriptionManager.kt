@@ -72,7 +72,7 @@ class SubscriptionManager(
     private val resubscribeFailures = java.util.concurrent.ConcurrentHashMap<Int, Int>()
 
     // resubscribeLock serializes resubscribeAll calls to prevent duplicate subscription requests.
-    // IBKR TWS handles duplicate market data subscription calls idempotently, so a race between
+    // The provider handles duplicate market data subscription calls idempotently, so a race between
     // subscribe() and resubscribeAll() for the same conId is harmless.
     fun resubscribeAll() {
         synchronized(resubscribeLock) {
