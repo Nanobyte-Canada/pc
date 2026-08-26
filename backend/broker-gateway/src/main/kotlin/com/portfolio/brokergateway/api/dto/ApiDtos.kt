@@ -59,9 +59,3 @@ data class GatewayHealthResponse(
     val status: String,
     val brokers: List<BrokerHealthResponse>
 )
-
-data class IbkrHealthResponse(
-    val connected: Boolean,
-    val service: String = "broker-gateway",
-    val connectionState: String
-)

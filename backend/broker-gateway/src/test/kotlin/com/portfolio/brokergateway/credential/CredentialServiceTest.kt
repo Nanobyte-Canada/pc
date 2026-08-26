@@ -39,18 +39,18 @@ class CredentialServiceTest {
 
     @Test
     fun `getCredentials decrypts and returns correct subtype`() {
-        val creds = BrokerCredentials.IbkrCredentials(host = "127.0.0.1", port = 4002, clientId = 2)
+        val creds = BrokerCredentials.QuestradeCredentials(refreshToken = "refresh")
         val json = objectMapper.writeValueAsString(creds)
         val encrypted = encryptionService.encrypt(json)
         val entity = GatewayConnection(
-            id = "conn-1", userId = 1L, brokerType = "IBKR", credentialsEncrypted = encrypted
+            id = "conn-1", userId = 1L, brokerType = "QUESTRADE", credentialsEncrypted = encrypted
         )
 
         every { repository.findById("conn-1") } returns Optional.of(entity)
 
         val result = service.getCredentials("conn-1")
-        assert(result is BrokerCredentials.IbkrCredentials)
-        assertEquals("127.0.0.1", (result as BrokerCredentials.IbkrCredentials).host)
+        assert(result is BrokerCredentials.QuestradeCredentials)
+        assertEquals("refresh", (result as BrokerCredentials.QuestradeCredentials).refreshToken)
     }
 
     @Test

@@ -14,7 +14,7 @@ class HealthControllerTest {
     @Test
     fun `health returns UP with broker statuses`() {
         val adapter = mockk<BrokerAdapter>()
-        every { adapter.brokerType } returns BrokerType.IBKR
+        every { adapter.brokerType } returns BrokerType.QUESTRADE
         val registry = AdapterRegistry(listOf(adapter))
         val controller = HealthController(registry)
 
@@ -22,15 +22,15 @@ class HealthControllerTest {
         assertEquals(HttpStatus.OK, response.statusCode)
         val body = response.body!!
         assertEquals("UP", body.status)
-        assertEquals(3, body.brokers.size)
-
-        val ibkr = body.brokers.first { it.brokerType == BrokerType.IBKR }
-        assertEquals(true, ibkr.enabled)
-        assertEquals("OK", ibkr.status)
+        assertEquals(2, body.brokers.size)
 
         val qt = body.brokers.first { it.brokerType == BrokerType.QUESTRADE }
-        assertEquals(false, qt.enabled)
-        assertEquals("DISABLED", qt.status)
+        assertEquals(true, qt.enabled)
+        assertEquals("OK", qt.status)
+
+        val ws = body.brokers.first { it.brokerType == BrokerType.WEALTHSIMPLE }
+        assertEquals(false, ws.enabled)
+        assertEquals("DISABLED", ws.status)
     }
 
     @Test
@@ -38,7 +38,7 @@ class HealthControllerTest {
         val registry = AdapterRegistry(emptyList())
         val controller = HealthController(registry)
 
-        val response = controller.brokerHealth(BrokerType.IBKR)
+        val response = controller.brokerHealth(BrokerType.QUESTRADE)
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(false, response.body!!.enabled)
         assertEquals("DISABLED", response.body!!.status)
