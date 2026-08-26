@@ -1,4 +1,4 @@
-package com.portfolio.marketdata.ibkr
+package com.portfolio.marketdata.questrade
 
 import com.portfolio.marketdata.distribution.QuoteWebSocketHandler
 import com.portfolio.marketdata.provider.MarketDataProvider
@@ -12,14 +12,14 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Component
-class IbkrConnectionManager(
-    private val ibkrClient: MarketDataProvider,
+class QuestradeConnectionManager(
+    private val provider: MarketDataProvider,
     @Lazy private val webSocketHandler: QuoteWebSocketHandler
 ) : ApplicationRunner {
 
-    private val logger = LoggerFactory.getLogger(IbkrConnectionManager::class.java)
+    private val logger = LoggerFactory.getLogger(QuestradeConnectionManager::class.java)
     private val executor = Executors.newSingleThreadScheduledExecutor { r ->
-        Thread(r, "ibkr-conn-mgr").apply { isDaemon = true }
+        Thread(r, "qt-conn-mgr").apply { isDaemon = true }
     }
     private val isHealthy = AtomicBoolean(false)
 
@@ -29,7 +29,7 @@ class IbkrConnectionManager(
     private val healthCheckIntervalSeconds = 30L
 
     override fun run(args: ApplicationArguments?) {
-        logger.info("IbkrConnectionManager: Starting...")
+        logger.info("QuestradeConnectionManager: Starting...")
         connectWithRetry()
         executor.scheduleWithFixedDelay(
             { checkHealth() },
@@ -42,12 +42,12 @@ class IbkrConnectionManager(
     fun isHealthy(): Boolean = isHealthy.get()
 
     fun getConnectionState(): ConnectionState {
-        return if (ibkrClient.isConnected()) ConnectionState.CONNECTED else ConnectionState.DISCONNECTED
+        return if (provider.isConnected()) ConnectionState.CONNECTED else ConnectionState.DISCONNECTED
     }
 
     fun reconnect() {
-        logger.info("IbkrConnectionManager: Manual reconnect requested")
-        ibkrClient.disconnect()
+        logger.info("QuestradeConnectionManager: Manual reconnect requested")
+        provider.disconnect()
         reconnectDelayMs = 5000L
         connectWithRetry()
     }
@@ -55,20 +55,20 @@ class IbkrConnectionManager(
     private fun connectWithRetry() {
         executor.execute {
             try {
-                logger.info("IbkrConnectionManager: Attempting to connect...")
-                ibkrClient.connect()
-                if (ibkrClient.isConnected()) {
-                    logger.info("IbkrConnectionManager: Connected successfully")
+                logger.info("QuestradeConnectionManager: Attempting to connect...")
+                provider.connect()
+                if (provider.isConnected()) {
+                    logger.info("QuestradeConnectionManager: Connected successfully")
                     isHealthy.set(true)
                     reconnectDelayMs = 5000L
                     try { webSocketHandler.broadcastConnectionStatus(true) } catch (_: Exception) {}
                 } else {
-                    logger.warn("IbkrConnectionManager: Connection failed, will retry")
+                    logger.warn("QuestradeConnectionManager: Connection failed, will retry")
                     isHealthy.set(false)
                     scheduleReconnect()
                 }
             } catch (e: Exception) {
-                logger.error("IbkrConnectionManager: Connection failed with exception", e)
+                logger.error("QuestradeConnectionManager: Connection failed with exception", e)
                 isHealthy.set(false)
                 scheduleReconnect()
             }
@@ -77,10 +77,10 @@ class IbkrConnectionManager(
 
     private fun checkHealth() {
         val wasHealthy = isHealthy.get()
-        val nowConnected = ibkrClient.isConnected()
+        val nowConnected = provider.isConnected()
         isHealthy.set(nowConnected)
         if (wasHealthy && !nowConnected) {
-            logger.warn("IbkrConnectionManager: Lost connection, triggering reconnect")
+            logger.warn("QuestradeConnectionManager: Lost connection, triggering reconnect")
             try { webSocketHandler.broadcastConnectionStatus(false) } catch (_: Exception) {}
             scheduleReconnect()
         }
@@ -88,15 +88,15 @@ class IbkrConnectionManager(
 
     private fun scheduleReconnect() {
         isHealthy.set(false)
-        logger.info("IbkrConnectionManager: Scheduling reconnect in {}ms", reconnectDelayMs)
+        logger.info("QuestradeConnectionManager: Scheduling reconnect in {}ms", reconnectDelayMs)
         executor.schedule({ connectWithRetry() }, reconnectDelayMs, TimeUnit.MILLISECONDS)
         reconnectDelayMs = (reconnectDelayMs * reconnectMultiplier).toLong().coerceAtMost(maxReconnectDelayMs)
     }
 
     fun shutdown() {
-        logger.info("IbkrConnectionManager: Shutting down...")
+        logger.info("QuestradeConnectionManager: Shutting down...")
         try {
-            ibkrClient.disconnect()
+            provider.disconnect()
             executor.shutdownNow()
         } catch (e: Exception) {
             logger.error("Error during shutdown", e)

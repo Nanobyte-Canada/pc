@@ -6,15 +6,15 @@ import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.stereotype.Component
 
 @Component
-class IbkrHealthIndicator(
-    private val ibkrClient: MarketDataProvider
+class QuestradeHealthIndicator(
+    private val provider: MarketDataProvider
 ) : HealthIndicator {
 
     override fun health(): Health {
-        return if (ibkrClient.isConnected()) {
-            Health.up().withDetail("ibkr", "connected").build()
+        return if (provider.isConnected()) {
+            Health.up().withDetail("provider", "connected").build()
         } else {
-            Health.down().withDetail("ibkr", "disconnected").build()
+            Health.down().withDetail("provider", "disconnected").build()
         }
     }
 }

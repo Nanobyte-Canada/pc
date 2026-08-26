@@ -31,7 +31,7 @@ class ChainControllerTest {
     private val quoteCacheService = mockk<QuoteCacheService>(relaxed = true)
     private val chainBuilder = mockk<OptionsChainBuilder>(relaxed = true)
     private val greeksCalculator = mockk<GreeksCalculator>(relaxed = true)
-    private val ibkrClient = mockk<MarketDataProvider>(relaxed = true)
+    private val provider = mockk<MarketDataProvider>(relaxed = true)
     private val expiryCacheService = mockk<ExpiryCacheService>(relaxed = true)
     private val properties = AppProperties(maxDteDefault = 90)
 
@@ -45,12 +45,12 @@ class ChainControllerTest {
         )
         every { quoteCacheService.getChain(any()) } returns null
         every { expiryCacheService.getExpiry(any()) } returns null
-        controller = ChainController(quoteCacheService, chainBuilder, greeksCalculator, ibkrClient, properties, 15, 2, expiryCacheService)
+        controller = ChainController(quoteCacheService, chainBuilder, greeksCalculator, provider, properties, 15, 2, expiryCacheService)
     }
 
     @Test
     fun `getChain returns 503 when IBKR not connected`() {
-        every { ibkrClient.isConnected() } returns false
+        every { provider.isConnected() } returns false
         every { quoteCacheService.getChain("SPY") } returns null
 
         val response = controller.getChain("SPY")
@@ -60,7 +60,7 @@ class ChainControllerTest {
 
     @Test
     fun `getChainWithGreeks returns 503 when IBKR not connected`() {
-        every { ibkrClient.isConnected() } returns false
+        every { provider.isConnected() } returns false
         every { quoteCacheService.getChain("SPY") } returns null
 
         val response = controller.getChainWithGreeks("SPY")
@@ -70,7 +70,7 @@ class ChainControllerTest {
 
     @Test
     fun `getExpirations returns 200 with empty list when IBKR not connected`() {
-        every { ibkrClient.isConnected() } returns false
+        every { provider.isConnected() } returns false
         every { quoteCacheService.getChain("SPY") } returns null
 
         val response = controller.getExpirations("SPY", null)
@@ -81,7 +81,7 @@ class ChainControllerTest {
 
     @Test
     fun `getChainForExpiry returns 503 when IBKR not connected`() {
-        every { ibkrClient.isConnected() } returns false
+        every { provider.isConnected() } returns false
 
         val response = controller.getChainForExpiry("SPY", "20260618", 0.45, 25, "both")
 
@@ -100,8 +100,8 @@ class ChainControllerTest {
         val response = controller.getChain("SPY")
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        verify(exactly = 0) { ibkrClient.requestContractDetails(any(), any(), any(), any(), any()) }
-        verify(exactly = 0) { ibkrClient.requestMarketDataSnapshot(any()) }
+        verify(exactly = 0) { provider.requestContractDetails(any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { provider.requestOptionSnapshots(any()) }
     }
 
     @Test
@@ -119,7 +119,7 @@ class ChainControllerTest {
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(listOf(within90), response.body!!.expirations)
-        verify(exactly = 0) { ibkrClient.requestOptionExpirations(any()) }
+        verify(exactly = 0) { provider.requestOptionExpirations(any()) }
     }
 
     @Test
@@ -129,9 +129,9 @@ class ChainControllerTest {
         val beyond90 = today.plusDays(180)
 
         every { quoteCacheService.getChain("SPY") } returns null
-        every { ibkrClient.requestOptionExpirations("SPY") } returns listOf(within90, beyond90)
+        every { provider.requestOptionExpirations("SPY") } returns listOf(within90, beyond90)
         every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
-        every { ibkrClient.isConnected() } returns true
+        every { provider.isConnected() } returns true
 
         val response = controller.getExpirations("SPY", null)
 
@@ -159,9 +159,9 @@ class ChainControllerTest {
     @Test
     fun `getExpirations returns 200 with empty list when IBKR returns empty`() {
         every { quoteCacheService.getChain("XYZ") } returns null
-        every { ibkrClient.requestOptionExpirations("XYZ") } returns emptyList()
+        every { provider.requestOptionExpirations("XYZ") } returns emptyList()
         every { quoteCacheService.getQuote("XYZ") } returns mockk { every { last } returns BigDecimal("10.00") }
-        every { ibkrClient.isConnected() } returns true
+        every { provider.isConnected() } returns true
 
         val response = controller.getExpirations("XYZ", null)
 
@@ -190,20 +190,21 @@ class ChainControllerTest {
             mapOf(expiry to mapOf(BigDecimal("150") to StrikeData(call = null, put = putQuote)))
         )
 
-        every { ibkrClient.isConnected() } returns true
+        every { provider.isConnected() } returns true
         every { quoteCacheService.getQuote("AAPL") } returns mockk { every { last } returns BigDecimal("155.00") }
-        every { ibkrClient.requestContractDetails("AAPL", "OPT", expiry, any(), any()) } returns listOf(putContract, callContract)
-        every { ibkrClient.requestMarketDataSnapshot(1) } returns mockk {
-            every { bid } returns 2.50; every { ask } returns 2.80; every { last } returns 2.65
-            every { volume } returns 100; every { delta } returns -0.35; every { gamma } returns 0.02
-            every { theta } returns -0.05; every { vega } returns 0.15
-        }
+        every { provider.requestContractDetails("AAPL", "OPT", expiry, any(), any()) } returns listOf(putContract, callContract)
+        every { provider.requestOptionSnapshots(any()) } returns mapOf(
+            1 to MarketDataSnapshot(
+                conId = 1, bid = 2.50, ask = 2.80, last = 2.65,
+                volume = 100, delta = -0.35, gamma = 0.02, theta = -0.05, vega = 0.15
+            )
+        )
         every { chainBuilder.build("AAPL", any(), any()) } returns chain
 
         val response = controller.getChainForExpiry("AAPL", expiry.toString(), 0.45, 25, "put")
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        verify(exactly = 0) { ibkrClient.requestMarketDataSnapshot(2) }
+        verify(exactly = 1) { provider.requestOptionSnapshots(listOf(1)) }
     }
 
     @Test
@@ -217,17 +218,16 @@ class ChainControllerTest {
         )
         val chain = OptionsChain("SPY", BigDecimal("455"), emptyMap())
 
-        every { ibkrClient.isConnected() } returns true
+        every { provider.isConnected() } returns true
         every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("455.00") }
-        every { ibkrClient.requestContractDetails("SPY", "OPT", expiry, any(), any()) } returns contracts
-        every { ibkrClient.requestMarketDataSnapshot(any()) } returns null
+        every { provider.requestContractDetails("SPY", "OPT", expiry, any(), any()) } returns contracts
+        every { provider.requestOptionSnapshots(any()) } returns emptyMap()
         every { chainBuilder.build("SPY", any(), any()) } returns chain
 
         val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        verify { ibkrClient.requestMarketDataSnapshot(1) }
-        verify { ibkrClient.requestMarketDataSnapshot(2) }
+        verify(exactly = 1) { provider.requestOptionSnapshots(listOf(1, 2)) }
     }
 
     @Test
@@ -243,15 +243,15 @@ class ChainControllerTest {
         val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        verify(exactly = 0) { ibkrClient.requestContractDetails(any(), any(), any(), any(), any()) }
-        verify(exactly = 0) { ibkrClient.requestMarketDataSnapshot(any()) }
+        verify(exactly = 0) { provider.requestContractDetails(any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { provider.requestOptionSnapshots(any()) }
     }
 
     @Test
     fun `getChainForExpiry returns 503 when cache miss and IBKR not connected`() {
         val expiry = LocalDate.now().plusDays(30)
         every { quoteCacheService.getChain("SPY") } returns null
-        every { ibkrClient.isConnected() } returns false
+        every { provider.isConnected() } returns false
 
         val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
 
@@ -261,9 +261,9 @@ class ChainControllerTest {
     @Test
     fun `getChain returns 503 when IBKR disconnects mid-build`() {
         every { quoteCacheService.getChain("SPY") } returns null
-        every { ibkrClient.isConnected() } returnsMany listOf(true, false)
+        every { provider.isConnected() } returnsMany listOf(true, false)
         every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
-        every { ibkrClient.requestOptionChain("SPY") } returns emptyList()
+        every { provider.requestOptionChain("SPY") } returns emptyList()
 
         val response = controller.getChain("SPY")
 
@@ -274,9 +274,9 @@ class ChainControllerTest {
     fun `getChainForExpiry returns 503 when IBKR disconnects mid-build`() {
         val expiry = LocalDate.now().plusDays(30)
         every { quoteCacheService.getChain("SPY") } returns null
-        every { ibkrClient.isConnected() } returnsMany listOf(true, false)
+        every { provider.isConnected() } returnsMany listOf(true, false)
         every { quoteCacheService.getQuote("SPY") } returns mockk { every { last } returns BigDecimal("450.00") }
-        every { ibkrClient.requestContractDetails("SPY", "OPT", expiry, any(), any()) } returns emptyList()
+        every { provider.requestContractDetails("SPY", "OPT", expiry, any(), any()) } returns emptyList()
 
         val response = controller.getChainForExpiry("SPY", expiry.toString(), 0.45, 25, "both")
 
@@ -286,8 +286,8 @@ class ChainControllerTest {
     @Test
     fun `getExpirations returns 200 with empty list when IBKR disconnects mid-fetch`() {
         every { quoteCacheService.getChain("SPY") } returns null
-        every { ibkrClient.isConnected() } returns true
-        every { ibkrClient.requestOptionExpirations("SPY") } throws RuntimeException("IBKR disconnected")
+        every { provider.isConnected() } returns true
+        every { provider.requestOptionExpirations("SPY") } throws RuntimeException("IBKR disconnected")
 
         val response = controller.getExpirations("SPY", null)
 

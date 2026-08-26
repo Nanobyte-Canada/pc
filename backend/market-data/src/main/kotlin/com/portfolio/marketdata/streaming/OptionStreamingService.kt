@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class OptionStreamingService(
     private val subscriptionManager: SubscriptionManager,
     private val contractResolver: ContractResolver,
-    private val ibkrClient: MarketDataProvider,
+    private val provider: MarketDataProvider,
     private val optionQuoteNormalizer: OptionQuoteNormalizer,
     private val greeksCalculator: GreeksCalculator,
     private val quoteWebSocketHandler: QuoteWebSocketHandler,
@@ -103,21 +103,21 @@ class OptionStreamingService(
         }
 
         val spotPrice = quoteCacheService.getQuote(underlying)?.last ?: run {
-            val stk = ibkrClient.requestContractDetails(underlying, "STK").firstOrNull() ?: return
-            val snapshot = ibkrClient.requestMarketDataSnapshot(stk.conId) ?: return
+            val stk = provider.requestContractDetails(underlying, "STK").firstOrNull() ?: return
+            val snapshot = provider.requestMarketDataSnapshot(stk.conId) ?: return
             snapshot.last?.let { java.math.BigDecimal.valueOf(it) } ?: return
         }
         val contracts = if (targetExpiry != null) {
             try {
-                ibkrClient.requestContractDetails(underlying, "OPT", targetExpiry).filter { c ->
+                provider.requestContractDetails(underlying, "OPT", targetExpiry).filter { c ->
                     c.tradingClass == null || c.tradingClass == underlying
-                }.ifEmpty { ibkrClient.requestContractDetails(underlying, "OPT", targetExpiry) }
+                }.ifEmpty { provider.requestContractDetails(underlying, "OPT", targetExpiry) }
             } catch (e: Exception) {
                 log.error("Failed to load contracts for {} expiry {}", underlying, targetExpiry, e)
                 return
             }
         } else {
-            try { ibkrClient.requestOptionChain(underlying) } catch (e: Exception) {
+            try { provider.requestOptionChain(underlying) } catch (e: Exception) {
                 log.error("Failed to load option chain for streaming: {}", underlying, e)
                 return
             }

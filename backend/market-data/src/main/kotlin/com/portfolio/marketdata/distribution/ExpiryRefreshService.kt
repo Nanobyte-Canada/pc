@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class ExpiryRefreshService(
-    private val ibkrClient: MarketDataProvider,
+    private val provider: MarketDataProvider,
     private val expiryCacheService: ExpiryCacheService,
     private val properties: ExpiryProperties
 ) {
@@ -19,13 +19,13 @@ class ExpiryRefreshService(
     /**
      * Refresh expiry dates on application startup so the cache is populated
      * immediately rather than waiting for the first scheduled Monday run.
-     * Runs with a short delay to let IBKR connection stabilize.
+     * Runs with a short delay to let the provider connection stabilize.
      */
     @EventListener(ApplicationReadyEvent::class)
     fun onStartup() {
         Thread {
             try {
-                Thread.sleep(10_000) // Wait 10s for IBKR connection to stabilize
+                Thread.sleep(10_000) // Wait 10s for provider connection to stabilize
                 log.info("Startup expiry refresh triggered")
                 refreshAll()
             } catch (e: Exception) {
@@ -60,7 +60,7 @@ class ExpiryRefreshService(
     fun refreshSymbol(symbol: String) {
         log.debug("Refreshing expirations for {}", symbol)
         try {
-            val expirations = ibkrClient.requestOptionExpirations(symbol)
+            val expirations = provider.requestOptionExpirations(symbol)
             expiryCacheService.cacheExpiry(symbol, expirations)
             log.debug("Cached {} expirations for {}", expirations.size, symbol)
         } catch (e: Exception) {

@@ -13,15 +13,15 @@ class QuoteControllerTest {
 
     private val quoteCacheService = mockk<QuoteCacheService>(relaxed = true)
     private val underlyingPriceRepository = mockk<UnderlyingPriceRepository>(relaxed = true)
-    private val ibkrClient = mockk<MarketDataProvider>(relaxed = true)
+    private val provider = mockk<MarketDataProvider>(relaxed = true)
 
-    private val controller = QuoteController(quoteCacheService, underlyingPriceRepository, ibkrClient)
+    private val controller = QuoteController(quoteCacheService, underlyingPriceRepository, provider)
 
     @Test
     fun `getQuote returns 503 when IBKR not connected and no cached data`() {
         every { quoteCacheService.getQuote("SPY") } returns null
         every { underlyingPriceRepository.findByTickerOrderByObservedAtDesc("SPY") } returns emptyList()
-        every { ibkrClient.isConnected() } returns false
+        every { provider.isConnected() } returns false
 
         val response = controller.getQuote("SPY")
 

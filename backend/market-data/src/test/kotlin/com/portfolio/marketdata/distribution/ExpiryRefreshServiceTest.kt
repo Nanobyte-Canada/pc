@@ -11,7 +11,7 @@ import java.time.LocalDate
 
 class ExpiryRefreshServiceTest {
 
-    private val ibkrClient = mockk<MarketDataProvider>()
+    private val provider = mockk<MarketDataProvider>()
     private val expiryCacheService = mockk<ExpiryCacheService>(relaxed = true)
     private val properties = ExpiryProperties(
         refresh = ExpiryProperties.Refresh(
@@ -22,7 +22,7 @@ class ExpiryRefreshServiceTest {
 
     @BeforeEach
     fun setup() {
-        service = ExpiryRefreshService(ibkrClient, expiryCacheService, properties)
+        service = ExpiryRefreshService(provider, expiryCacheService, properties)
     }
 
     @Test
@@ -31,9 +31,9 @@ class ExpiryRefreshServiceTest {
         val teclExpirations = listOf(LocalDate.of(2026, 7, 25))
         val tqqqExpirations = listOf(LocalDate.of(2026, 8, 1))
 
-        every { ibkrClient.requestOptionExpirations("SOXL") } returns soxlExpirations
-        every { ibkrClient.requestOptionExpirations("TECL") } returns teclExpirations
-        every { ibkrClient.requestOptionExpirations("TQQQ") } returns tqqqExpirations
+        every { provider.requestOptionExpirations("SOXL") } returns soxlExpirations
+        every { provider.requestOptionExpirations("TECL") } returns teclExpirations
+        every { provider.requestOptionExpirations("TQQQ") } returns tqqqExpirations
 
         service.refreshAll()
 
@@ -45,7 +45,7 @@ class ExpiryRefreshServiceTest {
     @Test
     fun `refreshSymbol fetches and caches expirations for single symbol`() {
         val expirations = listOf(LocalDate.of(2026, 7, 18))
-        every { ibkrClient.requestOptionExpirations("SOXL") } returns expirations
+        every { provider.requestOptionExpirations("SOXL") } returns expirations
 
         service.refreshSymbol("SOXL")
 
@@ -54,7 +54,7 @@ class ExpiryRefreshServiceTest {
 
     @Test
     fun `refreshSymbol handles IBKR failure gracefully`() {
-        every { ibkrClient.requestOptionExpirations("SOXL") } throws RuntimeException("IBKR disconnected")
+        every { provider.requestOptionExpirations("SOXL") } throws RuntimeException("IBKR disconnected")
 
         service.refreshSymbol("SOXL")
 
@@ -63,9 +63,9 @@ class ExpiryRefreshServiceTest {
 
     @Test
     fun `refreshAll continues when one symbol fails`() {
-        every { ibkrClient.requestOptionExpirations("SOXL") } throws RuntimeException("IBKR disconnected")
-        every { ibkrClient.requestOptionExpirations("TECL") } returns listOf(LocalDate.of(2026, 7, 25))
-        every { ibkrClient.requestOptionExpirations("TQQQ") } returns listOf(LocalDate.of(2026, 8, 1))
+        every { provider.requestOptionExpirations("SOXL") } throws RuntimeException("IBKR disconnected")
+        every { provider.requestOptionExpirations("TECL") } returns listOf(LocalDate.of(2026, 7, 25))
+        every { provider.requestOptionExpirations("TQQQ") } returns listOf(LocalDate.of(2026, 8, 1))
 
         service.refreshAll()
 

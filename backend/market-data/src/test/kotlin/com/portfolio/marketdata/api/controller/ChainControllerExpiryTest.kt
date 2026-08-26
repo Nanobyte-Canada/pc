@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 class ChainControllerExpiryTest {
 
     private val quoteCacheService = mockk<com.portfolio.marketdata.distribution.QuoteCacheService>(relaxed = true)
-    private val ibkrClient = mockk<MarketDataProvider>()
+    private val provider = mockk<MarketDataProvider>()
     private val expiryCacheService = mockk<ExpiryCacheService>(relaxed = true)
     private val properties = AppProperties(maxDteDefault = 90)
     private lateinit var controller: ChainController
@@ -27,7 +27,7 @@ class ChainControllerExpiryTest {
             quoteCacheService = quoteCacheService,
             chainBuilder = mockk(relaxed = true),
             greeksCalculator = mockk(relaxed = true),
-            ibkrClient = ibkrClient,
+            provider = provider,
             properties = properties,
             buildTimeoutSeconds = 15,
             buildMaxThreads = 2,
@@ -47,15 +47,15 @@ class ChainControllerExpiryTest {
 
         assertEquals(200, response.statusCode.value())
         assertEquals(2, response.body?.expirations?.size)
-        verify(exactly = 0) { ibkrClient.requestOptionExpirations(any()) }
+        verify(exactly = 0) { provider.requestOptionExpirations(any()) }
     }
 
     @Test
     fun `getExpirations falls back to IBKR on cache miss`() {
         val ibkrExpirations = listOf(LocalDate.now().plusDays(10))
         every { expiryCacheService.getExpiry("SOXL") } returns null
-        every { ibkrClient.isConnected() } returns true
-        every { ibkrClient.requestOptionExpirations("SOXL") } returns ibkrExpirations
+        every { provider.isConnected() } returns true
+        every { provider.requestOptionExpirations("SOXL") } returns ibkrExpirations
         every { quoteCacheService.getQuote("SOXL") } returns mockk { every { last } returns BigDecimal("50.00") }
 
         val response = controller.getExpirations("SOXL", null)

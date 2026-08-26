@@ -20,7 +20,7 @@ import java.time.Instant
 class QuoteController(
     private val quoteCacheService: QuoteCacheService,
     private val underlyingPriceRepository: UnderlyingPriceRepository,
-    private val ibkrClient: MarketDataProvider
+    private val provider: MarketDataProvider
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -40,14 +40,14 @@ class QuoteController(
                 symbol = latestPrice.ticker, bid = latestPrice.price, ask = latestPrice.price,
                 last = latestPrice.price, volume = latestPrice.volume ?: 0L, timestamp = latestPrice.observedAt
             )
-        } else if (!ibkrClient.isConnected()) {
-            logger.warn("IBKR not connected, cannot fetch quote for {}", symbol)
+        } else if (!provider.isConnected()) {
+            logger.warn("Provider not connected, cannot fetch quote for {}", symbol)
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
         } else {
-            val contracts = ibkrClient.requestContractDetails(symbol, "STK")
+            val contracts = provider.requestContractDetails(symbol, "STK")
             val conId = contracts.firstOrNull()?.conId
                 ?: return ResponseEntity.notFound().build()
-            val snapshot = ibkrClient.requestMarketDataSnapshot(conId)
+            val snapshot = provider.requestMarketDataSnapshot(conId)
                 ?: return ResponseEntity.notFound().build()
             val price = snapshot.last ?: snapshot.bid ?: snapshot.ask ?: return ResponseEntity.notFound().build()
             Quote(
