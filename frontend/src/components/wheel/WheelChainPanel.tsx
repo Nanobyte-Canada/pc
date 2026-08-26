@@ -35,7 +35,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   const [loadingExpiry, setLoadingExpiry] = useState(false)
   const [strikesPerSide, setStrikesPerSide] = useState(25)
   const [chainError, setChainError] = useState<string | null>(null)
-  const [ibkrDisconnected, setIbkrDisconnected] = useState(false)
+  const [providerDisconnected, setProviderDisconnected] = useState(false)
 
   // Search-first mode state
   const [searchQuery, setSearchQuery] = useState('')
@@ -55,7 +55,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   const chain = useQuoteStore(s => s.chains[context.ticker])
   const quote = useQuoteStore(s => s.quotes[context.ticker])
   const setChain = useQuoteStore(s => s.setChain)
-  const ibkrConnected = useQuoteStore(s => s.ibkrConnected)
+  const providerConnected = useQuoteStore(s => s.providerConnected)
   const toast = useToast()
   const { subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, switchChainExpiry } = useMarketDataWebSocket()
 
@@ -166,7 +166,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
           setLoading(false)
           console.error('[WheelChainPanel] Failed to load options chain:', err)
           const msg = err instanceof ApiError && err.status === 503
-            ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
+            ? 'Market data provider may be unavailable. Please check the connection and try again.'
             : 'Failed to load options chain. Please try again.'
           setChainError(msg)
           toast.error(msg)
@@ -182,10 +182,10 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
     }
   }, [context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain, strikesPerSide, side, toast, hasTicker])
 
-  // Track IBKR connection status via WebSocket
+  // Track market data connection status via WebSocket
   useEffect(() => {
-    setIbkrDisconnected(ibkrConnected === false)
-  }, [ibkrConnected])
+    setProviderDisconnected(providerConnected === false)
+  }, [providerConnected])
 
   const handleExpiryChange = useCallback(async (newExpiry: string) => {
     setSelectedExpiry(newExpiry)
@@ -203,7 +203,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
     } catch (err) {
       console.error('[WheelChainPanel] Failed to load expiry data:', err)
       const msg = err instanceof ApiError && err.status === 503
-        ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
+        ? 'Market data provider may be unavailable. Please check the connection and try again.'
         : 'Failed to load expiry data. Please try again.'
       setChainError(msg)
       toast.error(msg)
@@ -227,7 +227,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
     } catch (err) {
       console.error('[WheelChainPanel] Failed to reload chain:', err)
       const msg = err instanceof ApiError && err.status === 503
-        ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
+        ? 'Market data provider may be unavailable. Please check the connection and try again.'
         : 'Failed to reload chain. Please try again.'
       setChainError(msg)
       toast.error(msg)
@@ -406,10 +406,10 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         <button className="wcp2-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
       </div>
 
-      {ibkrDisconnected && (
+      {providerDisconnected && (
         <div className="wcp2-banner wcp2-banner--warning">
           <AlertTriangle size={14} />
-          <span>IBKR Gateway is disconnected. Data may be stale or unavailable.</span>
+          <span>Market data is disconnected. Data may be stale or unavailable.</span>
         </div>
       )}
 

@@ -71,8 +71,8 @@ export function OptionsPage() {
       }
     } catch (err) {
       console.error('Failed to load options data:', err)
-      toast.error('Failed to load options data. IBKR Gateway may be unavailable.')
-      setChainError('IBKR Gateway is not responding. Options data is currently unavailable. Please try again later.')
+      toast.error('Failed to load options data. Market data provider may be unavailable.')
+      setChainError('Market data is not responding. Options data is currently unavailable. Please try again later.')
       setSelectedUnderlying(null)
     } finally {
       setIsLoadingChain(false)
@@ -93,7 +93,7 @@ export function OptionsPage() {
     } catch (err) {
       console.error('Failed to load expiry data:', err)
       const msg = err instanceof ApiError && err.status === 503
-        ? 'IBKR Gateway may be unavailable. Please check the connection and try again.'
+        ? 'Market data provider may be unavailable. Please check the connection and try again.'
         : 'Failed to load expiry data. Please try again.'
       setExpiryError(msg)
       toast.error(msg)

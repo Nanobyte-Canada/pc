@@ -31,8 +31,6 @@ function getBrokerIcon(brokerName: string) {
   const lower = brokerName.toLowerCase()
   if (lower.includes('questrade')) return { letter: 'Q', bg: '#1a5c3a', color: '#4ade80' }
   if (lower.includes('wealthsimple')) return { letter: 'W', bg: '#1a1a3a', color: '#a78bfa' }
-  if (lower.includes('interactive') || lower.includes('ibkr'))
-    return { letter: 'IB', bg: '#3a1a1a', color: '#f87171' }
   return { letter: brokerName[0]?.toUpperCase() ?? '?', bg: '#1a2332', color: '#94a3b8' }
 }
 
@@ -187,7 +185,7 @@ export function OrderPanel({ position, ticker, currentPrice, expiryDate, onClose
     const account = accounts.find(a => a.connectionId === selectedAccountId)
     if (!account) return ['Limit', 'Market']
     const broker = account.brokerName.toLowerCase()
-    if (broker.includes('questrade') || broker.includes('ibkr') || broker.includes('interactive'))
+    if (broker.includes('questrade'))
       return ['Limit', 'Market', 'Stop', 'Stop Limit']
     return ['Limit', 'Market']
   }, [accounts, selectedAccountId])

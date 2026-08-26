@@ -17,7 +17,7 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
   const [isConnected, setIsConnected] = useState(false)
   const setQuote = useQuoteStore((state) => state.setQuote)
   const updateChainQuote = useQuoteStore((state) => state.updateChainQuote)
-  const setIbkrConnected = useQuoteStore((state) => state.setIbkrConnected)
+  const setProviderConnected = useQuoteStore((state) => state.setProviderConnected)
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return
@@ -51,7 +51,7 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
       try {
         const raw = JSON.parse(event.data)
         if (raw.type === 'connection_status') {
-          setIbkrConnected(raw.connected)
+          setProviderConnected(raw.connected)
           return
         }
         if (raw.type === 'option_quote' && raw.data) {
@@ -84,7 +84,7 @@ export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = 
     }
 
     wsRef.current = ws
-  }, [setQuote, updateChainQuote, setIbkrConnected])
+  }, [setQuote, updateChainQuote, setProviderConnected])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)

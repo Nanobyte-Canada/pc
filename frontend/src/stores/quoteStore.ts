@@ -5,12 +5,12 @@ interface QuoteState {
   quotes: Record<string, Quote>
   chains: Record<string, OptionsChain>
   selectedUnderlying: string | null
-  ibkrConnected: boolean | null
+  providerConnected: boolean | null
   setQuote: (symbol: string, quote: Quote) => void
   setChain: (underlying: string, chain: OptionsChain) => void
   updateChainQuote: (underlying: string, optionQuote: OptionQuoteData) => void
   setSelectedUnderlying: (symbol: string | null) => void
-  setIbkrConnected: (connected: boolean | null) => void
+  setProviderConnected: (connected: boolean | null) => void
   clearQuotes: () => void
 }
 
@@ -32,7 +32,7 @@ export const useQuoteStore = create<QuoteState>()((set) => ({
   quotes: {},
   chains: {},
   selectedUnderlying: null,
-  ibkrConnected: null,
+  providerConnected: null,
   setQuote: (symbol, quote) =>
     set((state) => ({ quotes: { ...state.quotes, [symbol]: quote } })),
   setChain: (underlying, chain) =>
@@ -86,6 +86,6 @@ export const useQuoteStore = create<QuoteState>()((set) => ({
       return { chains: { ...state.chains, [underlying]: updatedChain } }
     }),
   setSelectedUnderlying: (symbol) => set({ selectedUnderlying: symbol }),
-  setIbkrConnected: (connected) => set({ ibkrConnected: connected }),
+  setProviderConnected: (connected) => set({ providerConnected: connected }),
   clearQuotes: () => set({ quotes: {}, chains: {} }),
 }))
