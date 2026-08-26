@@ -147,9 +147,8 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      IBKR_HOST: ib-gateway
-      IBKR_PORT: "4003"
-      IBKR_CLIENT_ID: ${IBKR_CLIENT_ID:-1}
+      QUESTRADE_REFRESH_TOKEN: ${QUESTRADE_REFRESH_TOKEN:-}
+      QUESTRADE_USE_PRACTICE: ${QUESTRADE_USE_PRACTICE:-false}
     ports:
       - "10082:8082"
     depends_on:
@@ -175,7 +174,6 @@ services:
         max-file: "5"
     networks:
       - prod-network
-      - shared-network
 
   strategy-service:
     image: ghcr.io/nanobyte-canada/portfolio-strategy:${IMAGE_TAG}
@@ -227,10 +225,6 @@ services:
       REDIS_PORT: 6379
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY}
       GATEWAY_API_KEY: ${GATEWAY_API_KEY}
-      IBKR_GATEWAY_ENABLED: "true"
-      IBKR_HOST: ib-gateway
-      IBKR_PORT: "4003"
-      IBKR_GATEWAY_CLIENT_ID: ${IBKR_GATEWAY_CLIENT_ID:-2}
       QUESTRADE_ENABLED: "true"
       WEALTHSIMPLE_ENABLED: "true"
     ports:
@@ -258,7 +252,6 @@ services:
         max-file: "5"
     networks:
       - prod-network
-      - shared-network
 
   frontend:
     image: ghcr.io/nanobyte-canada/portfolio-frontend:${IMAGE_TAG}
@@ -289,6 +282,3 @@ volumes:
 networks:
   prod-network:
     driver: bridge
-  shared-network:
-    external: true
-    name: shared_shared-network
