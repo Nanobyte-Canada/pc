@@ -10,7 +10,7 @@ A full-stack application for constructing and analyzing investment portfolios us
 - **Drift & Rebalancing** — Monitor portfolio drift from targets and generate trade orders to rebalance
 - **Instrument Screener** — Browse and filter 190k+ instruments across stocks, ETFs, mutual funds, preferred stocks, indices, and bonds
 - **Dashboard** — Customizable widget-based dashboard with portfolio value, performance, risk metrics, and activity feeds
-- **Market Data** — Real-time market data streaming via IBKR with WebSocket delivery
+- **Market Data** — Real-time market data streaming via Questrade with WebSocket delivery
 - **Options Trading** — Multi-leg options strategies (spreads, iron condors, covered calls) with P&L and Greeks calculations
 - **Wheel Strategy** — Automated cash-secured put and covered call wheel writing with candidate scoring
 
@@ -23,7 +23,7 @@ A full-stack application for constructing and analyzing investment portfolios us
 | Database | PostgreSQL 16 + Flyway migrations |
 | Cache | Redis 7 |
 | Broker Gateway | broker-gateway (Spring Boot, multi-adapter for Questrade/Wealthsimple/IBKR) |
-| Market Data | IBKR TWS API (real-time) |
+| Market Data | Questrade API (refresh-token auth; real-time US/OPRA package required) |
 | Data Sources | EODHD, Alpha Vantage |
 | Containerization | Docker + Docker Compose |
 
@@ -33,7 +33,7 @@ backend/common/portfolio/     — Shared math/domain library (BlackScholes, Gree
 backend/portfolio/            — Main Spring Boot API (port 8080)
 backend/broker-gateway/       — Broker gateway abstraction layer (port 8084)
 backend/ingestion/            — Data ingestion microservice (port 8081)
-backend/market-data/          — Market data + IBKR + WebSocket streaming (port 8082)
+backend/market-data/          — Market data + Questrade + WebSocket streaming (port 8082)
 backend/strategy/             — Strategy engine + wheel writer (port 8083)
 frontend/                     — React SPA (port 3000)
 config/                       — Environment template (.env.example)
