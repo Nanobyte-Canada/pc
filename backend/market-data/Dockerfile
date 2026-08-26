@@ -4,7 +4,7 @@ WORKDIR /build
 # Copy common module for composite build
 COPY common ./common
 
-# Copy market-data service (includes vendored TwsApi.jar in libs/)
+# Copy market-data service
 COPY market-data ./market-data
 
 WORKDIR /build/market-data

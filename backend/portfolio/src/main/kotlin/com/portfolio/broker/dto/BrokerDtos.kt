@@ -154,9 +154,6 @@ fun BrokerConnection.toDto(): BrokerConnectionDto {
     val orderTypes = when {
         brokerSlug == "questrade" || brokerNameLower.contains("questrade") ->
             listOf("MARKET", "LIMIT", "STOP", "STOP_LIMIT")
-        brokerSlug == "ibkr" || brokerSlug == "interactive_brokers" ||
-            brokerNameLower.contains("interactive") || brokerNameLower.contains("ibkr") ->
-            listOf("MARKET", "LIMIT", "STOP", "STOP_LIMIT")
         brokerSlug == "wealthsimple" || brokerNameLower.contains("wealthsimple") ->
             listOf("MARKET", "LIMIT")
         else -> listOf("MARKET", "LIMIT")

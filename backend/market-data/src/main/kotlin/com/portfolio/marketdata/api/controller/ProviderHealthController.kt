@@ -18,10 +18,6 @@ class ProviderHealthController(
     @GetMapping("/provider")
     fun providerHealth(): Map<String, Any> = healthPayload()
 
-    /** Temporary alias for frontend compatibility; removed in Task 13. */
-    @GetMapping("/ibkr")
-    fun ibkrHealthAlias(): Map<String, Any> = healthPayload()
-
     private fun healthPayload(): Map<String, Any> {
         val state = connectionManager.getConnectionState()
         return mapOf(

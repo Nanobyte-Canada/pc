@@ -59,14 +59,10 @@ class BrokerServiceTest {
         val healthResponse = objectMapper.createObjectNode()
         healthResponse.put("status", "UP")
         val brokersArray = healthResponse.putArray("brokers")
-        val ibkr = brokersArray.addObject()
-        ibkr.put("brokerType", "IBKR")
-        ibkr.put("enabled", true)
-        ibkr.put("status", "OK")
         val questrade = brokersArray.addObject()
         questrade.put("brokerType", "QUESTRADE")
-        questrade.put("enabled", false)
-        questrade.put("status", "DISABLED")
+        questrade.put("enabled", true)
+        questrade.put("status", "OK")
         val wealthsimple = brokersArray.addObject()
         wealthsimple.put("brokerType", "WEALTHSIMPLE")
         wealthsimple.put("enabled", false)
@@ -76,13 +72,11 @@ class BrokerServiceTest {
 
         val result = service.getAvailableBrokers()
 
-        assertEquals(3, result.size)
-        assertEquals("IBKR", result[0].name)
+        assertEquals(2, result.size)
+        assertEquals("QUESTRADE", result[0].name)
         assertEquals(true, result[0].enabled)
-        assertEquals("QUESTRADE", result[1].name)
+        assertEquals("WEALTHSIMPLE", result[1].name)
         assertEquals(false, result[1].enabled)
-        assertEquals("WEALTHSIMPLE", result[2].name)
-        assertEquals(false, result[2].enabled)
     }
 
     @Test
@@ -90,10 +84,10 @@ class BrokerServiceTest {
         val healthResponse = objectMapper.createObjectNode()
         healthResponse.put("status", "UP")
         val brokersArray = healthResponse.putArray("brokers")
-        val ibkr = brokersArray.addObject()
-        ibkr.put("brokerType", "IBKR")
-        ibkr.put("enabled", false)
-        ibkr.put("status", "DISABLED")
+        val questrade = brokersArray.addObject()
+        questrade.put("brokerType", "QUESTRADE")
+        questrade.put("enabled", false)
+        questrade.put("status", "DISABLED")
 
         every { gatewayClient.getHealth() } returns healthResponse
 
