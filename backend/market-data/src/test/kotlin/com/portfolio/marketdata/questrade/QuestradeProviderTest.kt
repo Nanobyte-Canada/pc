@@ -197,10 +197,12 @@ class QuestradeProviderTest {
         every { streamClient.subscribe(any(), any()) } returns Unit
         every { streamClient.unsubscribe(any()) } returns Unit
         every { streamClient.setReconnectHandler(any()) } returns Unit
+        every { streamClient.connect() } returns Unit
         every { streamClient.shutdown() } returns Unit
 
         provider.connect()
         verify(exactly = 1) { tokenManager.getValidAccessToken() }
+        verify(exactly = 1) { streamClient.connect() }
 
         assertTrue(provider.isConnected())
         verify(exactly = 1) { streamClient.isConnected() }

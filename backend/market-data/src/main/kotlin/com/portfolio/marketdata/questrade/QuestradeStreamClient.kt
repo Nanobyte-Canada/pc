@@ -146,6 +146,40 @@ class QuestradeStreamClient(
 
     fun isConnected(): Boolean = connected
 
+    /**
+     * Opens the initial WebSocket connection for keep-alive.
+     * Negotiates a stock stream (even with no subscriptions) so the socket is ready
+     * before any subscribe() calls arrive.
+     */
+    fun connect() {
+        if (connected || shutdown) return
+        val port = try {
+            restClient.negotiateStockStream(emptyList())
+        } catch (e: Exception) {
+            log.warn("Initial stream negotiation failed: {}", e.toString())
+            return
+        }
+        if (port <= 0) {
+            log.warn("Initial stream negotiation returned port {}", port)
+            return
+        }
+        optionsMode = false
+        val token = try {
+            tokenManager.getValidAccessToken()
+        } catch (e: Exception) {
+            log.warn("Access token unavailable for initial stream connect: {}", e.toString())
+            return
+        }
+        val host = token.apiServer.trimEnd('/').removePrefix("https://")
+        log.info("Opening initial Questrade stock stream wss://{}:{}", host, port)
+        httpClient.newWebSocketBuilder().buildAsync(URI("wss://$host:$port"), StreamListener())
+            .whenComplete { _, error ->
+                if (error != null && !shutdown) {
+                    log.warn("Initial WebSocket connect failed: {}", error.toString())
+                }
+            }
+    }
+
     /** Handlers run after each successful (re)connect; re-requesting subscriptions upstream is idempotent. */
     fun setReconnectHandler(handler: Runnable) {
         reconnectHandlers.add(handler)
