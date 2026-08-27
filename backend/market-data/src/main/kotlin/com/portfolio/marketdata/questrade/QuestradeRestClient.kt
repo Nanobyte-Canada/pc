@@ -127,13 +127,13 @@ class QuestradeRestClient(
     }
 
     fun negotiateStockStream(symbolIds: List<Int>): Int = withApi { base, token ->
-        val url = "$base/v1/markets/stream?stream=true&mode=WebSocket&symbolIds=${symbolIds.joinToString(",")}"
+        val url = "$base/v1/markets/quotes?ids=${symbolIds.joinToString(",")}&stream=true&mode=WebSocket"
         fetchJson(token, HttpMethod.GET, url).path("streamPort").asInt(-1)
     }
 
     fun negotiateOptionStream(optionIds: List<Int>): Int = withApi { base, token ->
         val body = "{\"stream\":true,\"mode\":\"WebSocket\",\"optionIds\":[${optionIds.joinToString(",")}]}"
-        fetchJson(token, HttpMethod.POST, "$base/v1/markets/stream", body).path("streamPort").asInt(-1)
+        fetchJson(token, HttpMethod.POST, "$base/v1/markets/quotes/options", body).path("streamPort").asInt(-1)
     }
 
     fun serverTime(): Instant = withApi { base, token ->
