@@ -31,15 +31,17 @@ class QuestradeProvider(
     override fun connect() {
         // Warm-up: force a token exchange so the first data call never pays auth latency.
         tokenManager.getValidAccessToken()
-        // Open initial WebSocket for keep-alive so isConnected() returns true.
-        streamClient.connect()
     }
 
     override fun disconnect() {
         streamClient.shutdown()
     }
 
-    override fun isConnected(): Boolean = streamClient.isConnected()
+    override fun isConnected(): Boolean = try {
+        tokenManager.getValidAccessToken(); true
+    } catch (_: Exception) {
+        false
+    }
 
     override fun registerReconnectHandler(handler: Runnable) {
         streamClient.setReconnectHandler(handler)

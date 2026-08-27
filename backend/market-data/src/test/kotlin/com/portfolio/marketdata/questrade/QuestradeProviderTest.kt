@@ -193,19 +193,15 @@ class QuestradeProviderTest {
     fun `lifecycle and market data delegate to stream client and token manager`() {
         val accessToken = AccessToken("tok", "https://api01.iq.questrade.com/", 9999999999L)
         every { tokenManager.getValidAccessToken() } returns accessToken
-        every { streamClient.isConnected() } returns true
         every { streamClient.subscribe(any(), any()) } returns Unit
         every { streamClient.unsubscribe(any()) } returns Unit
         every { streamClient.setReconnectHandler(any()) } returns Unit
-        every { streamClient.connect() } returns Unit
         every { streamClient.shutdown() } returns Unit
 
         provider.connect()
         verify(exactly = 1) { tokenManager.getValidAccessToken() }
-        verify(exactly = 1) { streamClient.connect() }
 
         assertTrue(provider.isConnected())
-        verify(exactly = 1) { streamClient.isConnected() }
 
         val callback: (Int, Double) -> Unit = { _, _ -> }
         provider.requestMarketData(76915281, callback)
