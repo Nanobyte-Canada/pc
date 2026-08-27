@@ -3,6 +3,7 @@ package com.portfolio.marketdata.questrade
 import com.fasterxml.jackson.databind.JsonNode
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 
@@ -28,8 +29,12 @@ class QuestradeTokenManager(
     fun forceRefresh(): AccessToken {
         val refreshToken = currentRefreshToken()
         val authUrl = if (properties.usePractice) properties.practiceAuthUrl else properties.authUrl
-        val url = "$authUrl?grant_type=refresh_token&refresh_token=$refreshToken"
-        val node: JsonNode = restClient.get().uri(url).retrieve().body(JsonNode::class.java)
+        val node: JsonNode = restClient.post()
+            .uri(authUrl)
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body("grant_type=refresh_token&refresh_token=$refreshToken")
+            .retrieve()
+            .body(JsonNode::class.java)
             ?: throw IllegalStateException("Empty Questrade token response")
         val access = node.get("access_token")?.asText()
             ?: throw IllegalStateException("No access_token in Questrade response")

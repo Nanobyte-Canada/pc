@@ -8,9 +8,11 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.ValueOperations
+import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.header
+import org.springframework.test.web.client.match.MockRestRequestMatchers.method
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
@@ -55,7 +57,8 @@ class QuestradeRestClientTest {
     }
 
     private fun expectAuth() {
-        server.expect(requestTo("https://login.questrade.com/oauth2/token?grant_type=refresh_token&refresh_token=RT"))
+        server.expect(requestTo("https://login.questrade.com/oauth2/token"))
+            .andExpect(method(HttpMethod.POST))
             .andRespond(withSuccess(tokenBody, MediaType.APPLICATION_JSON))
     }
 
@@ -106,7 +109,8 @@ class QuestradeRestClientTest {
         server.expect(requestTo("https://api01.iq.questrade.com/v1/markets/quotes?ids=34987"))
             .andExpect(header("Authorization", "Bearer AT"))
             .andRespond(withSuccess("{\"code\":1017,\"message\":\"Access token is invalid\"}", MediaType.APPLICATION_JSON))
-        server.expect(requestTo("https://login.questrade.com/oauth2/token?grant_type=refresh_token&refresh_token=R2"))
+        server.expect(requestTo("https://login.questrade.com/oauth2/token"))
+            .andExpect(method(HttpMethod.POST))
             .andRespond(withSuccess(tokenBodyRotated, MediaType.APPLICATION_JSON))
         server.expect(requestTo("https://api01.iq.questrade.com/v1/markets/quotes?ids=34987"))
             .andExpect(header("Authorization", "Bearer AT2"))

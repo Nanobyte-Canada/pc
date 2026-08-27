@@ -40,8 +40,8 @@ class QuestradeTokenManagerTest {
 
     @Test
     fun `exchanges seed token and persists rotation`() {
-        server.expect(requestTo("https://login.questrade.com/oauth2/token?grant_type=refresh_token&refresh_token=RT_SEED"))
-            .andExpect(method(HttpMethod.GET))
+        server.expect(requestTo("https://login.questrade.com/oauth2/token"))
+            .andExpect(method(HttpMethod.POST))
             .andRespond(withSuccess(body, MediaType.APPLICATION_JSON))
         val t = mgr.forceRefresh()
         assertEquals("AT1", t.token)
@@ -52,7 +52,8 @@ class QuestradeTokenManagerTest {
     @Test
     fun `prefers redis token over env seed`() {
         `when`(ops.get(QuestradeTokenManager.REDIS_KEY)).thenReturn("RT_REDIS")
-        server.expect(requestTo("https://login.questrade.com/oauth2/token?grant_type=refresh_token&refresh_token=RT_REDIS"))
+        server.expect(requestTo("https://login.questrade.com/oauth2/token"))
+            .andExpect(method(HttpMethod.POST))
             .andRespond(withSuccess(body, MediaType.APPLICATION_JSON))
         mgr.forceRefresh()
         server.verify()
