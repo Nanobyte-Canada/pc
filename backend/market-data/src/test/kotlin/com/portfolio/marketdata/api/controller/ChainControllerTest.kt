@@ -83,7 +83,7 @@ class ChainControllerTest {
     fun `getChainForExpiry returns 503 when provider not connected`() {
         every { provider.isConnected() } returns false
 
-        val response = controller.getChainForExpiry("SPY", "20260618", 0.45, 25, "both")
+        val response = controller.getChainForExpiry("SPY", "2026-06-18", 0.45, 25, "both")
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.statusCode)
     }
