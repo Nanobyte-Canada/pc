@@ -163,13 +163,21 @@ class QuestradeRestClient(
         return objectMapper.readTree(raw)
     }
 
-    /** Executes the request, retrying once after sleeping when HTTP 429 is returned. */
+    /**
+     * Executes the request, retrying once after sleeping when HTTP 429 is returned.
+     * 401 responses are converted to [RestCallFailedWith1017] so [withApi] can retry
+     * with a freshly exchanged token — Spring's RestClient throws before the response
+     * body can be inspected, so the 1017 JSON check in [fetchJson] is never reached.
+     */
     private fun executeRaw(bearerToken: String, method: HttpMethod, url: String, jsonBody: String?): String {
         repeat(2) { attempt ->
             try {
                 return doExecute(bearerToken, method, url, jsonBody)
             } catch (e: RestClientResponseException) {
-                if (e.statusCode.value() == 429 && attempt == 0) {
+                if (e.statusCode.value() == 401) {
+                    log.debug("Questrade HTTP 401 on {}; will retry after token refresh", url)
+                    throw RestCallFailedWith1017()
+                } else if (e.statusCode.value() == 429 && attempt == 0) {
                     sleepForRateLimit(e)
                 } else {
                     throw e
