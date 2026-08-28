@@ -25,7 +25,7 @@ export async function getOptionsChainForExpiry(
   opts?: { strikesPerSide?: number; side?: 'put' | 'call' }
 ): Promise<OptionsChain> {
   const params = new URLSearchParams()
-  if (opts?.strikesPerSide) params.set('strikesPerSide', String(opts.strikesPerSide))
+  if (opts?.strikesPerSide !== undefined) params.set('strikesPerSide', String(opts.strikesPerSide))
   if (opts?.side) params.set('side', opts.side)
   const qs = params.toString()
   const url = `/market-data-api/api/v1/chains/${encodeURIComponent(underlying)}/expiry/${encodeURIComponent(expiry)}${qs ? '?' + qs : ''}`

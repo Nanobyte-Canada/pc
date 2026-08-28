@@ -33,7 +33,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   const [expirations, setExpirations] = useState<string[]>([])
   const [selectedExpiry, setSelectedExpiry] = useState(context.expiryDate)
   const [loadingExpiry, setLoadingExpiry] = useState(false)
-  const [strikesPerSide, setStrikesPerSide] = useState(25)
+  const [strikesPerSide, setStrikesPerSide] = useState(0) // 0 = all strikes
   const [chainError, setChainError] = useState<string | null>(null)
 
   // Search-first mode state
@@ -487,13 +487,13 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         <div className="wcp2-strikes">
           <span className="wcp2-strikes__label">Strikes</span>
           <div className="wcp2-strikes__options">
-            {[25, 50, 60].map(n => (
+            {[0, 50].map(n => (
               <button
                 key={n}
                 className={`wcp2-strikes__btn ${strikesPerSide === n ? 'wcp2-strikes__btn--active' : ''}`}
                 onClick={() => handleStrikesChange(n)}
               >
-                {n}
+                {n === 0 ? 'All' : n}
               </button>
             ))}
           </div>

@@ -75,7 +75,7 @@ class OptionStreamingService(
     }
 
     companion object {
-        private const val STRIKES_PER_SIDE = 25
+        private const val STRIKES_PER_SIDE = 0 // 0 = all strikes
         private const val MAX_CHAIN_SUBSCRIPTIONS = 80
     }
 
@@ -142,13 +142,18 @@ class OptionStreamingService(
         }
         // Use the same strike-proximity filter as the REST endpoint so streaming
         // covers exactly the strikes the frontend displays.
-        val spotDouble = spotPrice.toDouble()
-        val uniqueStrikes = eligible.map { it.strike!!.toDouble() }.distinct().sorted()
-        val below = uniqueStrikes.filter { it <= spotDouble }.takeLast(STRIKES_PER_SIDE).toSet()
-        val above = uniqueStrikes.filter { it > spotDouble }.take(STRIKES_PER_SIDE).toSet()
-        val validStrikes = below + above
-        val toSubscribe = eligible.filter { it.strike!!.toDouble() in validStrikes }
-            .take(MAX_CHAIN_SUBSCRIPTIONS)
+        val toSubscribe = if (STRIKES_PER_SIDE <= 0) {
+            // All strikes — subscribe up to the cap
+            eligible.take(MAX_CHAIN_SUBSCRIPTIONS)
+        } else {
+            val spotDouble = spotPrice.toDouble()
+            val uniqueStrikes = eligible.map { it.strike!!.toDouble() }.distinct().sorted()
+            val below = uniqueStrikes.filter { it <= spotDouble }.takeLast(STRIKES_PER_SIDE).toSet()
+            val above = uniqueStrikes.filter { it > spotDouble }.take(STRIKES_PER_SIDE).toSet()
+            val validStrikes = below + above
+            eligible.filter { it.strike!!.toDouble() in validStrikes }
+                .take(MAX_CHAIN_SUBSCRIPTIONS)
+        }
 
         for (contract in toSubscribe) {
             startStreamingSingleForChain(underlying, contract.conId, contract, chainKeys)

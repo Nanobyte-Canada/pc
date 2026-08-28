@@ -153,15 +153,18 @@ class ChainController(
         @PathVariable underlying: String,
         @PathVariable expiry: String,
         @RequestParam(defaultValue = "0.45") maxDelta: Double,
-        @RequestParam(defaultValue = "25") strikesPerSide: Int,
+        @RequestParam(defaultValue = "0") strikesPerSide: Int,
         @RequestParam(defaultValue = "both") side: String
     ): ResponseEntity<OptionsChainResponse> {
         val cachedChain = quoteCacheService.getChain(underlying)
-        if (cachedChain != null) {
+        if (cachedChain != null && cachedChain.expirations.containsKey(expiry)) {
+            // Serve from cache only if the requested expiry's data is already cached.
             if (!provider.isConnected()) {
                 log.warn("Serving stale chain from cache for {} because provider is disconnected", underlying)
             }
-            return ResponseEntity.ok(OptionsChainResponse.fromDomain(cachedChain))
+            // Return only the requested expiry's data.
+            val expiryOnly = cachedChain.copy(expirations = mapOf(expiry to cachedChain.expirations[expiry]!!))
+            return ResponseEntity.ok(OptionsChainResponse.fromDomain(expiryOnly))
         }
 
         if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
@@ -282,7 +285,7 @@ class ChainController(
         }
     }
 
-    private fun buildChainForExpiry(underlying: String, expiry: LocalDate, maxDelta: Double, strikesPerSide: Int = 25, side: String = "both"): OptionsChain? {
+    private fun buildChainForExpiry(underlying: String, expiry: LocalDate, maxDelta: Double, strikesPerSide: Int = 0, side: String = "both"): OptionsChain? {
         val future = CompletableFuture.supplyAsync({
             if (Thread.interrupted()) throw InterruptedException()
             if (!provider.isConnected()) {
@@ -358,6 +361,8 @@ class ChainController(
         val eligible = contracts.filter { c ->
             c.conId > 0 && c.strike != null && c.expiry == targetExpiry && c.right != null
         }
+        // strikesPerSide=0 means "all strikes"
+        if (strikesPerSide <= 0) return eligible
         val spotDouble = spotPrice.toDouble()
         val uniqueStrikes = eligible.map { it.strike!!.toDouble() }.distinct().sorted()
         val below = uniqueStrikes.filter { it <= spotDouble }.takeLast(strikesPerSide).toSet()
