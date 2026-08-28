@@ -156,22 +156,22 @@ class ChainController(
         @RequestParam(defaultValue = "0") strikesPerSide: Int,
         @RequestParam(defaultValue = "both") side: String
     ): ResponseEntity<OptionsChainResponse> {
+        val expiryDate = try { LocalDate.parse(expiry) } catch (_: Exception) {
+            return ResponseEntity.badRequest().build()
+        }
         val cachedChain = quoteCacheService.getChain(underlying)
-        if (cachedChain != null && cachedChain.expirations.containsKey(expiry)) {
+        if (cachedChain != null && cachedChain.expirations.containsKey(expiryDate)) {
             // Serve from cache only if the requested expiry's data is already cached.
             if (!provider.isConnected()) {
                 log.warn("Serving stale chain from cache for {} because provider is disconnected", underlying)
             }
             // Return only the requested expiry's data.
-            val expiryOnly = cachedChain.copy(expirations = mapOf(expiry to cachedChain.expirations[expiry]!!))
+            val expiryOnly = cachedChain.copy(expirations = mapOf(expiryDate to cachedChain.expirations[expiryDate]!!))
             return ResponseEntity.ok(OptionsChainResponse.fromDomain(expiryOnly))
         }
 
         if (!checkConnected(underlying)) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
 
-        val expiryDate = try { LocalDate.parse(expiry) } catch (_: Exception) {
-            return ResponseEntity.badRequest().build()
-        }
         val chain = try {
             buildChainForExpiry(underlying, expiryDate, maxDelta, strikesPerSide, side) ?: return ResponseEntity.notFound().build()
         } catch (e: ChainBuildTimeoutException) {
