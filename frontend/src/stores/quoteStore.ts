@@ -73,7 +73,6 @@ export const useQuoteStore = create<QuoteState>()((set) => ({
           }
         }
         if (!strikeData) {
-          console.warn(`[quoteStore] Strike key "${strikeKey}" not found in chain for ${underlying}/${expiryKey}. Available keys:`, Object.keys(expiryData))
           return state
         }
       }

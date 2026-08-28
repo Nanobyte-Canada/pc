@@ -35,7 +35,6 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
   const [loadingExpiry, setLoadingExpiry] = useState(false)
   const [strikesPerSide, setStrikesPerSide] = useState(25)
   const [chainError, setChainError] = useState<string | null>(null)
-  const [providerDisconnected, setProviderDisconnected] = useState(false)
 
   // Search-first mode state
   const [searchQuery, setSearchQuery] = useState('')
@@ -181,11 +180,6 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
       unsubscribeChain(context.ticker)
     }
   }, [context.ticker, context.expiryDate, subscribe, unsubscribe, subscribeChainExpiry, unsubscribeChain, setChain, strikesPerSide, side, toast, hasTicker])
-
-  // Track market data connection status via WebSocket
-  useEffect(() => {
-    setProviderDisconnected(providerConnected === false)
-  }, [providerConnected])
 
   const handleExpiryChange = useCallback(async (newExpiry: string) => {
     setSelectedExpiry(newExpiry)
@@ -421,7 +415,7 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
         <button className="wcp2-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
       </div>
 
-      {providerDisconnected && (
+      {providerConnected === false && (
         <div className="wcp2-banner wcp2-banner--warning">
           <AlertTriangle size={14} />
           <span>Market data is disconnected. Data may be stale or unavailable.</span>
