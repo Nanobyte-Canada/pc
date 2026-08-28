@@ -8,6 +8,7 @@ import com.portfolio.common.domain.OptionType
 import com.portfolio.common.domain.Quote
 import com.portfolio.marketdata.streaming.OptionStreamingService
 import com.portfolio.marketdata.streaming.QuoteStreamingService
+import com.portfolio.marketdata.questrade.QuestradeConnectionManager
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
@@ -22,7 +23,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Component
 class QuoteWebSocketHandler(
     @Lazy private val quoteStreamingService: QuoteStreamingService,
-    @Lazy private val optionStreamingService: OptionStreamingService
+    @Lazy private val optionStreamingService: OptionStreamingService,
+    @Lazy private val connectionManager: QuestradeConnectionManager
 ) : TextWebSocketHandler() {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -42,6 +44,14 @@ class QuoteWebSocketHandler(
         sessions[session.id] = session
         subscriptions[session.id] = ConcurrentHashMap.newKeySet()
         optionSubscriptions[session.id] = ConcurrentHashMap.newKeySet()
+        // Send current provider connection state so the frontend badge reflects reality.
+        try {
+            val connected = connectionManager.isHealthy()
+            val json = objectMapper.writeValueAsString(
+                mapOf("type" to "connection_status", "connected" to connected, "service" to "market-data")
+            )
+            synchronized(session) { if (session.isOpen) session.sendMessage(TextMessage(json)) }
+        } catch (_: Exception) {}
     }
 
     override fun handleTextMessage(session: WebSocketSession, message: TextMessage) {
