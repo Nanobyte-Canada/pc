@@ -101,8 +101,13 @@ class QuestradeProvider(
     }
 
     override fun requestMarketDataSnapshot(conId: Int): MarketDataSnapshot? {
-        restClient.getOptionQuotes(listOf(conId)).firstOrNull()?.let { return it.toSnapshot() }
-        return restClient.getStockQuotes(listOf(conId)).firstOrNull()?.toSnapshot()
+        // Questrade option symbolIds are >= 10_000_000; equity ids are far below.
+        // Trying the wrong endpoint crashes the request, so route by id range.
+        return if (conId >= OPTION_ID_THRESHOLD) {
+            restClient.getOptionQuotes(listOf(conId)).firstOrNull()?.toSnapshot()
+        } else {
+            restClient.getStockQuotes(listOf(conId)).firstOrNull()?.toSnapshot()
+        }
     }
 
     override fun requestOptionSnapshots(conIds: List<Int>): Map<Int, MarketDataSnapshot> =
@@ -189,4 +194,9 @@ class QuestradeProvider(
         last = lastTradePrice,
         volume = volume
     )
+
+    companion object {
+        /** Questrade option symbolIds are 8+ digits; equity ids are far below. */
+        private const val OPTION_ID_THRESHOLD = 10_000_000
+    }
 }
