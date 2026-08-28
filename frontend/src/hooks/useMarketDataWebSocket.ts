@@ -15,10 +15,10 @@ let wsInstance: WebSocket | null = null
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
 let reconnectDelay = 1000
 let refCount = 0
-let subscribedSymbols = new Set<string>()
-let subscribedChains = new Set<string>()
-let expirySubscriptions = new Map<string, ChainSubscription>()
-let connectionListeners = new Set<(connected: boolean) => void>()
+const subscribedSymbols = new Set<string>()
+const subscribedChains = new Set<string>()
+const expirySubscriptions = new Map<string, ChainSubscription>()
+const connectionListeners = new Set<(connected: boolean) => void>()
 
 // ─── Message batching ───────────────────────────────────────────────────────
 // Buffers option_quote messages and flushes them in a single Zustand update
