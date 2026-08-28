@@ -144,6 +144,7 @@ class QuestradeProviderTest {
 
     @Test
     fun `market data snapshot maps option quote with iv percent to fraction`() {
+        every { restClient.getStockQuotes(listOf(76915281)) } returns emptyList()
         every { restClient.getOptionQuotes(listOf(76915281)) } returns listOf(optionQuote())
         val snap = provider.requestMarketDataSnapshot(76915281)!!
         assertEquals(76915281, snap.conId)
