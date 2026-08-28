@@ -1,7 +1,10 @@
 import { useQuoteStore } from '@/stores/quoteStore'
+import { useMarketDataWebSocket } from '@/hooks/useMarketDataWebSocket'
 import './ConnectionBadge.css'
 
 export function ConnectionBadge({ compact = false }: { compact?: boolean }) {
+  // Ensure a WebSocket is always open so the connection badge reflects reality.
+  useMarketDataWebSocket()
   const providerConnected = useQuoteStore((state) => state.providerConnected)
 
   const status = providerConnected === true
