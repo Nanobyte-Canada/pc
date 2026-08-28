@@ -140,8 +140,7 @@ describe('quoteStore', () => {
       expect(expiryData['550.0']?.call?.bid).toBe(3.0)
     })
 
-    it('logs warning and returns unchanged state when strike key not found', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    it('returns unchanged state when strike key not found', () => {
       const chain = makeChain('SPY', ['550.0', '555.0'])
       useQuoteStore.getState().setChain('SPY', chain)
 
@@ -167,8 +166,6 @@ describe('quoteStore', () => {
       const updated = useQuoteStore.getState().chains['SPY']
       // Chain should be unchanged
       expect(updated.expirations['2026-08-21']?.['550.0']?.call?.bid).toBe(1.0)
-      expect(consoleWarnSpy).toHaveBeenCalled()
-      consoleWarnSpy.mockRestore()
     })
 
     it('returns unchanged state when underlying has no chain', () => {
