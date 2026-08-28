@@ -236,6 +236,8 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
     }
   }, [context.ticker, selectedExpiry, side, setChain, chain, toast])
 
+  const prevRowsRef = useRef<WheelChainStrike[]>([])
+
   const strikes: WheelChainStrike[] = useMemo(() => {
     if (!chain?.expirations) return []
     const expiryData = chain.expirations[selectedExpiry]
@@ -262,9 +264,22 @@ export function WheelChainPanel({ context, spotPrice: initialSpotPrice, onClose,
 
       rows.push({ strike: strikeNum, bid, ask, delta, discount, bidYield, askYield, isATM, isITM })
     }
-    return isCsp
+    const sorted = isCsp
       ? rows.sort((a, b) => a.strike - b.strike)
       : rows.sort((a, b) => b.strike - a.strike)
+
+    // Stabilize row references: reuse previous objects when data hasn't changed
+    // so React.memo on WheelChainRow can skip re-renders.
+    const prev = prevRowsRef.current
+    const stabilized = sorted.map((row) => {
+      const existing = prev.find(
+        (r) => r.strike === row.strike && r.bid === row.bid &&
+          r.ask === row.ask && r.delta === row.delta
+      )
+      return existing ?? row
+    })
+    prevRowsRef.current = stabilized
+    return stabilized
   }, [chain, selectedExpiry, spotPrice, dte, isCsp])
 
   const handleStrikeClick = useCallback((strike: WheelChainStrike) => {

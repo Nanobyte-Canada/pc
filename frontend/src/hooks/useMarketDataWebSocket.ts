@@ -1,6 +1,139 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useQuoteStore } from '@/stores/quoteStore'
 import type { Quote, OptionQuoteData } from '@/types/options'
+
+// ─── Singleton WebSocket manager ────────────────────────────────────────────
+// A single WebSocket connection shared across all hook instances.
+// Ref-counted: connects on first subscriber, disconnects when last unsubscribes.
+
+interface ChainSubscription {
+  expiry: string
+  side?: 'put' | 'call'
+}
+
+let wsInstance: WebSocket | null = null
+let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
+let reconnectDelay = 1000
+let refCount = 0
+let subscribedSymbols = new Set<string>()
+let subscribedChains = new Set<string>()
+let expirySubscriptions = new Map<string, ChainSubscription>()
+let connectionListeners = new Set<(connected: boolean) => void>()
+
+// ─── Message batching ───────────────────────────────────────────────────────
+// Buffers option_quote messages and flushes them in a single Zustand update
+// via requestAnimationFrame, collapsing 50+ renders into 1.
+
+const pendingUpdates = new Map<string, { underlying: string; optionQuote: OptionQuoteData }>()
+let rafId = 0
+
+function flushBatch() {
+  rafId = 0
+  if (pendingUpdates.size === 0) return
+  const updates = Array.from(pendingUpdates.values())
+  pendingUpdates.clear()
+  useQuoteStore.getState().batchUpdateChainQuotes(updates)
+}
+
+function queueUpdate(underlying: string, oq: OptionQuoteData) {
+  // Deduplicate by underlying:expiry:strike:optionType key
+  const key = `${underlying}:${oq.expiry}:${oq.strike}:${oq.optionType}`
+  pendingUpdates.set(key, { underlying, optionQuote: oq })
+  if (!rafId) {
+    rafId = requestAnimationFrame(flushBatch)
+  }
+}
+
+// ─── Connection management ──────────────────────────────────────────────────
+
+function connect() {
+  if (wsInstance?.readyState === WebSocket.OPEN) return
+
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const wsUrl = `${protocol}//${window.location.host}/ws/quotes`
+
+  const ws = new WebSocket(wsUrl)
+
+  ws.onopen = () => {
+    reconnectDelay = 1000
+    connectionListeners.forEach((l) => l(true))
+    // Re-send subscriptions
+    subscribedSymbols.forEach((symbol) => {
+      ws.send(JSON.stringify({ action: 'subscribe', symbol }))
+    })
+    expirySubscriptions.forEach((info, underlying) => {
+      const msg: Record<string, string> = { action: 'subscribe_chain_expiry', underlying, expiry: info.expiry }
+      if (info.side) msg.side = info.side
+      ws.send(JSON.stringify(msg))
+    })
+    subscribedChains.forEach((underlying) => {
+      if (!expirySubscriptions.has(underlying)) {
+        ws.send(JSON.stringify({ action: 'subscribe_chain', underlying }))
+      }
+    })
+  }
+
+  ws.onmessage = (event) => {
+    try {
+      const raw = JSON.parse(event.data)
+      if (raw.type === 'connection_status') {
+        connectionListeners.forEach((l) => l(raw.connected))
+        return
+      }
+      if (raw.type === 'option_quote' && raw.data) {
+        const oq = raw.data as OptionQuoteData
+        if (oq.underlying) {
+          queueUpdate(oq.underlying, oq)
+        }
+        return
+      }
+      const data = raw as Quote
+      if (data.symbol) {
+        useQuoteStore.getState().setQuote(data.symbol, data)
+      }
+    } catch {
+      // ignore malformed messages
+    }
+  }
+
+  ws.onclose = () => {
+    connectionListeners.forEach((l) => l(false))
+    wsInstance = null
+    reconnectTimeout = setTimeout(() => {
+      reconnectDelay = Math.min(reconnectDelay * 2, 30000)
+      connect()
+    }, reconnectDelay)
+  }
+
+  ws.onerror = () => {
+    ws.close()
+  }
+
+  wsInstance = ws
+}
+
+function disconnect() {
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout)
+    reconnectTimeout = null
+  }
+  if (rafId) {
+    cancelAnimationFrame(rafId)
+    rafId = 0
+  }
+  pendingUpdates.clear()
+  wsInstance?.close()
+  wsInstance = null
+  connectionListeners.forEach((l) => l(false))
+}
+
+function send(msg: object) {
+  if (wsInstance?.readyState === WebSocket.OPEN) {
+    wsInstance.send(JSON.stringify(msg))
+  }
+}
+
+// ─── React hook ─────────────────────────────────────────────────────────────
 
 interface UseMarketDataWebSocketOptions {
   autoConnect?: boolean
@@ -8,171 +141,90 @@ interface UseMarketDataWebSocketOptions {
 
 export function useMarketDataWebSocket(options: UseMarketDataWebSocketOptions = {}) {
   const { autoConnect = true } = options
-  const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
-  const reconnectDelayRef = useRef(1000)
-  const subscribedSymbolsRef = useRef<Set<string>>(new Set())
-  const subscribedChainsRef = useRef<Set<string>>(new Set())
-  const expirySubscriptionsRef = useRef<Map<string, { expiry: string; side?: 'put' | 'call' }>>(new Map())
   const [isConnected, setIsConnected] = useState(false)
-  const setQuote = useQuoteStore((state) => state.setQuote)
-  const updateChainQuote = useQuoteStore((state) => state.updateChainQuote)
   const setProviderConnected = useQuoteStore((state) => state.setProviderConnected)
 
-  const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return
+  useEffect(() => {
+    if (!autoConnect) return
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/ws/quotes`
+    refCount++
+    const listener = (connected: boolean) => {
+      setIsConnected(connected)
+      setProviderConnected(connected)
+    }
+    connectionListeners.add(listener)
 
-    const ws = new WebSocket(wsUrl)
-
-    ws.onopen = () => {
-      setIsConnected(true)
-      reconnectDelayRef.current = 1000
-      subscribedSymbolsRef.current.forEach((symbol) => {
-        ws.send(JSON.stringify({ action: 'subscribe', symbol }))
-      })
-      // Re-send expiry-level chain subscriptions (preferred over generic subscribe_chain)
-      expirySubscriptionsRef.current.forEach((info, underlying) => {
-        const msg: Record<string, string> = { action: 'subscribe_chain_expiry', underlying, expiry: info.expiry }
-        if (info.side) msg.side = info.side
-        ws.send(JSON.stringify(msg))
-      })
-      // Re-send generic chain subscriptions for any underlyings without expiry-level subscriptions
-      subscribedChainsRef.current.forEach((underlying) => {
-        if (!expirySubscriptionsRef.current.has(underlying)) {
-          ws.send(JSON.stringify({ action: 'subscribe_chain', underlying }))
-        }
-      })
+    if (refCount === 1) {
+      connect()
+    } else {
+      // Already connected — sync current state
+      setIsConnected(wsInstance?.readyState === WebSocket.OPEN)
     }
 
-    ws.onmessage = (event) => {
-      try {
-        const raw = JSON.parse(event.data)
-        if (raw.type === 'connection_status') {
-          setProviderConnected(raw.connected)
-          return
-        }
-        if (raw.type === 'option_quote' && raw.data) {
-          const oq = raw.data as OptionQuoteData
-          if (oq.underlying) {
-            updateChainQuote(oq.underlying, oq)
-          }
-          return
-        }
-        const data = raw as Quote
-        if (data.symbol) {
-          setQuote(data.symbol, data)
-        }
-      } catch {
-        // ignore malformed messages
+    return () => {
+      connectionListeners.delete(listener)
+      refCount--
+      if (refCount <= 0) {
+        refCount = 0
+        disconnect()
       }
     }
-
-    ws.onclose = () => {
-      setIsConnected(false)
-      wsRef.current = null
-      reconnectTimeoutRef.current = setTimeout(() => {
-        reconnectDelayRef.current = Math.min(reconnectDelayRef.current * 2, 30000)
-        connect()
-      }, reconnectDelayRef.current)
-    }
-
-    ws.onerror = () => {
-      ws.close()
-    }
-
-    wsRef.current = ws
-  }, [setQuote, updateChainQuote, setProviderConnected])
-
-  const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)
-    wsRef.current?.close()
-    wsRef.current = null
-    setIsConnected(false)
-  }, [])
+  }, [autoConnect, setProviderConnected])
 
   const subscribe = useCallback((symbol: string) => {
-    subscribedSymbolsRef.current.add(symbol)
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ action: 'subscribe', symbol }))
-    }
+    subscribedSymbols.add(symbol)
+    send({ action: 'subscribe', symbol })
   }, [])
 
   const unsubscribe = useCallback((symbol: string) => {
-    subscribedSymbolsRef.current.delete(symbol)
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ action: 'unsubscribe', symbol }))
-    }
+    subscribedSymbols.delete(symbol)
+    send({ action: 'unsubscribe', symbol })
   }, [])
 
   const subscribeChain = useCallback((underlying: string) => {
-    subscribedChainsRef.current.add(underlying)
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ action: 'subscribe_chain', underlying }))
-    }
+    subscribedChains.add(underlying)
+    send({ action: 'subscribe_chain', underlying })
   }, [])
 
   const unsubscribeChain = useCallback((underlying: string) => {
-    subscribedChainsRef.current.delete(underlying)
-    expirySubscriptionsRef.current.delete(underlying)
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ action: 'unsubscribe_chain', underlying }))
-    }
+    subscribedChains.delete(underlying)
+    expirySubscriptions.delete(underlying)
+    send({ action: 'unsubscribe_chain', underlying })
   }, [])
 
   const subscribeChainExpiry = useCallback((underlying: string, expiry: string, side?: 'put' | 'call') => {
-    subscribedChainsRef.current.add(underlying)
-    expirySubscriptionsRef.current.set(underlying, { expiry, side })
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      const msg: Record<string, string> = { action: 'subscribe_chain_expiry', underlying, expiry }
-      if (side) msg.side = side
-      wsRef.current.send(JSON.stringify(msg))
-    }
+    subscribedChains.add(underlying)
+    expirySubscriptions.set(underlying, { expiry, side })
+    const msg: Record<string, string> = { action: 'subscribe_chain_expiry', underlying, expiry }
+    if (side) msg.side = side
+    send(msg)
   }, [])
 
   const switchChainExpiry = useCallback((underlying: string, expiry: string, side?: 'put' | 'call') => {
-    // Update stored expiry+side for reconnect
-    expirySubscriptionsRef.current.set(underlying, { expiry, side })
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      const msg: Record<string, string> = { action: 'switch_chain_expiry', underlying, expiry }
-      if (side) msg.side = side
-      wsRef.current.send(JSON.stringify(msg))
-    }
+    expirySubscriptions.set(underlying, { expiry, side })
+    const msg: Record<string, string> = { action: 'switch_chain_expiry', underlying, expiry }
+    if (side) msg.side = side
+    send(msg)
   }, [])
 
   const subscribeOption = useCallback(
     (symbol: string, expiry: string, strike: string, optionType: string) => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(
-          JSON.stringify({ action: 'subscribe_option', symbol, expiry, strike, optionType })
-        )
-      }
+      send({ action: 'subscribe_option', symbol, expiry, strike, optionType })
     },
     []
   )
 
   const unsubscribeOption = useCallback(
     (symbol: string, expiry: string, strike: string, optionType: string) => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(
-          JSON.stringify({ action: 'unsubscribe_option', symbol, expiry, strike, optionType })
-        )
-      }
+      send({ action: 'unsubscribe_option', symbol, expiry, strike, optionType })
     },
     []
   )
 
-  useEffect(() => {
-    if (autoConnect) connect()
-    return () => disconnect()
-  }, [autoConnect, connect, disconnect])
-
   return {
     isConnected,
-    connect,
-    disconnect,
+    connect: () => connect(),
+    disconnect: () => disconnect(),
     subscribe,
     unsubscribe,
     subscribeChain,

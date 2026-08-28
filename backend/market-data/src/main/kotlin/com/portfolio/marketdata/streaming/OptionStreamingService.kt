@@ -75,8 +75,7 @@ class OptionStreamingService(
     }
 
     companion object {
-        private const val MAX_DELTA = 0.45
-        private const val ESTIMATED_IV = 0.30
+        private const val STRIKES_PER_SIDE = 25
         private const val MAX_CHAIN_SUBSCRIPTIONS = 80
     }
 
@@ -138,19 +137,24 @@ class OptionStreamingService(
             }
         } else contracts
 
-        val toSubscribe = sideFiltered.filter { c ->
+        val eligible = sideFiltered.filter { c ->
             c.conId > 0 && c.expiry == expiry && c.strike != null && c.right != null
-        }.filter { c ->
-            val optionType = if (isCall(c.right)) OptionType.CALL else OptionType.PUT
-            val greeks = greeksCalculator.calculate(spotPrice, c.strike!!, c.expiry!!, optionType, ESTIMATED_IV, null)
-            greeks.delta.abs().toDouble() <= MAX_DELTA
-        }.take(MAX_CHAIN_SUBSCRIPTIONS)
+        }
+        // Use the same strike-proximity filter as the REST endpoint so streaming
+        // covers exactly the strikes the frontend displays.
+        val spotDouble = spotPrice.toDouble()
+        val uniqueStrikes = eligible.map { it.strike!!.toDouble() }.distinct().sorted()
+        val below = uniqueStrikes.filter { it <= spotDouble }.takeLast(STRIKES_PER_SIDE).toSet()
+        val above = uniqueStrikes.filter { it > spotDouble }.take(STRIKES_PER_SIDE).toSet()
+        val validStrikes = below + above
+        val toSubscribe = eligible.filter { it.strike!!.toDouble() in validStrikes }
+            .take(MAX_CHAIN_SUBSCRIPTIONS)
 
         for (contract in toSubscribe) {
             startStreamingSingleForChain(underlying, contract.conId, contract, chainKeys)
         }
-        log.info("Started chain streaming for {} — {} contracts subscribed (delta≤{}, expiry {}, side={})",
-            underlying, toSubscribe.size, MAX_DELTA, expiry, side ?: "both")
+        log.info("Started chain streaming for {} — {} contracts subscribed ({} strikes/side, expiry {}, side={})",
+            underlying, toSubscribe.size, STRIKES_PER_SIDE, expiry, side ?: "both")
     }
 
     private fun isCall(right: String?) = right == "C" || right.equals("Call", ignoreCase = true)
