@@ -1,19 +1,8 @@
-name: Deploy
+name: Deploy to Production
 
 on:
-  workflow_run:
-    workflows: ["Build & Push Images"]
-    types: [completed]
-    branches: [main, master]
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Target environment"
-        required: true
-        type: choice
-        options:
-          - uat
-          - prod
       tag:
         description: "Image tag to deploy (e.g., main-a1b2c3d)"
         required: true
@@ -25,32 +14,21 @@ env:
 
 jobs:
   deploy:
-    name: Deploy to UAT
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    name: Deploy to Production
     runs-on: ubuntu-latest
+    environment: prod
     steps:
-      - name: Determine image tag
-        id: tag
-        run: |
-          if [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          elif [ -n "${{ github.event.workflow_run.head_sha }}" ]; then
-            echo "tag=main-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=main-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Validate tag format
         run: |
-          if [[ ! "${{ steps.tag.outputs.tag }}" =~ ^main-[a-f0-9]{7,}$ ]]; then
+          if [[ ! "${{ github.event.inputs.tag }}" =~ ^main-[a-f0-9]{7,}$ ]]; then
             echo "::error::Invalid tag format. Expected: main-<short-sha> (e.g., main-a1b2c3d)"
             exit 1
           fi
 
       - name: Fetch secrets from Vault
         run: |
-          ENV="uat"
-          TAG="${{ steps.tag.outputs.tag }}"
+          ENV="prod"
+          TAG="${{ github.event.inputs.tag }}"
 
           echo "Authenticating to Vault..."
           VAULT_TOKEN=$(curl -sf \
@@ -102,7 +80,7 @@ jobs:
           # Validate required secrets
           echo "Validating required secrets..."
           if ! grep -q '^GH_PROJECT_TOKEN=.\+' /tmp/deploy.env; then
-            echo "::error::GH_PROJECT_TOKEN is missing from Vault (portfolio/common or portfolio/uat)"
+            echo "::error::GH_PROJECT_TOKEN is missing from Vault (portfolio/common or portfolio/prod)"
             echo "  Add it: vault kv put secret/portfolio/common GH_PROJECT_TOKEN=\"<pat>\""
             exit 1
           fi
@@ -146,10 +124,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Deploy to UAT
+      - name: Deploy to Production
         run: |
-          ENV="uat"
-          TAG="${{ steps.tag.outputs.tag }}"
+          ENV="prod"
+          TAG="${{ github.event.inputs.tag }}"
 
           # Copy compose file and .env to server
           echo "Uploading docker-compose.yml and .env to server..."
@@ -204,8 +182,8 @@ jobs:
         run: |
           echo "### Deploy Successful :rocket:" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Environment:** uat" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Tag:** \`${{ steps.tag.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Environment:** prod" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Tag:** \`${{ github.event.inputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Secrets:** Fetched from Vault" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Triggered by:** ${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
 
@@ -217,5 +195,5 @@ jobs:
           webhook-type: incoming-webhook
           payload: |
             {
-              "text": "${{ job.status == 'success' && ':rocket:' || ':x:' }} Deploy *${{ steps.tag.outputs.tag }}* to *uat* ${{ job.status }}\nTriggered by: ${{ github.actor }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+              "text": "${{ job.status == 'success' && ':rocket:' || ':x:' }} Deploy *${{ github.event.inputs.tag }}* to *prod* ${{ job.status }}\nTriggered by: ${{ github.actor }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
             }
