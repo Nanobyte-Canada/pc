@@ -1,73 +1,22 @@
+# Portfolio UAT Deploy
+name: portfolio-uat
+
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: uat-postgres
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      APP_TEST_ADMIN_EMAIL: ${APP_TEST_ADMIN_EMAIL}
-      APP_TEST_ADMIN_PASSWORD: ${APP_TEST_ADMIN_PASSWORD}
-    ports:
-      - "25432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-guc.sh:/docker-entrypoint-initdb.d/init-guc.sh:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 8G
-    logging:
-      driver: json-file
-      options:
-        max-size: 50m
-        max-file: "5"
-    networks:
-      - uat-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: uat-redis
-    ports:
-      - "26379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    logging:
-      driver: json-file
-      options:
-        max-size: 50m
-        max-file: "5"
-    networks:
-      - uat-network
-
   backend:
     image: ghcr.io/nanobyte-canada/portfolio-backend:${IMAGE_TAG}
-    container_name: uat-backend
+    container_name: uat-portfolio-backend
     environment:
       SPRING_PROFILES_ACTIVE: uat
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://uat-postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: uat-redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       APP_VERSION: ${IMAGE_TAG}
       APP_ENVIRONMENT: uat
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY}
-      BROKER_GATEWAY_URL: http://broker-gateway-service:8084
+      BROKER_GATEWAY_URL: http://uat-portfolio-broker-gateway:8084
       BROKER_SYNC_ENABLED: ${BROKER_SYNC_ENABLED:-true}
       BROKER_SYNC_CRON: ${BROKER_SYNC_CRON:-0 20 16 * * *}
       BROKER_SYNC_CRON_MORNING: ${BROKER_SYNC_CRON_MORNING:-0 0 6 * * *}
@@ -79,11 +28,6 @@ services:
       GATEWAY_API_KEY: ${GATEWAY_API_KEY}
     ports:
       - "20080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
@@ -101,26 +45,23 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - uat-network
+      - uat-internal-network
+      - infra-uat-network
 
   ingestion-service:
     image: ghcr.io/nanobyte-canada/portfolio-ingestion:${IMAGE_TAG}
-    container_name: uat-ingestion
+    container_name: uat-portfolio-ingestion
     environment:
       SPRING_PROFILES_ACTIVE: uat
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://uat-postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: uat-redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       EODHD_API_KEY: ${EODHD_API_KEY:-}
     ports:
       - "20081:8081"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
       interval: 30s
@@ -138,27 +79,24 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - uat-network
+      - uat-internal-network
+      - infra-uat-network
 
   market-data-service:
     image: ghcr.io/nanobyte-canada/portfolio-market-data:${IMAGE_TAG}
-    container_name: uat-market-data
+    container_name: uat-portfolio-market-data
     environment:
       SPRING_PROFILES_ACTIVE: uat
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://uat-postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: uat-redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       QUESTRADE_REFRESH_TOKEN: ${QUESTRADE_REFRESH_TOKEN:-}
       QUESTRADE_USE_PRACTICE: ${QUESTRADE_USE_PRACTICE:-false}
     ports:
       - "20082:8082"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
       interval: 30s
@@ -176,27 +114,24 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - uat-network
+      - uat-internal-network
+      - infra-uat-network
 
   strategy-service:
     image: ghcr.io/nanobyte-canada/portfolio-strategy:${IMAGE_TAG}
-    container_name: uat-strategy
+    container_name: uat-portfolio-strategy
     environment:
       SPRING_PROFILES_ACTIVE: uat
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://uat-postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: uat-redis
       REDIS_PORT: 6379
-      MARKET_DATA_SERVICE_URL: http://market-data-service:8082
-      PORTFOLIO_SERVICE_URL: http://backend:8080
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MARKET_DATA_SERVICE_URL: http://uat-portfolio-market-data:8082
+      PORTFOLIO_SERVICE_URL: http://uat-portfolio-backend:8080
     ports:
       - "20083:8083"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
       interval: 30s
@@ -214,29 +149,26 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - uat-network
+      - uat-internal-network
+      - infra-uat-network
 
   broker-gateway-service:
     image: ghcr.io/nanobyte-canada/portfolio-broker-gateway:${IMAGE_TAG}
-    container_name: uat-broker-gateway
+    container_name: uat-portfolio-broker-gateway
     environment:
       SPRING_PROFILES_ACTIVE: uat
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://uat-postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: uat-redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY}
       GATEWAY_API_KEY: ${GATEWAY_API_KEY}
       QUESTRADE_ENABLED: "true"
       WEALTHSIMPLE_ENABLED: "true"
     ports:
       - "20084:8084"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
       interval: 30s
@@ -254,11 +186,12 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - uat-network
+      - uat-internal-network
+      - infra-uat-network
 
   frontend:
     image: ghcr.io/nanobyte-canada/portfolio-frontend-uat:${IMAGE_TAG}
-    container_name: uat-frontend
+    container_name: uat-portfolio-frontend
     ports:
       - "20000:80"
     environment:
@@ -277,11 +210,10 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - uat-network
-
-volumes:
-  postgres_data:
+      - uat-internal-network
 
 networks:
-  uat-network:
-    driver: bridge
+  uat-internal-network:
+    external: true
+  infra-uat-network:
+    external: true

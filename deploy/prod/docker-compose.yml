@@ -1,70 +1,22 @@
+# Portfolio Production Deploy
+name: portfolio-prod
+
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: prod-postgres
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "15432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 8G
-    logging:
-      driver: json-file
-      options:
-        max-size: 50m
-        max-file: "5"
-    networks:
-      - prod-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: prod-redis
-    ports:
-      - "16379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    logging:
-      driver: json-file
-      options:
-        max-size: 50m
-        max-file: "5"
-    networks:
-      - prod-network
-
   backend:
     image: ghcr.io/nanobyte-canada/portfolio-backend:${IMAGE_TAG}
-    container_name: prod-backend
+    container_name: prod-portfolio-backend
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://prod-postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: prod-redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       APP_VERSION: ${IMAGE_TAG}
       APP_ENVIRONMENT: prod
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY}
-      BROKER_GATEWAY_URL: http://broker-gateway-service:8084
+      BROKER_GATEWAY_URL: http://prod-portfolio-broker-gateway:8084
       BROKER_SYNC_ENABLED: ${BROKER_SYNC_ENABLED:-true}
       BROKER_SYNC_CRON: ${BROKER_SYNC_CRON:-0 20 16 * * *}
       BROKER_SYNC_CRON_MORNING: ${BROKER_SYNC_CRON_MORNING:-0 0 6 * * *}
@@ -76,11 +28,6 @@ services:
       GATEWAY_API_KEY: ${GATEWAY_API_KEY}
     ports:
       - "10080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
@@ -98,26 +45,23 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - prod-network
+      - prod-internal-network
+      - infra-prod-network
 
   ingestion-service:
     image: ghcr.io/nanobyte-canada/portfolio-ingestion:${IMAGE_TAG}
-    container_name: prod-ingestion
+    container_name: prod-portfolio-ingestion
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://prod-postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: prod-redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       EODHD_API_KEY: ${EODHD_API_KEY:-}
     ports:
       - "10081:8081"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
       interval: 30s
@@ -135,27 +79,24 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - prod-network
+      - prod-internal-network
+      - infra-prod-network
 
   market-data-service:
     image: ghcr.io/nanobyte-canada/portfolio-market-data:${IMAGE_TAG}
-    container_name: prod-market-data
+    container_name: prod-portfolio-market-data
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://prod-postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: prod-redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       QUESTRADE_REFRESH_TOKEN: ${QUESTRADE_REFRESH_TOKEN:-}
       QUESTRADE_USE_PRACTICE: ${QUESTRADE_USE_PRACTICE:-false}
     ports:
       - "10082:8082"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
       interval: 30s
@@ -173,27 +114,24 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - prod-network
+      - prod-internal-network
+      - infra-prod-network
 
   strategy-service:
     image: ghcr.io/nanobyte-canada/portfolio-strategy:${IMAGE_TAG}
-    container_name: prod-strategy
+    container_name: prod-portfolio-strategy
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://prod-postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: prod-redis
       REDIS_PORT: 6379
-      MARKET_DATA_SERVICE_URL: http://market-data-service:8082
-      PORTFOLIO_SERVICE_URL: http://backend:8080
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MARKET_DATA_SERVICE_URL: http://prod-portfolio-market-data:8082
+      PORTFOLIO_SERVICE_URL: http://prod-portfolio-backend:8080
     ports:
       - "10083:8083"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
       interval: 30s
@@ -211,29 +149,26 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - prod-network
+      - prod-internal-network
+      - infra-prod-network
 
   broker-gateway-service:
     image: ghcr.io/nanobyte-canada/portfolio-broker-gateway:${IMAGE_TAG}
-    container_name: prod-broker-gateway
+    container_name: prod-portfolio-broker-gateway
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://prod-postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: prod-redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY}
       GATEWAY_API_KEY: ${GATEWAY_API_KEY}
       QUESTRADE_ENABLED: "true"
       WEALTHSIMPLE_ENABLED: "true"
     ports:
       - "10084:8084"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
       interval: 30s
@@ -251,11 +186,12 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - prod-network
+      - prod-internal-network
+      - infra-prod-network
 
   frontend:
     image: ghcr.io/nanobyte-canada/portfolio-frontend:${IMAGE_TAG}
-    container_name: prod-frontend
+    container_name: prod-portfolio-frontend
     ports:
       - "10000:80"
     environment:
@@ -274,11 +210,10 @@ services:
         max-size: 50m
         max-file: "5"
     networks:
-      - prod-network
-
-volumes:
-  postgres_data:
+      - prod-internal-network
 
 networks:
-  prod-network:
-    driver: bridge
+  prod-internal-network:
+    external: true
+  infra-prod-network:
+    external: true
