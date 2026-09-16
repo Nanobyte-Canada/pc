@@ -53,7 +53,7 @@ fi
 
 # --- 5. Create directory structure ---
 echo "[5/7] Creating application directories..."
-mkdir -p /opt/portfolio/{prod,uat,monitoring/prometheus,monitoring/loki,monitoring/grafana/provisioning/datasources,monitoring/grafana/provisioning/alerting,cloudflared,scripts,backups/prod,backups/uat}
+mkdir -p /opt/portfolio/{prod,uat,cloudflared,scripts}
 chown -R deploy:deploy /opt/portfolio
 
 # --- 6. Install and configure UFW ---
@@ -82,11 +82,9 @@ echo ""
 echo "Next steps:"
 echo "  1. Tunnel setup:   sudo bash deploy/scripts/setup-cloudflared-tunnel.sh"
 echo "  2. SSH key setup:  generate ed25519 keypair, add pubkey to /home/deploy/.ssh/authorized_keys"
-echo "  3. Copy configs:   cp deploy/monitoring/* to /opt/portfolio/monitoring/"
-echo "  4. Start monitoring: cd /opt/portfolio/monitoring && docker compose up -d"
-echo "  5. Init Vault:     bash deploy/scripts/vault-init.sh"
-echo "  6. Populate Vault:  store prod/uat secrets in Vault"
-echo "  7. GitHub Secrets:  add DEPLOY_SSH_KEY, SERVER_HOSTNAME, SSH_KNOWN_HOSTS,"
+echo "  3. Populate Vault:  store prod/uat secrets in the shared Vault (nanobyte-services"
+echo "                      infra/shared stack, https://vault.nanobyte.ca)"
+echo "  4. GitHub Secrets:  add DEPLOY_SSH_KEY, SERVER_HOSTNAME, SSH_KNOWN_HOSTS,"
 echo "                      VAULT_ROLE_ID, VAULT_SECRET_ID, SLACK_WEBHOOK_URL"
-echo "  8. First deploy:   gh workflow run deploy.yml -f environment=uat -f tag=main-<sha>"
+echo "  5. First deploy:   gh workflow run deploy.yml -f environment=uat -f tag=main-<sha>"
 echo ""
