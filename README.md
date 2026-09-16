@@ -66,7 +66,6 @@ backend/market-data/          — Market data + Questrade + WebSocket streaming 
 backend/strategy/             — Strategy engine + wheel writer (port 8083)
 frontend/                     — React SPA (port 3000 local; nginx on 80 in deployed images)
 deploy/prod|uat/              — Server compose files (shared-infra based)
-deploy/monitoring/            — Monitoring stack
 config/                       — Environment template (.env.example)
 scripts/                      — Operational scripts (broker sync test, integration test, SDLC Vault/board setup)
 docs/                         — ADRs, reference docs, runbooks, design specs

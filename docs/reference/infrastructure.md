@@ -285,7 +285,7 @@ npm run dev
 
 ## Home Server Deployment
 
-Production and UAT environments hosted on a dedicated home server with comprehensive monitoring.
+Production and UAT environments hosted on a dedicated home server. Monitoring, Vault, backups, shared Postgres/Redis, and server bootstrap are owned by the separate **nanobyte-services** repo; pc owns only its application services, CI/CD workflows, and local dev stack.
 
 ### Hardware
 
@@ -307,73 +307,49 @@ Production and UAT environments hosted on a dedicated home server with comprehen
 │   ├── docker-compose.yml
 │   ├── .env
 │   └── (service volumes)
-├── monitoring/           # Observability stack
-│   ├── docker-compose.yml
-│   ├── prometheus/
-│   ├── grafana/
-│   ├── loki/
-│   └── alerting/
-├── cloudflared/          # Cloudflare Tunnel daemon
-│   └── config.yml
-├── scripts/              # Management and backup scripts
-│   ├── deploy.sh
-│   ├── backup.sh
-│   └── rollback.sh
-└── backups/              # Database backups
-    ├── daily/
-    └── weekly/
+└── cloudflared/          # Cloudflare Tunnel daemon
+    └── config.yml
 ```
+
+**nanobyte-services-managed paths** (not under pc's `/opt/portfolio/`): monitoring stack at `/opt/nanobyte-services/monitoring/`, database backups at `/opt/backups`, shared infra stack under `/opt/nanobyte-services/infra/`.
 
 ### Docker Compose Stacks
 
-Three independent Docker Compose stacks run simultaneously.
+Two pc Docker Compose stacks run simultaneously; shared Postgres/Redis, monitoring, and Vault come from nanobyte-services stacks (referenced by container hostname over external networks — see ADR-0017).
 
-#### Production Stack (ports 10000-10084, 14001, 15432, 15900, 16379)
-
-| Service | Image | Ports | Notes |
-|---------|-------|-------|-------|
-| `prod-frontend` | `ghcr.io/portfolio/frontend:main-*` | 10000:80 | React SPA via Nginx |
-| `prod-backend` | `ghcr.io/portfolio/backend:main-*` | 10080:8080 | Main API service |
-| `prod-ingestion` | `ghcr.io/portfolio/ingestion:main-*` | 10081:8081 | Data ingestion service |
-| `prod-market-data` | `ghcr.io/portfolio/market-data:main-*` | 10082:8082 | IBKR + WebSocket streaming |
-| `prod-strategy` | `ghcr.io/portfolio/strategy:main-*` | 10083:8083 | Strategy engine |
-| `prod-broker-gateway` | `ghcr.io/portfolio/broker-gateway:main-*` | 10084:8084 | Broker adapter service |
-| `prod-postgres` | `postgres:16-alpine` | 15432:5432 | PostgreSQL database |
-| `prod-redis` | `redis:7-alpine` | 16379:6379 | Cache and session store |
-| `ib-gateway` | `ghcr.io/gnzsnz/ib-gateway:10.30.1t` | 14001:4001, 127.0.0.1:15900:5900 | IBKR Gateway + IBC + VNC (live mode) |
-
-#### UAT Stack (ports 20000-20084, 24002, 25432, 25900, 26379)
+#### Production Stack (ports 10000-10084)
 
 | Service | Image | Ports | Notes |
 |---------|-------|-------|-------|
-| `uat-frontend` | `ghcr.io/portfolio/frontend:main-*` | 20000:80 | React SPA via Nginx |
-| `uat-backend` | `ghcr.io/portfolio/backend:main-*` | 20080:8080 | Main API service |
-| `uat-ingestion` | `ghcr.io/portfolio/ingestion:main-*` | 20081:8081 | Data ingestion service |
-| `uat-market-data` | `ghcr.io/portfolio/market-data:main-*` | 20082:8082 | IBKR + WebSocket streaming |
-| `uat-strategy` | `ghcr.io/portfolio/strategy:main-*` | 20083:8083 | Strategy engine |
-| `uat-broker-gateway` | `ghcr.io/portfolio/broker-gateway:main-*` | 20084:8084 | Broker adapter service |
-| `uat-postgres` | `postgres:16-alpine` | 25432:5432 | PostgreSQL database |
-| `uat-redis` | `redis:7-alpine` | 26379:6379 | Cache and session store |
-| `ib-gateway` | `ghcr.io/gnzsnz/ib-gateway:10.30.1t` | 24002:4002, 127.0.0.1:25900:5900 | IBKR Gateway + IBC + VNC (paper mode) |
+| `prod-frontend` | `ghcr.io/nanobyte-canada/portfolio-frontend:main-*` | 10000:80 | React SPA via Nginx |
+| `prod-backend` | `ghcr.io/nanobyte-canada/portfolio-backend:main-*` | 10080:8080 | Main API service |
+| `prod-ingestion` | `ghcr.io/nanobyte-canada/portfolio-ingestion:main-*` | 10081:8081 | Data ingestion service |
+| `prod-market-data` | `ghcr.io/nanobyte-canada/portfolio-market-data:main-*` | 10082:8082 | IBKR + WebSocket streaming |
+| `prod-strategy` | `ghcr.io/nanobyte-canada/portfolio-strategy:main-*` | 10083:8083 | Strategy engine |
+| `prod-broker-gateway` | `ghcr.io/nanobyte-canada/portfolio-broker-gateway:main-*` | 10084:8084 | Broker adapter service |
 
-#### Monitoring Stack (ports 13000-19187)
+Postgres (`prod-postgres`) and Redis (`prod-redis`) are provided by the shared nanobyte-services infra stack and joined over the external `prod-internal-network`/`infra-prod-network` networks — no host ports on pc's compose.
 
-| Service | Ports | Purpose |
-|---------|-------|---------|
-| `grafana` | 13000:3000 | Visualization and dashboards |
-| `uptime-kuma` | 13001:3001 | Public status page |
-| `prometheus` | 19090:9090 | Metrics collection and storage |
-| `loki` | 13100:3100 | Log aggregation |
-| `promtail` | - | Log shipping to Loki |
-| `cadvisor` | 18080:8080 | Container metrics |
-| `node_exporter` | 19100:9100 | System metrics |
-| `postgres_exporter` | 19187:9187 | PostgreSQL metrics |
-| `redis_exporter` | 19121:9121 | Redis metrics |
-| `vault` | 18200:8200 | HashiCorp Vault secret management (`hashicorp/vault:1.17`, 512MB) |
+#### UAT Stack (ports 20000-20084)
+
+| Service | Image | Ports | Notes |
+|---------|-------|-------|-------|
+| `uat-frontend` | `ghcr.io/nanobyte-canada/portfolio-frontend:main-*` | 20000:80 | React SPA via Nginx |
+| `uat-backend` | `ghcr.io/nanobyte-canada/portfolio-backend:main-*` | 20080:8080 | Main API service |
+| `uat-ingestion` | `ghcr.io/nanobyte-canada/portfolio-ingestion:main-*` | 20081:8081 | Data ingestion service |
+| `uat-market-data` | `ghcr.io/nanobyte-canada/portfolio-market-data:main-*` | 20082:8082 | IBKR + WebSocket streaming |
+| `uat-strategy` | `ghcr.io/nanobyte-canada/portfolio-strategy:main-*` | 20083:8083 | Strategy engine |
+| `uat-broker-gateway` | `ghcr.io/nanobyte-canada/portfolio-broker-gateway:main-*` | 20084:8084 | Broker adapter service |
+
+Postgres (`uat-postgres`) and Redis (`uat-redis`) are provided by the shared nanobyte-services infra stack and joined over the external `uat-internal-network`/`infra-uat-network` networks — no host ports on pc's compose.
+
+The monitoring stack (Grafana, Uptime Kuma, Prometheus, Loki, exporters) and shared Vault are owned by nanobyte-services; see `https://grafana.nanobyte.ca` and `https://vault.nanobyte.ca`.
 
 ### Cloudflare Tunnel Routing
 
 All external traffic routed through Cloudflare Tunnel (no exposed ports). Zero-trust network access.
+
+> **Note:** The pc application routes (`portfolio.nanobyte.ca`, `uatportfolio.nanobyte.ca`) target pc's app services. The `status.nanobyte.ca`, `grafana.nanobyte.ca`, and `vault.nanobyte.ca` routes target services now owned and managed by **nanobyte-services** (Uptime Kuma, Grafana, shared Vault — host ports 13001, 13000, and 18200 are unchanged by the migration). Tunnel config lives in `deploy/cloudflared/config.yml`, generated by `deploy/scripts/setup-cloudflared-tunnel.sh`.
 
 | Hostname | Target | Notes |
 |----------|--------|-------|
@@ -390,12 +366,12 @@ All external traffic routed through Cloudflare Tunnel (no exposed ports). Zero-t
 **Triggers:** Push to `main` branch
 
 **Steps:**
-1. Run full CI test suite (`ci.yml`)
-2. Build 8 Docker images in parallel (frontend, backend, ingestion, market-data, strategy, broker-gateway, postgres-exporter, redis-exporter)
+1. Run backend and frontend test jobs (`test-backend`, `test-frontend`)
+2. Build 7 Docker images in parallel (backend, ingestion, market-data, strategy, broker-gateway, frontend, frontend-uat)
 3. Tag images with `main-<sha>` (e.g., `main-abc1234`)
-4. Push to GitHub Container Registry (`ghcr.io/portfolio/*`)
+4. Push to GitHub Container Registry (`ghcr.io/nanobyte-canada/portfolio/*`)
 
-**Artifacts:** Docker images published to `ghcr.io/portfolio/{service}:main-{sha}`
+**Artifacts:** Docker images published to `ghcr.io/nanobyte-canada/portfolio-{service}:main-{sha}`
 
 #### deploy.yml -- Deploy to Home Server
 
@@ -430,52 +406,6 @@ All external traffic routed through Cloudflare Tunnel (no exposed ports). Zero-t
 - `SLACK_WEBHOOK_URL` -- Slack channel webhook for notifications
 
 **Rollback procedure:** Re-run workflow with previous tag
-
-### Observability (Production Only)
-
-Comprehensive monitoring and alerting for production environment.
-
-#### Metrics Collection
-
-- **Prometheus** scrapes all 5 backend services via `/actuator/prometheus` endpoints (10s interval)
-- **Exporters:** node_exporter (system), cadvisor (containers), postgres_exporter (DB), redis_exporter (cache)
-- **Retention:** 90 days
-
-#### Grafana Dashboards
-
-| Dashboard | Panels | Key Metrics |
-|-----------|--------|-------------|
-| **JVM Overview** | Heap usage, GC pauses, thread count, CPU time | JVM health across all backend services |
-| **API Performance** | Request rate, error rate, latency (p50/p95/p99), endpoint breakdown | HTTP performance by endpoint and method |
-| **Infrastructure** | CPU, memory, disk I/O, network | System-level resource utilization |
-| **Database** | Connections, query rate, cache hit ratio, slow queries | PostgreSQL performance and health |
-| **Redis** | Hit rate, evictions, memory usage, command rate | Cache effectiveness |
-
-#### Loki Log Aggregation
-
-- **Docker logging driver:** `loki` configured on all production containers
-- **Retention:** 30 days
-- **Queryable fields:** container name, service name, log level, timestamp
-- **Integration:** Grafana Explore for log correlation with metrics
-
-#### Slack Alerts (6 rules)
-
-| Alert | Condition | Severity |
-|-------|-----------|----------|
-| **Service Down** | Any backend service unreachable for 1 minute | Critical |
-| **High Error Rate** | HTTP 5xx errors > 5% for 5 minutes | Critical |
-| **JVM Heap Pressure** | Heap usage > 85% for 10 minutes | Warning |
-| **Disk Space Low** | Disk usage > 80% | Warning |
-| **Database Pool Exhausted** | Active connections > 90% for 5 minutes | Critical |
-| **Container Restart Loop** | Container restarted > 3 times in 10 minutes | Critical |
-
-#### Uptime Kuma
-
-- **Public status page:** `status.nanobyte.ca`
-- **Monitors:** Frontend (HTTPS), Backend (HTTPS), Database (TCP), Redis (TCP)
-- **Check interval:** 60 seconds
-- **History:** 90 days
-- **Notifications:** Slack webhook on status change
 
 ### Security
 
@@ -514,6 +444,8 @@ The script:
 
 **SSH access:** `ssh.nanobyte.ca` routes to `localhost:22` via the tunnel. GitHub Actions uses `cloudflared access ssh` as a ProxyCommand with pinned host key verification.
 
+> **Note:** pc is the only home for this tunnel config (nanobyte-services has no cloudflared files). Some routed services (Grafana, Uptime Kuma, Vault) are backed by nanobyte-services containers, but the tunnel routes and host ports are unchanged by that migration.
+
 ### IBKR Gateway Integration
 
 Both production and UAT stacks include an IBKR Gateway container for live Interactive Brokers connectivity.
@@ -539,71 +471,9 @@ Both production and UAT stacks include an IBKR Gateway container for live Intera
 - `market-data-service` and `broker-gateway-service` connect to gateway via `ib-gateway:4001` (prod) or `ib-gateway:4002` (UAT/local)
 - IBC configuration handles timeout extensions and daily reconnect at 11:45 PM ET
 
-### Backups
-
-Automated PostgreSQL backups with multi-tier retention.
-
-#### Backup Schedule
-
-- **Frequency:** Daily at 3:00 AM (both prod and UAT)
-- **Method:** `pg_dump` with custom format (`-Fc`)
-- **Compression:** gzip level 6
-- **Encryption:** AES-256 (GPG symmetric)
-
-#### Retention Policy
-
-| Tier | Frequency | Retention | Location |
-|------|-----------|-----------|----------|
-| **Daily** | Every day at 3 AM | 7 days | `/opt/portfolio/backups/daily/` |
-| **Weekly** | Sunday 3 AM | 30 days | `/opt/portfolio/backups/weekly/` |
-
-#### Backup Script
-
-Located at `/opt/portfolio/scripts/backup.sh`, runs via cron:
-
-```bash
-0 3 * * * /opt/portfolio/scripts/backup.sh prod >> /var/log/portfolio/backup.log 2>&1
-5 3 * * * /opt/portfolio/scripts/backup.sh uat >> /var/log/portfolio/backup.log 2>&1
-```
-
-**Restore procedure:**
-```bash
-# Decrypt backup
-gpg -d backup.sql.gz.gpg | gunzip > backup.sql
-
-# Restore to database
-docker compose exec -T prod-postgres psql -U portfolio portfolio < backup.sql
-```
-
-### Vault Secret Management
-
-HashiCorp Vault provides centralized secret management for production and UAT environments.
-
-**Container:** `hashicorp/vault:1.17` in the monitoring stack (port 18200, 512MB memory limit)
-
-**Access:** `vault.nanobyte.ca` via Cloudflare Tunnel, protected by Cloudflare Access (email authentication)
-
-**Initialization:**
-- One-time setup via `deploy/scripts/vault-init.sh`
-- Generates unseal keys and root token
-- Enables KV v2 secrets engine at `secret/`
-- Configures AppRole auth method for CI/CD
-
-**Unsealing:**
-- Vault seals itself on server restart
-- Manual unseal required via the Vault web UI at `vault.nanobyte.ca`
-
-**Secret Paths:**
-- `secret/portfolio/prod` -- Production environment secrets
-- `secret/portfolio/uat` -- UAT environment secrets
-
-**Backup:**
-- Daily volume backup with 30-day retention
-- Location: `/opt/portfolio/backups/vault/`
-
 ### Port Reference Table
 
-Complete port allocation across all three stacks.
+Complete port allocation for pc's application stacks (prod and uat). Shared infra, monitoring, and Vault ports are allocated by nanobyte-services (e.g., Grafana 13000, Uptime Kuma 13001, Vault `127.0.0.1:18200:8200`) and must not overlap pc's `1xxxx`/`2xxxx` ranges.
 
 | Port Range | Stack | Service | Protocol |
 |------------|-------|---------|----------|
@@ -613,33 +483,14 @@ Complete port allocation across all three stacks.
 | 10082 | Production | Market data service | HTTP |
 | 10083 | Production | Strategy service | HTTP |
 | 10084 | Production | Broker gateway | HTTP |
-| 14001 | Production | IBKR Gateway API (live) | TCP |
-| 15432 | Production | PostgreSQL | TCP |
-| 15900 | Production | IBKR Gateway VNC | TCP (127.0.0.1 only) |
-| 16379 | Production | Redis | TCP |
 | 20000 | UAT | Frontend (Nginx) | HTTP |
 | 20080 | UAT | Backend API | HTTP |
 | 20081 | UAT | Ingestion service | HTTP |
 | 20082 | UAT | Market data service | HTTP |
 | 20083 | UAT | Strategy service | HTTP |
 | 20084 | UAT | Broker gateway | HTTP |
-| 24002 | UAT | IBKR Gateway API (paper) | TCP |
-| 25432 | UAT | PostgreSQL | TCP |
-| 25900 | UAT | IBKR Gateway VNC | TCP (127.0.0.1 only) |
-| 26379 | UAT | Redis | TCP |
-| 4002 | Local | IBKR Gateway API (paper) | TCP |
-| 5900 | Local | IBKR Gateway VNC | TCP (127.0.0.1 only) |
-| 13000 | Monitoring | Grafana | HTTP |
-| 13001 | Monitoring | Uptime Kuma | HTTP |
-| 13100 | Monitoring | Loki | HTTP |
-| 18080 | Monitoring | cAdvisor | HTTP |
-| 19090 | Monitoring | Prometheus | HTTP |
-| 19100 | Monitoring | node_exporter | HTTP |
-| 19121 | Monitoring | redis_exporter | HTTP |
-| 18200 | Monitoring | Vault | HTTP |
-| 19187 | Monitoring | postgres_exporter | HTTP |
 
-**Note:** All ports are bound to `0.0.0.0` except VNC ports (127.0.0.1 only). UFW firewall protects all ports. Only Cloudflare Tunnel has local access to application ports.
+**Note:** All ports are bound to `0.0.0.0`. UFW firewall protects all ports. Only Cloudflare Tunnel has local access to application ports.
 
 ### GitHub Secrets Required
 
@@ -657,14 +508,15 @@ Complete port allocation across all three stacks.
 Initial server provisioning automated via script at `deploy/scripts/setup-server.sh`.
 
 **Setup script actions:**
-1. Install Docker Engine and Docker Compose plugin
-2. Create `/opt/portfolio/` directory structure
-3. Install and configure Cloudflare Tunnel daemon
-4. Install UFW and apply firewall rules
-5. Install Prometheus exporters (node, postgres, redis)
-6. Set up log rotation for application logs
-7. Configure systemd service for Cloudflare Tunnel auto-start
-8. Create backup cron jobs
+1. Update system packages
+2. Install Docker Engine and Docker Compose plugin
+3. Install cloudflared (Cloudflare Tunnel daemon)
+4. Create `deploy` user (added to docker group)
+5. Create `/opt/portfolio/` directory structure (`prod`, `uat`, `cloudflared`, `scripts`)
+6. Install UFW and apply firewall rules (SSH from LAN only)
+7. Enable unattended security upgrades
+
+Monitoring, Vault, backups, and shared infra are provisioned by nanobyte-services' `bootstrap-server.sh` — not by this script.
 
 **Run setup:**
 ```bash
