@@ -371,7 +371,7 @@ All external traffic routed through Cloudflare Tunnel (no exposed ports). Zero-t
 3. Tag images with `main-<sha>` (e.g., `main-abc1234`)
 4. Push to GitHub Container Registry (`ghcr.io/nanobyte-canada/portfolio/*`)
 
-**Artifacts:** Docker images published to `ghcr.io/portfolio/{service}:main-{sha}`
+**Artifacts:** Docker images published to `ghcr.io/nanobyte-canada/portfolio-{service}:main-{sha}`
 
 #### deploy.yml -- Deploy to Home Server
 
