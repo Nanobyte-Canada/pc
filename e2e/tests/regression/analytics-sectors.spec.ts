@@ -3,11 +3,11 @@ import { scenario } from '../../support/scenario';
 import { LoginPage } from '../../pages/login.page';
 
 test.describe('Analytics - Sectors', { tag: ['@regression'] }, () => {
-  const email = process.env.E2E_USER_EMAIL;
-  const password = process.env.E2E_USER_PASSWORD;
+  const email = process.env.APP_TEST_ADMIN_EMAIL;
+  const password = process.env.APP_TEST_ADMIN_PASSWORD;
 
   test.beforeEach(async ({ page }) => {
-    test.skip(!email || !password, 'E2E_USER_EMAIL/E2E_USER_PASSWORD not set');
+    test.skip(!email || !password, 'APP_TEST_ADMIN_EMAIL/APP_TEST_ADMIN_PASSWORD not set');
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login(email!, password!);

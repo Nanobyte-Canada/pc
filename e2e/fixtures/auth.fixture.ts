@@ -2,13 +2,15 @@ import { test as base } from '@playwright/test';
 
 export const test = base.extend<{ authenticatedPage: void }>({
   authenticatedPage: [async ({ page, baseURL }, use) => {
-    // Login with the UAT test account from CI secrets (no committed seed
-    // accounts exist in this repo). Sessions are cookie-based; the browser
-    // holds the session cookie after form login — no token handling.
-    const email = process.env.E2E_USER_EMAIL;
-    const password = process.env.E2E_USER_PASSWORD;
+    // Login with the single UAT admin test account from CI secrets (no committed seed
+    // accounts exist in this repo). Per owner decision, this one account is used for
+    // all authenticated suites — it has access to both admin and user features.
+    // Sessions are cookie-based; the browser holds the session cookie after form
+    // login — no token handling.
+    const email = process.env.APP_TEST_ADMIN_EMAIL;
+    const password = process.env.APP_TEST_ADMIN_PASSWORD;
     if (!email || !password) {
-      throw new Error('E2E_USER_EMAIL and E2E_USER_PASSWORD must be set');
+      throw new Error('APP_TEST_ADMIN_EMAIL and APP_TEST_ADMIN_PASSWORD must be set');
     }
     await page.goto('/login');
     await page.fill('input[type="email"], input[name="email"]', email);

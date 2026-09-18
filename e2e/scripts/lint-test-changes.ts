@@ -25,7 +25,7 @@ function gitDiff(baseRef: string): string {
 
 // Skip policy: conditional skips with documented reasons are a sanctioned
 // pattern — data-driven tests guard on env/fixtures (e.g.
-// `test.skip(!email || !password, 'E2E_USER_EMAIL not set')`) and
+// `test.skip(!email || !password, 'APP_TEST_ADMIN_EMAIL not set')`) and
 // reviewer-mandated TODO skips carry explicit reason strings. The defect this
 // rule exists to catch is the *unexplained, unconditional* skip that hides
 // coverage: a bare `test.skip()`, `test.skip(true)`, a title-only

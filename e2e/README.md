@@ -44,7 +44,7 @@ If you need to debug locally against UAT, set the base URL and credentials:
 BASE_URL=https://uatportfolio.nanobyte.ca npx playwright test --grep @smoke
 ```
 
-Note: this requires valid UAT credentials provided via `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` secrets.
+Note: this requires valid UAT credentials provided via `APP_TEST_ADMIN_EMAIL` / `APP_TEST_ADMIN_PASSWORD` secrets (uat environment).
 
 ## File structure
 
