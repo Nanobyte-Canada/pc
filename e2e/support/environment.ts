@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test';
+
 const ALLOWED_HOSTS = ['uatportfolio.nanobyte.ca'];
 
 export function assertEnvironment(baseURL: string): void {
@@ -10,8 +12,10 @@ export function assertEnvironment(baseURL: string): void {
   }
 }
 
-export async function assertPageMarker(page: { meta: (name: string) => Promise<string | null> }): Promise<void> {
-  const marker = await page.meta('app-environment');
+export async function assertPageMarker(page: Page): Promise<void> {
+  const marker = await page
+    .locator('meta[name="app-environment"]')
+    .getAttribute('content');
   if (marker !== 'uat') {
     throw new Error(
       `Environment safety violation: app-environment meta tag is "${marker}", expected "uat". ` +
