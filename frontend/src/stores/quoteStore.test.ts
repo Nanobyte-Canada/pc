@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useQuoteStore } from './quoteStore'
 import type { OptionQuoteData, OptionsChain } from '@/types/options'
+import { scenario } from '../test/scenario'
 
 /** Helper to build a minimal chain for testing. */
 function makeChain(underlying: string, strikes: string[]): OptionsChain {
@@ -53,7 +54,7 @@ describe('quoteStore', () => {
   })
 
   describe('updateChainQuote', () => {
-    it('updates chain when strike key matches directly (decimal format "550.0")', () => {
+    it(scenario('QUOTE-STORE-001', 'updates chain when strike key matches directly (decimal format "550.0")'), () => {
       const chain = makeChain('SPY', ['550.0', '555.0', '560.0'])
       useQuoteStore.getState().setChain('SPY', chain)
 
@@ -83,7 +84,7 @@ describe('quoteStore', () => {
       expect(expiryData['550.0']?.call?.ask).toBe(3.0)
     })
 
-    it('updates chain when strike is integer and chain key has ".0"', () => {
+    it(scenario('QUOTE-STORE-002', 'updates chain when strike is integer and chain key has ".0"'), () => {
       const chain = makeChain('SPY', ['550.0', '555.0'])
       useQuoteStore.getState().setChain('SPY', chain)
 
@@ -111,7 +112,7 @@ describe('quoteStore', () => {
       expect(expiryData['555.0']?.put?.bid).toBe(1.0)
     })
 
-    it('handles string strike from WebSocket with extra precision (e.g. "550.0000")', () => {
+    it(scenario('QUOTE-STORE-003', 'handles string strike from WebSocket with extra precision (e.g. "550.0000")'), () => {
       const chain = makeChain('SPY', ['550.0', '555.0'])
       useQuoteStore.getState().setChain('SPY', chain)
 
@@ -140,7 +141,7 @@ describe('quoteStore', () => {
       expect(expiryData['550.0']?.call?.bid).toBe(3.0)
     })
 
-    it('returns unchanged state when strike key not found', () => {
+    it(scenario('QUOTE-STORE-004', 'returns unchanged state when strike key not found'), () => {
       const chain = makeChain('SPY', ['550.0', '555.0'])
       useQuoteStore.getState().setChain('SPY', chain)
 
@@ -168,7 +169,7 @@ describe('quoteStore', () => {
       expect(updated.expirations['2026-08-21']?.['550.0']?.call?.bid).toBe(1.0)
     })
 
-    it('returns unchanged state when underlying has no chain', () => {
+    it(scenario('QUOTE-STORE-005', 'returns unchanged state when underlying has no chain'), () => {
       const optionQuote: OptionQuoteData = {
         underlying: 'NONEXISTENT',
         optionType: 'CALL',
@@ -191,7 +192,7 @@ describe('quoteStore', () => {
       expect(useQuoteStore.getState().chains['NONEXISTENT']).toBeUndefined()
     })
 
-    it('returns unchanged state when expiry key not found', () => {
+    it(scenario('QUOTE-STORE-006', 'returns unchanged state when expiry key not found'), () => {
       const chain = makeChain('SPY', ['550.0'])
       useQuoteStore.getState().setChain('SPY', chain)
 

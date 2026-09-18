@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { scenario } from '../../test/scenario';
 import { LoginPage } from './LoginPage';
 
 vi.mock('../../services/authService', () => ({
@@ -28,7 +29,7 @@ describe('LoginPage', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the hero section with heading and features', () => {
+  it(scenario('AUTH-LOGIN-001', 'renders the hero section with heading and features'), () => {
     renderLoginPage();
 
     expect(screen.getByText(/your portfolio/i)).toBeInTheDocument();
@@ -37,14 +38,14 @@ describe('LoginPage', () => {
     expect(screen.getByText(/look-through etf decomposition/i)).toBeInTheDocument();
   });
 
-  it('renders the sign-in card with Google button', () => {
+  it(scenario('AUTH-LOGIN-002', 'renders the sign-in card with Google button'), () => {
     renderLoginPage();
 
     expect(screen.getByText('Get started')).toBeInTheDocument();
     expect(screen.getByText('Continue with Google')).toBeInTheDocument();
   });
 
-  it('calls initiateGoogleLogin when Google button is clicked', async () => {
+  it(scenario('AUTH-LOGIN-003', 'calls initiateGoogleLogin when Google button is clicked'), async () => {
     const { initiateGoogleLogin } = await import('../../services/authService');
     renderLoginPage();
 
@@ -54,13 +55,13 @@ describe('LoginPage', () => {
     expect(initiateGoogleLogin).toHaveBeenCalledOnce();
   });
 
-  it('displays error message from query params', () => {
+  it(scenario('AUTH-LOGIN-004', 'displays error message from query params'), () => {
     renderLoginPage('/login?error=auth_failed');
 
     expect(screen.getByText(/sign in was cancelled or failed/i)).toBeInTheDocument();
   });
 
-  it('displays generic error for unknown error codes', () => {
+  it(scenario('AUTH-LOGIN-005', 'displays generic error for unknown error codes'), () => {
     renderLoginPage('/login?error=unknown_code');
 
     expect(screen.getByText(/an error occurred/i)).toBeInTheDocument();

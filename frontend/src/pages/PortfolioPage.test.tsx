@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, it, expect, vi } from 'vitest'
+import { scenario } from '../test/scenario'
 
 vi.mock('@/hooks/useModelPortfolios', () => ({
   useModelPortfolios: () => ({
@@ -26,7 +27,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 )
 
 describe('PortfolioPage', () => {
-  it('renders 4 system model cards plus custom slot', async () => {
+  it(scenario('PORT-001', 'renders 4 system model cards plus custom slot'), async () => {
     const PortfolioPage = (await import('./PortfolioPage')).default
     render(<PortfolioPage />, { wrapper })
     expect(screen.getByText('Conservative Income')).toBeInTheDocument()

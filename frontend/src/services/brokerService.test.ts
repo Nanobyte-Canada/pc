@@ -11,6 +11,7 @@ import {
   formatQuantity,
   getRelativeTime
 } from './brokerService'
+import { scenario } from '../test/scenario'
 
 describe('Broker Service', () => {
   const mockFetch = vi.fn()
@@ -24,7 +25,7 @@ describe('Broker Service', () => {
   })
 
   describe('getAvailableBrokers', () => {
-    it('returns brokers list on success', async () => {
+    it(scenario('BROKER-SVC-001', 'returns brokers list on success'), async () => {
       const mockResponse = {
         brokers: [
           { name: 'Questrade', slug: 'questrade', logoUrl: null, description: 'Canadian brokerage' },
@@ -42,7 +43,7 @@ describe('Broker Service', () => {
       expect(mockFetch).toHaveBeenCalledWith('/api/v1/brokers', expect.any(Object))
     })
 
-    it('throws error on failed response', async () => {
+    it(scenario('BROKER-SVC-002', 'throws error on failed response'), async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500
@@ -53,7 +54,7 @@ describe('Broker Service', () => {
   })
 
   describe('getUserConnections', () => {
-    it('returns connections list on success', async () => {
+    it(scenario('BROKER-SVC-003', 'returns connections list on success'), async () => {
       const mockResponse = {
         connections: [
           { id: 1, broker: { name: 'Questrade', slug: 'questrade' }, status: 'ACTIVE' }
@@ -72,7 +73,7 @@ describe('Broker Service', () => {
   })
 
   describe('connectBroker', () => {
-    it('sends POST request to connect endpoint', async () => {
+    it(scenario('BROKER-SVC-004', 'sends POST request to connect endpoint'), async () => {
       const mockResponse = {
         connections: [{ id: 1, broker: { name: 'Questrade' }, status: 'ACTIVE' }]
       }
@@ -96,7 +97,7 @@ describe('Broker Service', () => {
   })
 
   describe('reconnectBroker', () => {
-    it('sends POST request to reconnect endpoint with credentials', async () => {
+    it(scenario('BROKER-SVC-005', 'sends POST request to reconnect endpoint with credentials'), async () => {
       const mockResponse = { status: 'RECONNECTED', connectionId: 'conn-123' }
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -115,7 +116,7 @@ describe('Broker Service', () => {
       )
     })
 
-    it('throws error with detail message on failed response', async () => {
+    it(scenario('BROKER-SVC-006', 'throws error with detail message on failed response'), async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         json: () => Promise.resolve({ detail: 'Invalid refresh token' })
@@ -124,7 +125,7 @@ describe('Broker Service', () => {
       await expect(reconnectBroker('conn-123', { refreshToken: 'bad' })).rejects.toThrow('Invalid refresh token')
     })
 
-    it('throws generic error when response has no detail', async () => {
+    it(scenario('BROKER-SVC-007', 'throws generic error when response has no detail'), async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         json: () => Promise.resolve({})
@@ -135,7 +136,7 @@ describe('Broker Service', () => {
   })
 
   describe('getAggregatedPositions', () => {
-    it('returns aggregated positions on success', async () => {
+    it(scenario('BROKER-SVC-008', 'returns aggregated positions on success'), async () => {
       const mockResponse = {
         positions: [
           { symbol: 'VFV.TO', totalQuantity: 100, totalValue: 10500 }
@@ -160,7 +161,7 @@ describe('Broker Service', () => {
   })
 
   describe('triggerPositionFetch', () => {
-    it('sends POST request to trigger fetch', async () => {
+    it(scenario('BROKER-SVC-009', 'sends POST request to trigger fetch'), async () => {
       const mockResponse = {
         fetchId: 'abc123',
         status: 'PENDING',
@@ -184,63 +185,63 @@ describe('Broker Service', () => {
 
 describe('Formatting utilities', () => {
   describe('formatCurrency', () => {
-    it('formats positive numbers', () => {
+    it(scenario('BROKER-SVC-010', 'formats positive numbers'), () => {
       expect(formatCurrency(1234.56)).toMatch(/\$1,234\.56/)
     })
 
-    it('formats negative numbers', () => {
+    it(scenario('BROKER-SVC-011', 'formats negative numbers'), () => {
       expect(formatCurrency(-1234.56)).toMatch(/-?\$1,234\.56/)
     })
 
-    it('returns dash for null', () => {
+    it(scenario('BROKER-SVC-012', 'returns dash for null'), () => {
       expect(formatCurrency(null)).toBe('-')
     })
 
-    it('formats zero', () => {
+    it(scenario('BROKER-SVC-013', 'formats zero'), () => {
       expect(formatCurrency(0)).toMatch(/\$0\.00/)
     })
   })
 
   describe('formatPercent', () => {
-    it('formats positive percent with plus sign', () => {
+    it(scenario('BROKER-SVC-014', 'formats positive percent with plus sign'), () => {
       expect(formatPercent(12.345)).toBe('+12.35%')
     })
 
-    it('formats negative percent', () => {
+    it(scenario('BROKER-SVC-015', 'formats negative percent'), () => {
       expect(formatPercent(-5.678)).toBe('-5.68%')
     })
 
-    it('returns dash for null', () => {
+    it(scenario('BROKER-SVC-016', 'returns dash for null'), () => {
       expect(formatPercent(null)).toBe('-')
     })
 
-    it('formats zero', () => {
+    it(scenario('BROKER-SVC-017', 'formats zero'), () => {
       expect(formatPercent(0)).toBe('+0.00%')
     })
   })
 
   describe('formatQuantity', () => {
-    it('formats whole numbers without decimals', () => {
+    it(scenario('BROKER-SVC-018', 'formats whole numbers without decimals'), () => {
       expect(formatQuantity(100)).toBe('100')
     })
 
-    it('formats fractional quantities', () => {
+    it(scenario('BROKER-SVC-019', 'formats fractional quantities'), () => {
       expect(formatQuantity(100.5)).toBe('100.5')
     })
 
-    it('formats with up to 4 decimal places', () => {
+    it(scenario('BROKER-SVC-020', 'formats with up to 4 decimal places'), () => {
       expect(formatQuantity(100.1234)).toBe('100.1234')
     })
   })
 
   describe('getRelativeTime', () => {
-    it('returns relative time string for recent date', () => {
+    it(scenario('BROKER-SVC-021', 'returns relative time string for recent date'), () => {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
       const result = getRelativeTime(fiveMinutesAgo)
       expect(result).toContain('min ago')
     })
 
-    it('returns Never for null', () => {
+    it(scenario('BROKER-SVC-022', 'returns Never for null'), () => {
       expect(getRelativeTime(null)).toBe('Never')
     })
   })

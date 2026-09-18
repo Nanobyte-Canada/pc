@@ -1,0 +1,32 @@
+{
+  "name": "pc-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:regression": "playwright test --grep @regression",
+    "validate-specs": "npx tsx scripts/validate-specs.ts",
+    "build-manifest": "npx tsx scripts/build-manifest.ts",
+    "build-requirements-index": "npx tsx scripts/build-requirements-index.ts",
+    "discover-routes": "npx tsx scripts/discover-routes.ts",
+    "check-route-coverage": "npx tsx scripts/check-route-coverage.ts",
+    "analyze-test-impact": "npx tsx scripts/analyze-test-impact.ts",
+    "build-impact-graph": "npx tsx scripts/build-impact-graph.ts",
+    "lint-test-changes": "npx tsx scripts/lint-test-changes.ts",
+    "build-coverage-report": "npx tsx scripts/build-coverage-report.ts",
+    "publish-history": "npx tsx scripts/publish-history.ts"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^26.6.1",
+    "ajv": "^8.17.0",
+    "gray-matter": "^4.0.3",
+    "tinyglobby": "^0.2.12",
+    "ts-morph": "^24.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  }
+}

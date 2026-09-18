@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
+import { scenario } from './test/scenario'
 
 const mockUser = { id: '1', email: 'test@example.com', name: 'Test User', roles: ['USER'] }
 
@@ -47,21 +48,21 @@ describe('App', () => {
     vi.clearAllMocks()
   })
 
-  it('renders the app without crashing', async () => {
+  it(scenario('APP-001', 'renders the app without crashing'), async () => {
     const { container } = renderWithProviders(<App />)
     await waitFor(() => {
       expect(container.innerHTML.length).toBeGreaterThan(0)
     })
   })
 
-  it('renders the default dashboard page when authenticated', async () => {
+  it(scenario('APP-002', 'renders the default dashboard page when authenticated'), async () => {
     renderWithProviders(<App />)
     await waitFor(() => {
       expect(document.querySelector('[class*="dashboard"], [class*="app-layout"]')).toBeTruthy()
     })
   })
 
-  it('renders navigation elements', async () => {
+  it(scenario('APP-003', 'renders navigation elements'), async () => {
     renderWithProviders(<App />)
     await waitFor(() => {
       const navButtons = screen.getAllByRole('button')
@@ -69,7 +70,7 @@ describe('App', () => {
     })
   })
 
-  it('has route definitions for key pages', async () => {
+  it(scenario('APP-004', 'has route definitions for key pages'), async () => {
     renderWithProviders(<App />)
     await waitFor(() => {
       expect(document.body.querySelector('main, [class*="layout"], [class*="app"]')).toBeTruthy()

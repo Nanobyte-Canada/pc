@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { buildWheelGrid, computeTickerTotals, discoverTickers, detectCCEligible, generateWeeklyExpiries } from '../useWheelPositions'
 import { isMarketHoliday, isMonthlyExpiry, getWeeklyExpiryDate } from '../marketHolidays'
 import type { BrokerPosition } from '@/types/broker'
+import { scenario } from '../../test/scenario'
 
 function makePosition(overrides: Partial<BrokerPosition> = {}): BrokerPosition {
   return {
@@ -29,7 +30,7 @@ describe('buildWheelGrid', () => {
   const tickers = ['SOXL', 'TECL']
   const today = new Date('2026-05-23T00:00:00')
 
-  it('places a CSP position in the correct cell', () => {
+  it(scenario('WHEEL-POS-001', 'places a CSP position in the correct cell'), () => {
     const positions = [makePosition()]
     const grid = buildWheelGrid(positions, tickers, [], today)
 
@@ -40,7 +41,7 @@ describe('buildWheelGrid', () => {
     expect(row!.cells['SOXL'].positions[0].strike).toBe(20)
   })
 
-  it('places a CC position in the correct cell', () => {
+  it(scenario('WHEEL-POS-002', 'places a CC position in the correct cell'), () => {
     const positions = [
       makePosition({
         id: 2,
@@ -60,7 +61,7 @@ describe('buildWheelGrid', () => {
     expect(row!.cells['TECL'].positions[0].type).toBe('CC')
   })
 
-  it('filters out non-option positions', () => {
+  it(scenario('WHEEL-POS-003', 'filters out non-option positions'), () => {
     const positions = [
       makePosition({ instrumentType: 'STOCK', strikePrice: null, optionType: null }),
     ]
@@ -74,7 +75,7 @@ describe('buildWheelGrid', () => {
     expect(totalPositions).toBe(0)
   })
 
-  it('filters out positions with expiry beyond 90 days', () => {
+  it(scenario('WHEEL-POS-004', 'filters out positions with expiry beyond 90 days'), () => {
     const positions = [
       makePosition({ expirationDate: '2026-09-18' }),
     ]
@@ -88,7 +89,7 @@ describe('buildWheelGrid', () => {
     expect(totalPositions).toBe(0)
   })
 
-  it('stacks multiple positions in the same cell', () => {
+  it(scenario('WHEEL-POS-005', 'stacks multiple positions in the same cell'), () => {
     const positions = [
       makePosition({ id: 1, strikePrice: 20 }),
       makePosition({ id: 2, strikePrice: 18, averageCost: 0.60, totalPnl: 40 }),
@@ -99,7 +100,7 @@ describe('buildWheelGrid', () => {
     expect(row!.cells['SOXL'].positions).toHaveLength(2)
   })
 
-  it('computes DTE correctly', () => {
+  it(scenario('WHEEL-POS-006', 'computes DTE correctly'), () => {
     const positions = [makePosition()]
     const grid = buildWheelGrid(positions, tickers, [], today)
 
@@ -108,7 +109,7 @@ describe('buildWheelGrid', () => {
     expect(row!.dte).toBe(7)
   })
 
-  it('includes expiry dates from available expirations even without positions', () => {
+  it(scenario('WHEEL-POS-007', 'includes expiry dates from available expirations even without positions'), () => {
     const availableExpiries = ['2026-06-06', '2026-06-20']
     const grid = buildWheelGrid([], tickers, availableExpiries, today)
 
@@ -118,7 +119,7 @@ describe('buildWheelGrid', () => {
     expect(jun6!.cells['SOXL'].positions).toHaveLength(0)
   })
 
-  it('adds currency field to positions', () => {
+  it(scenario('WHEEL-POS-008', 'adds currency field to positions'), () => {
     const positions = [makePosition({ currency: 'USD' })]
     const grid = buildWheelGrid(positions, tickers, [], today)
 
@@ -126,7 +127,7 @@ describe('buildWheelGrid', () => {
     expect(row!.cells['SOXL'].positions[0].currency).toBe('USD')
   })
 
-  it('fills premium from premiumMap when averageCost is null', () => {
+  it(scenario('WHEEL-POS-009', 'fills premium from premiumMap when averageCost is null'), () => {
     const positions = [makePosition({ averageCost: null })]
     const premiumMap = new Map([['SOXL 250530P00020000', { premium: 125, currency: 'USD' }]])
     const grid = buildWheelGrid(positions, tickers, [], today, null, null, 0, {}, premiumMap)
@@ -137,7 +138,7 @@ describe('buildWheelGrid', () => {
 })
 
 describe('computeTickerTotals', () => {
-  it('computes position count, CSP exposure (dual currency), and total P&L (dual currency)', () => {
+  it(scenario('WHEEL-POS-010', 'computes position count, CSP exposure (dual currency), and total P&L (dual currency)'), () => {
     const positions = [
       makePosition(),
       makePosition({
@@ -166,7 +167,7 @@ describe('buildWheelGrid with symbol-parsed positions', () => {
   const tickers = ['SOXL', 'TQQQ']
   const today = new Date('2026-05-23T00:00:00')
 
-  it('parses option data from symbol when fields are null', () => {
+  it(scenario('WHEEL-POS-011', 'parses option data from symbol when fields are null'), () => {
     const positions = [
       makePosition({
         symbol: 'SOXL29May26P70.00',
@@ -186,7 +187,7 @@ describe('buildWheelGrid with symbol-parsed positions', () => {
     expect(row!.cells['SOXL'].positions[0].strike).toBe(70)
   })
 
-  it('parses call options from symbol', () => {
+  it(scenario('WHEEL-POS-012', 'parses call options from symbol'), () => {
     const positions = [
       makePosition({
         symbol: 'TQQQ18Jun26C48.00',
@@ -208,7 +209,7 @@ describe('buildWheelGrid with symbol-parsed positions', () => {
 })
 
 describe('discoverTickers', () => {
-  it('returns unique underlying symbols from option positions', () => {
+  it(scenario('WHEEL-POS-013', 'returns unique underlying symbols from option positions'), () => {
     const positions: BrokerPosition[] = [
       makePosition({ underlyingSymbol: 'SOXL', optionType: 'PUT' }),
       makePosition({ id: 2, underlyingSymbol: 'SOXL', optionType: 'PUT' }),
@@ -218,7 +219,7 @@ describe('discoverTickers', () => {
     expect(tickers).toEqual(['SOXL', 'TQQQ'])
   })
 
-  it('ignores positions without option fields', () => {
+  it(scenario('WHEEL-POS-014', 'ignores positions without option fields'), () => {
     const positions: BrokerPosition[] = [
       makePosition({ underlyingSymbol: null, optionType: null, symbol: 'AAPL', instrumentType: 'STOCK', strikePrice: null, expirationDate: null }),
     ]
@@ -228,7 +229,7 @@ describe('discoverTickers', () => {
 })
 
 describe('detectCCEligible', () => {
-  it('detects tickers with 100+ shares', () => {
+  it(scenario('WHEEL-POS-015', 'detects tickers with 100+ shares'), () => {
     const positions: BrokerPosition[] = [
       { id: 10, symbol: 'TQQQ', instrumentType: 'STOCK', quantity: 100, currency: 'USD',
         securityName: null, averageCost: 40, currentPrice: 827, currentValue: 82700,
@@ -251,18 +252,18 @@ describe('detectCCEligible', () => {
 })
 
 describe('marketHolidays', () => {
-  it('identifies known market holidays', () => {
+  it(scenario('WHEEL-POS-016', 'identifies known market holidays'), () => {
     expect(isMarketHoliday('2026-07-03')).toBe(true)   // Independence Day (observed)
     expect(isMarketHoliday('2026-12-25')).toBe(true)   // Christmas
     expect(isMarketHoliday('2026-04-03')).toBe(true)   // Good Friday
   })
 
-  it('returns false for regular trading days', () => {
+  it(scenario('WHEEL-POS-017', 'returns false for regular trading days'), () => {
     expect(isMarketHoliday('2026-06-05')).toBe(false)  // regular Friday
     expect(isMarketHoliday('2026-06-12')).toBe(false)  // regular Friday
   })
 
-  it('shifts Friday expiry to Thursday when Friday is a holiday', () => {
+  it(scenario('WHEEL-POS-018', 'shifts Friday expiry to Thursday when Friday is a holiday'), () => {
     // 2026-07-03 is a holiday (Independence Day observed) — should shift to 2026-07-02 (Thursday)
     const friday = new Date(2026, 6, 3) // July 3
     const actual = getWeeklyExpiryDate(friday)
@@ -270,14 +271,14 @@ describe('marketHolidays', () => {
     expect(actual.getDay()).toBe(4) // Thursday
   })
 
-  it('keeps Friday when it is not a holiday', () => {
+  it(scenario('WHEEL-POS-019', 'keeps Friday when it is not a holiday'), () => {
     const friday = new Date(2026, 5, 5) // June 5
     const actual = getWeeklyExpiryDate(friday)
     expect(actual.getDate()).toBe(5)
     expect(actual.getDay()).toBe(5) // Friday
   })
 
-  it('recognizes holiday-adjusted monthly expiry (3rd Friday shifted to Thursday)', () => {
+  it(scenario('WHEEL-POS-020', 'recognizes holiday-adjusted monthly expiry (3rd Friday shifted to Thursday)'), () => {
     // 2027-03-26 is Good Friday AND the 4th Friday — not a monthly
     // Need a case where 3rd Friday IS a holiday. Check Juneteenth 2027:
     // 2027-06-18 is Juneteenth (observed, Friday) AND the 3rd Friday of June 2027
@@ -285,7 +286,7 @@ describe('marketHolidays', () => {
     expect(isMonthlyExpiry('2027-06-18')).toBe(false)  // holiday itself
   })
 
-  it('recognizes normal 3rd Friday as monthly expiry', () => {
+  it(scenario('WHEEL-POS-021', 'recognizes normal 3rd Friday as monthly expiry'), () => {
     // June 2026: 3rd Friday (Jun 19) is Juneteenth holiday, so monthly shifts to Jun 18 (Thu)
     expect(isMonthlyExpiry('2026-06-18')).toBe(true)
     expect(isMonthlyExpiry('2026-06-19')).toBe(false)  // holiday — not a valid expiry
@@ -296,7 +297,7 @@ describe('marketHolidays', () => {
 })
 
 describe('generateWeeklyExpiries with holidays', () => {
-  it('generates Thursday expiry when Friday is a holiday', () => {
+  it(scenario('WHEEL-POS-022', 'generates Thursday expiry when Friday is a holiday'), () => {
     // Start from a date just before July 3, 2026 (holiday Friday)
     const start = new Date(2026, 5, 29) // June 29 (Monday)
     const expiries = generateWeeklyExpiries(start, 2)

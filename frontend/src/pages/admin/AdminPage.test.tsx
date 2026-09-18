@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AdminPage } from './AdminPage'
 import * as adminService from '../../services/adminService'
+import { scenario } from '../../test/scenario'
 
 vi.mock('../../services/adminService', () => ({
   getIngestionStats: vi.fn(),
@@ -58,18 +59,18 @@ describe('AdminPage', () => {
     vi.mocked(adminService.getIngestionRuns).mockResolvedValue([])
   })
 
-  it('renders the page title', () => {
+  it(scenario('ADMIN-001', 'renders the page title'), () => {
     renderWithProviders(<AdminPage />)
     expect(screen.getByText('Admin Panel')).toBeTruthy()
   })
 
-  it('renders both workflow cards', () => {
+  it(scenario('ADMIN-002', 'renders both workflow cards'), () => {
     renderWithProviders(<AdminPage />)
     expect(screen.getByText('Exchange Sync')).toBeTruthy()
     expect(screen.getByText('Full Ingestion')).toBeTruthy()
   })
 
-  it('displays summary stats after loading', async () => {
+  it(scenario('ADMIN-003', 'displays summary stats after loading'), async () => {
     renderWithProviders(<AdminPage />)
     await waitFor(() => {
       expect(screen.getByText('12,847')).toBeTruthy()
@@ -78,7 +79,7 @@ describe('AdminPage', () => {
     })
   })
 
-  it('displays instrument type stats', async () => {
+  it(scenario('ADMIN-004', 'displays instrument type stats'), async () => {
     renderWithProviders(<AdminPage />)
     await waitFor(() => {
       expect(screen.getByText('8,421')).toBeTruthy()
@@ -86,7 +87,7 @@ describe('AdminPage', () => {
     })
   })
 
-  it('shows empty state when no runs are available', async () => {
+  it(scenario('ADMIN-005', 'shows empty state when no runs are available'), async () => {
     renderWithProviders(<AdminPage />)
     await waitFor(() => {
       expect(screen.getByText(/No ingestion runs found/i)).toBeTruthy()

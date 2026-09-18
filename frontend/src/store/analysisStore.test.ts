@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useAnalysisStore } from './analysisStore';
 import { PortfolioAnalysis } from '../types/portfolio';
+import { scenario } from '../test/scenario';
 
 describe('analysisStore', () => {
   beforeEach(() => {
@@ -47,7 +48,7 @@ describe('analysisStore', () => {
     },
   };
 
-  it('should set analysis data', () => {
+  it(scenario('ANALYSIS-STORE-001', 'should set analysis data'), () => {
     useAnalysisStore.getState().setAnalysis(mockAnalysis);
 
     const { analysis, error } = useAnalysisStore.getState();
@@ -55,7 +56,7 @@ describe('analysisStore', () => {
     expect(error).toBeNull();
   });
 
-  it('should set loading state', () => {
+  it(scenario('ANALYSIS-STORE-002', 'should set loading state'), () => {
     useAnalysisStore.getState().setLoading(true);
     expect(useAnalysisStore.getState().isLoading).toBe(true);
 
@@ -63,12 +64,12 @@ describe('analysisStore', () => {
     expect(useAnalysisStore.getState().isLoading).toBe(false);
   });
 
-  it('should set error message', () => {
+  it(scenario('ANALYSIS-STORE-003', 'should set error message'), () => {
     useAnalysisStore.getState().setError('Something went wrong');
     expect(useAnalysisStore.getState().error).toBe('Something went wrong');
   });
 
-  it('should clear analysis data', () => {
+  it(scenario('ANALYSIS-STORE-004', 'should clear analysis data'), () => {
     useAnalysisStore.getState().setAnalysis(mockAnalysis);
     useAnalysisStore.getState().setError('test error');
 

@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { usePortfolioStore } from './portfolioStore';
+import { scenario } from '../test/scenario';
 
 describe('portfolioStore', () => {
   beforeEach(() => {
     usePortfolioStore.getState().clearAll();
   });
 
-  it('should add a position to the portfolio', () => {
+  it(scenario('PORT-STORE-001', 'should add a position to the portfolio'), () => {
     usePortfolioStore.getState().addPosition({
       instrumentType: 'STOCK',
       instrumentId: 1,
@@ -20,7 +21,7 @@ describe('portfolioStore', () => {
     expect(positions[0].weight).toBe(0);
   });
 
-  it('should not add duplicate positions', () => {
+  it(scenario('PORT-STORE-002', 'should not add duplicate positions'), () => {
     const store = usePortfolioStore.getState();
 
     store.addPosition({
@@ -40,7 +41,7 @@ describe('portfolioStore', () => {
     expect(usePortfolioStore.getState().positions).toHaveLength(1);
   });
 
-  it('should remove a position from the portfolio', () => {
+  it(scenario('PORT-STORE-003', 'should remove a position from the portfolio'), () => {
     usePortfolioStore.getState().addPosition({
       instrumentType: 'STOCK',
       instrumentId: 1,
@@ -53,7 +54,7 @@ describe('portfolioStore', () => {
     expect(usePortfolioStore.getState().positions).toHaveLength(0);
   });
 
-  it('should update position weight', () => {
+  it(scenario('PORT-STORE-004', 'should update position weight'), () => {
     usePortfolioStore.getState().addPosition({
       instrumentType: 'STOCK',
       instrumentId: 1,
@@ -66,7 +67,7 @@ describe('portfolioStore', () => {
     expect(usePortfolioStore.getState().positions[0].weight).toBe(0.5);
   });
 
-  it('should calculate total weight', () => {
+  it(scenario('PORT-STORE-005', 'should calculate total weight'), () => {
     usePortfolioStore.getState().addPosition({
       instrumentType: 'STOCK',
       instrumentId: 1,
@@ -86,7 +87,7 @@ describe('portfolioStore', () => {
     expect(usePortfolioStore.getState().totalWeight()).toBe(1.0);
   });
 
-  it('should normalize weights to 100%', () => {
+  it(scenario('PORT-STORE-006', 'should normalize weights to 100%'), () => {
     usePortfolioStore.getState().addPosition({
       instrumentType: 'STOCK',
       instrumentId: 1,
@@ -111,7 +112,7 @@ describe('portfolioStore', () => {
     expect(total).toBeCloseTo(1.0, 5);
   });
 
-  it('should clear all positions', () => {
+  it(scenario('PORT-STORE-007', 'should clear all positions'), () => {
     usePortfolioStore.getState().addPosition({
       instrumentType: 'STOCK',
       instrumentId: 1,

@@ -1,0 +1,60 @@
+name: UI Tests — Production Smoke
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: portfolio-prod-smoke
+  cancel-in-progress: false
+
+jobs:
+  prod-smoke:
+    name: Production Smoke Tests
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.52.0-noble
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install e2e dependencies
+        run: npm ci
+        working-directory: e2e
+
+      - name: Run production smoke tests
+        run: npx playwright test --grep @smoke --timeout=30000
+        working-directory: e2e
+        env:
+          BASE_URL: https://portfolio.nanobyte.ca
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-smoke-results
+          path: e2e/test-results/
+          retention-days: 30
+
+      - name: Upload traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-smoke-traces
+          path: e2e/test-results/**/trace.zip
+          retention-days: 30
+
+      - name: Notify Slack on failure
+        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": ":rotating_light: *Production smoke tests failed*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+            }
