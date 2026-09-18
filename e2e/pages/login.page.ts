@@ -14,6 +14,6 @@ export class LoginPage {
   }
 
   async expectVisible() {
-    await expect(this.page.locator('text=Sign In')).toBeVisible();
+    await expect(this.page.getByRole('button', { name: 'Sign in with Email' })).toBeVisible();
   }
 }
