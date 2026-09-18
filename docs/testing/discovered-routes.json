@@ -1,0 +1,78 @@
+{
+  "discovered_at": "2026-09-18T03:29:01.302Z",
+  "routes": [
+    {
+      "path": "/login",
+      "params": []
+    },
+    {
+      "path": "/",
+      "params": []
+    },
+    {
+      "path": "portfolios",
+      "params": []
+    },
+    {
+      "path": "screener/:type",
+      "params": [
+        "type"
+      ]
+    },
+    {
+      "path": "instruments/:type/:ticker",
+      "params": [
+        "type",
+        "ticker"
+      ]
+    },
+    {
+      "path": "analytics",
+      "params": []
+    },
+    {
+      "path": "brokers/connections",
+      "params": []
+    },
+    {
+      "path": "brokers/positions",
+      "params": []
+    },
+    {
+      "path": "brokers/positions/:connectionId",
+      "params": [
+        "connectionId"
+      ]
+    },
+    {
+      "path": "brokers/accounts/:connectionId",
+      "params": [
+        "connectionId"
+      ]
+    },
+    {
+      "path": "brokers/reporting",
+      "params": []
+    },
+    {
+      "path": "options",
+      "params": []
+    },
+    {
+      "path": "wheel",
+      "params": []
+    },
+    {
+      "path": "profile",
+      "params": []
+    },
+    {
+      "path": "admin",
+      "params": []
+    },
+    {
+      "path": "/unauthorized",
+      "params": []
+    }
+  ]
+}
