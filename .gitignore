@@ -108,6 +108,8 @@ coverage/
 frontend/test-results/
 frontend/playwright-report/
 frontend/playwright/.cache/
+e2e/results/
+e2e/playwright-report/
 
 # Database dumps
 *.backup

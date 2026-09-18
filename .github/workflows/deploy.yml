@@ -219,3 +219,15 @@ jobs:
             {
               "text": "${{ job.status == 'success' && ':rocket:' || ':x:' }} Deploy *${{ steps.tag.outputs.tag }}* to *uat* ${{ job.status }}\nTriggered by: ${{ github.actor }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
             }
+
+  verify-deploy:
+    name: Verify deployment ran
+    needs: [deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail when deployment was skipped
+        if: ${{ needs.deploy.result != 'success' }}
+        run: |
+          echo "::error::Deployment job did not succeed (result: ${{ needs.deploy.result }}). Failing so downstream UI tests do not fire against a stale UAT."
+          exit 1

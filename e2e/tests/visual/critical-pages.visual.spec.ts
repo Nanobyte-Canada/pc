@@ -7,7 +7,7 @@ const visualPages = [
 ];
 
 for (const page of visualPages) {
-  test(scenario(`VISUAL-${page.name.toUpperCase()}-001`, `${page.name} visual regression`), async ({ page: p }) => {
+  test(scenario(`VISUAL-${page.name.toUpperCase()}-001`, `${page.name} visual regression`), { tag: ['@visual'] }, async ({ page: p }) => {
     await p.goto(page.path);
     await expect(p).toHaveScreenshot(`${page.name.toLowerCase()}.png`, {
       maxDiffPixelRatio: 0.01,

@@ -111,5 +111,5 @@ For full details, see:
 |----------|------|---------|
 | Build & Push Images | `build.yml` | Backend + frontend tests, image builds. Vitest runs here. |
 | UI Tests (PR) | `ui-tests-pr.yml` | Deterministic PR checks: spec validation, route coverage, impact analysis, lint |
-| UI Tests (Deployed) | `ui-tests-deployed.yml` | Post-deploy browser regression against UAT |
 | Deploy | `deploy.yml` | UAT deployment (no e2e job — handled by `ui-tests-deployed.yml`) |
+| UI Tests (Deployed) | `ui-tests-deployed.yml` | Post-deploy browser regression against UAT; triggered via `workflow_run` after the Deploy workflow succeeds on `main`, or manually via `workflow_dispatch` |

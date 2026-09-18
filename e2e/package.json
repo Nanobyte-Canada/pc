@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "1.60.0",
     "@types/node": "^26.6.1",
     "ajv": "^8.17.0",
     "gray-matter": "^4.0.3",
