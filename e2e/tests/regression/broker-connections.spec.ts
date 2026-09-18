@@ -3,7 +3,7 @@ import { scenario } from '../../support/scenario';
 
 test.describe('Broker - Connections', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/broker');
+    await page.goto('/brokers/connections');
   });
 
   test(scenario('BROKER-CONN-001', 'broker page loads successfully @regression'), async ({ page }) => {
@@ -22,6 +22,7 @@ test.describe('Broker - Connections', () => {
   });
 
   test(scenario('BROKER-CONN-004', 'positions tab is accessible @regression'), async ({ page }) => {
+    await page.goto('/brokers/positions');
     const positionsTab = page.locator('[role="tab"]:has-text("Positions"), button:has-text("Positions"), a:has-text("Positions"), [data-testid*="positions-tab"]');
     await expect(positionsTab).toBeVisible();
   });

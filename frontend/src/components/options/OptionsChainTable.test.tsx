@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { OptionsChainTable } from './OptionsChainTable'
-import type { OptionsChain } from '@/types/options'
+import type { OptionsChain, StrikeData } from '@/types/options'
 import { scenario } from '../../test/scenario'
 
 beforeAll(() => {
@@ -26,7 +26,7 @@ vi.mock('@/stores/strategyStore', () => ({
   }),
 }))
 
-function makeChain(overrides?: { expirations?: Record<string, Record<string, unknown>>; spotPrice?: number }): OptionsChain {
+function makeChain(overrides?: { expirations?: Record<string, Record<string, StrikeData>>; spotPrice?: number }): OptionsChain {
   return {
     underlying: 'AAPL',
     spotPrice: overrides?.spotPrice ?? 195,

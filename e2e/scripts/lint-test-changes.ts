@@ -23,12 +23,148 @@ function gitDiff(baseRef: string): string {
   }
 }
 
+// Skip policy: conditional skips with documented reasons are a sanctioned
+// pattern — data-driven tests guard on env/fixtures (e.g.
+// `test.skip(!email || !password, 'E2E_USER_EMAIL not set')`) and
+// reviewer-mandated TODO skips carry explicit reason strings. The defect this
+// rule exists to catch is the *unexplained, unconditional* skip that hides
+// coverage: a bare `test.skip()`, `test.skip(true)`, a title-only
+// `test.skip('some title')`, or a `describe.skip` with no reason comment.
+// A skip call is therefore only flagged when it carries no non-empty string
+// reason argument (a lone first-position string is a title, not a reason).
+
+/**
+ * Collect the full argument text of a call whose opening paren sits at
+ * `openParenPos` on diff line `startLine`, scanning forward (max 20 lines)
+ * until parentheses balance. String-aware; returns null if unbalanced.
+ */
+function extractCallArgs(
+  lines: string[],
+  startLine: number,
+  openParenPos: number,
+): string | null {
+  let text = "";
+  let depth = 0;
+  let started = false;
+  let inStr: string | null = null;
+
+  for (let i = startLine; i < Math.min(lines.length, startLine + 20); i++) {
+    const raw = lines[i];
+    const content =
+      raw.startsWith("+") && !raw.startsWith("+++") ? raw.slice(1) : raw;
+    const from = i === startLine ? openParenPos : 0;
+
+    for (let j = from; j < content.length; j++) {
+      const ch = content[j];
+      if (inStr) {
+        text += ch;
+        if (ch === "\\") {
+          text += content[++j] ?? "";
+          continue;
+        }
+        if (ch === inStr) inStr = null;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === "`") {
+        inStr = ch;
+        text += ch;
+        continue;
+      }
+      if (ch === "(") {
+        depth++;
+        started = true;
+        text += ch;
+        continue;
+      }
+      if (ch === ")") {
+        depth--;
+        text += ch;
+        if (started && depth === 0) return text.slice(1, -1);
+        continue;
+      }
+      text += ch;
+    }
+    text += "\n";
+  }
+  return null;
+}
+
+/** Split an argument list on top-level commas (string/bracket aware). */
+function splitTopLevelArgs(args: string): string[] {
+  const parts: string[] = [];
+  let cur = "";
+  let depth = 0;
+  let inStr: string | null = null;
+
+  for (let i = 0; i < args.length; i++) {
+    const ch = args[i];
+    if (inStr) {
+      cur += ch;
+      if (ch === "\\") {
+        cur += args[++i] ?? "";
+        continue;
+      }
+      if (ch === inStr) inStr = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") {
+      inStr = ch;
+      cur += ch;
+      continue;
+    }
+    if (ch === "(" || ch === "[" || ch === "{") depth++;
+    if (ch === ")" || ch === "]" || ch === "}") depth--;
+    if (ch === "," && depth === 0) {
+      parts.push(cur.trim());
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur.trim()) parts.push(cur.trim());
+  return parts;
+}
+
+/** True when the argument is a non-empty string literal (a reason/title). */
+function isNonEmptyStringLiteral(arg: string): boolean {
+  const m = arg.match(/^(?:'([^']*)'|"([^"]*)"|`([\s\S]*)`)$/);
+  if (!m) return false;
+  return (m[1] ?? m[2] ?? m[3] ?? "").trim().length > 0;
+}
+
+/** True when the line has a `//` comment outside of string literals. */
+function hasReasonComment(line: string): boolean {
+  const noStrings = line.replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "");
+  return /\/\/\s*\S/.test(noStrings);
+}
+
+function isSanctionedSkip(
+  kind: string,
+  argsText: string | null,
+  line: string,
+): boolean {
+  if (argsText === null) return false;
+  const args = splitTopLevelArgs(argsText);
+
+  if (kind === "describe") {
+    // describe.skip('title', () => {...}) — the first string is a title, so
+    // sanction only via a reason string beyond the title or a reason comment.
+    return args.slice(1).some(isNonEmptyStringLiteral) || hasReasonComment(line);
+  }
+
+  // test/it skip/fixme: sanctioned when any argument after the first is a
+  // non-empty string reason (covers conditional env guards and TODO skips).
+  // A lone first-position string is a title, not a reason — still flagged.
+  return args.slice(1).some(isNonEmptyStringLiteral);
+}
+
 function checkTestSkip(diff: string, violations: Violation[]): void {
   const lines = diff.split("\n");
   let currentFile = "";
   let lineNum = 0;
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     if (line.startsWith("+++ b/")) {
       currentFile = line.slice(6);
     } else if (line.startsWith("@@")) {
@@ -37,18 +173,18 @@ function checkTestSkip(diff: string, violations: Violation[]): void {
     } else if (line.startsWith("+") && !line.startsWith("+++")) {
       lineNum++;
       const content = line.slice(1);
-      if (
-        /\btest\.skip\s*\(/.test(content) ||
-        /\btest\.fixme\s*\(/.test(content) ||
-        /\bit\.skip\s*\(/.test(content) ||
-        /\bdescribe\.skip\s*\(/.test(content)
-      ) {
-        violations.push({
-          type: "test.skip",
-          file: currentFile,
-          line: lineNum,
-          message: `Added ${content.trim().match(/\b(test|it|describe)\.(skip|fixme)/)?.[0] || "skip/fixme"}: ${content.trim()}`,
-        });
+      const skipMatch = content.match(/\b(test|it|describe)\.(skip|fixme)\s*\(/);
+      if (skipMatch && skipMatch.index !== undefined) {
+        const openParenPos = skipMatch.index + skipMatch[0].length - 1;
+        const argsText = extractCallArgs(lines, i, openParenPos);
+        if (!isSanctionedSkip(skipMatch[1], argsText, content)) {
+          violations.push({
+            type: "test.skip",
+            file: currentFile,
+            line: lineNum,
+            message: `Added ${skipMatch[1]}.${skipMatch[2]}: ${content.trim()}`,
+          });
+        }
       }
     } else if (!line.startsWith("-")) {
       lineNum++;

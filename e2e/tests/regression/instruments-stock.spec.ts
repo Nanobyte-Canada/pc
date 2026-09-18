@@ -11,7 +11,7 @@ test.describe('Instruments - Stock Detail', { tag: ['@regression'] }, () => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login(email!, password!);
-    await page.goto('/instruments');
+    await page.goto('/instruments/stock/AAPL');
   });
 
   test(scenario('INST-STOCK-001', 'instruments page loads and displays stock list'), async ({ page }) => {

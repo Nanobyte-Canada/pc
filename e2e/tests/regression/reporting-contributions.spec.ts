@@ -11,7 +11,7 @@ test.describe('Reporting - Contributions', { tag: ['@regression'] }, () => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login(email!, password!);
-    await page.goto('/reporting');
+    await page.goto('/brokers/reporting');
   });
 
   test(scenario('RPT-CONTRIB-001', 'reporting page loads and shows total value'), async ({ page }) => {

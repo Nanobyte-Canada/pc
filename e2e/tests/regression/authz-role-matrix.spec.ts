@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { scenario } from '../../support/scenario';
 import { LoginPage } from '../../pages/login.page';
 
-const USER_ROUTES = ['/', '/portfolios', '/options', '/wheel', '/broker'];
+const USER_ROUTES = ['/', '/portfolios', '/options', '/wheel', '/brokers/connections'];
 const ALL_ROUTES = [...USER_ROUTES, '/admin'];
 
 test.describe('Authorization - Role Matrix @regression', () => {
