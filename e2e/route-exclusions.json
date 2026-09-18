@@ -1,0 +1,20 @@
+{
+  "exclusions": [
+    {
+      "route": "brokers/positions/:connectionId",
+      "reason": "Covered indirectly via brokers/positions listing navigation; direct detail-route scenario pending plan authoring in specs/ui."
+    },
+    {
+      "route": "brokers/accounts/:connectionId",
+      "reason": "Deep parameterized account-detail route; no authenticated scenario navigates it yet — pending plan authoring in specs/ui."
+    },
+    {
+      "route": "profile",
+      "reason": "No authenticated profile scenarios yet — pending plan authoring in specs/ui."
+    },
+    {
+      "route": "/unauthorized",
+      "reason": "Static unauthorized page reached only via role-denial flows; no dedicated navigation scenario yet — pending plan authoring in specs/ui."
+    }
+  ]
+}

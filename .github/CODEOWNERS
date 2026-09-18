@@ -1,0 +1,5 @@
+# UI testing platform
+specs/ui/** @saurabhbilakhia
+e2e/** @saurabhbilakhia
+frontend/src/**/*.test.* @saurabhbilakhia
+docs/testing/** @saurabhbilakhia

@@ -5,3 +5,6 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 Dockerfile text eol=lf
+
+# Playwright visual regression snapshot baselines via Git LFS
+e2e/tests/visual/**/*-snapshots/** filter=lfs diff=lfs merge=lfs -text

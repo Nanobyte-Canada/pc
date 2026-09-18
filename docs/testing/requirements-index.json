@@ -1,0 +1,12 @@
+{
+  "generated": "2026-09-18T03:16:54.628Z",
+  "requirements": [
+    {
+      "id": "RQ-AUTH-001",
+      "area": "AUTH",
+      "number": "001",
+      "source_file": "docs/superpowers/specs/2026-09-17-ui-testing-platform-design.md",
+      "context": "requirement_refs: [RQ-AUTH-001]"
+    }
+  ]
+}

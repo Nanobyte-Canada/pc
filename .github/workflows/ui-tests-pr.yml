@@ -1,0 +1,102 @@
+name: UI Tests — PR
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ui-tests-pr-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  impact-analysis:
+    name: Impact Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install e2e dependencies
+        run: npm ci
+        working-directory: e2e
+
+      - name: Analyze test impact
+        run: npx tsx scripts/analyze-test-impact.ts origin/${{ github.base_ref }}
+        working-directory: e2e
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CI: "true"
+
+  lint-test-changes:
+    name: Lint Test Changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install e2e dependencies
+        run: npm ci
+        working-directory: e2e
+
+      - name: Lint test changes
+        run: npx tsx scripts/lint-test-changes.ts origin/${{ github.base_ref }}
+        working-directory: e2e
+
+  spec-validation:
+    name: Spec Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install e2e dependencies
+        run: npm ci
+        working-directory: e2e
+
+      - name: Validate test specs
+        run: npx tsx scripts/validate-specs.ts
+        working-directory: e2e
+
+  route-coverage:
+    name: Route Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install e2e dependencies
+        run: npm ci
+        working-directory: e2e
+
+      - name: Discover routes
+        run: npx tsx scripts/discover-routes.ts
+        working-directory: e2e
+
+      - name: Check route coverage
+        run: npx tsx scripts/check-route-coverage.ts
+        working-directory: e2e

@@ -178,6 +178,7 @@ jobs:
             ${{ env.IMAGE_PREFIX }}/portfolio-frontend:latest
           build-args: |
             VITE_API_URL=https://portfolio.nanobyte.ca
+            VITE_APP_ENVIRONMENT=production
           cache-from: type=gha,scope=portfolio-frontend-prod
           cache-to: type=gha,mode=max,scope=portfolio-frontend-prod
 
@@ -193,6 +194,7 @@ jobs:
           build-args: |
             VITE_API_URL=https://uatportfolio.nanobyte.ca
             VITE_AUTH_METHOD=both
+            VITE_APP_ENVIRONMENT=uat
           cache-from: type=gha,scope=portfolio-frontend-uat
           cache-to: type=gha,mode=max,scope=portfolio-frontend-uat
 

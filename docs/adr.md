@@ -167,3 +167,71 @@ Detailed records for the infrastructure migration (commit `6b73ca4`) and related
 **Context:** Following ADR-0017 (shared DB/Redis), the remaining platform infrastructure has fully moved to the `nanobyte-services` repo, which now ships the complete monitoring stack (Prometheus, Grafana, Loki, Promtail, cAdvisor, node-exporter, postgres-exporter, redis-exporter, Uptime Kuma), the shared Vault (container `vault`, host port `127.0.0.1:18200:8200`, reachable at `https://vault.nanobyte.ca` via tunnel), nightly `backup.sh` (pg_dumpall + Vault snapshot, 7-day retention, written to `/opt/backups`), and `bootstrap-server.sh` for server provisioning. This left duplicated, drifting copies in pc: `deploy/monitoring/` (including an untracked `webhook-proxy/` and uncommitted alert fixes), `deploy/scripts/backup.sh`, `deploy/scripts/vault-init.sh`, and `deploy/uat/init-guc.sh`. Two of these were independently obsolete: `init-guc.sh` seeded the UAT admin conditionally on the `app.environment` PostgreSQL GUC, which was never set — Flyway `V75` was a no-op and `V76__uat_seed_test_admin_user.sql` now seeds the UAT test admin unconditionally, so no init script is needed (and none was ported to nanobyte-services). `vault-init.sh` targeted the retired `portfolio-vault` container, which no longer exists in pc. During pre-flight, the uncommitted monitoring improvements in `deploy/monitoring/` (real Grafana datasource UIDs replacing the stale `prometheus`/`loki` values, a `job="node-exporter"` filter on the disk-usage query, faster alert timing, and a Grafana webhook → Slack formatter service) were evaluated for porting; **the user chose to abandon them all (2026-09-16)** — nanobyte-services' direct-to-Slack contact point is the accepted replacement, and fixing its alerts later is out of scope for pc. A stash (`pre-cleanup: uncommitted monitoring fixes + webhook-proxy`) preserves the abandoned work for recovery.
 **Decision:** Delete `deploy/monitoring/` (including the untracked `webhook-proxy/`), `deploy/scripts/backup.sh`, `deploy/scripts/vault-init.sh`, and `deploy/uat/init-guc.sh` from pc. nanobyte-services is the single owner of monitoring, Vault, backups, and server bootstrap; pc retains only its application services, CI/CD workflows, and local dev stack. `deploy/cloudflared/config.yml` and `deploy/scripts/setup-cloudflared-tunnel.sh` remain in pc — they are the only home for the tunnel config (nanobyte-services has no cloudflared files), and the routed host ports are unchanged by the migration (Grafana 13000, Uptime Kuma 13001, Vault `127.0.0.1:18200:8200`).
 **Consequences:** pc CI/CD is unaffected — all workflows authenticate to `https://vault.nanobyte.ca` (Cloudflare tunnel URL) via AppRole, not to any pc-managed container. Docs (`README.md`, `AGENTS.md`, `docs/reference/infrastructure.md`, `deploy/scripts/setup-server.sh`) no longer reference pc-owned monitoring/Vault/backup infra. Future alerts/config fixes belong to nanobyte-services; the abandoned pc-side alert fixes live in the git stash if ever needed.
+
+## ADR-0024: Adopt UI Testing Platform (Revision 2 Model)
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** The portfolio construction app has 16 pages, ~97 components, and ~15 Vitest tests but no systematic UI testing strategy. There is no traceability from requirements to tests, no CI gates for browser tests, and no accessibility or visual regression testing. The existing single Playwright spec targets localhost only.
+**Decision:** Adopt the UI testing platform defined in `docs/superpowers/specs/2026-09-17-ui-testing-platform-design.md` across six phases:
+1. **Phase 0 — Discovery:** Source documents, discovery report, critical journeys, legacy disposition, CODEOWNERS, operations decisions.
+2. **Phase 1 — Foundation:** e2e package, Playwright config targeting UAT, environment safety contract, Vitest expansion, CI workflow skeletons, documentation.
+3. **Phase 2 — Authentication Pilot:** Auth fixtures, page objects, login browser tests, auth guard/session tests, login component tests.
+4. **Phase 3 — Coverage & Gates:** Manifest/route discovery scripts, impact analyzer, coverage builder, browser tests for all critical journeys, full CI workflows.
+5. **Phase 4 — Accessibility & Visual:** Axe fixture, accessibility scans, visual regression with Git LFS baselines, baseline update workflow.
+6. **Phase 5 — Impact Refinement:** Import-graph analyzer, AST style-only classification, agent skills.
+7. **Phase 6 — Expansion:** Remaining journey tests, component tests, legacy retirement, full browser matrix, operations finalization.
+**Consequences:** New `e2e/` package at repo root with Playwright, axe-core, TypeScript tooling. Two new CI workflows: `ui-tests-pr.yml` (spec validation + route coverage on PRs) and `ui-tests-deployed.yml` (browser tests after UAT deploy). All 15 existing Vitest tests rewritten with scenario IDs. Existing single e2e spec relocated to `e2e/legacy/` and rewritten. `frontend/playwright.config.ts` retired (replaced by `e2e/playwright.config.ts`). CODEOWNERS added for `specs/ui/`, `e2e/`, `frontend/src/**/*.test.*`, `docs/testing/`. Three on-demand OpenCode skills created (planner, impact analyst, failure analyst). Browser tests never run locally — CI-only against deployed UAT.
+
+---
+
+## 2026-09-17 — UI Testing Platform phase implementations
+
+Detailed records for each phase's workflow and tooling changes.
+
+## ADR-0025: UI Testing Platform Phase 1 — Foundation
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** Phase 0 discovery identified the need for a systematic UI testing strategy. Phase 1 establishes the baseline infrastructure — package structure, environment safety, CI workflows, and documentation — so all subsequent phases can build on a stable foundation.
+**Decision:** Implement the Phase 1 foundation of the UI testing platform:
+- Introduce `VITE_APP_ENVIRONMENT` environment marker so frontend code and tests can distinguish UAT from production at build/runtime.
+- Create two initial CI workflow skeletons: `ui-tests-pr.yml` (spec validation + route coverage on PRs) and `ui-tests-deployed.yml` (browser tests after UAT deploy).
+- Enforce deploy/test serialization: UAT deploys are gated on the build workflow completing successfully, and browser tests only run against a fully deployed environment — never locally.
+- Expand Vitest suite from ~15 to 154 tests across 19 files with scenario IDs for traceability.
+- Initialize `e2e/` package at repo root with Playwright, axe-core, and TypeScript tooling.
+- Add documentation under `docs/testing/` and CODEOWNERS rules for `specs/ui/`, `e2e/`, and `frontend/src/**/*.test.*`.
+**Consequences:** Subsequent phases (2–6) build on this foundation without rework. CI validates every PR and every UAT deploy. The environment marker prevents accidental cross-environment test execution.
+
+## ADR-0026: UI Testing Platform Phase 3 — Full CI Gates
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** Phase 2 completed the authentication pilot. Phase 3 expands browser test coverage to all critical journeys and adds full CI gates that block merges on regressions.
+**Decision:** Implement full CI gates for the UI testing platform:
+- PR gate runs impact analysis, test-change lint, route coverage check, and Vitest suite on every pull request.
+- Coverage history is persisted on a dedicated `test-reports` branch (JSON artifacts) for trend analysis.
+- Production pre-flight gate validates that the UAT environment is healthy and reachable before any prod deploy workflow proceeds.
+**Consequences:** Regressions are caught before merge. Coverage trends are trackable over time. Prod deploys are gated on UAT health, reducing the risk of shipping broken UIs.
+
+## ADR-0027: UI Testing Platform Phase 4 — Visual Baselines
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** Accessibility and visual regression testing were missing entirely. Phase 4 introduces both with automated gates.
+**Decision:** Implement visual regression and accessibility baselines:
+- Visual regression uses Playwright screenshot comparison against Git LFS-managed baseline images.
+- A weekly reliability measurement job quantifies flakiness and visual diff stability over time.
+- A baseline update workflow (`ui-visual-baseline-update.yml`) allows authorized users to regenerate baselines after intentional UI changes.
+- Axe-core accessibility scans run on critical pages with a configurable baseline threshold.
+**Consequences:** Visual and accessibility regressions are caught automatically. Baseline updates are explicit, auditable operations. Git LFS keeps the repo size manageable.
+
+## ADR-0028: UI Testing Platform Phase 5 — Impact Refinement
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** Phase 3's initial impact analysis used simple file-level heuristics. Phase 5 refines this to import-graph analysis for more accurate test selection.
+**Decision:** Implement impact analysis v2:
+- Import-graph analyzer traces TypeScript/React component imports to determine which tests are affected by a given change, replacing file-level heuristics.
+- Gate metrics collected over 30 days of measurement inform thresholds and exclusions for the impact analyzer.
+- Agent skills (planner, impact analyst, failure analyst) are created as OpenCode skills to assist developers with test planning and failure triage.
+**Consequences:** Fewer irrelevant tests run on PRs, reducing CI time. Agent skills provide structured guidance for common testing workflows.
+
+## ADR-0029: UI Testing Platform Phase 6 — Legacy Retirement
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** After Phases 1–5, the new UI testing platform achieves parity with and exceeds the coverage of legacy test artifacts. Phase 6 retires the old and expands to full browser coverage.
+**Decision:** Complete the UI testing platform:
+- Retire legacy test artifacts (old Playwright config, `frontend/playwright.config.ts`, legacy e2e specs) after confirming parity with new platform coverage.
+- Expand browser matrix to chromium, firefox, webkit, and mobile-chrome to validate cross-browser compatibility.
+- Finalize the operations handbook under `docs/testing/` covering test authoring, debugging, baseline updates, and CI pipeline behavior.
+**Consequences:** Single source of truth for UI testing. Cross-browser coverage reduces production surprises. Operations handbook enables onboarding without tribal knowledge.

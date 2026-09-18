@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { ErrorBoundary } from './ErrorBoundary'
+import { scenario } from '../../test/scenario'
 
 const ThrowingComponent = () => {
   throw new Error('Test explosion')
@@ -13,7 +14,7 @@ describe('ErrorBoundary', () => {
   beforeEach(() => { console.error = vi.fn() })
   afterEach(() => { console.error = originalError })
 
-  it('renders children when no error', () => {
+  it(scenario('ERR-BOUND-001', 'renders children when no error'), () => {
     render(
       <ErrorBoundary>
         <WorkingComponent />
@@ -22,7 +23,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('All good')).toBeDefined()
   })
 
-  it('renders fallback when child throws', () => {
+  it(scenario('ERR-BOUND-002', 'renders fallback when child throws'), () => {
     render(
       <ErrorBoundary>
         <ThrowingComponent />
@@ -31,7 +32,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText(/something went wrong/i)).toBeDefined()
   })
 
-  it('renders custom fallback when provided', () => {
+  it(scenario('ERR-BOUND-003', 'renders custom fallback when provided'), () => {
     render(
       <ErrorBoundary fallback={<div>Custom error</div>}>
         <ThrowingComponent />
@@ -40,7 +41,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Custom error')).toBeDefined()
   })
 
-  it('recovers when retry is clicked', () => {
+  it(scenario('ERR-BOUND-004', 'recovers when retry is clicked'), () => {
     render(
       <ErrorBoundary>
         <ThrowingComponent />

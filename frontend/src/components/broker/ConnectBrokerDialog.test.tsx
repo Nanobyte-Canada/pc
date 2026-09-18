@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { ConnectBrokerDialog } from './ConnectBrokerDialog'
+import { scenario } from '../../test/scenario'
 
 function renderDialog(brokerType: string, overrides: Record<string, unknown> = {}) {
   const props = {
@@ -16,14 +17,14 @@ function renderDialog(brokerType: string, overrides: Record<string, unknown> = {
 
 describe('ConnectBrokerDialog', () => {
   describe('Questrade', () => {
-    it('renders Questrade instructions', () => {
+    it(scenario('BROKER-DIALOG-001', 'renders Questrade instructions'), () => {
       renderDialog('questrade')
       expect(screen.getByText('Connect Questrade')).toBeTruthy()
       expect(screen.getByText(/Log in to your Questrade account/)).toBeTruthy()
       expect(screen.getByText(/Questrade API Hub/)).toBeTruthy()
     })
 
-    it('renders API token input for Questrade', () => {
+    it(scenario('BROKER-DIALOG-002', 'renders API token input for Questrade'), () => {
       renderDialog('questrade')
       expect(screen.getByText('API Token (Refresh Token)')).toBeTruthy()
       const input = screen.getByPlaceholderText('Paste your Questrade API token')
@@ -31,7 +32,7 @@ describe('ConnectBrokerDialog', () => {
       expect(input.getAttribute('type')).toBe('password')
     })
 
-    it('shows practice account checkbox for Questrade', () => {
+    it(scenario('BROKER-DIALOG-003', 'shows practice account checkbox for Questrade'), () => {
       // Checkbox is specific to Questrade in the new design? 
       // Actually, looking at the current config - Questrade config doesn't include a checkbox
       // Let's verify the existing flow works
@@ -41,13 +42,13 @@ describe('ConnectBrokerDialog', () => {
   })
 
   describe('Wealthsimple', () => {
-    it('renders Wealthsimple instructions', () => {
+    it(scenario('BROKER-DIALOG-004', 'renders Wealthsimple instructions'), () => {
       renderDialog('wealthsimple')
       expect(screen.getByText('Connect Wealthsimple')).toBeTruthy()
       expect(screen.getByText(/Enter your Wealthsimple account email and password/)).toBeTruthy()
     })
 
-    it('renders email and password inputs for Wealthsimple', () => {
+    it(scenario('BROKER-DIALOG-005', 'renders email and password inputs for Wealthsimple'), () => {
       renderDialog('wealthsimple')
       expect(screen.getByText('Email')).toBeTruthy()
       expect(screen.getByText('Password')).toBeTruthy()
@@ -57,13 +58,13 @@ describe('ConnectBrokerDialog', () => {
   })
 
   describe('IBKR', () => {
-    it('renders IBKR instructions', () => {
+    it(scenario('BROKER-DIALOG-006', 'renders IBKR instructions'), () => {
       renderDialog('ibkr')
       expect(screen.getByText('Connect Interactive Brokers')).toBeTruthy()
       expect(screen.getByText(/Ensure your IBKR TWS or IB Gateway is running/)).toBeTruthy()
     })
 
-    it('renders host, port and clientId inputs for IBKR', () => {
+    it(scenario('BROKER-DIALOG-007', 'renders host, port and clientId inputs for IBKR'), () => {
       renderDialog('ibkr')
       expect(screen.getByText('Host')).toBeTruthy()
       expect(screen.getByText('Port')).toBeTruthy()
@@ -75,7 +76,7 @@ describe('ConnectBrokerDialog', () => {
   })
 
   describe('Reconnect mode', () => {
-    it('shows Reconnect title when connectionId is provided', () => {
+    it(scenario('BROKER-DIALOG-008', 'shows Reconnect title when connectionId is provided'), () => {
       render(
         <ConnectBrokerDialog
           brokerType="questrade"
@@ -90,7 +91,7 @@ describe('ConnectBrokerDialog', () => {
       expect(screen.getByText('Reconnect Questrade')).toBeTruthy()
     })
 
-    it('calls onReconnect instead of onConnect when submitting in reconnect mode', () => {
+    it(scenario('BROKER-DIALOG-009', 'calls onReconnect instead of onConnect when submitting in reconnect mode'), () => {
       const onConnect = vi.fn()
       const onReconnect = vi.fn()
       render(
@@ -120,19 +121,19 @@ describe('ConnectBrokerDialog', () => {
   })
 
   describe('Common behavior', () => {
-    it('renders broker name in title', () => {
+    it(scenario('BROKER-DIALOG-010', 'renders broker name in title'), () => {
       renderDialog('questrade')
       expect(screen.getByText('Connect Questrade')).toBeTruthy()
     })
 
-    it('calls onCancel when clicking overlay', () => {
+    it(scenario('BROKER-DIALOG-011', 'calls onCancel when clicking overlay'), () => {
       const onCancel = vi.fn()
       renderDialog('questrade', { onCancel })
       fireEvent.click(screen.getByTestId('dialog-overlay'))
       expect(onCancel).toHaveBeenCalled()
     })
 
-    it('calls onConnect with form data on submit', () => {
+    it(scenario('BROKER-DIALOG-012', 'calls onConnect with form data on submit'), () => {
       const onConnect = vi.fn()
       render(
         <ConnectBrokerDialog
@@ -156,18 +157,18 @@ describe('ConnectBrokerDialog', () => {
       })
     })
 
-    it('shows error message when provided', () => {
+    it(scenario('BROKER-DIALOG-013', 'shows error message when provided'), () => {
       renderDialog('questrade', { error: 'Failed to connect' })
       expect(screen.getByText('Failed to connect')).toBeTruthy()
     })
 
-    it('disables submit button when no credentials entered', () => {
+    it(scenario('BROKER-DIALOG-014', 'disables submit button when no credentials entered'), () => {
       renderDialog('questrade')
       const submitBtn = screen.getByText('Connect')
       expect(submitBtn.hasAttribute('disabled')).toBe(true)
     })
 
-    it('enables submit button when credentials entered', () => {
+    it(scenario('BROKER-DIALOG-015', 'enables submit button when credentials entered'), () => {
       render(
         <ConnectBrokerDialog
           brokerType="questrade"
@@ -185,7 +186,7 @@ describe('ConnectBrokerDialog', () => {
       expect(submitBtn.hasAttribute('disabled')).toBe(false)
     })
 
-    it('shows Connecting... when isConnecting is true', () => {
+    it(scenario('BROKER-DIALOG-016', 'shows Connecting... when isConnecting is true'), () => {
       renderDialog('questrade', { isConnecting: true })
       expect(screen.getByText('Connecting...')).toBeTruthy()
     })

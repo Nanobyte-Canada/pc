@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { getVersion, getHealth } from './api'
+import { scenario } from '../test/scenario'
 
 describe('API Service', () => {
   const mockFetch = vi.fn()
@@ -13,7 +14,7 @@ describe('API Service', () => {
   })
 
   describe('getVersion', () => {
-    it('returns version response on success', async () => {
+    it(scenario('API-001', 'returns version response on success'), async () => {
       const mockResponse = { version: '1.0.0', environment: 'test' }
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -28,7 +29,7 @@ describe('API Service', () => {
       }))
     })
 
-    it('throws error on failed response', async () => {
+    it(scenario('API-002', 'throws error on failed response'), async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -39,7 +40,7 @@ describe('API Service', () => {
   })
 
   describe('getHealth', () => {
-    it('returns health response on success', async () => {
+    it(scenario('API-003', 'returns health response on success'), async () => {
       const mockResponse = { status: 'UP', timestamp: '2024-01-01T00:00:00Z' }
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -54,7 +55,7 @@ describe('API Service', () => {
       }))
     })
 
-    it('throws error on failed response', async () => {
+    it(scenario('API-004', 'throws error on failed response'), async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 503,

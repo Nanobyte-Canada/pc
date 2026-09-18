@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { BrokerCard } from './BrokerCard'
 import type { Broker } from '../../types/broker'
+import { scenario } from '../../test/scenario'
 
 describe('BrokerCard', () => {
   const mockBroker: Broker = {
@@ -12,7 +13,7 @@ describe('BrokerCard', () => {
     logoUrl: null
   }
 
-  it('renders broker name', () => {
+  it(scenario('BROKER-CARD-001', 'renders broker name'), () => {
     render(
       <BrokerCard
         broker={mockBroker}
@@ -24,7 +25,7 @@ describe('BrokerCard', () => {
     expect(screen.getByText('Questrade')).toBeInTheDocument()
   })
 
-  it('calls onConnect with broker slug when card clicked', () => {
+  it(scenario('BROKER-CARD-002', 'calls onConnect with broker slug when card clicked'), () => {
     const mockOnConnect = vi.fn()
     render(
       <BrokerCard
@@ -39,7 +40,7 @@ describe('BrokerCard', () => {
     expect(mockOnConnect).toHaveBeenCalledWith('questrade')
   })
 
-  it('does not call onConnect when disabled', () => {
+  it(scenario('BROKER-CARD-003', 'does not call onConnect when disabled'), () => {
     const mockOnConnect = vi.fn()
     render(
       <BrokerCard
@@ -54,7 +55,7 @@ describe('BrokerCard', () => {
     expect(mockOnConnect).not.toHaveBeenCalled()
   })
 
-  it('renders broker initial as icon when no logoUrl', () => {
+  it(scenario('BROKER-CARD-004', 'renders broker initial as icon when no logoUrl'), () => {
     render(
       <BrokerCard
         broker={mockBroker}
@@ -67,7 +68,7 @@ describe('BrokerCard', () => {
     expect(screen.getByText('Q')).toBeInTheDocument()
   })
 
-  it('shows connected pill when connection exists', () => {
+  it(scenario('BROKER-CARD-005', 'shows connected pill when connection exists'), () => {
     const connections = [{
       id: 1,
       broker: mockBroker,
@@ -100,7 +101,7 @@ describe('BrokerCard', () => {
     expect(screen.getByText('1 Account Connected')).toBeInTheDocument()
   })
 
-  it('shows maintenance badge when broker is in maintenance', () => {
+  it(scenario('BROKER-CARD-006', 'shows maintenance badge when broker is in maintenance'), () => {
     render(
       <BrokerCard
         broker={{ ...mockBroker, maintenanceMode: true }}
