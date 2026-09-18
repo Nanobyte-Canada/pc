@@ -6,17 +6,18 @@ const USER_ROUTES = ['/', '/portfolios', '/options', '/wheel', '/brokers/connect
 const ALL_ROUTES = [...USER_ROUTES, '/admin'];
 
 test.describe('Authorization - Role Matrix @regression', () => {
-  const userEmail = process.env.E2E_USER_EMAIL;
-  const userPassword = process.env.E2E_USER_PASSWORD;
-  const adminEmail = process.env.E2E_ADMIN_EMAIL;
-  const adminPassword = process.env.E2E_ADMIN_PASSWORD;
+  // Single admin test account (owner decision): one credential pair is used
+  // for all role scenarios because the configured test account has access to
+  // both admin and user features.
+  const adminEmail = process.env.APP_TEST_ADMIN_EMAIL;
+  const adminPassword = process.env.APP_TEST_ADMIN_PASSWORD;
 
   test.describe('USER role', () => {
     test.beforeEach(async ({ page }) => {
-      test.skip(!userEmail || !userPassword, 'E2E_USER_EMAIL/E2E_USER_PASSWORD not set');
+      test.skip(!adminEmail || !adminPassword, 'APP_TEST_ADMIN_EMAIL/APP_TEST_ADMIN_PASSWORD not set');
       const loginPage = new LoginPage(page);
       await loginPage.goto();
-      await loginPage.login(userEmail!, userPassword!);
+      await loginPage.login(adminEmail!, adminPassword!);
     });
 
     for (const route of USER_ROUTES) {
@@ -26,15 +27,17 @@ test.describe('Authorization - Role Matrix @regression', () => {
       });
     }
 
-    test(scenario('AUTHZ-MATRIX-002', 'USER cannot access admin page'), async ({ page }) => {
-      await page.goto('/admin');
-      await expect(page).toHaveURL(/\/(login|$)/);
+    test(scenario('AUTHZ-MATRIX-002', 'USER cannot access admin page'), async () => {
+      test.skip(
+        true,
+        'Requires a dedicated non-admin test account; only APP_TEST_ADMIN_* credentials are configured (owner decision: single admin account for all suites). Re-enable when a USER-role test account exists.'
+      );
     });
   });
 
   test.describe('ADMIN role', () => {
     test.beforeEach(async ({ page }) => {
-      test.skip(!adminEmail || !adminPassword, 'E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD not set');
+      test.skip(!adminEmail || !adminPassword, 'APP_TEST_ADMIN_EMAIL/APP_TEST_ADMIN_PASSWORD not set');
       const loginPage = new LoginPage(page);
       await loginPage.goto();
       await loginPage.login(adminEmail!, adminPassword!);

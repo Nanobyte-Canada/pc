@@ -1,13 +1,13 @@
 import { test, expect, type Page } from '@playwright/test'
 
-const EMAIL = process.env.E2E_USER_EMAIL ?? ''
-const PASSWORD = process.env.E2E_USER_PASSWORD ?? ''
+const EMAIL = process.env.APP_TEST_ADMIN_EMAIL ?? ''
+const PASSWORD = process.env.APP_TEST_ADMIN_PASSWORD ?? ''
 const QUESTRADE_TOKEN = process.env.E2E_QUESTRADE_TOKEN ?? ''
 const GATEWAY_URL = process.env.E2E_GATEWAY_URL ?? 'http://127.0.0.1:8084'
 const GATEWAY_KEY = process.env.E2E_GATEWAY_KEY ?? 'dev-gateway-key'
 
 test.beforeAll(() => {
-  if (!EMAIL || !PASSWORD) throw new Error('E2E_USER_EMAIL and E2E_USER_PASSWORD are required')
+  if (!EMAIL || !PASSWORD) throw new Error('APP_TEST_ADMIN_EMAIL and APP_TEST_ADMIN_PASSWORD are required')
   if (!QUESTRADE_TOKEN) throw new Error('E2E_QUESTRADE_TOKEN is required (generate at https://login.questrade.com/APIAccess/UserApps.aspx)')
 })
 
