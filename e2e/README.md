@@ -37,7 +37,7 @@ npx playwright install --with-deps chromium
 
 In CI, tests run automatically:
 - **PR checks** (`ui-tests-pr.yml`): deterministic validations + component tests
-- **Post-deploy** (`ui-tests-deployed.yml`): browser smoke, regression, accessibility, and visual suites against UAT
+- **Post-deploy** (`ui-tests-deployed.yml`): browser smoke, regression, accessibility, and visual suites against UAT, triggered via `workflow_run` after the **Deploy** workflow succeeds on `main`, or manually via `workflow_dispatch`
 
 If you need to debug locally against UAT, set the base URL and credentials:
 ```bash

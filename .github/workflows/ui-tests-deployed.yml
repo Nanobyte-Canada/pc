@@ -2,21 +2,46 @@ name: UI Tests — Deployed
 
 on:
   workflow_run:
-    workflows: ["Build & Push Images"]
+    workflows: ["Deploy"]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "Suite to run"
+        required: true
+        type: choice
+        default: all
+        options:
+          - all
+          - smoke
+      update_visual_baselines:
+        description: "Run visual suite with --update-snapshots and commit new baselines"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: portfolio-uat-deploy
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
   smoke-tests:
     name: Smoke Tests
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.60.0-noble
+    env:
+      HOME: /root
+      BASE_URL: https://uatportfolio.nanobyte.ca
     steps:
       - uses: actions/checkout@v4
 
@@ -33,15 +58,21 @@ jobs:
       - name: Run smoke tests
         run: npx playwright test --grep @smoke
         working-directory: e2e
-        env:
-          BASE_URL: https://uatportfolio.nanobyte.ca
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: smoke-test-results
-          path: e2e/test-results/
+          name: smoke-results
+          path: e2e/results/
+          retention-days: 14
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report
+          path: e2e/playwright-report/
           retention-days: 14
 
       - name: Upload traces
@@ -49,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: smoke-traces
-          path: e2e/test-results/**/trace.zip
+          path: e2e/results/**/trace.zip
           retention-days: 14
 
       - name: Upload screenshots
@@ -57,16 +88,25 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: smoke-screenshots
-          path: e2e/test-results/**/screenshot.png
+          path: e2e/results/**/screenshot.png
           retention-days: 14
 
   regression-tests:
     name: Regression Tests
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main')
     needs: [smoke-tests]
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.60.0-noble
+    env:
+      HOME: /root
+      BASE_URL: https://uatportfolio.nanobyte.ca
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -83,15 +123,21 @@ jobs:
       - name: Run regression tests
         run: npx playwright test --grep @regression
         working-directory: e2e
-        env:
-          BASE_URL: https://uatportfolio.nanobyte.ca
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: regression-test-results
-          path: e2e/test-results/
+          name: regression-results
+          path: e2e/results/
+          retention-days: 14
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-report
+          path: e2e/playwright-report/
           retention-days: 14
 
       - name: Upload traces
@@ -99,7 +145,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: regression-traces
-          path: e2e/test-results/**/trace.zip
+          path: e2e/results/**/trace.zip
           retention-days: 14
 
       - name: Upload screenshots
@@ -107,16 +153,25 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: regression-screenshots
-          path: e2e/test-results/**/screenshot.png
+          path: e2e/results/**/screenshot.png
           retention-days: 14
 
   accessibility-tests:
     name: Accessibility Tests
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main')
     needs: [regression-tests]
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.60.0-noble
+    env:
+      HOME: /root
+      BASE_URL: https://uatportfolio.nanobyte.ca
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -131,28 +186,50 @@ jobs:
         working-directory: e2e
 
       - name: Run accessibility tests
-        run: npx playwright test --grep @accessibility
+        run: npx playwright test --grep @a11y
         working-directory: e2e
-        env:
-          BASE_URL: https://uatportfolio.nanobyte.ca
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: accessibility-test-results
-          path: e2e/test-results/
+          name: accessibility-results
+          path: e2e/results/
+          retention-days: 14
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report
+          path: e2e/playwright-report/
           retention-days: 14
 
   visual-tests:
     name: Visual Regression Tests
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main')
     needs: [accessibility-tests]
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.60.0-noble
+    env:
+      HOME: /root
+      BASE_URL: https://uatportfolio.nanobyte.ca
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
     steps:
+      - name: Install git-lfs
+        run: |
+          apt-get update && apt-get install -y git-lfs
+          git lfs install
+
       - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - uses: actions/setup-node@v4
         with:
@@ -165,17 +242,28 @@ jobs:
         working-directory: e2e
 
       - name: Run visual regression tests
-        run: npx playwright test --grep @visual
         working-directory: e2e
-        env:
-          BASE_URL: https://uatportfolio.nanobyte.ca
+        run: |
+          ARGS="--grep @visual"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.update_visual_baselines }}" = "true" ]; then
+            ARGS="$ARGS --update-snapshots"
+          fi
+          npx playwright test $ARGS
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: visual-test-results
-          path: e2e/test-results/
+          name: visual-results
+          path: e2e/results/
+          retention-days: 14
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-report
+          path: e2e/playwright-report/
           retention-days: 14
 
       - name: Upload visual snapshots
@@ -183,20 +271,41 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: visual-snapshots
-          path: e2e/test-results/**/screenshot.png
+          path: e2e/results/**/screenshot.png
           retention-days: 14
+
+      - name: Commit updated visual baselines
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.update_visual_baselines == true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add e2e/tests/visual
+          if git diff --cached --quiet; then
+            echo "No visual baseline changes to commit"
+            exit 0
+          fi
+          git commit -m "chore(testing): update visual baselines"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:${{ github.ref_name }}; then
+              exit 0
+            fi
+            git fetch --depth 1 origin ${{ github.ref_name }} && git rebase FETCH_HEAD || true
+          done
+          exit 1
 
   notify-failure:
     name: Notify on Failure
     if: failure()
     needs: [smoke-tests, regression-tests, accessibility-tests, visual-tests]
     runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Notify Slack
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
         uses: slackapi/slack-github-action@v2.0.0
         with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook: ${{ env.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
             {

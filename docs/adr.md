@@ -235,3 +235,17 @@ Detailed records for each phase's workflow and tooling changes.
 - Expand browser matrix to chromium, firefox, webkit, and mobile-chrome to validate cross-browser compatibility.
 - Finalize the operations handbook under `docs/testing/` covering test authoring, debugging, baseline updates, and CI pipeline behavior.
 **Consequences:** Single source of truth for UI testing. Cross-browser coverage reduces production surprises. Operations handbook enables onboarding without tribal knowledge.
+
+## ADR-0030: Repair and re-target the deployed UI test workflow
+**Status:** Accepted | **Date:** 2026-09-18 | **Deciders:** @saurabhbilakhia
+**Context:** `ui-tests-deployed.yml` failed on every trigger with 0 jobs and instant failure. Root cause: the `secrets` context was used in a job-level `if` (notify-failure), which makes the workflow file invalid at parse time; GitHub rejected the file on every push regardless of trigger. A secondary latent flaw: the workflow triggered on "Build & Push Images" completion in parallel with the Deploy workflow, so tests would run before UAT was updated.
+**Decision:**
+- Trigger re-targeted to `workflow_run` on "Deploy" (conclusion success, branch main), serializing the chain Build → Deploy → UI tests, per design spec §5.3 and the investment-club-platform reference pattern.
+- Guard on test jobs: `workflow_dispatch` OR (upstream conclusion success AND `workflow_run.event == 'workflow_run'` AND `head_branch == 'main'`) — excludes prod dispatch deploys.
+- Manual `workflow_dispatch` with `suite` (all|smoke) and `update_visual_baselines` inputs; the baseline commit step runs only on explicit dispatch.
+- Tag model enforced: `@smoke`, `@regression`, `@a11y`, `@visual` — CI greps must always match ≥1 test.
+- `@playwright/test` pinned exactly 1.60.0 to match the container `mcr.microsoft.com/playwright:v1.60.0-noble` (the lockfile had floated to 1.63.0).
+- Artifact uploads aligned to actual output dirs (`e2e/results/`, `e2e/playwright-report/`); both gitignored.
+- Authenticated suites receive `E2E_USER_EMAIL`/`E2E_USER_PASSWORD` from GitHub secrets (no committed seed accounts).
+- `deploy.yml` gains a `verify-deploy` sentinel job that fails the run when the deploy job is skipped, preventing downstream tests from firing against a stale UAT after a failed build.
+**Consequences:** Deployed browser suites now execute automatically after each UAT deploy. The first visual run requires a one-time baseline bootstrap via dispatch. Accessibility violations are triaged through the baseline file rather than hard failure.
