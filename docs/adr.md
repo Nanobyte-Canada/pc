@@ -180,3 +180,58 @@ Detailed records for the infrastructure migration (commit `6b73ca4`) and related
 6. **Phase 5 — Impact Refinement:** Import-graph analyzer, AST style-only classification, agent skills.
 7. **Phase 6 — Expansion:** Remaining journey tests, component tests, legacy retirement, full browser matrix, operations finalization.
 **Consequences:** New `e2e/` package at repo root with Playwright, axe-core, TypeScript tooling. Two new CI workflows: `ui-tests-pr.yml` (spec validation + route coverage on PRs) and `ui-tests-deployed.yml` (browser tests after UAT deploy). All 15 existing Vitest tests rewritten with scenario IDs. Existing single e2e spec relocated to `e2e/legacy/` and rewritten. `frontend/playwright.config.ts` retired (replaced by `e2e/playwright.config.ts`). CODEOWNERS added for `specs/ui/`, `e2e/`, `frontend/src/**/*.test.*`, `docs/testing/`. Three on-demand OpenCode skills created (planner, impact analyst, failure analyst). Browser tests never run locally — CI-only against deployed UAT.
+
+---
+
+## 2026-09-17 — UI Testing Platform phase implementations
+
+Detailed records for each phase's workflow and tooling changes.
+
+## ADR-0025: UI Testing Platform Phase 1 — Foundation
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** Phase 0 discovery identified the need for a systematic UI testing strategy. Phase 1 establishes the baseline infrastructure — package structure, environment safety, CI workflows, and documentation — so all subsequent phases can build on a stable foundation.
+**Decision:** Implement the Phase 1 foundation of the UI testing platform:
+- Introduce `VITE_APP_ENVIRONMENT` environment marker so frontend code and tests can distinguish UAT from production at build/runtime.
+- Create two initial CI workflow skeletons: `ui-tests-pr.yml` (spec validation + route coverage on PRs) and `ui-tests-deployed.yml` (browser tests after UAT deploy).
+- Enforce deploy/test serialization: UAT deploys are gated on the build workflow completing successfully, and browser tests only run against a fully deployed environment — never locally.
+- Expand Vitest suite from ~15 to 154 tests across 19 files with scenario IDs for traceability.
+- Initialize `e2e/` package at repo root with Playwright, axe-core, and TypeScript tooling.
+- Add documentation under `docs/testing/` and CODEOWNERS rules for `specs/ui/`, `e2e/`, and `frontend/src/**/*.test.*`.
+**Consequences:** Subsequent phases (2–6) build on this foundation without rework. CI validates every PR and every UAT deploy. The environment marker prevents accidental cross-environment test execution.
+
+## ADR-0026: UI Testing Platform Phase 3 — Full CI Gates
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** Phase 2 completed the authentication pilot. Phase 3 expands browser test coverage to all critical journeys and adds full CI gates that block merges on regressions.
+**Decision:** Implement full CI gates for the UI testing platform:
+- PR gate runs impact analysis, test-change lint, route coverage check, and Vitest suite on every pull request.
+- Coverage history is persisted on a dedicated `test-reports` branch (JSON artifacts) for trend analysis.
+- Production pre-flight gate validates that the UAT environment is healthy and reachable before any prod deploy workflow proceeds.
+**Consequences:** Regressions are caught before merge. Coverage trends are trackable over time. Prod deploys are gated on UAT health, reducing the risk of shipping broken UIs.
+
+## ADR-0027: UI Testing Platform Phase 4 — Visual Baselines
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** Accessibility and visual regression testing were missing entirely. Phase 4 introduces both with automated gates.
+**Decision:** Implement visual regression and accessibility baselines:
+- Visual regression uses Playwright screenshot comparison against Git LFS-managed baseline images.
+- A weekly reliability measurement job quantifies flakiness and visual diff stability over time.
+- A baseline update workflow (`ui-visual-baseline-update.yml`) allows authorized users to regenerate baselines after intentional UI changes.
+- Axe-core accessibility scans run on critical pages with a configurable baseline threshold.
+**Consequences:** Visual and accessibility regressions are caught automatically. Baseline updates are explicit, auditable operations. Git LFS keeps the repo size manageable.
+
+## ADR-0028: UI Testing Platform Phase 5 — Impact Refinement
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** Phase 3's initial impact analysis used simple file-level heuristics. Phase 5 refines this to import-graph analysis for more accurate test selection.
+**Decision:** Implement impact analysis v2:
+- Import-graph analyzer traces TypeScript/React component imports to determine which tests are affected by a given change, replacing file-level heuristics.
+- Gate metrics collected over 30 days of measurement inform thresholds and exclusions for the impact analyzer.
+- Agent skills (planner, impact analyst, failure analyst) are created as OpenCode skills to assist developers with test planning and failure triage.
+**Consequences:** Fewer irrelevant tests run on PRs, reducing CI time. Agent skills provide structured guidance for common testing workflows.
+
+## ADR-0029: UI Testing Platform Phase 6 — Legacy Retirement
+**Status:** Accepted | **Date:** 2026-09-17
+**Context:** After Phases 1–5, the new UI testing platform achieves parity with and exceeds the coverage of legacy test artifacts. Phase 6 retires the old and expands to full browser coverage.
+**Decision:** Complete the UI testing platform:
+- Retire legacy test artifacts (old Playwright config, `frontend/playwright.config.ts`, legacy e2e specs) after confirming parity with new platform coverage.
+- Expand browser matrix to chromium, firefox, webkit, and mobile-chrome to validate cross-browser compatibility.
+- Finalize the operations handbook under `docs/testing/` covering test authoring, debugging, baseline updates, and CI pipeline behavior.
+**Consequences:** Single source of truth for UI testing. Cross-browser coverage reduces production surprises. Operations handbook enables onboarding without tribal knowledge.
