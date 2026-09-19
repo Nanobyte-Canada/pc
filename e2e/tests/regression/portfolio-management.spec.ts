@@ -11,6 +11,9 @@ test.describe('Portfolio Management', { tag: ['@regression'] }, () => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login(email!, password!);
+    // Login is async: settle on the authenticated shell before visiting guarded
+    // routes, otherwise ProtectedRoute redirects to /login and the login page renders.
+    await expect(page).toHaveURL('/');
     await page.goto('/portfolios');
     await expect(page).toHaveURL('/portfolios');
   });
@@ -32,7 +35,10 @@ test.describe('Portfolio Management', { tag: ['@regression'] }, () => {
 
     // With no custom model saved, the slot opens CustomPortfolioBuilder (h2 "Build Custom Portfolio");
     // with one saved, it shows ModelAnalysisPanel + "Edit Portfolio" button.
-    const builderOrEditBtn = page.locator('text=Edit Portfolio, text=Build Custom Portfolio, [class*="custom"], [class*="builder"]').first();
+    const builderOrEditBtn = page
+      .getByRole('heading', { name: /Build Custom Portfolio|Edit Custom Portfolio/ })
+      .or(page.getByRole('button', { name: 'Edit Portfolio' }))
+      .first();
     await expect(builderOrEditBtn).toBeVisible();
   });
 

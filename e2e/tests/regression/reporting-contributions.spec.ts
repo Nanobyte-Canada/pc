@@ -11,6 +11,9 @@ test.describe('Reporting - Contributions', { tag: ['@regression'] }, () => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login(email!, password!);
+    // Login is async: settle on the authenticated shell before visiting guarded
+    // routes, otherwise ProtectedRoute redirects to /login and the login page renders.
+    await expect(page).toHaveURL('/');
     await page.goto('/brokers/reporting');
   });
 
