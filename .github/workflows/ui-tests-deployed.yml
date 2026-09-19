@@ -68,7 +68,7 @@ jobs:
         with:
           name: smoke-results
           path: e2e/results/
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload HTML report
         if: always()
@@ -76,7 +76,7 @@ jobs:
         with:
           name: smoke-report
           path: e2e/playwright-report/
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload traces
         if: always()
@@ -84,7 +84,7 @@ jobs:
         with:
           name: smoke-traces
           path: e2e/results/**/trace.zip
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload screenshots
         if: failure()
@@ -92,7 +92,7 @@ jobs:
         with:
           name: smoke-screenshots
           path: e2e/results/**/screenshot.png
-          retention-days: 14
+          retention-days: 3
 
   regression-tests:
     name: Regression Tests
@@ -154,7 +154,7 @@ jobs:
         with:
           name: regression-results
           path: e2e/results/
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload HTML report
         if: always()
@@ -162,7 +162,7 @@ jobs:
         with:
           name: regression-report
           path: e2e/playwright-report/
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload traces
         if: always()
@@ -170,7 +170,7 @@ jobs:
         with:
           name: regression-traces
           path: e2e/results/**/trace.zip
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload screenshots
         if: failure()
@@ -178,7 +178,7 @@ jobs:
         with:
           name: regression-screenshots
           path: e2e/results/**/screenshot.png
-          retention-days: 14
+          retention-days: 3
 
   accessibility-tests:
     name: Accessibility Tests
@@ -240,7 +240,7 @@ jobs:
         with:
           name: accessibility-results
           path: e2e/results/
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload HTML report
         if: always()
@@ -248,7 +248,7 @@ jobs:
         with:
           name: accessibility-report
           path: e2e/playwright-report/
-          retention-days: 14
+          retention-days: 3
 
   visual-tests:
     name: Visual Regression Tests
@@ -322,7 +322,7 @@ jobs:
         with:
           name: visual-results
           path: e2e/results/
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload HTML report
         if: always()
@@ -330,7 +330,7 @@ jobs:
         with:
           name: visual-report
           path: e2e/playwright-report/
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload visual snapshots
         if: failure()
@@ -338,7 +338,7 @@ jobs:
         with:
           name: visual-snapshots
           path: e2e/results/**/screenshot.png
-          retention-days: 14
+          retention-days: 3
 
       - name: Commit updated visual baselines
         if: always() && github.event_name == 'workflow_dispatch' && inputs.update_visual_baselines == true

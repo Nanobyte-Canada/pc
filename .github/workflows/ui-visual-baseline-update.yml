@@ -89,7 +89,7 @@ jobs:
         with:
           name: visual-baseline-diffs
           path: visual-diff/
-          retention-days: 14
+          retention-days: 3
 
       - name: Commit updated baselines
         run: |
