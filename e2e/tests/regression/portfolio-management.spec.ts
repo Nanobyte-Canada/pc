@@ -30,7 +30,9 @@ test.describe('Portfolio Management', { tag: ['@regression'] }, () => {
     const customSlot = page.locator('.portfolio-page__cards > *').last();
     await customSlot.click();
 
-    const builderOrEditBtn = page.locator('text=Edit Portfolio, text=Create Portfolio, [class*="custom"], [class*="builder"]').first();
+    // With no custom model saved, the slot opens CustomPortfolioBuilder (h2 "Build Custom Portfolio");
+    // with one saved, it shows ModelAnalysisPanel + "Edit Portfolio" button.
+    const builderOrEditBtn = page.locator('text=Edit Portfolio, text=Build Custom Portfolio, [class*="custom"], [class*="builder"]').first();
     await expect(builderOrEditBtn).toBeVisible();
   });
 

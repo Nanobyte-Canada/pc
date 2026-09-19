@@ -18,6 +18,7 @@ test.describe('Authorization - Role Matrix @regression', () => {
       const loginPage = new LoginPage(page);
       await loginPage.goto();
       await loginPage.login(adminEmail!, adminPassword!);
+      await expect(page).toHaveURL('/');
     });
 
     for (const route of USER_ROUTES) {
@@ -41,6 +42,7 @@ test.describe('Authorization - Role Matrix @regression', () => {
       const loginPage = new LoginPage(page);
       await loginPage.goto();
       await loginPage.login(adminEmail!, adminPassword!);
+      await expect(page).toHaveURL('/');
     });
 
     for (const route of ALL_ROUTES) {
