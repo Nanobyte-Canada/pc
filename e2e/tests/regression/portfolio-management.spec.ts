@@ -16,7 +16,7 @@ test.describe('Portfolio Management', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('PORT-MGMT-001', 'portfolio page loads with header'), async ({ page }) => {
-    await expect(page.locator('h1', { hasText: 'Portfolio' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Portfolio', exact: true })).toBeVisible();
   });
 
   test(scenario('PORT-MGMT-002', 'model portfolio cards display'), async ({ page }) => {

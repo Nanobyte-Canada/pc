@@ -20,7 +20,7 @@ test.describe('Reporting - Contributions', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('RPT-CONTRIB-002', 'contributions chart renders'), async ({ page }) => {
-    const chart = page.locator('canvas, svg, [data-testid*="chart"], [data-testid*="contribut"], .recharts-wrapper, .chart-container');
+    const chart = page.locator('.chart-container canvas').first();
     await expect(chart).toBeVisible();
   });
 
