@@ -42,7 +42,7 @@ Test reports are published to the `test-reports` branch via `e2e/scripts/publish
 ## Secrets
 
 - `APP_TEST_ADMIN_EMAIL` / `APP_TEST_ADMIN_PASSWORD`: UAT admin test account credentials (single account used for all authenticated UI suites; has both admin and user access)
-- Stored in GitHub repository secrets
+- Stored in Vault KV v2 at `secret/portfolio/uat`; fetched in CI via AppRole using the `VAULT_ROLE_ID` / `VAULT_SECRET_ID` GitHub secrets (ADR-0031). No GitHub secrets required for these credentials.
 - No committed seed accounts
 
 ## Manual UAT Reset
@@ -62,7 +62,7 @@ Reset triggers when test-scoped data accumulates beyond manageable volume. For t
 
 1. **Pre-check:** Verify no active test runs are in progress (check GitHub Actions).
 2. **Data cleanup:** Run UAT data cleanup (remove test-namespaced portfolios, orders, positions created by `APP_TEST_ADMIN_EMAIL`).
-3. **Credential refresh:** If the admin test account password is stale, regenerate and update `secrets.APP_TEST_ADMIN_PASSWORD` in GitHub.
+3. **Credential refresh:** If the admin test account password is stale, regenerate it and update `APP_TEST_ADMIN_PASSWORD` under `secret/portfolio/uat` in Vault.
 4. **Baseline rebuild:** Re-run visual baseline workflow (`ui-visual-baseline-update.yml`) to capture fresh snapshots.
 5. **Verification:** Run full regression suite against clean UAT to confirm no data-dependent failures.
 6. **Log:** Record the reset in the team Slack channel with date and reason.
