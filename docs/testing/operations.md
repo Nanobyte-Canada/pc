@@ -73,9 +73,11 @@ application) on a deployed environment, roughly 50% of requests, varying per cal
 
 3. Remediation: compose service keys (which become network aliases) must be
    app-prefixed and unique per shared network. Rename the offending service keys,
-   update `frontend/nginx.conf`, rebuild the frontend image, and reconcile the deploy
-   with `docker compose down --remove-orphans` once before `up -d`
-   (`--remove-orphans` is now permanent in both deploy workflows).
+   update `frontend/nginx.conf`, and rebuild the frontend image.
+   `--remove-orphans` is now permanent in both deploy workflows; if a renamed
+   service is not reconciled by `up -d --remove-orphans`, recover with a one-time
+   `docker compose down --remove-orphans` followed by re-dispatch (for the manual
+   prod deploy, perform the `down` deliberately before dispatch).
 
 4. The shared-network convention and the ADR for this fix: ADR-0032 and
    `docs/superpowers/specs/2026-09-19-service-alias-collision-design.md`.
