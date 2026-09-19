@@ -21,7 +21,7 @@ test.describe('Wheel - Calendar', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('WHEEL-CAL-002', 'calendar grid renders'), async ({ page }) => {
-    const grid = page.getByRole('table');
+    const grid = page.locator('.wcg-table');
     await expect(grid).toBeVisible();
   });
 
@@ -32,6 +32,7 @@ test.describe('Wheel - Calendar', { tag: ['@regression'] }, () => {
 
   test(scenario('WHEEL-CAL-004', 'top tickers table is visible'), async ({ page }) => {
     const tickersBar = page.getByRole('button', { name: 'Add Ticker' });
+    await tickersBar.scrollIntoViewIfNeeded();
     await expect(tickersBar).toBeVisible();
   });
 });
