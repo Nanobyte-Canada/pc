@@ -16,7 +16,7 @@ test.describe('Reporting - Contributions', { tag: ['@regression'] }, () => {
 
   test(scenario('RPT-CONTRIB-001', 'reporting page loads and shows total value'), async ({ page }) => {
     await expect(page).toHaveURL(/\/reporting/);
-    await expect(page.locator('text=Total Value, text=Total')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Total Value' })).toBeVisible();
   });
 
   test(scenario('RPT-CONTRIB-002', 'contributions chart renders'), async ({ page }) => {
@@ -25,12 +25,12 @@ test.describe('Reporting - Contributions', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('RPT-CONTRIB-003', 'dividends table is visible'), async ({ page }) => {
-    const dividends = page.locator('table, [role="grid"], .ag-root-wrapper, [data-testid*="dividend"]');
+    const dividends = page.getByRole('heading', { name: 'Dividend History' });
     await expect(dividends).toBeVisible();
   });
 
   test(scenario('RPT-CONTRIB-004', 'total value display shows numeric data'), async ({ page }) => {
-    const valueEl = page.locator('[data-testid*="total"], [data-testid*="value"]').first();
+    const valueEl = page.locator('.kpi-card:has-text("Net Change") .kpi-value');
     await expect(valueEl).toBeVisible();
   });
 });

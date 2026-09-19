@@ -21,18 +21,24 @@ test.describe('Broker - Connections', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('BROKER-CONN-002', 'connection cards display'), async ({ page }) => {
-    const cards = page.locator('[class*="card"], [data-testid*="connection"], [role="article"]');
+    // Real page: broker cards render as buttons named after the broker
+    // (aria: button "Q QUESTRADE 3 Accounts Connected" / button "W WEALTHSIMPLE")
+    const cards = page.getByRole('button', { name: /QUESTRADE|WEALTHSIMPLE/ });
     await expect(cards.first()).toBeVisible();
   });
 
   test(scenario('BROKER-CONN-003', 'connect button is visible'), async ({ page }) => {
-    const connectBtn = page.locator('button:has-text("Connect"), [data-testid*="connect"], a:has-text("Connect")');
-    await expect(connectBtn).toBeVisible();
+    // Real page has no control labelled "Connect" — the broker cards in
+    // "Available Brokers" open the ConnectBrokerDialog when clicked.
+    // (Old selector matched the hidden bottom-tab "Connections" nav button.)
+    const connectBtn = page.getByRole('button', { name: /QUESTRADE|WEALTHSIMPLE/ });
+    await expect(connectBtn.first()).toBeVisible();
   });
 
   test(scenario('BROKER-CONN-004', 'positions tab is accessible'), async ({ page }) => {
     await page.goto('/brokers/positions');
-    const positionsTab = page.locator('[role="tab"]:has-text("Positions"), button:has-text("Positions"), a:has-text("Positions"), [data-testid*="positions-tab"]');
-    await expect(positionsTab).toBeVisible();
+    // /brokers/positions is a standalone page: heading "Portfolio Positions",
+    // All/By Broker toggle, positions treegrid — there is no "Positions" tab.
+    await expect(page.getByRole('heading', { name: 'Portfolio Positions' })).toBeVisible();
   });
 });

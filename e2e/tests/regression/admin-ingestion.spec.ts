@@ -11,26 +11,27 @@ test.describe('Admin - Ingestion @regression', () => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login(adminEmail!, adminPassword!);
+    await expect(page).toHaveURL('/');
   });
 
   test(scenario('ADMIN-ING-001', 'admin page loads for ADMIN role'), async ({ page }) => {
     await page.goto('/admin');
     await expect(page).toHaveURL(/\/admin/);
-    await expect(page.locator('h1, h2, [role="heading"]')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Admin Panel' })).toBeVisible();
   });
 
   test(scenario('ADMIN-ING-002', 'ingestion stats display'), async ({ page }) => {
     await page.goto('/admin');
-    await expect(page.locator('text=Ingestion')).toBeVisible();
+    await expect(page.locator('.admin-stats-grid')).toBeVisible();
   });
 
   test(scenario('ADMIN-ING-003', 'workflows table visible'), async ({ page }) => {
     await page.goto('/admin');
-    await expect(page.locator('table, [role="table"], [class*="table"]')).toBeVisible();
+    await expect(page.locator('.admin-workflows-section')).toBeVisible();
   });
 
   test(scenario('ADMIN-ING-004', 'run history accessible'), async ({ page }) => {
     await page.goto('/admin');
-    await expect(page.locator('text=Run, text=History, text=Recent')).toBeVisible();
+    await expect(page.getByText('Recent Runs')).toBeVisible();
   });
 });
