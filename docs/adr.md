@@ -249,3 +249,30 @@ Detailed records for each phase's workflow and tooling changes.
 - Authenticated suites receive `APP_TEST_ADMIN_EMAIL`/`APP_TEST_ADMIN_PASSWORD` from GitHub secrets (single admin test account used for all suites; no committed seed accounts).
 - `deploy.yml` gains a `verify-deploy` sentinel job that fails the run when the deploy job is skipped, preventing downstream tests from firing against a stale UAT after a failed build.
 **Consequences:** Deployed browser suites now execute automatically after each UAT deploy. The first visual run requires a one-time baseline bootstrap via dispatch. Accessibility violations are triaged through the baseline file rather than hard failure.
+
+---
+
+## ADR-0031: Source UI Test Credentials from Vault via AppRole
+
+**Date:** 2026-09-19
+**Status:** Accepted
+**Deciders:** @saurabhbilakhia
+
+### Context
+
+The deployed UI test workflow sourced `APP_TEST_ADMIN_EMAIL`/`APP_TEST_ADMIN_PASSWORD` from GitHub repository secrets — which were never provisioned, so the authenticated suites skipped gracefully on every run. The credentials actually live in HashiCorp Vault KV v2 at `secret/portfolio/uat`, matching the repository secrets policy (`secret/portfolio/common` + `secret/portfolio/{env}`).
+
+### Decision
+
+- The three authenticated test jobs (regression, accessibility, visual) in `ui-tests-deployed.yml` authenticate to Vault with AppRole using the existing `VAULT_ROLE_ID`/`VAULT_SECRET_ID` GitHub secrets (same pattern as `deploy.yml`), read the KV secret at `secret/data/portfolio/uat`, and export `APP_TEST_ADMIN_EMAIL`/`APP_TEST_ADMIN_PASSWORD` to `$GITHUB_ENV`.
+- `VAULT_ADDR` (`https://vault.nanobyte.ca`) is set at workflow level.
+- JSON parsing uses `node` (`jq` is not guaranteed in the Playwright container).
+- The fetch step fails fast with an actionable error if authentication fails or the keys are missing/empty in Vault.
+- No GitHub secrets are required for the test credentials.
+
+### Consequences
+
+- Credential rotation happens in Vault only: `vault kv put secret/portfolio/uat APP_TEST_ADMIN_EMAIL=<...> APP_TEST_ADMIN_PASSWORD=<...>`.
+- The authenticated suites run for real once Vault contains the keys — no GitHub-side provisioning step.
+- The fetch step is duplicated across the three jobs (jobs are isolated).
+- Vault token and credentials stay within the job environment; values are never echoed to logs.

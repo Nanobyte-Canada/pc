@@ -28,6 +28,9 @@ concurrency:
 permissions:
   contents: write
 
+env:
+  VAULT_ADDR: https://vault.nanobyte.ca
+
 jobs:
   smoke-tests:
     name: Smoke Tests
@@ -106,8 +109,6 @@ jobs:
     env:
       HOME: /root
       BASE_URL: https://uatportfolio.nanobyte.ca
-      APP_TEST_ADMIN_EMAIL: ${{ secrets.APP_TEST_ADMIN_EMAIL }}
-      APP_TEST_ADMIN_PASSWORD: ${{ secrets.APP_TEST_ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -120,6 +121,28 @@ jobs:
       - name: Install e2e dependencies
         run: npm ci
         working-directory: e2e
+
+      - name: Fetch test credentials from Vault
+        run: |
+          VAULT_TOKEN=$(curl -sf \
+            --data "{\"role_id\": \"${{ secrets.VAULT_ROLE_ID }}\", \"secret_id\": \"${{ secrets.VAULT_SECRET_ID }}\"}" \
+            "${VAULT_ADDR}/v1/auth/approle/login" \
+            | node -pe "JSON.parse(require('fs').readFileSync(0,'utf8')).auth?.client_token || ''")
+          if [ -z "$VAULT_TOKEN" ]; then
+            echo "::error::Vault AppRole authentication failed"
+            exit 1
+          fi
+          KVDATA=$(curl -sf --header "X-Vault-Token: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/data/portfolio/uat" || echo '{}')
+          EMAIL=$(node -pe "(JSON.parse(process.argv[1]||'{}').data?.data?.APP_TEST_ADMIN_EMAIL) || ''" "$KVDATA")
+          PASSWORD=$(node -pe "(JSON.parse(process.argv[1]||'{}').data?.data?.APP_TEST_ADMIN_PASSWORD) || ''" "$KVDATA")
+          if [ -z "$EMAIL" ] || [ -z "$PASSWORD" ]; then
+            echo "::error::APP_TEST_ADMIN_EMAIL/APP_TEST_ADMIN_PASSWORD missing or empty in Vault (secret/data/portfolio/uat)"
+            exit 1
+          fi
+          {
+            echo "APP_TEST_ADMIN_EMAIL=$EMAIL"
+            echo "APP_TEST_ADMIN_PASSWORD=$PASSWORD"
+          } >> "$GITHUB_ENV"
 
       - name: Run regression tests
         run: npx playwright test --grep @regression
@@ -172,8 +195,6 @@ jobs:
     env:
       HOME: /root
       BASE_URL: https://uatportfolio.nanobyte.ca
-      APP_TEST_ADMIN_EMAIL: ${{ secrets.APP_TEST_ADMIN_EMAIL }}
-      APP_TEST_ADMIN_PASSWORD: ${{ secrets.APP_TEST_ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -186,6 +207,28 @@ jobs:
       - name: Install e2e dependencies
         run: npm ci
         working-directory: e2e
+
+      - name: Fetch test credentials from Vault
+        run: |
+          VAULT_TOKEN=$(curl -sf \
+            --data "{\"role_id\": \"${{ secrets.VAULT_ROLE_ID }}\", \"secret_id\": \"${{ secrets.VAULT_SECRET_ID }}\"}" \
+            "${VAULT_ADDR}/v1/auth/approle/login" \
+            | node -pe "JSON.parse(require('fs').readFileSync(0,'utf8')).auth?.client_token || ''")
+          if [ -z "$VAULT_TOKEN" ]; then
+            echo "::error::Vault AppRole authentication failed"
+            exit 1
+          fi
+          KVDATA=$(curl -sf --header "X-Vault-Token: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/data/portfolio/uat" || echo '{}')
+          EMAIL=$(node -pe "(JSON.parse(process.argv[1]||'{}').data?.data?.APP_TEST_ADMIN_EMAIL) || ''" "$KVDATA")
+          PASSWORD=$(node -pe "(JSON.parse(process.argv[1]||'{}').data?.data?.APP_TEST_ADMIN_PASSWORD) || ''" "$KVDATA")
+          if [ -z "$EMAIL" ] || [ -z "$PASSWORD" ]; then
+            echo "::error::APP_TEST_ADMIN_EMAIL/APP_TEST_ADMIN_PASSWORD missing or empty in Vault (secret/data/portfolio/uat)"
+            exit 1
+          fi
+          {
+            echo "APP_TEST_ADMIN_EMAIL=$EMAIL"
+            echo "APP_TEST_ADMIN_PASSWORD=$PASSWORD"
+          } >> "$GITHUB_ENV"
 
       - name: Run accessibility tests
         run: npx playwright test --grep @a11y
@@ -222,8 +265,6 @@ jobs:
     env:
       HOME: /root
       BASE_URL: https://uatportfolio.nanobyte.ca
-      APP_TEST_ADMIN_EMAIL: ${{ secrets.APP_TEST_ADMIN_EMAIL }}
-      APP_TEST_ADMIN_PASSWORD: ${{ secrets.APP_TEST_ADMIN_PASSWORD }}
     steps:
       - name: Install git-lfs
         run: |
@@ -243,6 +284,28 @@ jobs:
       - name: Install e2e dependencies
         run: npm ci
         working-directory: e2e
+
+      - name: Fetch test credentials from Vault
+        run: |
+          VAULT_TOKEN=$(curl -sf \
+            --data "{\"role_id\": \"${{ secrets.VAULT_ROLE_ID }}\", \"secret_id\": \"${{ secrets.VAULT_SECRET_ID }}\"}" \
+            "${VAULT_ADDR}/v1/auth/approle/login" \
+            | node -pe "JSON.parse(require('fs').readFileSync(0,'utf8')).auth?.client_token || ''")
+          if [ -z "$VAULT_TOKEN" ]; then
+            echo "::error::Vault AppRole authentication failed"
+            exit 1
+          fi
+          KVDATA=$(curl -sf --header "X-Vault-Token: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/data/portfolio/uat" || echo '{}')
+          EMAIL=$(node -pe "(JSON.parse(process.argv[1]||'{}').data?.data?.APP_TEST_ADMIN_EMAIL) || ''" "$KVDATA")
+          PASSWORD=$(node -pe "(JSON.parse(process.argv[1]||'{}').data?.data?.APP_TEST_ADMIN_PASSWORD) || ''" "$KVDATA")
+          if [ -z "$EMAIL" ] || [ -z "$PASSWORD" ]; then
+            echo "::error::APP_TEST_ADMIN_EMAIL/APP_TEST_ADMIN_PASSWORD missing or empty in Vault (secret/data/portfolio/uat)"
+            exit 1
+          fi
+          {
+            echo "APP_TEST_ADMIN_EMAIL=$EMAIL"
+            echo "APP_TEST_ADMIN_PASSWORD=$PASSWORD"
+          } >> "$GITHUB_ENV"
 
       - name: Run visual regression tests
         working-directory: e2e
