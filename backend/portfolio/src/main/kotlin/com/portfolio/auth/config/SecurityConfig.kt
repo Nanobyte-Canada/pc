@@ -66,7 +66,12 @@ class SecurityConfig(
                         "/auth/google/callback",
                         "/auth/logout",
                     ).permitAll()
-                    .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                    .requestMatchers(
+                        "/actuator/health",
+                        "/actuator/info",
+                        "/actuator/prometheus",
+                        "/actuator/metrics"
+                    ).permitAll()
                     .requestMatchers("/api/v1/admin/**", "/admin/**").hasRole("ADMIN")
                     .requestMatchers("/auth/me", "/auth/profile").authenticated()
                     .requestMatchers("/api/**").authenticated()

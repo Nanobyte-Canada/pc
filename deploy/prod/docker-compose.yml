@@ -63,7 +63,7 @@ services:
     ports:
       - "10081:8081"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -98,7 +98,7 @@ services:
     ports:
       - "10082:8082"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -133,7 +133,7 @@ services:
     ports:
       - "10083:8083"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -170,7 +170,7 @@ services:
     ports:
       - "10084:8084"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/health"]
       interval: 30s
       timeout: 5s
       retries: 3

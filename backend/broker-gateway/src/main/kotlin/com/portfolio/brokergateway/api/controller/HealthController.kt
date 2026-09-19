@@ -7,15 +7,14 @@ import com.portfolio.brokergateway.config.AdapterRegistry
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.time.Instant
 
 @RestController
-@RequestMapping("/api/v1/gateway/health")
 class HealthController(
     private val adapterRegistry: AdapterRegistry
 ) {
-    @GetMapping
+    @GetMapping("/api/v1/gateway/health")
     fun health(): ResponseEntity<GatewayHealthResponse> {
         val enabledBrokers = adapterRegistry.getEnabledBrokers()
         val brokerStatuses = BrokerType.entries.map { type ->
@@ -28,7 +27,7 @@ class HealthController(
         return ResponseEntity.ok(GatewayHealthResponse(status = "UP", brokers = brokerStatuses))
     }
 
-    @GetMapping("/{brokerType}")
+    @GetMapping("/api/v1/gateway/health/{brokerType}")
     fun brokerHealth(@PathVariable brokerType: BrokerType): ResponseEntity<BrokerHealthResponse> {
         val enabledBrokers = adapterRegistry.getEnabledBrokers()
         val enabled = brokerType in enabledBrokers
@@ -40,4 +39,13 @@ class HealthController(
             )
         )
     }
+
+    @GetMapping("/health")
+    fun liveness(): ResponseEntity<Map<String, String>> =
+        ResponseEntity.ok(
+            mapOf(
+                "status" to "UP",
+                "timestamp" to Instant.now().toString()
+            )
+        )
 }
