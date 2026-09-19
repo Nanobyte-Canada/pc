@@ -279,7 +279,9 @@ jobs:
 
       - name: Commit updated visual baselines
         if: always() && github.event_name == 'workflow_dispatch' && inputs.update_visual_baselines == true
+        working-directory: ${{ github.workspace }}
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add e2e/tests/visual
