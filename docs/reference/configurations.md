@@ -179,7 +179,7 @@ Every environment variable referenced in `application.yml`, organized by categor
 
 | Variable | Description | Default | Used By |
 |----------|-------------|---------|---------|
-| `BROKER_GATEWAY_URL` | URL for portfolio service to reach the broker gateway | `http://broker-gateway-service:8084` | Portfolio service |
+| `BROKER_GATEWAY_URL` | URL for portfolio service to reach the broker gateway | `http://portfolio-broker-gateway:8084` | Portfolio service |
 | `GATEWAY_API_KEY` | Service-to-service authentication key for the broker gateway | `dev-gateway-key` | Portfolio service, Broker gateway service |
 | `BROKER_GATEWAY_TIMEOUT` | HTTP request timeout for gateway calls | `30s` | Portfolio service |
 
@@ -393,7 +393,7 @@ SPRING_PROFILES_ACTIVE=local
 VITE_API_URL=http://localhost:8080
 
 # Broker Gateway Configuration
-BROKER_GATEWAY_URL=http://broker-gateway-service:8084
+BROKER_GATEWAY_URL=http://portfolio-broker-gateway:8084
 GATEWAY_API_KEY=dev-gateway-key
 BROKER_GATEWAY_TIMEOUT=30s
 

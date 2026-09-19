@@ -39,11 +39,60 @@ Test reports are published to the `test-reports` branch via `e2e/scripts/publish
 - Tests must never modify production data
 - Environment safety contract enforced by `app.fixture.ts`: `BASE_URL` must be in committed allowlist, page must expose `<meta name="app-environment" content="uat">`, production markers must be absent
 
+## Diagnosing Service Alias Collisions
+
+Symptom: intermittent `403 Invalid CORS request` (or requests answered by a different
+application) on a deployed environment, roughly 50% of requests, varying per call.
+
+1. Inspect Docker network aliases on the host. Every `pc` container must carry only
+   `uat-portfolio-*`/`prod-portfolio-*` and `portfolio-*` aliases:
+
+   ```bash
+   for c in uat-portfolio-backend uat-portfolio-ingestion uat-portfolio-market-data \
+            uat-portfolio-strategy uat-portfolio-broker-gateway uat-portfolio-frontend; do
+     docker inspect "$c" --format '{{.Name}}{{range $k,$v := .NetworkSettings.Networks}} | {{$k}}=[{{join $v.Aliases " "}}]{{end}}'
+   done
+   ```
+
+   Any generic alias (`backend`, `frontend`, `ingestion-service`, …) is a defect:
+   another app on the same shared network may own it too.
+
+2. Probe through the frontend nginx repeatedly; after a correct fix every response is
+   JSON and none is `Invalid CORS request`:
+
+   ```bash
+   for i in $(seq 1 8); do
+     curl -s -X POST http://localhost:20000/auth/login \
+       -H "Origin: https://uatportfolio.nanobyte.ca" \
+       -H "Content-Type: application/json" -d '{}' | head -c 42; echo
+   done
+   ```
+
+   For prod use `http://localhost:10000/auth/login` and
+   `Origin: https://portfolio.nanobyte.ca`.
+
+3. Remediation: compose service keys (which become network aliases) must be
+   app-prefixed and unique per shared network. Rename the offending service keys,
+   update `frontend/nginx.conf`, rebuild the frontend image, and reconcile the deploy
+   with `docker compose down --remove-orphans` once before `up -d`
+   (`--remove-orphans` is now permanent in both deploy workflows).
+
+4. The shared-network convention and the ADR for this fix: ADR-0032 and
+   `docs/superpowers/specs/2026-09-19-service-alias-collision-design.md`.
+
 ## Secrets
 
 - `APP_TEST_ADMIN_EMAIL` / `APP_TEST_ADMIN_PASSWORD`: UAT admin test account credentials (single account used for all authenticated UI suites; has both admin and user access)
 - Stored in Vault KV v2 at `secret/portfolio/uat`; fetched in CI via AppRole using the `VAULT_ROLE_ID` / `VAULT_SECRET_ID` GitHub secrets (ADR-0031). No GitHub secrets required for these credentials.
-- No committed seed accounts
+- A committed seed migration exists in git history (`V76__uat_seed_test_admin_user.sql`); the seeded account was removed from prod on 2026-09-19 (rotation pending).
+- Rotation spans **both** stores: the password hash in the `users` table of the UAT
+  database and `APP_TEST_ADMIN_PASSWORD` in Vault must be changed together (there is
+  no change-password endpoint). See ADR-0032's incident spec section 9.1 for the
+  procedure. The seeded credential is also present in the committed
+  `V76__uat_seed_test_admin_user.sql`; do not edit that applied migration.
+- Playwright `error-context.md` failure captures include DOM snapshots with typed
+  input values and cannot be masked by screenshot `mask` options. This is why
+  authenticated UAT artifact retention is 3 days.
 
 ## Manual UAT Reset
 

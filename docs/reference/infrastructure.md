@@ -69,17 +69,17 @@ Full-stack local development environment.
 |---------|-------|-------|-------|
 | redis | `redis:7-alpine` | 6379:6379 | Health check via `redis-cli ping` |
 | postgres | `postgres:16-alpine` | 5432:5432 | Volume `postgres_data`, health check via `pg_isready` |
-| backend | Build from `./backend/portfolio/Dockerfile` | 8080:8080, 5005:5005 | Debug port 5005, JAVA_TOOL_OPTIONS for JDWP, `restart: unless-stopped` |
-| ingestion-service | Build from `./backend/ingestion/Dockerfile` | 8081:8081 | Separate ingestion microservice with own `ingestion` DB schema, depends on postgres + redis, `restart: unless-stopped` |
-| market-data-service | Build from `./backend` context, `market-data/Dockerfile` | 8082:8082 | IBKR market data + WebSocket streaming, `market_data` DB schema, depends on postgres + redis |
-| strategy-service | Build from `./backend` context, `strategy/Dockerfile` | 8083:8083 | Strategy engine + wheel writer, `strategy` DB schema, depends on postgres + redis |
-| broker-gateway-service | Build from `./backend/broker-gateway/Dockerfile` | 8084:8084 | Broker data gateway (IBKR, Questrade, Wealthsimple), `broker_gateway` DB schema, depends on postgres + redis |
-| frontend | Build from `./frontend/Dockerfile` target=development | 3000:3000 | Bind mounts `src/`, `public/`, `index.html` as read-only for hot reload |
+| portfolio-backend | Build from `./backend/portfolio/Dockerfile` | 8080:8080, 5005:5005 | Debug port 5005, JAVA_TOOL_OPTIONS for JDWP, `restart: unless-stopped` |
+| portfolio-ingestion | Build from `./backend/ingestion/Dockerfile` | 8081:8081 | Separate ingestion microservice with own `ingestion` DB schema, depends on postgres + redis, `restart: unless-stopped` |
+| portfolio-market-data | Build from `./backend` context, `market-data/Dockerfile` | 8082:8082 | IBKR market data + WebSocket streaming, `market_data` DB schema, depends on postgres + redis |
+| portfolio-strategy | Build from `./backend` context, `strategy/Dockerfile` | 8083:8083 | Strategy engine + wheel writer, `strategy` DB schema, depends on postgres + redis |
+| portfolio-broker-gateway | Build from `./backend/broker-gateway/Dockerfile` | 8084:8084 | Broker data gateway (IBKR, Questrade, Wealthsimple), `broker_gateway` DB schema, depends on postgres + redis |
+| portfolio-frontend | Build from `./frontend/Dockerfile` target=development | 3000:3000 | Bind mounts `src/`, `public/`, `index.html` as read-only for hot reload |
 
 **Key configuration:**
 - Network: `portfolio-network` (bridge driver)
 - Backend depends on postgres + redis (both `service_healthy`)
-- Frontend depends on backend, ingestion-service, market-data-service, strategy-service
+- Frontend depends on portfolio-backend, portfolio-ingestion, portfolio-market-data, portfolio-strategy
 - Profile: `SPRING_PROFILES_ACTIVE=local`
 - Backend health check: `wget http://localhost:8080/health` (30s interval, 30s start period)
 - Ingestion health check: `wget http://localhost:8081/actuator/health` (30s interval, 60s start period)
@@ -94,7 +94,7 @@ Full-stack local development environment.
 - Vite dev server proxies `/strategy-api` to `http://localhost:8083` (strategy service), rewrites path prefix
 - Vite dev server proxies `/ws/quotes` to `ws://localhost:8082` (WebSocket for real-time quotes)
 - Market-data and strategy services use Gradle composite builds with shared `backend/common/` module
-- `market-data-service` and `broker-gateway-service` include `extra_hosts: ["host.docker.internal:host-gateway"]` for connecting to IB Gateway/TWS running on the Docker host
+- `portfolio-market-data` and `portfolio-broker-gateway` include `extra_hosts: ["host.docker.internal:host-gateway"]` for connecting to IB Gateway/TWS running on the Docker host
 
 ### IB Gateway / TWS Prerequisites
 
@@ -247,7 +247,7 @@ open http://localhost:3000
 docker compose up -d postgres
 
 # Backend (inside Docker -- no local JDK)
-docker compose exec backend ./gradlew bootRun
+docker compose exec portfolio-backend ./gradlew bootRun
 
 # Frontend (local Node.js)
 cd frontend
@@ -266,14 +266,14 @@ npm run dev
 | Task | Command |
 |------|---------|
 | Reset database | `docker compose down -v && docker compose up -d` |
-| Run backend tests | `docker compose exec backend ./gradlew test` |
-| Run specific test | `docker compose exec backend ./gradlew test --tests "HealthControllerTest"` |
+| Run backend tests | `docker compose exec portfolio-backend ./gradlew test` |
+| Run specific test | `docker compose exec portfolio-backend ./gradlew test --tests "HealthControllerTest"` |
 | Run frontend tests | `cd frontend && npm run test:run` |
 | Frontend lint | `cd frontend && npm run lint` |
 | Frontend build | `cd frontend && npm run build` |
-| Check outdated deps (backend) | `docker compose exec backend ./gradlew dependencyUpdates` |
+| Check outdated deps (backend) | `docker compose exec portfolio-backend ./gradlew dependencyUpdates` |
 | Check outdated deps (frontend) | `cd frontend && npm outdated` |
-| Tail backend logs | `docker compose logs -f backend` |
+| Tail backend logs | `docker compose logs -f portfolio-backend` |
 
 ### Code Style
 
@@ -468,7 +468,7 @@ Both production and UAT stacks include an IBKR Gateway container for live Intera
 
 **Configuration:**
 - Environment variables: `IBKR_USERNAME`, `IBKR_PASSWORD`, `TRADING_MODE` (live/paper)
-- `market-data-service` and `broker-gateway-service` connect to gateway via `ib-gateway:4001` (prod) or `ib-gateway:4002` (UAT/local)
+- `portfolio-market-data` and `portfolio-broker-gateway` connect to gateway via `ib-gateway:4001` (prod) or `ib-gateway:4002` (UAT/local)
 - IBC configuration handles timeout extensions and daily reconnect at 11:45 PM ET
 
 ### Port Reference Table

@@ -528,7 +528,7 @@ HTTP client for communicating with the broker-gateway microservice (port 8084). 
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `broker-gateway.url` | String | `http://broker-gateway-service:8084` | Base URL for the broker-gateway service |
+| `broker-gateway.url` | String | `http://portfolio-broker-gateway:8084` | Base URL for the broker-gateway service |
 | `broker-gateway.api-key` | String | `dev-gateway-key` | API key for service-to-service auth |
 | `broker-gateway.timeout` | Duration | `30s` | HTTP request timeout |
 

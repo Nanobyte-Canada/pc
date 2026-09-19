@@ -95,7 +95,7 @@ at `frontend/nginx.conf`) proxies `/auth/` to the backend:
 
 ```nginx
 location /auth/ {
-    proxy_pass http://backend:8080;
+    proxy_pass http://portfolio-backend:8080;
     ...
 }
 ```
@@ -149,7 +149,7 @@ ERROR Unexpected error during Google OAuth callback
 1. Check Loki for the full stack trace of the `Exception`.
 2. Verify network connectivity from the backend container:
    ```bash
-   docker compose -f /opt/portfolio/prod/docker-compose.yml exec prod-backend \
+   docker compose -f /opt/portfolio/prod/docker-compose.yml exec prod-portfolio-backend \
      curl -v https://oauth2.googleapis.com/token
    ```
 3. Check that `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set (see
