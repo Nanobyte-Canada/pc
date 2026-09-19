@@ -49,7 +49,7 @@ Monorepo for a portfolio construction and analysis application using public ETFs
 3. Create JPA entity in the appropriate `entity/` package -- see [entity-relationships.md](entity-relationships.md)
 4. Create Spring Data repository interface -- see [backend-services.md](backend-services.md)
 5. Add DTO for API responses -- never expose entities directly
-6. Validate: `docker compose exec backend ./gradlew test`
+6. Validate: `docker compose exec portfolio-backend ./gradlew test`
 
 ### Adding a Frontend Page
 
@@ -91,7 +91,7 @@ The ingestion pipeline has been moved to a separate microservice at `backend/ing
 1. Check [database-schema.md](database-schema.md) for the current table definition and all columns
 2. Check the Flyway migration history section for when columns were added/removed
 3. Check [unused-legacy.md](unused-legacy.md) for orphan tables with no JPA entity
-4. Run `docker compose exec backend ./gradlew test` to verify Hibernate validation passes
+4. Run `docker compose exec portfolio-backend ./gradlew test` to verify Hibernate validation passes
 
 ## Operational Runbooks
 

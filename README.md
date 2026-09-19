@@ -42,6 +42,8 @@ Six services make up the app. Internal container ports are fixed; host ports fol
 | strategy | `prod-portfolio-strategy` / `uat-portfolio-strategy` | 8083 | 10083 | 20083 |
 | broker-gateway | `prod-portfolio-broker-gateway` / `uat-portfolio-broker-gateway` | 8084 | 10084 | 20084 |
 
+Compose service keys are app-prefixed (`portfolio-backend`, `portfolio-ingestion`, `portfolio-market-data`, `portfolio-strategy`, `portfolio-broker-gateway`, `portfolio-frontend`) so Docker network aliases never collide with sibling apps on shared networks.
+
 ## Environments & URLs
 
 | Environment | URL | Compose | Deploy Path |
@@ -95,9 +97,9 @@ docker compose up --build
 
 ```bash
 # Backend tests (inside container)
-docker compose exec backend ./gradlew test
-docker compose exec market-data-service ./gradlew test
-docker compose exec strategy-service ./gradlew test
+docker compose exec portfolio-backend ./gradlew test
+docker compose exec portfolio-market-data ./gradlew test
+docker compose exec portfolio-strategy ./gradlew test
 
 # Frontend dev server (local npm)
 cd frontend && npm run dev

@@ -1574,7 +1574,7 @@ Individual error records within ingestion steps.
 
 1. **Always use Flyway migrations** -- never modify Hibernate DDL mode (it is `validate`).
 2. **Migration naming**: `V{N}__{description}.sql` (double underscore). Check the highest existing number and increment by 1.
-3. **Test after schema changes**: `docker compose exec backend ./gradlew test` (no local JDK).
+3. **Test after schema changes**: `docker compose exec portfolio-backend ./gradlew test` (no local JDK).
 4. **JPA entity validation**: Hibernate will fail startup if entities do not match the schema. Every column in an entity must exist in the database and vice versa for mapped columns.
 5. **Indexes**: Consider adding indexes for columns used in WHERE clauses, JOIN conditions, or ORDER BY. Use partial indexes for boolean filters.
 6. **JSONB columns**: Used for flexible/nested data (cash amounts, raw API payloads, notification metadata). Query with PostgreSQL `->` and `->>` operators.

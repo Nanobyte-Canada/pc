@@ -2,7 +2,7 @@
 name: portfolio-prod
 
 services:
-  backend:
+  portfolio-backend:
     image: ghcr.io/nanobyte-canada/portfolio-backend:${IMAGE_TAG}
     container_name: prod-portfolio-backend
     environment:
@@ -48,7 +48,7 @@ services:
       - prod-internal-network
       - infra-prod-network
 
-  ingestion-service:
+  portfolio-ingestion:
     image: ghcr.io/nanobyte-canada/portfolio-ingestion:${IMAGE_TAG}
     container_name: prod-portfolio-ingestion
     environment:
@@ -82,7 +82,7 @@ services:
       - prod-internal-network
       - infra-prod-network
 
-  market-data-service:
+  portfolio-market-data:
     image: ghcr.io/nanobyte-canada/portfolio-market-data:${IMAGE_TAG}
     container_name: prod-portfolio-market-data
     environment:
@@ -117,7 +117,7 @@ services:
       - prod-internal-network
       - infra-prod-network
 
-  strategy-service:
+  portfolio-strategy:
     image: ghcr.io/nanobyte-canada/portfolio-strategy:${IMAGE_TAG}
     container_name: prod-portfolio-strategy
     environment:
@@ -152,7 +152,7 @@ services:
       - prod-internal-network
       - infra-prod-network
 
-  broker-gateway-service:
+  portfolio-broker-gateway:
     image: ghcr.io/nanobyte-canada/portfolio-broker-gateway:${IMAGE_TAG}
     container_name: prod-portfolio-broker-gateway
     environment:
@@ -189,7 +189,7 @@ services:
       - prod-internal-network
       - infra-prod-network
 
-  frontend:
+  portfolio-frontend:
     image: ghcr.io/nanobyte-canada/portfolio-frontend:${IMAGE_TAG}
     container_name: prod-portfolio-frontend
     ports:
@@ -197,7 +197,7 @@ services:
     environment:
       - VITE_AUTH_METHOD=google
     depends_on:
-      backend:
+      portfolio-backend:
         condition: service_healthy
     restart: unless-stopped
     deploy:

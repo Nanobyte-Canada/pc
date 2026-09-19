@@ -987,9 +987,9 @@ interface PortfolioStore {
 
 | Path | Target | Description |
 |---|---|---|
-| `/market-data-api/*` | `http://market-data-service:8082` | Market data REST API (path prefix stripped) |
-| `/ws/quotes` | `ws://market-data-service:8082` | WebSocket for real-time quotes |
-| `/strategy-api/*` | `http://strategy-service:8083` | Strategy REST API (path prefix stripped) |
+| `/market-data-api/*` | `http://portfolio-market-data:8082` | Market data REST API (path prefix stripped) |
+| `/ws/quotes` | `ws://portfolio-market-data:8082` | WebSocket for real-time quotes |
+| `/strategy-api/*` | `http://portfolio-strategy:8083` | Strategy REST API (path prefix stripped) |
 
 ---
 

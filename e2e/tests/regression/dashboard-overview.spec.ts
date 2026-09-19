@@ -39,6 +39,8 @@ test.describe('Dashboard Overview', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('DASH-OVERVIEW-004', 'account switching toggles between all accounts and individual account'), async ({ page }) => {
+    const width = page.viewportSize()?.width ?? 0;
+    test.skip(width > 0 && width < 769, 'The account pill switcher is desktop-only (AccountNavBar.css:190-196 hides .account-nav__pills below 769px); mobile uses the account sheet');
     const allAccountsBtn = page.locator('.account-nav__pill', { hasText: 'All Accounts' });
     await expect(allAccountsBtn).toBeVisible();
 

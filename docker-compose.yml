@@ -31,7 +31,7 @@ services:
     networks:
       - portfolio-network
 
-  backend:
+  portfolio-backend:
     build:
       context: ./backend/portfolio
       dockerfile: Dockerfile
@@ -46,7 +46,7 @@ services:
       APP_VERSION: ${APP_VERSION:-0.0.1-SNAPSHOT}
       APP_ENVIRONMENT: local
       BROKER_ENCRYPTION_KEY: ${BROKER_ENCRYPTION_KEY:-}
-      BROKER_GATEWAY_URL: http://broker-gateway-service:8084
+      BROKER_GATEWAY_URL: http://portfolio-broker-gateway:8084
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
@@ -74,7 +74,7 @@ services:
     networks:
       - portfolio-network
 
-  ingestion-service:
+  portfolio-ingestion:
     build:
       context: ./backend/ingestion
       dockerfile: Dockerfile
@@ -104,7 +104,7 @@ services:
     networks:
       - portfolio-network
 
-  market-data-service:
+  portfolio-market-data:
     build:
       context: ./backend
       dockerfile: market-data/Dockerfile
@@ -137,7 +137,7 @@ services:
     networks:
       - portfolio-network
 
-  strategy-service:
+  portfolio-strategy:
     build:
       context: ./backend
       dockerfile: strategy/Dockerfile
@@ -149,8 +149,8 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      MARKET_DATA_SERVICE_URL: http://market-data-service:8082
-      PORTFOLIO_SERVICE_URL: http://backend:8080
+      MARKET_DATA_SERVICE_URL: http://portfolio-market-data:8082
+      PORTFOLIO_SERVICE_URL: http://portfolio-backend:8080
     ports:
       - "8083:8083"
     depends_on:
@@ -168,7 +168,7 @@ services:
     networks:
       - portfolio-network
 
-  broker-gateway-service:
+  portfolio-broker-gateway:
     build:
       context: ./backend
       dockerfile: broker-gateway/Dockerfile
@@ -203,7 +203,7 @@ services:
     networks:
       - portfolio-network
 
-  frontend:
+  portfolio-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -211,10 +211,10 @@ services:
     container_name: portfolio-frontend
     environment:
       VITE_API_URL: http://localhost:8080
-      VITE_PROXY_BACKEND_URL: http://backend:8080
-      VITE_PROXY_INGESTION_URL: http://ingestion-service:8081
-      VITE_PROXY_MARKET_DATA_URL: http://market-data-service:8082
-      VITE_PROXY_STRATEGY_URL: http://strategy-service:8083
+      VITE_PROXY_BACKEND_URL: http://portfolio-backend:8080
+      VITE_PROXY_INGESTION_URL: http://portfolio-ingestion:8081
+      VITE_PROXY_MARKET_DATA_URL: http://portfolio-market-data:8082
+      VITE_PROXY_STRATEGY_URL: http://portfolio-strategy:8083
     ports:
       - "3000:3000"
     volumes:
@@ -223,10 +223,10 @@ services:
       - ./frontend/index.html:/app/index.html:ro
       - ./frontend/vite.config.ts:/app/vite.config.ts:ro
     depends_on:
-      - backend
-      - ingestion-service
-      - market-data-service
-      - strategy-service
+      - portfolio-backend
+      - portfolio-ingestion
+      - portfolio-market-data
+      - portfolio-strategy
     networks:
       - portfolio-network
 
