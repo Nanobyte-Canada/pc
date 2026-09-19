@@ -3,11 +3,11 @@ import { scenario } from '../../support/scenario';
 import { LoginPage } from '../../pages/login.page';
 
 test.describe('Admin - Ingestion @regression', () => {
-  const adminEmail = process.env.E2E_ADMIN_EMAIL;
-  const adminPassword = process.env.E2E_ADMIN_PASSWORD;
+  const adminEmail = process.env.APP_TEST_ADMIN_EMAIL;
+  const adminPassword = process.env.APP_TEST_ADMIN_PASSWORD;
 
   test.beforeEach(async ({ page }) => {
-    test.skip(!adminEmail || !adminPassword, 'E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD not set');
+    test.skip(!adminEmail || !adminPassword, 'APP_TEST_ADMIN_EMAIL/APP_TEST_ADMIN_PASSWORD not set');
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login(adminEmail!, adminPassword!);

@@ -246,6 +246,6 @@ Detailed records for each phase's workflow and tooling changes.
 - Tag model enforced: `@smoke`, `@regression`, `@a11y`, `@visual` — CI greps must always match ≥1 test.
 - `@playwright/test` pinned exactly 1.60.0 to match the container `mcr.microsoft.com/playwright:v1.60.0-noble` (the lockfile had floated to 1.63.0).
 - Artifact uploads aligned to actual output dirs (`e2e/results/`, `e2e/playwright-report/`); both gitignored.
-- Authenticated suites receive `E2E_USER_EMAIL`/`E2E_USER_PASSWORD` from GitHub secrets (no committed seed accounts).
+- Authenticated suites receive `APP_TEST_ADMIN_EMAIL`/`APP_TEST_ADMIN_PASSWORD` from GitHub secrets (single admin test account used for all suites; no committed seed accounts).
 - `deploy.yml` gains a `verify-deploy` sentinel job that fails the run when the deploy job is skipped, preventing downstream tests from firing against a stale UAT after a failed build.
 **Consequences:** Deployed browser suites now execute automatically after each UAT deploy. The first visual run requires a one-time baseline bootstrap via dispatch. Accessibility violations are triaged through the baseline file rather than hard failure.
