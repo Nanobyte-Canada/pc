@@ -559,13 +559,15 @@ Expected: `UPDATE 1`. If `0`, the account does not exist under that email — st
 
 Authenticate the Vault CLI first (AppRole login or `vault login` at `https://vault.nanobyte.ca`), then:
 ```bash
-vault kv put secret/portfolio/uat \
+vault kv patch secret/portfolio/uat \
   APP_TEST_ADMIN_EMAIL=test-admin@nanobyte.ca \
   APP_TEST_ADMIN_PASSWORD="$NEW_PASSWORD"
 unset NEW_PASSWORD HASH
 ```
 
-If the Vault CLI is unavailable, use the Vault UI (`https://vault.nanobyte.ca`) at `secret/portfolio/uat`. Preserve the email value from the existing secret rather than retyping it.
+**Use `kv patch`, never `kv put`** — the secret carries other UAT keys (Postgres password, JWT signing key, Questrade tokens, gateway key, and more); `put` replaces the entire secret data and would wipe them, while `patch` merges.
+
+If the Vault CLI is unavailable, use the Vault UI (`https://vault.nanobyte.ca`) at `secret/portfolio/uat` — the UI edits individual keys in place, so the other keys are preserved. Preserve the email value from the existing secret rather than retyping it.
 
 - [ ] **Step 6: Verify at the next post-fix suite run**
 
