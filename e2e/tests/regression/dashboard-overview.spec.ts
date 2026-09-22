@@ -22,7 +22,11 @@ test.describe('Dashboard Overview', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('DASH-OVERVIEW-002', 'positions table renders on dashboard'), async ({ page }) => {
-    test.skip(true, 'Premise absent on real UAT page: 4 authenticated ARIA captures at failure time (chromium-retry1, firefox, webkit-retry1, mobile-chrome-retry1) all show the dashboard Positions section rendering a "No positions" empty state with Holdings/Orders toggle buttons — no grid/table is rendered. Notably /brokers/positions shows 32 positions while the dashboard shows C$ 0 totals; possible app bug, needs owner review.');
+    // Re-enabled 2026-09-19 after the owner refreshed UAT broker data (the sync was
+    // disabled and the stored aggregates were stale since 2026-08-28). Verified live:
+    // the dashboard Positions section renders the AG Grid with 25 positions.
+    const grid = page.locator('.ag-root-wrapper, [role="grid"]').first();
+    await expect(grid).toBeVisible();
   });
 
   test(scenario('DASH-OVERVIEW-003', 'activities tab renders when individual account is selected'), async ({ page }) => {
