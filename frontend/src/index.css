@@ -17,7 +17,7 @@ html, body, #root {
   --card-bg: #ffffff;
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-muted: #617087; /* step below slate-500 — >=4.5:1 on all light surfaces (#f1f5f9 is worst) */
   --accent: #059669;
   --accent-hover: #047857;
   --accent-light: rgba(5,150,105,0.1);
