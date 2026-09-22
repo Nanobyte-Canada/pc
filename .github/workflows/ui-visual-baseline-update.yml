@@ -107,6 +107,8 @@ jobs:
 
       - name: Post summary
         if: always()
+        env:
+          BRANCH_REF: ${{ github.head_ref }}
         run: |
           STATUS="${{ job.status }}"
           if [ "$STATUS" = "success" ]; then
@@ -115,7 +117,7 @@ jobs:
             echo "### Visual Baseline Update Failed :x:" >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Branch:** \`${{ github.head_ref }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Branch:** \`$BRANCH_REF\`" >> "$GITHUB_STEP_SUMMARY"
           echo "**Triggered by:** @${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Review the committed snapshot changes in the PR diff." >> "$GITHUB_STEP_SUMMARY"
