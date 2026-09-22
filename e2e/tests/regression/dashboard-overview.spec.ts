@@ -22,11 +22,18 @@ test.describe('Dashboard Overview', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('DASH-OVERVIEW-002', 'positions table renders on dashboard'), async ({ page }) => {
-    // Re-enabled 2026-09-19 after the owner refreshed UAT broker data (the sync was
-    // disabled and the stored aggregates were stale since 2026-08-28). Verified live:
-    // the dashboard Positions section renders the AG Grid with 25 positions.
-    const grid = page.locator('.ag-root-wrapper, [role="grid"]').first();
-    await expect(grid).toBeVisible();
+    // Re-enabled 2026-09-19 after the owner refreshed UAT broker data. Desktop renders
+    // the AG Grid; mobile (<769px) renders a card list with the grid hidden (verified
+    // 2026-09-22 from the mobile ARIA snapshot: heading "Positions", Holdings/Orders
+    // toggles and position rows are visible while .ag-root-wrapper is display:none).
+    const width = page.viewportSize()?.width ?? 0;
+    if (width > 0 && width < 769) {
+      await expect(page.getByRole('heading', { name: 'Positions' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Holdings' })).toBeVisible();
+    } else {
+      const grid = page.locator('.ag-root-wrapper, [role="grid"]').first();
+      await expect(grid).toBeVisible();
+    }
   });
 
   test(scenario('DASH-OVERVIEW-003', 'activities tab renders when individual account is selected'), async ({ page }) => {
