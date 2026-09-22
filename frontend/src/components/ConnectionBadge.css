@@ -11,18 +11,20 @@
   transition: background-color 0.2s, color 0.2s;
 }
 
+/* Label ink uses the theme's readable text-on-tint tones (dark theme: light tints,
+   light theme: dark inks); the dot and 12% tint keep the saturated status color. */
 .connection-badge--connected {
-  color: var(--success, #059669);
+  color: var(--success-dark, #065f46);
   background: color-mix(in srgb, var(--success, #059669) 12%, transparent);
 }
 
 .connection-badge--connecting {
-  color: var(--warning, #d97706);
+  color: var(--warning-dark, #92400e);
   background: color-mix(in srgb, var(--warning, #d97706) 12%, transparent);
 }
 
 .connection-badge--disconnected {
-  color: var(--destructive, #dc2626);
+  color: var(--error-dark, #991b1b);
   background: color-mix(in srgb, var(--destructive, #dc2626) 12%, transparent);
 }
 
