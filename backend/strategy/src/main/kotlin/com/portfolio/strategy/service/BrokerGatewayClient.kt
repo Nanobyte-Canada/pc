@@ -25,7 +25,7 @@ class BrokerGatewayClient(
         limitPrice: BigDecimal,
         timeInForce: String
     ): Map<String, Any?> {
-        val body = mapOf(
+        val body: Map<String, Any?> = mapOf(
             "legs" to legs,
             "orderType" to orderType,
             "limitPrice" to limitPrice,
@@ -33,7 +33,8 @@ class BrokerGatewayClient(
         )
 
         return try {
-            webClient.post()
+            @Suppress("UNCHECKED_CAST")
+            val response = webClient.post()
                 .uri(
                     "/api/v1/gateway/connections/{connectionId}/accounts/{accountId}/combo-orders",
                     connectionId.toString(), accountId
@@ -42,10 +43,8 @@ class BrokerGatewayClient(
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(Map::class.java)
-                .block()
-                ?.entries
-                ?.associate { it.key.toString() to it.value }
-                ?: mapOf("status" to "ERROR", "message" to "No response from broker gateway")
+                .block() as? Map<String, Any?>
+            response ?: mapOf("status" to "ERROR", "message" to "No response from broker gateway")
         } catch (e: Exception) {
             log.error("Failed to place combo order via broker-gateway: {}", e.message)
             mapOf(

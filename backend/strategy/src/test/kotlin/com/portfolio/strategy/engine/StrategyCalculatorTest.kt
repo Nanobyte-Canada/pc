@@ -323,14 +323,14 @@ class StrategyCalculatorTest {
 
     @Test
     fun `risk reward is zero when max loss is zero`() {
-        // Single leg deep ITM call where max loss = 0 is hard to trigger
-        // but test the division logic: if maxLoss is 0, ratio should be 0
+        // Long call struck at the bottom of the modeled price range with zero premium:
+        // P&L is never negative over the range, so max loss is 0 and the ratio is defined as 0.
         val legs = listOf(
-            Leg(LegAction.BUY, OptionType.CALL, BigDecimal("50"), LocalDate.now().plusDays(30), 1,
+            Leg(LegAction.BUY, OptionType.CALL, BigDecimal("80"), LocalDate.now().plusDays(30), 1,
                 mid = BigDecimal("0"))
         )
         val result = calculator.calculate(legs, BigDecimal("100"))
-        // With zero premium, maxProfit = huge, maxLoss = 0 (can't lose on free option)
+        assertEquals(0, BigDecimal("0").compareTo(result.maxLoss))
         assertEquals(0, BigDecimal("0").compareTo(result.riskRewardRatio))
     }
 

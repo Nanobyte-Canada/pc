@@ -54,7 +54,7 @@ class StrategyCalculator {
     private fun generatePnlCurve(legs: List<Leg>, spotPrice: BigDecimal, netCost: BigDecimal): List<PnlPoint> {
         val minPrice = spotPrice * (BigDecimal.ONE - PRICE_RANGE_PERCENT)
         val maxPrice = spotPrice * (BigDecimal.ONE + PRICE_RANGE_PERCENT)
-        val priceStep = (maxPrice - minPrice) / BigDecimal(PNL_POINTS - 1)
+        val priceStep = (maxPrice - minPrice).divide(BigDecimal(PNL_POINTS - 1), 10, RoundingMode.HALF_UP)
 
         return (0 until PNL_POINTS).map { i ->
             val price = minPrice + (priceStep * BigDecimal(i))
@@ -102,7 +102,9 @@ class StrategyCalculator {
 
     private fun interpolateBreakEven(p1: PnlPoint, p2: PnlPoint): BigDecimal {
         if (p1.pnl == p2.pnl) return p1.underlyingPrice
-        val breakEven = p1.underlyingPrice + (BigDecimal.ZERO - p1.pnl) * (p2.underlyingPrice - p1.underlyingPrice) / (p2.pnl - p1.pnl)
+        val breakEven = p1.underlyingPrice + (BigDecimal.ZERO - p1.pnl)
+            .multiply(p2.underlyingPrice - p1.underlyingPrice)
+            .divide(p2.pnl - p1.pnl, 10, RoundingMode.HALF_UP)
         return breakEven.setScale(SCALE, RoundingMode.HALF_UP)
     }
 
