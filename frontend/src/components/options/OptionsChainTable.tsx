@@ -39,6 +39,7 @@ export function OptionsChainTable({ chain, onExpiryChange, strikesPerSide, onStr
       ask: quote.ask,
       mid: quote.mid,
       delta: quote.greeks?.delta,
+      symbol: quote.underlying,
     }
     addLeg(leg)
   }

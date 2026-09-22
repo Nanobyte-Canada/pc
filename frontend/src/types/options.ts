@@ -79,6 +79,7 @@ export interface Leg {
   ask?: number
   mid?: number
   delta?: number
+  symbol?: string
 }
 
 export interface NetGreeks {

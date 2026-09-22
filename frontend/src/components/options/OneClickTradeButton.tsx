@@ -16,7 +16,8 @@ export function OneClickTradeButton() {
   const [tradeResult, setTradeResult] = useState<TradeResponse | null>(null)
 
   const isConnected = connection?.connected ?? connectionStatus.connected
-  const isDisabled = !isConnected || connLoading || tradeInProgress || legs.length === 0 || !quote
+  const hasTradableLegs = legs.length > 0 && legs.every((l) => !!l.symbol)
+  const isDisabled = !isConnected || connLoading || tradeInProgress || !hasTradableLegs || !quote
 
   const handleTrade = useCallback(async () => {
     if (isDisabled || !selectedStrategy || !connection) return
@@ -48,6 +49,7 @@ export function OneClickTradeButton() {
           ask: l.ask,
           mid: l.mid,
           delta: l.delta,
+          symbol: l.symbol,
         })),
         spotPrice: quote!.last,
         connectionId: connection.connectionId,
@@ -133,6 +135,12 @@ export function OneClickTradeButton() {
       {legs.length === 0 && isConnected && (
         <p className="one-click-trade__hint">
           Add legs to the builder to enable trading
+        </p>
+      )}
+
+      {legs.length > 0 && !hasTradableLegs && isConnected && (
+        <p className="one-click-trade__hint">
+          Every leg needs an underlying symbol. Add legs from the options chain.
         </p>
       )}
 
