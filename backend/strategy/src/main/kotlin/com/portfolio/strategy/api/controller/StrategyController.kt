@@ -44,19 +44,7 @@ class StrategyController(
 
     @PostMapping("/calculate")
     fun calculate(@RequestBody request: CalculateRequest): CalculateResponse {
-        val legs = request.legs.map { lr ->
-            val action = try { LegAction.valueOf(lr.action.uppercase()) } catch (e: IllegalArgumentException) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid action: ${lr.action}")
-            }
-            val optionType = lr.optionType?.let { try { OptionType.valueOf(it.uppercase()) } catch (e: IllegalArgumentException) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid option type: $it")
-            }}
-            val expiry = lr.expiry?.let { try { LocalDate.parse(it) } catch (e: Exception) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid expiry: $it")
-            }}
-            Leg(action = action, optionType = optionType, strike = lr.strike, expiry = expiry,
-                quantity = lr.quantity, bid = lr.bid, ask = lr.ask, mid = lr.mid, delta = lr.delta)
-        }
+        val legs = parseLegs(request.legs)
 
         val strategyTypeEnum = request.strategyType?.let {
             try { StrategyType.valueOf(it) } catch (e: IllegalArgumentException) { null }
@@ -103,20 +91,7 @@ class StrategyController(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid strategy type: ${request.strategyType}")
         }
 
-        // Parse legs
-        val legs = request.legs.map { lr ->
-            val action = try { LegAction.valueOf(lr.action.uppercase()) } catch (e: IllegalArgumentException) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid action: ${lr.action}")
-            }
-            val optionType = lr.optionType?.let { try { OptionType.valueOf(it.uppercase()) } catch (e: IllegalArgumentException) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid option type: $it")
-            }}
-            val expiry = lr.expiry?.let { try { LocalDate.parse(it) } catch (e: Exception) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid expiry: $it")
-            }}
-            Leg(action = action, optionType = optionType, strike = lr.strike, expiry = expiry,
-                quantity = lr.quantity, bid = lr.bid, ask = lr.ask, mid = lr.mid, delta = lr.delta)
-        }
+        val legs = parseLegs(request.legs)
 
         // Validate legs
         val validation = legValidator.validate(legs, strategyType)
@@ -171,5 +146,22 @@ class StrategyController(
             message = message,
             legs = legResults
         )
+    }
+
+    private fun parseLegs(legRequests: List<LegRequest>): List<Leg> = legRequests.map { lr ->
+        val action = try { LegAction.valueOf(lr.action.uppercase()) } catch (e: IllegalArgumentException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid action: ${lr.action}")
+        }
+        val optionType = lr.optionType?.let {
+            try { OptionType.valueOf(it.uppercase()) } catch (e: IllegalArgumentException) {
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid option type: $it")
+            }
+        }
+        val expiry = lr.expiry?.let {
+            try { LocalDate.parse(it) } catch (e: Exception) {
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid expiry: $it")
+            }
+        }
+        Leg(action, optionType, lr.strike, expiry, lr.quantity, lr.bid, lr.ask, lr.mid, lr.delta)
     }
 }

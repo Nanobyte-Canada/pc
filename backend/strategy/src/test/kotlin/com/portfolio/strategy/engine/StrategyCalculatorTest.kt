@@ -179,9 +179,9 @@ class StrategyCalculatorTest {
                 mid = BigDecimal("1"))
         )
         val result = calculator.calculate(legs, BigDecimal("52"))
-        // netDebitCredit = -3 + 1 = -2
-        // quantity = 2 (first leg), contractMultiplier = 100
-        // netDebitCreditDollars = -2 * 100 * 2 = -400
+        // netDebitCredit = (-3 * 2) + (1 * 2) = -4
+        // netDebitCreditDollars = -4 * 100 = -400
+        assertEquals(0, BigDecimal("-4.00").compareTo(result.netDebitCredit))
         assertEquals(0, BigDecimal("-400").compareTo(result.netDebitCreditDollars))
     }
 
@@ -227,9 +227,9 @@ class StrategyCalculatorTest {
         val result1 = calculator.calculate(legsQty1, BigDecimal("52"))
         val result3 = calculator.calculate(legsQty3, BigDecimal("52"))
 
-        // netDebitCredit should be the same regardless of quantity
-        assertEquals(0, result1.netDebitCredit.compareTo(result3.netDebitCredit))
-        // Dollar values should scale by 3x
+        // Per-position values include each leg's quantity.
+        assertEquals(0, result1.netDebitCredit.multiply(BigDecimal("3")).compareTo(result3.netDebitCredit))
+        // Dollar values scale by 3x
         assertEquals(0, result1.netDebitCreditDollars.multiply(BigDecimal("3")).compareTo(result3.netDebitCreditDollars))
     }
 

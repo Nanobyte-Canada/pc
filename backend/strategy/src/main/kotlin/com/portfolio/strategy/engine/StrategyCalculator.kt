@@ -26,11 +26,10 @@ class StrategyCalculator {
         } else BigDecimal.ZERO
         val netGreeks = calculateNetGreeks(legs, spotPrice)
 
-        val quantity = legs.firstOrNull()?.quantity?.toBigDecimal() ?: BigDecimal.ONE
         val contractMultiplier = BigDecimal(100)
-        val maxProfitDollars = maxProfit * contractMultiplier * quantity
-        val maxLossDollars = maxLoss * contractMultiplier * quantity
-        val netDebitCreditDollars = netDebitCredit * contractMultiplier * quantity
+        val maxProfitDollars = maxProfit * contractMultiplier
+        val maxLossDollars = maxLoss * contractMultiplier
+        val netDebitCreditDollars = netDebitCredit * contractMultiplier
 
         return CalculationResult(
             strategyType = null, netDebitCredit = netDebitCredit,
@@ -44,9 +43,10 @@ class StrategyCalculator {
 
     private fun calculateNetDebitCredit(legs: List<Leg>): BigDecimal {
         return legs.sumOf { leg ->
+            val quantity = BigDecimal(leg.quantity)
             when (leg.action) {
-                LegAction.BUY -> leg.mid.negate()
-                LegAction.SELL -> leg.mid
+                LegAction.BUY -> leg.mid.negate() * quantity
+                LegAction.SELL -> leg.mid * quantity
             }
         }.setScale(SCALE, RoundingMode.HALF_UP)
     }
@@ -80,10 +80,10 @@ class StrategyCalculator {
             val quantityMultiplier = BigDecimal(leg.quantity).divide(BigDecimal(100), SCALE, RoundingMode.HALF_UP)
             return underlyingPrice * quantityMultiplier
         }
-        return when (leg.optionType) {
+        return (when (leg.optionType) {
             OptionType.CALL -> (underlyingPrice - leg.strike).max(BigDecimal.ZERO)
             OptionType.PUT -> (leg.strike - underlyingPrice).max(BigDecimal.ZERO)
-        }
+        }) * BigDecimal(leg.quantity)
     }
 
     private fun findBreakEvenPrices(pnlCurve: List<PnlPoint>): List<BigDecimal> {

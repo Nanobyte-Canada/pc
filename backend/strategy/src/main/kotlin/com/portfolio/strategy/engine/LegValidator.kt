@@ -44,8 +44,11 @@ class LegValidator {
             }
             val sellLegs = legs.filter { it.action == LegAction.SELL }
             val buyLegs = legs.filter { it.action == LegAction.BUY }
-            if (sellLegs.any { it.quantity != 2 } || buyLegs.any { it.quantity != 1 }) {
-                errors.add("Butterfly Spread requires 1 quantity on BUY legs and 2 quantity on the SELL leg")
+            if (sellLegs.size != 1 || sellLegs.first().quantity != 2) {
+                errors.add("Butterfly Spread requires exactly 1 SELL leg with quantity 2")
+            }
+            if (buyLegs.size != 2 || buyLegs.any { it.quantity != 1 }) {
+                errors.add("Butterfly Spread requires exactly 2 BUY legs with quantity 1")
             }
         }
 

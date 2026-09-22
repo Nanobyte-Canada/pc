@@ -7,6 +7,7 @@ import com.portfolio.brokergateway.adapter.dto.OrderResult
 import com.portfolio.brokergateway.config.AdapterRegistry
 import com.portfolio.brokergateway.credential.CredentialService
 import com.portfolio.brokergateway.exception.BrokerAuthenticationException
+import com.portfolio.brokergateway.exception.BrokerConnectionException
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -40,9 +41,12 @@ class ComboOrderController(
         return try {
             operation(adapter, credentials)
         } catch (e: BrokerAuthenticationException) {
-            log.warn("401 from broker for connection {}, force-refreshing and retrying...", connectionId)
+            log.warn("Authentication failure from broker for connection {}, refreshing and retrying...", connectionId)
             val refreshed = credentialService.forceRefresh(connectionId, adapter)
             operation(adapter, refreshed)
+        } catch (e: BrokerConnectionException) {
+            log.warn("Transient broker connection failure for connection {}, retrying...", connectionId)
+            operation(adapter, credentials)
         }
     }
 }
