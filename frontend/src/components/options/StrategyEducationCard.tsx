@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { EducationContent, StrategyInfo } from '@/types/options'
+import type { StrategyEducation, StrategyInfo } from '@/types/options'
 import './StrategyEducationCard.css'
 
 interface StrategyEducationCardProps {
   strategy: StrategyInfo
-  education: EducationContent
+  education: StrategyEducation
 }
 
 function formatStrategyName(name: string): string {

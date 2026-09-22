@@ -631,7 +631,19 @@ Broker data gateway microservice for connecting to IBKR, Questrade, and Wealthsi
 
 | Method | Path | Auth | Description | Response |
 |---|---|---|---|---|
-| `GET` | `/api/v1/strategies` | None | List all 7 strategy definitions. | `List<StrategyListResponse>` |
+| `GET` | `/api/v1/strategies` | None | List all 6 strategy definitions. | `List<StrategyListResponse>` |
 | `GET` | `/api/v1/strategies/{name}` | None | Get strategy info with education content. | `StrategyInfoResponse` |
 | `POST` | `/api/v1/strategies/calculate` | None | Calculate P&L, break-evens, Greeks for leg combination. | `CalculateResponse` |
 | `POST` | `/api/v1/strategies/suggest` | None | Suggest strategies by market outlook (bullish/bearish/neutral). | `List<StrategyListResponse>` |
+| `POST` | `/api/v1/strategies/trade` | None | Validate and submit an atomic multi-leg order through broker-gateway. | `TradeResponse` |
+
+Calculate requests include `strategyType` and symbol-bearing `LegRequest` values;
+responses include `maxProfitDollars`, `maxLossDollars`,
+`netDebitCreditDollars`, and `warnings`. Trade requests include the connection
+and account identifiers plus legs with an underlying `symbol`.
+
+### Combo orders
+
+| Method | Path | Auth | Description | Response |
+|---|---|---|---|---|
+| `POST` | `/api/v1/gateway/connections/{connectionId}/accounts/{accountId}/combo-orders` | API Key | Submit one atomic multi-leg order; unsupported adapters reject it. | `OrderResult` |

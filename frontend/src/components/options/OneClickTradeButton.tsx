@@ -16,7 +16,7 @@ export function OneClickTradeButton() {
   const [tradeResult, setTradeResult] = useState<TradeResponse | null>(null)
 
   const isConnected = connection?.connected ?? connectionStatus.connected
-  const isDisabled = !isConnected || tradeInProgress || legs.length === 0
+  const isDisabled = !isConnected || connLoading || tradeInProgress || legs.length === 0 || !quote
 
   const handleTrade = useCallback(async () => {
     if (isDisabled || !selectedStrategy || !connection) return
@@ -49,7 +49,7 @@ export function OneClickTradeButton() {
           mid: l.mid,
           delta: l.delta,
         })),
-        spotPrice: quote?.last ?? 0,
+        spotPrice: quote!.last,
         connectionId: connection.connectionId,
         accountId: connection.accountNumber ?? '',
         limitPrice: Math.abs(limitPrice),

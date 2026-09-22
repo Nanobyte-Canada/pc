@@ -37,9 +37,10 @@ class LegValidator {
             if (legs.size != 3) {
                 errors.add("Butterfly Spread requires exactly 3 legs")
             }
-            val allCalls = legs.all { it.optionType == OptionType.CALL }
-            if (!allCalls) {
-                errors.add("Butterfly Spread requires all legs to be CALL options")
+            val allSameType = legs.map { it.optionType }.distinct().size == 1 &&
+                legs.firstOrNull()?.optionType in setOf(OptionType.CALL, OptionType.PUT)
+            if (!allSameType) {
+                errors.add("Butterfly Spread requires all legs to be CALL or all legs to be PUT options")
             }
             val sellLegs = legs.filter { it.action == LegAction.SELL }
             val buyLegs = legs.filter { it.action == LegAction.BUY }

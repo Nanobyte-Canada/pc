@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
+/** Exposes atomic multi-leg order placement with credential refresh retry. */
 @RestController
 @RequestMapping("/api/v1/gateway/connections/{connectionId}/accounts/{accountId}/combo-orders")
 class ComboOrderController(
@@ -19,6 +20,7 @@ class ComboOrderController(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    /** Places a combo order through the selected broker adapter. */
     @PostMapping
     fun placeComboOrder(
         @PathVariable connectionId: String,

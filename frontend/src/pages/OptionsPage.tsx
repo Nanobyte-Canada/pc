@@ -136,7 +136,7 @@ export function OptionsPage() {
         legs,
       )
       setCalcResult(result)
-      setCalcWarnings(result.probabilityOfProfit !== undefined ? [] : [])
+      setCalcWarnings(result.warnings)
     } catch (err) {
       console.error('Calculation failed:', err)
     } finally {

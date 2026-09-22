@@ -105,6 +105,7 @@ export interface CalculationResult {
   maxProfitDollars: number
   maxLossDollars: number
   netDebitCreditDollars: number
+  warnings: string[]
 }
 
 export interface StrategyInfo {
@@ -116,7 +117,7 @@ export interface StrategyInfo {
   riskLevel: string
 }
 
-export interface EducationContent {
+export interface StrategyEducation {
   whenToUse: string
   riskExplanation: string
   keyCharacteristics: string[]
@@ -176,13 +177,6 @@ export interface OptionsOrderResponse {
   status: string
   brokerOrderId: string | null
   createdAt: string
-}
-
-export interface StrategyEducation {
-  whenToUse: string
-  riskExplanation: string
-  keyCharacteristics: string[]
-  warnings: string[]
 }
 
 export interface TradeRequest {

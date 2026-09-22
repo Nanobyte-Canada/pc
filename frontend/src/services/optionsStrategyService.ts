@@ -3,7 +3,7 @@ import type {
   StrategyInfo,
   StrategyType,
   CalculationResult,
-  EducationContent,
+  StrategyEducation,
   Leg,
   OptionsOrderRequest,
   OptionsOrderResponse,
@@ -61,6 +61,7 @@ function mapCalculationResult(raw: BackendCalculateResponse): CalculationResult 
     maxProfitDollars: raw.maxProfitDollars ?? 0,
     maxLossDollars: raw.maxLossDollars ?? 0,
     netDebitCreditDollars: raw.netDebitCreditDollars ?? 0,
+    warnings: raw.warnings ?? [],
   }
 }
 
@@ -73,7 +74,7 @@ export async function getStrategies(): Promise<StrategyInfo[]> {
   return data.map(mapStrategyInfo)
 }
 
-export async function getStrategyInfo(type: StrategyType): Promise<StrategyInfo & { education: EducationContent }> {
+export async function getStrategyInfo(type: StrategyType): Promise<StrategyInfo & { education: StrategyEducation }> {
   const response = await proxyFetch(`/strategy-api/api/v1/strategies/${type}`)
   if (!response.ok) throw await parseErrorResponse(response)
   const raw = await response.json()

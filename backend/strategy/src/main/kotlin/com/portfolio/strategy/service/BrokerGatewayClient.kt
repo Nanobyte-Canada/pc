@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import java.math.BigDecimal
 
 @Service
+/** HTTP client for atomic combo orders in the broker-gateway service. */
 class BrokerGatewayClient(
     @Value("\${broker-gateway.url:http://localhost:8084}")
     private val brokerGatewayUrl: String
@@ -15,6 +16,7 @@ class BrokerGatewayClient(
     private val log = LoggerFactory.getLogger(javaClass)
     private val webClient = WebClient.builder().baseUrl(brokerGatewayUrl).build()
 
+    /** Places one atomic multi-leg order and returns the gateway result. */
     fun placeComboOrder(
         connectionId: Long,
         accountId: String,
@@ -41,6 +43,8 @@ class BrokerGatewayClient(
                 .retrieve()
                 .bodyToMono(Map::class.java)
                 .block()
+                ?.entries
+                ?.associate { it.key.toString() to it.value }
                 ?: mapOf("status" to "ERROR", "message" to "No response from broker gateway")
         } catch (e: Exception) {
             log.error("Failed to place combo order via broker-gateway: {}", e.message)

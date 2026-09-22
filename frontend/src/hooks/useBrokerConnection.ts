@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { proxyFetch } from '@/services/api'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -18,8 +19,7 @@ export interface UseBrokerConnectionResult {
 
 /**
  * Fetches the first broker connection status on mount and provides it
- * to the strategy UI. Uses raw fetch — for a richer React Query-based
- * broker hook set, see `useBrokerConnections.ts`.
+ * to the strategy UI through the shared authenticated proxy wrapper.
  */
 export function useBrokerConnection(): UseBrokerConnectionResult {
   const [connection, setConnection] = useState<BrokerConnection | null>(null)
@@ -30,7 +30,7 @@ export function useBrokerConnection(): UseBrokerConnectionResult {
 
     async function fetchConnection() {
       try {
-        const response = await fetch('/api/v1/brokers/connections')
+        const response = await proxyFetch('/api/v1/brokers/connections')
         if (response.ok) {
           const data = await response.json()
           const connections = data.connections ?? (Array.isArray(data) ? data : [])
@@ -46,8 +46,8 @@ export function useBrokerConnection(): UseBrokerConnectionResult {
             }
           }
         }
-      } catch {
-        // ignore — connection stays null
+      } catch (error) {
+        console.error('Failed to load broker connection', error)
       } finally {
         if (!cancelled) setLoading(false)
       }

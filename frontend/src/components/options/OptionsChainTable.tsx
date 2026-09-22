@@ -154,32 +154,32 @@ export function OptionsChainTable({ chain, onExpiryChange, strikesPerSide, onStr
                     className={`chain-table__call-side ${callITM ? 'chain-table__itm' : ''}`}
                     onClick={() => data.call && handleClickOption(data.call, 'BUY')}
                   >
-                    {data.call?.bid.toFixed(2) ?? '-'}
+                    {data.call?.bid?.toFixed(2) ?? '-'}
                   </td>
                   <td
                     className={`chain-table__call-side ${callITM ? 'chain-table__itm' : ''}`}
                     onClick={() => data.call && handleClickOption(data.call, 'SELL')}
                   >
-                    {data.call?.ask.toFixed(2) ?? '-'}
+                    {data.call?.ask?.toFixed(2) ?? '-'}
                   </td>
                   <td className={`chain-table__delta ${callITM ? 'chain-table__itm' : ''}`}>
-                    {data.call?.greeks?.delta.toFixed(3) ?? '-'}
+                    {data.call?.greeks?.delta?.toFixed(3) ?? '-'}
                   </td>
                   <td className="chain-table__strike-cell">{Math.round(strike)}</td>
                   <td className={`chain-table__delta ${putITM ? 'chain-table__itm' : ''}`}>
-                    {data.put?.greeks?.delta.toFixed(3) ?? '-'}
+                    {data.put?.greeks?.delta?.toFixed(3) ?? '-'}
                   </td>
                   <td
                     className={`chain-table__put-side ${putITM ? 'chain-table__itm' : ''}`}
                     onClick={() => data.put && handleClickOption(data.put, 'BUY')}
                   >
-                    {data.put?.bid.toFixed(2) ?? '-'}
+                    {data.put?.bid?.toFixed(2) ?? '-'}
                   </td>
                   <td
                     className={`chain-table__put-side ${putITM ? 'chain-table__itm' : ''}`}
                     onClick={() => data.put && handleClickOption(data.put, 'SELL')}
                   >
-                    {data.put?.ask.toFixed(2) ?? '-'}
+                    {data.put?.ask?.toFixed(2) ?? '-'}
                   </td>
                 </tr>
               )
@@ -214,16 +214,16 @@ export function OptionsChainTable({ chain, onExpiryChange, strikesPerSide, onStr
                     className={`chain-table__${mobileSide === 'calls' ? 'call' : 'put'}-side ${isITM ? 'chain-table__itm' : ''}`}
                     onClick={() => side && handleClickOption(side, 'BUY')}
                   >
-                    {side?.bid.toFixed(2) ?? '-'}
+                    {side?.bid?.toFixed(2) ?? '-'}
                   </td>
                   <td
                     className={`chain-table__${mobileSide === 'calls' ? 'call' : 'put'}-side ${isITM ? 'chain-table__itm' : ''}`}
                     onClick={() => side && handleClickOption(side, 'SELL')}
                   >
-                    {side?.ask.toFixed(2) ?? '-'}
+                    {side?.ask?.toFixed(2) ?? '-'}
                   </td>
                   <td className={`chain-table__delta ${isITM ? 'chain-table__itm' : ''}`}>
-                    {side?.greeks?.delta.toFixed(3) ?? '-'}
+                    {side?.greeks?.delta?.toFixed(3) ?? '-'}
                   </td>
                 </tr>
               )

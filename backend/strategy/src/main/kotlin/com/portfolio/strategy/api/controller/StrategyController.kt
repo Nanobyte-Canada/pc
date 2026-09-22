@@ -94,6 +94,7 @@ class StrategyController(
         }.map { d -> StrategyListResponse(d.type.name, d.displayName, d.description, d.outlook, d.riskProfile, d.legCount) }
     }
 
+    /** Validates and submits an atomic multi-leg strategy order. */
     @PostMapping("/trade")
     fun tradeStrategy(@RequestBody request: TradeRequest): TradeResponse {
         val strategyType = try {
@@ -122,11 +123,14 @@ class StrategyController(
         if (!validation.valid) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid legs: ${validation.errors.joinToString(", ")}")
         }
+        if (request.legs.any { it.symbol.isNullOrBlank() }) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Every trade leg must include an underlying symbol")
+        }
 
         // Build combo order legs for broker-gateway
         val comboLegs = request.legs.map { lr ->
             mapOf(
-                "symbol" to (lr.symbol ?: request.strategyType),
+                "symbol" to lr.symbol,
                 "action" to lr.action.uppercase(),
                 "quantity" to lr.quantity,
                 "optionType" to lr.optionType,
@@ -155,7 +159,7 @@ class StrategyController(
         val legResults = request.legs.map { lr ->
             LegResult(
                 action = lr.action,
-                symbol = lr.symbol ?: request.strategyType,
+                symbol = lr.symbol!!,
                 quantity = lr.quantity,
                 status = if (status == "SUBMITTED") "SUBMITTED" else "REJECTED"
             )
