@@ -1,4 +1,6 @@
+import { useCallback } from 'react'
 import { useStrategyStore } from '@/stores/strategyStore'
+import { getStrategyInfo } from '@/services/optionsStrategyService'
 import type { StrategyInfo } from '@/types/options'
 import './StrategySelector.css'
 
@@ -6,7 +8,6 @@ interface StrategySelectorProps {
   strategies: StrategyInfo[]
 }
 
-/** Convert raw enum-style names like "BULL_CALL_SPREAD" to "Bull Call Spread" */
 function formatStrategyName(name: string): string {
   if (!name.includes('_') && name !== name.toUpperCase()) return name
   return name
@@ -15,40 +16,64 @@ function formatStrategyName(name: string): string {
     .join(' ')
 }
 
+function outlookBadgeClass(outlook: string): string {
+  const lower = outlook.toLowerCase()
+  if (lower.includes('bullish')) return 'strategy-card__outlook--bullish'
+  if (lower.includes('bearish')) return 'strategy-card__outlook--bearish'
+  return 'strategy-card__outlook--neutral'
+}
+
+function riskBadgeClass(risk: string): string {
+  const lower = risk.toLowerCase()
+  if (lower.includes('high')) return 'strategy-card__risk--high'
+  if (lower.includes('limited')) return 'strategy-card__risk--low'
+  return 'strategy-card__risk--medium'
+}
+
 export function StrategySelector({ strategies }: StrategySelectorProps) {
-  const { selectedStrategy, setSelectedStrategy } = useStrategyStore()
+  const { selectedStrategy, setSelectedStrategy, setSelectedStrategyEducation } = useStrategyStore()
+
+  const handleSelect = useCallback(async (strategy: StrategyInfo) => {
+    const isAlreadySelected = selectedStrategy === strategy.type
+    if (isAlreadySelected) {
+      setSelectedStrategy(null)
+      setSelectedStrategyEducation(null)
+      return
+    }
+
+    setSelectedStrategy(strategy.type)
+
+    try {
+      const data = await getStrategyInfo(strategy.type)
+      setSelectedStrategyEducation(data.education)
+    } catch {
+      // Education fetch failed - card still shows basic info
+    }
+  }, [selectedStrategy, setSelectedStrategy, setSelectedStrategyEducation])
 
   return (
-    <>
-      {/* Desktop: pill buttons */}
-      <div className="strategy-selector">
-        {strategies.map((s) => (
-          <button
-            key={s.type}
-            className={`strategy-selector__pill ${selectedStrategy === s.type ? 'strategy-selector__pill--active' : ''}`}
-            onClick={() => setSelectedStrategy(selectedStrategy === s.type ? null : s.type)}
-            title={s.description}
-          >
-            {formatStrategyName(s.name)}
-          </button>
-        ))}
-      </div>
-
-      {/* Mobile: dropdown */}
-      <div className="strategy-selector__mobile">
-        <select
-          className="strategy-selector__dropdown"
-          value={selectedStrategy ?? ''}
-          onChange={(e) => setSelectedStrategy(e.target.value ? (e.target.value as StrategyInfo['type']) : null)}
+    <div className="strategy-selector">
+      {strategies.map((s) => (
+        <button
+          key={s.type}
+          className={`strategy-card ${selectedStrategy === s.type ? 'strategy-card--selected' : ''}`}
+          onClick={() => handleSelect(s)}
+          title={s.description}
         >
-          <option value="">Strategy...</option>
-          {strategies.map((s) => (
-            <option key={s.type} value={s.type}>
-              {formatStrategyName(s.name)}
-            </option>
-          ))}
-        </select>
-      </div>
-    </>
+          <div className="strategy-card__top-row">
+            <span className="strategy-card__name">{formatStrategyName(s.name)}</span>
+            <span className={`strategy-card__outlook ${outlookBadgeClass(s.marketOutlook)}`}>
+              {s.marketOutlook.split(' ')[0]}
+            </span>
+          </div>
+          <div className="strategy-card__bottom-row">
+            <span className={`strategy-card__risk ${riskBadgeClass(s.riskLevel)}`}>
+              {s.riskLevel}
+            </span>
+            <span className="strategy-card__legs">{s.legs} legs</span>
+          </div>
+        </button>
+      ))}
+    </div>
   )
 }

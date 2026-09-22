@@ -11,7 +11,10 @@ data class CalculationResult(
     val riskRewardRatio: BigDecimal,
     val probabilityOfProfit: BigDecimal?,
     val pnlCurve: List<PnlPoint>,
-    val netGreeks: NetGreeks
+    val netGreeks: NetGreeks,
+    val maxProfitDollars: BigDecimal = BigDecimal.ZERO,
+    val maxLossDollars: BigDecimal = BigDecimal.ZERO,
+    val netDebitCreditDollars: BigDecimal = BigDecimal.ZERO
 )
 
 data class PnlPoint(

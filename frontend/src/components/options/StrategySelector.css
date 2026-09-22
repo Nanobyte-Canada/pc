@@ -1,77 +1,139 @@
-/* ── Desktop: pill buttons ── */
+/* ── Card grid layout ── */
 .strategy-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
   margin-bottom: 16px;
 }
 
-.strategy-selector__pill {
-  padding: 7px 16px;
+/* ── Strategy card ── */
+.strategy-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 100px;
-  background: transparent;
-  color: var(--text-secondary, #94a3b8);
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: var(--radius-md, 10px);
+  background: var(--bg-secondary, #111827);
   cursor: pointer;
   transition: all var(--transition-fast, 150ms ease-out);
+  text-align: left;
+  font-family: inherit;
+}
+
+.strategy-card:hover {
+  border-color: var(--accent, #10b981);
+  background: var(--bg-tertiary, #1a2332);
+}
+
+.strategy-card--selected {
+  border-color: var(--accent, #10b981);
+  background: rgba(16, 185, 129, 0.06);
+  box-shadow: 0 0 0 1px var(--accent, #10b981), 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.strategy-card--selected:hover {
+  background: rgba(16, 185, 129, 0.08);
+}
+
+/* ── Card content ── */
+.strategy-card__top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.strategy-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.strategy-card__outlook {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.strategy-selector__pill:hover {
-  border-color: var(--accent, #10b981);
-  color: var(--accent, #10b981);
-  background: var(--accent-subtle, rgba(16, 185, 129, 0.08));
+.strategy-card__outlook--bullish {
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
 }
 
-.strategy-selector__pill--active {
-  background: var(--accent, #10b981);
-  border-color: var(--accent, #10b981);
-  color: #fff;
+.strategy-card__outlook--bearish {
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
 }
 
-.strategy-selector__pill--active:hover {
-  background: var(--accent, #10b981);
-  filter: brightness(1.1);
-  color: #fff;
+.strategy-card__outlook--neutral {
+  background: rgba(96, 165, 250, 0.12);
+  color: #93bbfd;
 }
 
-/* ── Mobile: side-by-side dropdowns instead of pills ── */
-.strategy-selector__mobile {
-  display: none;
+.strategy-card__bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
+.strategy-card__risk {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.strategy-card__risk--low {
+  color: #6ee7b7;
+}
+
+.strategy-card__risk--medium {
+  color: #fbbf24;
+}
+
+.strategy-card__risk--high {
+  color: #fca5a5;
+}
+
+.strategy-card__legs {
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+  margin-left: auto;
+}
+
+/* ── Mobile: horizontal scroll row ── */
 @media (max-width: 768px) {
   .strategy-selector {
-    display: none;
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
-  .strategy-selector__mobile {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 14px;
+  .strategy-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
   }
 
-  .strategy-selector__dropdown {
+  .strategy-card__top-row {
     flex: 1;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm, 6px);
-    background: var(--bg-tertiary, #1a2332);
-    color: var(--text-primary);
-    font-size: 13px;
-    font-family: inherit;
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    padding-right: 28px;
   }
 
-  .strategy-selector__dropdown:focus {
-    outline: none;
-    border-color: var(--accent, #10b981);
+  .strategy-card__bottom-row {
+    flex-shrink: 0;
+  }
+}
+
+/* ── Tablet: 3 columns ── */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .strategy-selector {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

@@ -35,6 +35,10 @@ export function OptionsChainTable({ chain, onExpiryChange, strikesPerSide, onStr
       expiry: quote.expiry,
       quantity: 1,
       price: quote.mid,
+      bid: quote.bid,
+      ask: quote.ask,
+      mid: quote.mid,
+      delta: quote.greeks?.delta,
     }
     addLeg(leg)
   }

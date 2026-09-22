@@ -6,6 +6,5 @@ enum class StrategyType {
     BULL_PUT_SPREAD,
     BEAR_CALL_SPREAD,
     IRON_CONDOR,
-    COVERED_CALL,
-    PROTECTIVE_PUT
+    BUTTERFLY_SPREAD
 }

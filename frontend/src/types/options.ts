@@ -64,8 +64,7 @@ export type StrategyType =
   | 'BULL_PUT_SPREAD'
   | 'BEAR_CALL_SPREAD'
   | 'IRON_CONDOR'
-  | 'COVERED_CALL'
-  | 'PROTECTIVE_PUT'
+  | 'BUTTERFLY_SPREAD'
 
 export type LegAction = 'BUY' | 'SELL'
 
@@ -76,6 +75,10 @@ export interface Leg {
   expiry: string
   quantity: number
   price?: number
+  bid?: number
+  ask?: number
+  mid?: number
+  delta?: number
 }
 
 export interface NetGreeks {
@@ -99,6 +102,9 @@ export interface CalculationResult {
   roi: number
   pnlCurve: PnlPoint[]
   netGreeks: NetGreeks
+  maxProfitDollars: number
+  maxLossDollars: number
+  netDebitCreditDollars: number
 }
 
 export interface StrategyInfo {
@@ -111,10 +117,10 @@ export interface StrategyInfo {
 }
 
 export interface EducationContent {
-  overview: string
-  greeksExplanation: string
-  riskWarnings: string[]
-  suitableFor: string
+  whenToUse: string
+  riskExplanation: string
+  keyCharacteristics: string[]
+  warnings: string[]
 }
 
 export interface WheelAccount {
@@ -170,4 +176,34 @@ export interface OptionsOrderResponse {
   status: string
   brokerOrderId: string | null
   createdAt: string
+}
+
+export interface StrategyEducation {
+  whenToUse: string
+  riskExplanation: string
+  keyCharacteristics: string[]
+  warnings: string[]
+}
+
+export interface TradeRequest {
+  strategyType: string
+  legs: Leg[]
+  spotPrice: number
+  connectionId: number
+  accountId: string
+  limitPrice: number
+  orderType?: string
+  timeInForce?: string
+}
+
+export interface TradeResponse {
+  orderId: string | null
+  status: 'SUBMITTED' | 'REJECTED' | 'ERROR'
+  message: string
+  legs?: Array<{
+    action: string
+    symbol: string
+    quantity: number
+    status: string
+  }>
 }

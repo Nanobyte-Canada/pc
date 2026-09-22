@@ -1,0 +1,130 @@
+.one-click-trade {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.one-click-trade__btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent, #10b981);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease-out);
+  font-family: inherit;
+}
+
+.one-click-trade__btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.one-click-trade__btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.one-click-trade__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.one-click-trade__btn--loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* ── Spinner ── */
+.one-click-trade__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: one-click-spin 0.6s linear infinite;
+}
+
+@keyframes one-click-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Disconnected state ── */
+.one-click-trade__disconnected {
+  padding: 12px 16px;
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.one-click-trade__disconnected-text {
+  font-size: 12px;
+  color: #fbbf24;
+  margin: 0 0 6px;
+}
+
+.one-click-trade__connect-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent, #10b981);
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.one-click-trade__connect-link:hover {
+  opacity: 0.8;
+}
+
+/* ── Hint ── */
+.one-click-trade__hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Trade result ── */
+.one-click-trade__result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.one-click-trade__result--submitted {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  color: var(--success-text, #6ee7b7);
+}
+
+.one-click-trade__result--rejected {
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+}
+
+.one-click-trade__result--error {
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+  color: var(--danger-text, #f87171);
+}
+
+.one-click-trade__order-id {
+  font-weight: 600;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.one-click-trade__result-message {
+  opacity: 0.9;
+}

@@ -1,12 +1,15 @@
 package com.portfolio.strategy.engine
 
+import com.portfolio.common.domain.OptionType
 import com.portfolio.strategy.model.Leg
+import com.portfolio.strategy.model.LegAction
+import com.portfolio.strategy.model.StrategyType
 import org.springframework.stereotype.Component
 
 @Component
 class LegValidator {
 
-    fun validate(legs: List<Leg>): ValidationResult {
+    fun validate(legs: List<Leg>, strategyType: StrategyType? = null): ValidationResult {
         val errors = mutableListOf<String>()
 
         if (legs.isEmpty()) {
@@ -27,6 +30,21 @@ class LegValidator {
             val expiries = optionLegs.mapNotNull { it.expiry }.distinct()
             if (expiries.size > 1) {
                 errors.add("All option legs must have the same expiration date")
+            }
+        }
+
+        if (strategyType == StrategyType.BUTTERFLY_SPREAD) {
+            if (legs.size != 3) {
+                errors.add("Butterfly Spread requires exactly 3 legs")
+            }
+            val allCalls = legs.all { it.optionType == OptionType.CALL }
+            if (!allCalls) {
+                errors.add("Butterfly Spread requires all legs to be CALL options")
+            }
+            val sellLegs = legs.filter { it.action == LegAction.SELL }
+            val buyLegs = legs.filter { it.action == LegAction.BUY }
+            if (sellLegs.any { it.quantity != 2 } || buyLegs.any { it.quantity != 1 }) {
+                errors.add("Butterfly Spread requires 1 quantity on BUY legs and 2 quantity on the SELL leg")
             }
         }
 

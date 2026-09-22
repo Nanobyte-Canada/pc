@@ -45,6 +45,28 @@ interface BrokerAdapter {
             warnings = listOf("Order impact preview not supported for this broker")
         )
     }
+    fun placeMultiLegOrder(
+        credentials: BrokerCredentials,
+        accountId: String,
+        request: MultiLegOrderRequest
+    ): OrderResult {
+        // Default: sequential single-leg fallback
+        val results = request.legs.map { leg ->
+            placeOrder(credentials, accountId, OrderRequest(
+                symbol = leg.symbol,
+                action = leg.action,
+                quantity = leg.quantity,
+                orderType = request.orderType,
+                limitPrice = request.limitPrice,
+                timeInForce = request.timeInForce,
+                symbolId = leg.symbolId,
+                optionType = leg.optionType,
+                strike = leg.strike,
+                expiry = leg.expiry
+            ))
+        }
+        return results.lastOrNull() ?: OrderResult(null, OrderStatus.REJECTED, "No legs to place")
+    }
     fun capabilities(): BrokerCapabilities
 }
 

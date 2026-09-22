@@ -1,0 +1,91 @@
+.dollar-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dollar-metrics__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.dollar-metrics__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--bg-primary, #0a0f1a);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.dollar-metrics__label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.dollar-metrics__values {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.dollar-metrics__cell--profit .dollar-metrics__dollar {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-variant-numeric: tabular-nums;
+  color: var(--success-text, #6ee7b7);
+}
+
+.dollar-metrics__cell--loss .dollar-metrics__dollar {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-variant-numeric: tabular-nums;
+  color: var(--danger-text, #f87171);
+}
+
+.dollar-metrics__percent {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.dollar-metrics__per-contract {
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* ── Net debit/credit row ── */
+.dollar-metrics__net-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-primary, #0a0f1a);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.dollar-metrics__net-value {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.dollar-metrics__net-value--positive {
+  color: var(--success-text, #6ee7b7);
+}
+
+.dollar-metrics__net-value--negative {
+  color: var(--danger-text, #f87171);
+}

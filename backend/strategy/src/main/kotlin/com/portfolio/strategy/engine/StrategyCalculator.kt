@@ -24,13 +24,21 @@ class StrategyCalculator {
         val riskRewardRatio = if (maxLoss > BigDecimal.ZERO) {
             maxProfit.divide(maxLoss, SCALE, RoundingMode.HALF_UP)
         } else BigDecimal.ZERO
-        val netGreeks = calculateNetGreeks(legs)
+        val netGreeks = calculateNetGreeks(legs, spotPrice)
+
+        val quantity = legs.firstOrNull()?.quantity?.toBigDecimal() ?: BigDecimal.ONE
+        val contractMultiplier = BigDecimal(100)
+        val maxProfitDollars = maxProfit * contractMultiplier * quantity
+        val maxLossDollars = maxLoss * contractMultiplier * quantity
+        val netDebitCreditDollars = netDebitCredit * contractMultiplier * quantity
 
         return CalculationResult(
             strategyType = null, netDebitCredit = netDebitCredit,
             maxProfit = maxProfit, maxLoss = maxLoss,
             breakEvenPrices = breakEvenPrices, riskRewardRatio = riskRewardRatio,
-            probabilityOfProfit = null, pnlCurve = pnlCurve, netGreeks = netGreeks
+            probabilityOfProfit = null, pnlCurve = pnlCurve, netGreeks = netGreeks,
+            maxProfitDollars = maxProfitDollars, maxLossDollars = maxLossDollars,
+            netDebitCreditDollars = netDebitCreditDollars
         )
     }
 
@@ -98,7 +106,7 @@ class StrategyCalculator {
         return breakEven.setScale(SCALE, RoundingMode.HALF_UP)
     }
 
-    private fun calculateNetGreeks(legs: List<Leg>): NetGreeks {
+    private fun calculateNetGreeks(legs: List<Leg>, spotPrice: BigDecimal): NetGreeks {
         var netDelta = BigDecimal.ZERO
         legs.forEach { leg ->
             val multiplier = when (leg.action) {
@@ -112,6 +120,12 @@ class StrategyCalculator {
                 netDelta += leg.delta * multiplier
             }
         }
-        return NetGreeks(netDelta.setScale(SCALE, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)
+        // Approximate gamma as delta / (spotPrice * 0.01)
+        // TODO: compute real gamma from Black-Scholes or market data
+        val gamma = if (spotPrice > BigDecimal.ZERO) {
+            netDelta.divide(spotPrice * BigDecimal("0.01"), SCALE, RoundingMode.HALF_UP)
+        } else BigDecimal.ZERO
+        // TODO: compute real theta and vega from Black-Scholes or market data
+        return NetGreeks(netDelta.setScale(SCALE, RoundingMode.HALF_UP), gamma, BigDecimal.ZERO, BigDecimal.ZERO)
     }
 }

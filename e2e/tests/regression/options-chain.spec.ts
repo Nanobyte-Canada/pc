@@ -20,15 +20,73 @@ test.describe('Options - Chain', { tag: ['@regression'] }, () => {
     await expect(page.locator('body')).toBeVisible();
   });
 
-  test(scenario('OPT-CHAIN-002', 'chain table renders with rows'), async () => {
-    test.skip(true, 'Options page shows the empty state "Enter a symbol above to load the options chain" until a symbol is loaded — no chain table exists by default (market data disconnected)');
+  test(scenario('OPT-CHAIN-002', 'chain table renders with rows'), async ({ page }) => {
+    await expect(page).toHaveURL(/\/options/);
+
+    // Enter symbol and load chain
+    const symbolInput = page.locator('input.underlying-search__input');
+    await symbolInput.fill('SPY');
+    await page.locator('button.underlying-search__button').click();
+
+    // Wait for either the chain to load or an error to appear (market data unavailable)
+    const chainOrError = await Promise.race([
+      page.locator('.chain-table').waitFor({ state: 'visible', timeout: 15000 }).then(() => 'chain' as const),
+      page.locator('.options-page__error').waitFor({ state: 'visible', timeout: 15000 }).then(() => 'error' as const),
+    ]).catch(() => 'timeout' as const);
+
+    if (chainOrError !== 'chain') {
+      test.skip(true, 'Market data provider unavailable — chain cannot be loaded');
+      return;
+    }
+
+    // Chain loaded — assert strikes are visible
+    const strikeCells = page.locator('.chain-table__strike-cell');
+    await expect(strikeCells.first()).toBeVisible();
+    const count = await strikeCells.count();
+    expect(count).toBeGreaterThan(0);
   });
 
-  test(scenario('OPT-CHAIN-003', 'strategy selector is visible'), async () => {
-    test.skip(true, 'No strategy selector exists on the options page — it only offers a symbol textbox and a Load Chain button');
+  test(scenario('OPT-CHAIN-003', 'strategy selector is visible'), async ({ page }) => {
+    await expect(page).toHaveURL(/\/options/);
+
+    // Strategy selector renders when strategies load from the API (independent of market data)
+    const strategyCards = page.locator('button.strategy-card');
+    await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
+
+    const count = await strategyCards.count();
+    expect(count).toBeGreaterThanOrEqual(6);
   });
 
-  test(scenario('OPT-CHAIN-004', 'P&L chart renders'), async () => {
-    test.skip(true, 'P&L chart renders only after loading a chain for a symbol; the page shows the empty state by default');
+  test(scenario('OPT-CHAIN-004', 'P&L chart renders after calculation'), async ({ page }) => {
+    await expect(page).toHaveURL(/\/options/);
+
+    // Enter symbol and load chain
+    const symbolInput = page.locator('input.underlying-search__input');
+    await symbolInput.fill('SPY');
+    await page.locator('button.underlying-search__button').click();
+
+    // Wait for chain to load or skip if market data unavailable
+    const chainOrError = await Promise.race([
+      page.locator('.chain-table').waitFor({ state: 'visible', timeout: 15000 }).then(() => 'chain' as const),
+      page.locator('.options-page__error').waitFor({ state: 'visible', timeout: 15000 }).then(() => 'error' as const),
+    ]).catch(() => 'timeout' as const);
+
+    if (chainOrError !== 'chain') {
+      test.skip(true, 'Market data provider unavailable — cannot test P&L chart');
+      return;
+    }
+
+    // Click on a call bid cell to add a leg
+    const callBidCell = page.locator('.chain-table__call-side').first();
+    await callBidCell.click();
+
+    // Click calculate
+    const calcButton = page.locator('.leg-builder__calculate');
+    await expect(calcButton).toBeEnabled();
+    await calcButton.click();
+
+    // P&L chart should render
+    const pnlChart = page.locator('.pnl-chart');
+    await expect(pnlChart).toBeVisible({ timeout: 10000 });
   });
 });

@@ -1,0 +1,135 @@
+.strategy-edu-card {
+  overflow: hidden;
+}
+
+.strategy-edu-card__header {
+  padding-bottom: 12px;
+}
+
+.strategy-edu-card__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.strategy-edu-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.strategy-edu-card__description {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+
+/* ── Outlook badge ── */
+.outlook-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.outlook-badge--bullish {
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+}
+
+.outlook-badge--bearish {
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+}
+
+.outlook-badge--neutral {
+  background: rgba(96, 165, 250, 0.12);
+  color: #93bbfd;
+}
+
+/* ── Body sections ── */
+.strategy-edu-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.strategy-edu-card__section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.strategy-edu-card__section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.strategy-edu-card__text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Key characteristics list ── */
+.strategy-edu-card__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.strategy-edu-card__list-item {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  padding-left: 14px;
+  position: relative;
+}
+
+.strategy-edu-card__list-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent, #10b981);
+}
+
+/* ── Warnings callout ── */
+.strategy-edu-card__section--warnings {
+  margin-top: 2px;
+}
+
+.strategy-edu-card__warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.strategy-edu-card__warning {
+  font-size: 12px;
+  color: #fbbf24;
+  padding: 6px 10px;
+  background: rgba(251, 191, 36, 0.06);
+  border-radius: 6px;
+  border: 1px solid rgba(251, 191, 36, 0.1);
+  line-height: 1.4;
+}
