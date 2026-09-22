@@ -3,6 +3,7 @@ import { AgGridReact } from 'ag-grid-react'
 import { Search, TableProperties } from 'lucide-react'
 import { useDashboardPositions, useOpenOrders } from '@/hooks/useDashboardWidgets'
 import { useAgGridTheme } from '@/hooks/useAgGridTheme'
+import { useGridScrollableFocus } from '@/hooks/useGridScrollableFocus'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { ColDef, ValueFormatterParams, ICellRendererParams } from 'ag-grid-community'
 import type { AggregatedPosition } from '@/types/broker'
@@ -48,6 +49,8 @@ function SymbolCellRenderer(params: ICellRendererParams<AggregatedPosition>) {
 export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
   const agTheme = useAgGridTheme()
   const cardRef = useRef<HTMLDivElement>(null)
+  const gridRootRef = useRef<HTMLDivElement | null>(null)
+  const gridFocusHandlers = useGridScrollableFocus(gridRootRef)
   const autoPageSize = useAutoPageSize(cardRef, 44, POSITIONS_RESERVED_HEIGHT)
   const { data: positionsData, isLoading: positionsLoading } = useDashboardPositions(connectionId)
   const { data: ordersData, isLoading: ordersLoading } = useOpenOrders()
@@ -217,8 +220,9 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
       ) : activeTab === 'holdings' ? (
         <>
           {/* Desktop: AG Grid */}
-          <div className={`${agTheme} positions-table__grid positions-table__desktop-only`}>
+          <div className={`${agTheme} positions-table__grid positions-table__desktop-only`} ref={gridRootRef}>
             <AgGridReact
+              {...gridFocusHandlers}
               rowData={filteredHoldings}
               columnDefs={holdingsColumns}
               domLayout="autoHeight"
@@ -259,8 +263,9 @@ export function PositionsTable({ connectionId, autoFit }: PositionsTableProps) {
           </div>
         </>
       ) : (
-        <div className={`${agTheme} positions-table__grid`}>
+        <div className={`${agTheme} positions-table__grid`} ref={gridRootRef}>
           <AgGridReact
+            {...gridFocusHandlers}
             rowData={orders}
             columnDefs={ordersColumns}
             domLayout="autoHeight"

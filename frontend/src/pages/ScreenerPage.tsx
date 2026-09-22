@@ -5,6 +5,7 @@ import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { useAgGridTheme } from '@/hooks/useAgGridTheme';
+import { useGridScrollableFocus } from '@/hooks/useGridScrollableFocus';
 import { Search } from 'lucide-react';
 import { ScreenerFilters, FilterInput, FilterSelect } from '@/components/screener/ScreenerFilters';
 import { Pagination } from '@/components/ui/Pagination';
@@ -501,6 +502,8 @@ export function ScreenerPage() {
 
   // Reset filters and pagination when type changes
   const prevTypeKeyRef = useRef(typeKey);
+  const gridRootRef = useRef<HTMLDivElement | null>(null);
+  const gridFocusHandlers = useGridScrollableFocus(gridRootRef);
   useEffect(() => {
     if (prevTypeKeyRef.current !== typeKey) {
       prevTypeKeyRef.current = typeKey;
@@ -630,8 +633,9 @@ export function ScreenerPage() {
         </div>
       ) : (
         <div className="screener-grid-card">
-          <div className={`${agTheme} screener-grid-container`}>
+          <div className={`${agTheme} screener-grid-container`} ref={gridRootRef}>
             <AgGridReact
+              {...gridFocusHandlers}
               rowData={data?.data ?? []}
               columnDefs={columnDefs}
               defaultColDef={{ sortable: true, resizable: true }}

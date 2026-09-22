@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { AgGridReact } from 'ag-grid-react'
 import type { ColDef, ValueFormatterParams } from 'ag-grid-community'
@@ -12,12 +12,15 @@ import type { BrokerPosition } from '../types/broker'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
 import { useAgGridTheme } from '@/hooks/useAgGridTheme'
+import { useGridScrollableFocus } from '@/hooks/useGridScrollableFocus'
 import './PositionDetailsPage.css'
 
 type TabType = 'positions' | 'activities'
 
 export function PositionDetailsPage() {
   const agTheme = useAgGridTheme()
+  const gridRootRef = useRef<HTMLDivElement | null>(null)
+  const gridFocusHandlers = useGridScrollableFocus(gridRootRef)
   const { connectionId } = useParams<{ connectionId: string }>()
   const navigate = useNavigate()
   const id = parseInt(connectionId || '0', 10)
@@ -248,8 +251,9 @@ export function PositionDetailsPage() {
             </p>
           </div>
         ) : (
-          <div className={`${agTheme} position-grid-container`}>
+          <div className={`${agTheme} position-grid-container`} ref={gridRootRef}>
             <AgGridReact
+              {...gridFocusHandlers}
               rowData={positions}
               columnDefs={columnDefs}
               defaultColDef={{

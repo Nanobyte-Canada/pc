@@ -1,9 +1,11 @@
+import { useRef } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef } from 'ag-grid-community';
 import { TopHolding } from '../../types/portfolio';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { useAgGridTheme } from '@/hooks/useAgGridTheme';
+import { useGridScrollableFocus } from '@/hooks/useGridScrollableFocus';
 import './TopHoldingsGrid.css';
 
 interface TopHoldingsGridProps {
@@ -23,6 +25,8 @@ const formatSources = (sources: TopHolding['sources']): string => {
 
 export function TopHoldingsGrid({ data }: TopHoldingsGridProps) {
   const agTheme = useAgGridTheme()
+  const gridRootRef = useRef<HTMLDivElement | null>(null)
+  const gridFocusHandlers = useGridScrollableFocus(gridRootRef)
   const columnDefs: ColDef<TopHolding>[] = [
     {
       field: 'ticker',
@@ -59,8 +63,9 @@ export function TopHoldingsGrid({ data }: TopHoldingsGridProps) {
   };
 
   return (
-    <div className={`top-holdings-grid ${agTheme}`}>
+    <div className={`top-holdings-grid ${agTheme}`} ref={gridRootRef}>
       <AgGridReact
+        {...gridFocusHandlers}
         rowData={data}
         columnDefs={columnDefs}
         defaultColDef={defaultColDef}
