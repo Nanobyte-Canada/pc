@@ -10,6 +10,12 @@ for (const page of visualPages) {
   test(scenario(`VISUAL-${page.name.toUpperCase()}-001`, `${page.name} visual regression`), { tag: ['@visual'] }, async ({ page: p }) => {
     await p.goto(page.path);
 
+    // Wait for the route content before stabilizing: unauthenticated '/' redirects
+    // to /login, and Firefox can capture the pre-redirect background-only frame if
+    // the screenshot fires while the redirect is pending (observed 2026-09-22: the
+    // blank capture matched the blank committed baseline, so no update could heal it).
+    await expect(p.getByRole('button', { name: 'Sign in with Email' })).toBeVisible();
+
     // Stabilize the capture: the app loads web fonts from an external CDN with
     // `display: swap` and renders a Suspense fallback (`.page-loading`) while
     // lazy routes load. Captures taken before both settle produce false-positive
