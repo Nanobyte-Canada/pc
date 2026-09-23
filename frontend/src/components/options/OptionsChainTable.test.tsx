@@ -228,4 +228,24 @@ describe('OptionsChainTable', () => {
     fireEvent.click(bidCells[0])
     expect(mockRemoveLeg).toHaveBeenCalledWith(0)
   })
+
+  it(scenario('OPT-TABLE-011', 'clears the flash class when the quote goes undefined mid-flash'), () => {
+    const { container, rerender } = render(
+      <OptionsChainTable chain={makeChain()} strikesPerSide={25} onStrikesPerSideChange={vi.fn()} />
+    )
+    // price rise arms an upward flash
+    rerender(
+      <OptionsChainTable chain={makeChain({ higherBid: true })} strikesPerSide={25} onStrikesPerSideChange={vi.fn()} />
+    )
+    expect(container.querySelectorAll('.chain-table__flash--up').length).toBeGreaterThan(0)
+
+    // within the 400ms window, the quote disappears (price → undefined) — flash must clear
+    const gone = makeChain({ higherBid: true })
+    gone.expirations['2026-09-19']['195.00'].call = null
+    rerender(
+      <OptionsChainTable chain={gone} strikesPerSide={25} onStrikesPerSideChange={vi.fn()} />
+    )
+    expect(container.querySelectorAll('.chain-table__flash--up').length).toBe(0)
+    expect(container.querySelectorAll('[data-flash="up"]').length).toBe(0)
+  })
 })

@@ -14,16 +14,24 @@ type ChainSide = 'calls' | 'puts'
 
 function useFlashDirection(price: number | undefined, key: string) {
   const prev = useRef<Map<string, number>>(new Map())
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [flash, setFlash] = useState<'' | 'up' | 'down'>('')
 
   useEffect(() => {
-    if (price === undefined) return
+    clearTimeout(timeoutRef.current)
+    if (price === undefined) {
+      setFlash('')
+      return
+    }
     const last = prev.current.get(key)
     prev.current.set(key, price)
-    if (last === undefined || last === price) return
+    if (last === undefined || last === price) {
+      setFlash('')
+      return
+    }
     setFlash(price > last ? 'up' : 'down')
-    const t = setTimeout(() => setFlash(''), 400)
-    return () => clearTimeout(t)
+    timeoutRef.current = setTimeout(() => setFlash(''), 400)
+    return () => clearTimeout(timeoutRef.current)
   }, [price, key])
 
   return flash
