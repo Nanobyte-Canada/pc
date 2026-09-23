@@ -56,4 +56,24 @@ describe('derivePriceFor', () => {
     const priceFor = derivePriceFor(chain, 'SPY')
     expect(priceFor({ ...leg, symbol: undefined })).toBeUndefined()
   })
+
+  it('returns undefined when the leg symbol does not match the selected underlying', () => {
+    const bothChains = {
+      ...chain,
+      QQQ: {
+        underlying: 'QQQ',
+        spotPrice: 100,
+        expirations: {
+          '2026-12-18': {
+            '100': {
+              call: { bid: 9.9, ask: 10.1, last: 10, mid: 10 },
+              put: null,
+            },
+          },
+        },
+      },
+    } as unknown as Record<string, OptionsChain>
+    const priceFor = derivePriceFor(bothChains, 'QQQ')
+    expect(priceFor(leg)).toBeUndefined()
+  })
 })

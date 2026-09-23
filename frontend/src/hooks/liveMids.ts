@@ -17,6 +17,7 @@ export function derivePriceFor(
 ): (leg: Leg) => number | undefined {
   return (leg) => {
     if (!underlying || !leg.symbol) return undefined
+    if (leg.symbol !== underlying) return undefined
     const expiryData = chains[underlying]?.expirations[leg.expiry]
     if (!expiryData) return undefined
 
