@@ -99,10 +99,10 @@
   color: #fdba74;
 }
 
-/* ── 3-column layout: strike, mid, expiry ── */
+/* ── 4-column layout: strike, qty, mid, expiry ── */
 .leg-builder__card-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 4px;
   flex: 1;
   min-width: 0;
@@ -180,4 +180,22 @@
   opacity: 0.4;
   cursor: not-allowed;
   filter: none;
+}
+
+.leg-builder__qty-btn {
+  background: none;
+  border: 1px solid var(--border, #333);
+  border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  padding: 0;
+}
+
+.leg-builder__qty-value {
+  display: inline-block;
+  min-width: 18px;
+  text-align: center;
 }

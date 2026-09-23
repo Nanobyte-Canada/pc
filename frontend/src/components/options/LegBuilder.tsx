@@ -1,13 +1,22 @@
 import { useStrategyStore } from '@/stores/strategyStore'
+import type { Leg } from '@/types/options'
 import './LegBuilder.css'
 
 interface LegBuilderProps {
   onCalculate: () => void
   isCalculating: boolean
+  liveMid?: (leg: Leg) => number | undefined
 }
 
-export function LegBuilder({ onCalculate, isCalculating }: LegBuilderProps) {
-  const { legs, removeLeg, clearStrategy } = useStrategyStore()
+export function LegBuilder({ onCalculate, isCalculating, liveMid }: LegBuilderProps) {
+  const { legs, removeLeg, updateLeg, clearStrategy } = useStrategyStore()
+
+  const adjustQuantity = (index: number, delta: number) => {
+    const current = legs[index]
+    const next = Math.max(1, current.quantity + delta)
+    if (next === current.quantity) return
+    updateLeg(index, { ...current, quantity: next })
+  }
 
   return (
     <div className="leg-builder">
@@ -45,8 +54,30 @@ export function LegBuilder({ onCalculate, isCalculating }: LegBuilderProps) {
                   <span className="leg-builder__card-value">${leg.strike.toFixed(0)}</span>
                 </div>
                 <div className="leg-builder__card-field">
+                  <span className="leg-builder__card-label">Qty</span>
+                  <span className="leg-builder__card-value">
+                    <button
+                      className="leg-builder__qty-btn"
+                      aria-label={`Decrease quantity for leg ${i + 1}`}
+                      onClick={() => adjustQuantity(i, -1)}
+                    >
+                      &minus;
+                    </button>
+                    <span className="leg-builder__qty-value">{leg.quantity}</span>
+                    <button
+                      className="leg-builder__qty-btn"
+                      aria-label={`Increase quantity for leg ${i + 1}`}
+                      onClick={() => adjustQuantity(i, 1)}
+                    >
+                      +
+                    </button>
+                  </span>
+                </div>
+                <div className="leg-builder__card-field">
                   <span className="leg-builder__card-label">Mid</span>
-                  <span className="leg-builder__card-value">${leg.price?.toFixed(2) ?? '-'}</span>
+                  <span className="leg-builder__card-value">
+                    ${(liveMid?.(leg) ?? leg.price)?.toFixed(2) ?? '-'}
+                  </span>
                 </div>
                 <div className="leg-builder__card-field">
                   <span className="leg-builder__card-label">Expiry</span>
