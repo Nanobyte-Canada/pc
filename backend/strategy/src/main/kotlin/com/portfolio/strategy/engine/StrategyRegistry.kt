@@ -65,7 +65,7 @@ class StrategyRegistry {
                 outlook = "Neutral (Range-Bound)", riskProfile = "Limited risk, limited profit", legCount = 3,
                 legTemplates = listOf(
                     LegTemplate(LegAction.BUY, OptionType.CALL, StrikeOffset.ATM),
-                    LegTemplate(LegAction.SELL, OptionType.CALL, StrikeOffset.OTM_1),
+                    LegTemplate(LegAction.SELL, OptionType.CALL, StrikeOffset.OTM_1, quantity = 2),
                     LegTemplate(LegAction.BUY, OptionType.CALL, StrikeOffset.OTM_2)
                 )
             )

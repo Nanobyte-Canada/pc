@@ -5,6 +5,7 @@ import com.portfolio.strategy.api.dto.*
 import com.portfolio.strategy.engine.*
 import com.portfolio.strategy.model.Leg
 import com.portfolio.strategy.model.LegAction
+import com.portfolio.strategy.model.LegTemplate
 import com.portfolio.strategy.model.StrategyType
 import com.portfolio.strategy.service.BrokerGatewayClient
 import org.slf4j.LoggerFactory
@@ -27,7 +28,10 @@ class StrategyController(
     @GetMapping
     fun listStrategies(): List<StrategyListResponse> {
         return registry.listAll().map { d ->
-            StrategyListResponse(d.type.name, d.displayName, d.description, d.outlook, d.riskProfile, d.legCount)
+            StrategyListResponse(
+                d.type.name, d.displayName, d.description, d.outlook, d.riskProfile, d.legCount,
+                d.legTemplates.map { it.toDto() }
+            )
         }
     }
 
@@ -38,9 +42,20 @@ class StrategyController(
         }
         val definition = registry.getDefinition(strategyType)
         val education = educationEngine.getContent(strategyType)
-        return StrategyInfoResponse(definition.type.name, definition.displayName, definition.description,
-            definition.outlook, definition.riskProfile, definition.legCount, education)
+        return StrategyInfoResponse(
+            definition.type.name, definition.displayName, definition.description,
+            definition.outlook, definition.riskProfile, definition.legCount,
+            definition.legTemplates.map { it.toDto() },
+            education
+        )
     }
+
+    private fun LegTemplate.toDto() = LegTemplateDto(
+        action = action.name,
+        optionType = optionType?.name,
+        strikeOffset = strikeOffset.name,
+        quantity = quantity
+    )
 
     @PostMapping("/calculate")
     fun calculate(@RequestBody request: CalculateRequest): CalculateResponse {
@@ -79,7 +94,10 @@ class StrategyController(
                 "neutral" -> d.outlook.contains("Neutral", ignoreCase = true) || d.outlook.contains("Range-Bound", ignoreCase = true)
                 else -> false
             }
-        }.map { d -> StrategyListResponse(d.type.name, d.displayName, d.description, d.outlook, d.riskProfile, d.legCount) }
+        }.map { d ->
+            StrategyListResponse(d.type.name, d.displayName, d.description, d.outlook, d.riskProfile, d.legCount,
+                d.legTemplates.map { it.toDto() })
+        }
     }
 
     /** Validates and submits an atomic multi-leg strategy order. */

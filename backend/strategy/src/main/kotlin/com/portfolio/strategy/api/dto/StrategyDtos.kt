@@ -9,7 +9,8 @@ data class StrategyListResponse(
     val description: String,
     val outlook: String,
     val riskProfile: String,
-    val legCount: Int
+    val legCount: Int,
+    val legTemplates: List<LegTemplateDto>
 )
 
 data class StrategyInfoResponse(
@@ -19,7 +20,15 @@ data class StrategyInfoResponse(
     val outlook: String,
     val riskProfile: String,
     val legCount: Int,
+    val legTemplates: List<LegTemplateDto>,
     val education: EducationContent
+)
+
+data class LegTemplateDto(
+    val action: String,
+    val optionType: String?,
+    val strikeOffset: String,
+    val quantity: Int
 )
 
 data class CalculateRequest(

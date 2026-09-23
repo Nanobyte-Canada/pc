@@ -15,7 +15,8 @@ data class StrategyDefinition(
 data class LegTemplate(
     val action: LegAction,
     val optionType: OptionType?,
-    val strikeOffset: StrikeOffset
+    val strikeOffset: StrikeOffset,
+    val quantity: Int = 1
 )
 
 enum class StrikeOffset {
