@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import type { OptionsChain, OptionQuoteData, Leg, LegAction, OptionTypeName } from '@/types/options'
+import { useState, useEffect, useRef } from 'react'
+import type { OptionsChain, OptionQuoteData, Leg, LegAction, OptionTypeName, StrikeData } from '@/types/options'
 import { useStrategyStore } from '@/stores/strategyStore'
 import './OptionsChainTable.css'
 
@@ -12,12 +12,123 @@ interface OptionsChainTableProps {
 
 type ChainSide = 'calls' | 'puts'
 
+function useFlashDirection(price: number | undefined, key: string) {
+  const prev = useRef<Map<string, number>>(new Map())
+  const [flash, setFlash] = useState<'' | 'up' | 'down'>('')
+
+  useEffect(() => {
+    if (price === undefined) return
+    const last = prev.current.get(key)
+    prev.current.set(key, price)
+    if (last === undefined || last === price) return
+    setFlash(price > last ? 'up' : 'down')
+    const t = setTimeout(() => setFlash(''), 400)
+    return () => clearTimeout(t)
+  }, [price, key])
+
+  return flash
+}
+
+interface ChainRowProps {
+  strikeKey: string
+  data: StrikeData
+  spot: number
+  legs: Leg[]
+  toggleLeg: (quote: OptionQuoteData, action: LegAction) => void
+  variant: 'desktop' | 'mobile'
+  mobileSide: ChainSide
+}
+
+function ChainRow({ strikeKey, data, spot, toggleLeg, variant, mobileSide }: ChainRowProps) {
+  const strike = parseFloat(strikeKey)
+  const isATM = Math.abs(strike - spot) <= spot * 0.01
+  const callITM = strike < spot
+  const putITM = strike > spot
+
+  const callBidFlash = useFlashDirection(data.call?.bid, `${strikeKey}:call:bid`)
+  const callAskFlash = useFlashDirection(data.call?.ask, `${strikeKey}:call:ask`)
+  const putBidFlash = useFlashDirection(data.put?.bid, `${strikeKey}:put:bid`)
+  const putAskFlash = useFlashDirection(data.put?.ask, `${strikeKey}:put:ask`)
+  const mobileQuote = mobileSide === 'calls' ? data.call : data.put
+  const mobileBidFlash = useFlashDirection(mobileQuote?.bid, `${strikeKey}:${mobileSide}:bid`)
+  const mobileAskFlash = useFlashDirection(mobileQuote?.ask, `${strikeKey}:${mobileSide}:ask`)
+
+  if (variant === 'mobile') {
+    const isITM = mobileSide === 'calls' ? strike < spot : strike > spot
+
+    return (
+      <tr className={isATM ? 'chain-table__atm-row' : ''}>
+        <td className="chain-table__strike-cell">{Math.round(strike)}</td>
+        <td
+          className={`chain-table__${mobileSide === 'calls' ? 'call' : 'put'}-side ${isITM ? 'chain-table__itm' : ''} ${mobileBidFlash ? `chain-table__flash--${mobileBidFlash}` : ''}`}
+          data-flash={mobileBidFlash}
+          onClick={() => mobileQuote && toggleLeg(mobileQuote, 'BUY')}
+        >
+          {mobileQuote?.bid?.toFixed(2) ?? '-'}
+        </td>
+        <td
+          className={`chain-table__${mobileSide === 'calls' ? 'call' : 'put'}-side ${isITM ? 'chain-table__itm' : ''} ${mobileAskFlash ? `chain-table__flash--${mobileAskFlash}` : ''}`}
+          data-flash={mobileAskFlash}
+          onClick={() => mobileQuote && toggleLeg(mobileQuote, 'SELL')}
+        >
+          {mobileQuote?.ask?.toFixed(2) ?? '-'}
+        </td>
+        <td className={`chain-table__delta ${isITM ? 'chain-table__itm' : ''}`}>
+          {mobileQuote?.greeks?.delta?.toFixed(3) ?? '-'}
+        </td>
+      </tr>
+    )
+  }
+
+  return (
+    <tr className={isATM ? 'chain-table__atm-row' : ''}>
+      <td
+        className={`chain-table__call-side ${callITM ? 'chain-table__itm' : ''} ${callBidFlash ? `chain-table__flash--${callBidFlash}` : ''}`}
+        data-flash={callBidFlash}
+        onClick={() => data.call && toggleLeg(data.call, 'BUY')}
+      >
+        {data.call?.bid?.toFixed(2) ?? '-'}
+      </td>
+      <td
+        className={`chain-table__call-side ${callITM ? 'chain-table__itm' : ''} ${callAskFlash ? `chain-table__flash--${callAskFlash}` : ''}`}
+        data-flash={callAskFlash}
+        onClick={() => data.call && toggleLeg(data.call, 'SELL')}
+      >
+        {data.call?.ask?.toFixed(2) ?? '-'}
+      </td>
+      <td className={`chain-table__delta ${callITM ? 'chain-table__itm' : ''}`}>
+        {data.call?.greeks?.delta?.toFixed(3) ?? '-'}
+      </td>
+      <td className="chain-table__strike-cell">{Math.round(strike)}</td>
+      <td className={`chain-table__delta ${putITM ? 'chain-table__itm' : ''}`}>
+        {data.put?.greeks?.delta?.toFixed(3) ?? '-'}
+      </td>
+      <td
+        className={`chain-table__put-side ${putITM ? 'chain-table__itm' : ''} ${putBidFlash ? `chain-table__flash--${putBidFlash}` : ''}`}
+        data-flash={putBidFlash}
+        onClick={() => data.put && toggleLeg(data.put, 'BUY')}
+      >
+        {data.put?.bid?.toFixed(2) ?? '-'}
+      </td>
+      <td
+        className={`chain-table__put-side ${putITM ? 'chain-table__itm' : ''} ${putAskFlash ? `chain-table__flash--${putAskFlash}` : ''}`}
+        data-flash={putAskFlash}
+        onClick={() => data.put && toggleLeg(data.put, 'SELL')}
+      >
+        {data.put?.ask?.toFixed(2) ?? '-'}
+      </td>
+    </tr>
+  )
+}
+
 export function OptionsChainTable({ chain, onExpiryChange, strikesPerSide, onStrikesPerSideChange }: OptionsChainTableProps) {
   const expirations = Object.keys(chain.expirations).sort()
   const [selectedExpiry, setSelectedExpiry] = useState(expirations[0] ?? '')
   const [mobileSide, setMobileSide] = useState<ChainSide>('calls')
   const [isMobile, setIsMobile] = useState(false)
   const addLeg = useStrategyStore((s) => s.addLeg)
+  const removeLeg = useStrategyStore((s) => s.removeLeg)
+  const legs = useStrategyStore((s) => s.legs)
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
@@ -27,8 +138,19 @@ export function OptionsChainTable({ chain, onExpiryChange, strikesPerSide, onStr
     return () => mq.removeEventListener('change', handler)
   }, [])
 
-  const handleClickOption = (quote: OptionQuoteData, action: LegAction) => {
-    const leg: Leg = {
+  const toggleLeg = (quote: OptionQuoteData, action: LegAction) => {
+    const existing = legs.findIndex(
+      (l) =>
+        l.strike === quote.strike &&
+        l.expiry === quote.expiry &&
+        l.optionType === quote.optionType &&
+        l.action === action
+    )
+    if (existing >= 0) {
+      removeLeg(existing)
+      return
+    }
+    addLeg({
       action,
       optionType: quote.optionType as OptionTypeName,
       strike: quote.strike,
@@ -40,8 +162,7 @@ export function OptionsChainTable({ chain, onExpiryChange, strikesPerSide, onStr
       mid: quote.mid,
       delta: quote.greeks?.delta,
       symbol: quote.underlying,
-    }
-    addLeg(leg)
+    })
   }
 
   if (expirations.length === 0) {
@@ -143,46 +264,18 @@ export function OptionsChainTable({ chain, onExpiryChange, strikesPerSide, onStr
           </thead>
           <tbody>
             {strikeEntries.map(([strikeKey, data]) => {
-              const strike = parseFloat(strikeKey)
               if (!data) return null
-              const isATM = Math.abs(strike - spot) <= (spot * 0.01)
-              const callITM = strike < spot
-              const putITM = strike > spot
-
               return (
-                <tr key={strikeKey} className={isATM ? 'chain-table__atm-row' : ''}>
-                  <td
-                    className={`chain-table__call-side ${callITM ? 'chain-table__itm' : ''}`}
-                    onClick={() => data.call && handleClickOption(data.call, 'BUY')}
-                  >
-                    {data.call?.bid?.toFixed(2) ?? '-'}
-                  </td>
-                  <td
-                    className={`chain-table__call-side ${callITM ? 'chain-table__itm' : ''}`}
-                    onClick={() => data.call && handleClickOption(data.call, 'SELL')}
-                  >
-                    {data.call?.ask?.toFixed(2) ?? '-'}
-                  </td>
-                  <td className={`chain-table__delta ${callITM ? 'chain-table__itm' : ''}`}>
-                    {data.call?.greeks?.delta?.toFixed(3) ?? '-'}
-                  </td>
-                  <td className="chain-table__strike-cell">{Math.round(strike)}</td>
-                  <td className={`chain-table__delta ${putITM ? 'chain-table__itm' : ''}`}>
-                    {data.put?.greeks?.delta?.toFixed(3) ?? '-'}
-                  </td>
-                  <td
-                    className={`chain-table__put-side ${putITM ? 'chain-table__itm' : ''}`}
-                    onClick={() => data.put && handleClickOption(data.put, 'BUY')}
-                  >
-                    {data.put?.bid?.toFixed(2) ?? '-'}
-                  </td>
-                  <td
-                    className={`chain-table__put-side ${putITM ? 'chain-table__itm' : ''}`}
-                    onClick={() => data.put && handleClickOption(data.put, 'SELL')}
-                  >
-                    {data.put?.ask?.toFixed(2) ?? '-'}
-                  </td>
-                </tr>
+                <ChainRow
+                  key={strikeKey}
+                  strikeKey={strikeKey}
+                  data={data}
+                  spot={spot}
+                  legs={legs}
+                  toggleLeg={toggleLeg}
+                  variant="desktop"
+                  mobileSide={mobileSide}
+                />
               )
             })}
           </tbody>
@@ -202,31 +295,18 @@ export function OptionsChainTable({ chain, onExpiryChange, strikesPerSide, onStr
           </thead>
           <tbody>
             {strikeEntries.map(([strikeKey, data]) => {
-              const strike = parseFloat(strikeKey)
               if (!data) return null
-              const isATM = Math.abs(strike - spot) <= (spot * 0.01)
-              const side = mobileSide === 'calls' ? data.call : data.put
-              const isITM = mobileSide === 'calls' ? strike < spot : strike > spot
-
               return (
-                <tr key={strikeKey} className={isATM ? 'chain-table__atm-row' : ''}>
-                  <td className="chain-table__strike-cell">{Math.round(strike)}</td>
-                  <td
-                    className={`chain-table__${mobileSide === 'calls' ? 'call' : 'put'}-side ${isITM ? 'chain-table__itm' : ''}`}
-                    onClick={() => side && handleClickOption(side, 'BUY')}
-                  >
-                    {side?.bid?.toFixed(2) ?? '-'}
-                  </td>
-                  <td
-                    className={`chain-table__${mobileSide === 'calls' ? 'call' : 'put'}-side ${isITM ? 'chain-table__itm' : ''}`}
-                    onClick={() => side && handleClickOption(side, 'SELL')}
-                  >
-                    {side?.ask?.toFixed(2) ?? '-'}
-                  </td>
-                  <td className={`chain-table__delta ${isITM ? 'chain-table__itm' : ''}`}>
-                    {side?.greeks?.delta?.toFixed(3) ?? '-'}
-                  </td>
-                </tr>
+                <ChainRow
+                  key={strikeKey}
+                  strikeKey={strikeKey}
+                  data={data}
+                  spot={spot}
+                  legs={legs}
+                  toggleLeg={toggleLeg}
+                  variant="mobile"
+                  mobileSide={mobileSide}
+                />
               )
             })}
           </tbody>

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { OptionsChainTable } from './OptionsChainTable'
-import type { OptionsChain, StrikeData } from '@/types/options'
+import type { OptionsChain, StrikeData, Leg } from '@/types/options'
 import { scenario } from '../../test/scenario'
 
 beforeAll(() => {
@@ -20,52 +20,74 @@ beforeAll(() => {
   })
 })
 
+const mockLegs: Leg[] = []
+const mockAddLeg = vi.fn((leg: Leg) => {
+  mockLegs.push(leg)
+})
+const mockRemoveLeg = vi.fn((index: number) => {
+  mockLegs.splice(index, 1)
+})
+
 vi.mock('@/stores/strategyStore', () => ({
-  useStrategyStore: () => ({
-    addLeg: vi.fn(),
-  }),
+  useStrategyStore: (selector: (s: unknown) => unknown) =>
+    selector({ legs: mockLegs, addLeg: mockAddLeg, removeLeg: mockRemoveLeg }),
 }))
 
-function makeChain(overrides?: { expirations?: Record<string, Record<string, StrikeData>>; spotPrice?: number }): OptionsChain {
-  return {
-    underlying: 'AAPL',
-    spotPrice: overrides?.spotPrice ?? 195,
-    expirations: overrides?.expirations ?? {
-      '2026-09-19': {
-        '195.00': {
-          call: {
-            underlying: 'AAPL', optionType: 'CALL', strike: 195, expiry: '2026-09-19',
-            bid: 2.50, ask: 2.70, last: 2.60, mid: 2.60, spread: 0.20,
-            spreadQuality: 0.5, volume: 1000, openInterest: 5000,
-            greeks: { delta: 0.5, gamma: 0.02, theta: -0.05, vega: 0.15, rho: 0.01, source: 'BLACK_SCHOLES' },
-            timestamp: new Date().toISOString(),
-          },
-          put: {
-            underlying: 'AAPL', optionType: 'PUT', strike: 195, expiry: '2026-09-19',
-            bid: 2.30, ask: 2.50, last: 2.40, mid: 2.40, spread: 0.20,
-            spreadQuality: 0.5, volume: 800, openInterest: 4000,
-            greeks: { delta: -0.5, gamma: 0.02, theta: -0.05, vega: 0.15, rho: -0.01, source: 'BLACK_SCHOLES' },
-            timestamp: new Date().toISOString(),
-          },
+function makeChain(overrides?: {
+  expirations?: Record<string, Record<string, StrikeData>>
+  spotPrice?: number
+  higherBid?: boolean
+}): OptionsChain {
+  const expirations = overrides?.expirations ?? {
+    '2026-09-19': {
+      '195.00': {
+        call: {
+          underlying: 'AAPL', optionType: 'CALL', strike: 195, expiry: '2026-09-19',
+          bid: 2.50, ask: 2.70, last: 2.60, mid: 2.60, spread: 0.20,
+          spreadQuality: 0.5, volume: 1000, openInterest: 5000,
+          greeks: { delta: 0.5, gamma: 0.02, theta: -0.05, vega: 0.15, rho: 0.01, source: 'BLACK_SCHOLES' },
+          timestamp: new Date().toISOString(),
         },
-        '200.00': {
-          call: {
-            underlying: 'AAPL', optionType: 'CALL', strike: 200, expiry: '2026-09-19',
-            bid: 0.80, ask: 1.00, last: 0.90, mid: 0.90, spread: 0.20,
-            spreadQuality: 0.5, volume: 500, openInterest: 3000,
-            greeks: { delta: 0.3, gamma: 0.01, theta: -0.04, vega: 0.12, rho: 0.005, source: 'BLACK_SCHOLES' },
-            timestamp: new Date().toISOString(),
-          },
-          put: {
-            underlying: 'AAPL', optionType: 'PUT', strike: 200, expiry: '2026-09-19',
-            bid: 4.50, ask: 4.70, last: 4.60, mid: 4.60, spread: 0.20,
-            spreadQuality: 0.5, volume: 600, openInterest: 2500,
-            greeks: { delta: -0.7, gamma: 0.01, theta: -0.04, vega: 0.12, rho: -0.005, source: 'BLACK_SCHOLES' },
-            timestamp: new Date().toISOString(),
-          },
+        put: {
+          underlying: 'AAPL', optionType: 'PUT', strike: 195, expiry: '2026-09-19',
+          bid: 2.30, ask: 2.50, last: 2.40, mid: 2.40, spread: 0.20,
+          spreadQuality: 0.5, volume: 800, openInterest: 4000,
+          greeks: { delta: -0.5, gamma: 0.02, theta: -0.05, vega: 0.15, rho: -0.01, source: 'BLACK_SCHOLES' },
+          timestamp: new Date().toISOString(),
+        },
+      },
+      '200.00': {
+        call: {
+          underlying: 'AAPL', optionType: 'CALL', strike: 200, expiry: '2026-09-19',
+          bid: 0.80, ask: 1.00, last: 0.90, mid: 0.90, spread: 0.20,
+          spreadQuality: 0.5, volume: 500, openInterest: 3000,
+          greeks: { delta: 0.3, gamma: 0.01, theta: -0.04, vega: 0.12, rho: 0.005, source: 'BLACK_SCHOLES' },
+          timestamp: new Date().toISOString(),
+        },
+        put: {
+          underlying: 'AAPL', optionType: 'PUT', strike: 200, expiry: '2026-09-19',
+          bid: 4.50, ask: 4.70, last: 4.60, mid: 4.60, spread: 0.20,
+          spreadQuality: 0.5, volume: 600, openInterest: 2500,
+          greeks: { delta: -0.7, gamma: 0.01, theta: -0.04, vega: 0.12, rho: -0.005, source: 'BLACK_SCHOLES' },
+          timestamp: new Date().toISOString(),
         },
       },
     },
+  }
+
+  if (overrides?.higherBid) {
+    const call = expirations['2026-09-19']?.['195.00']?.call
+    if (call) {
+      call.bid = 2.80
+      call.ask = 3.00
+      call.mid = 2.90
+    }
+  }
+
+  return {
+    underlying: 'AAPL',
+    spotPrice: overrides?.spotPrice ?? 195,
+    expirations,
   }
 }
 
@@ -182,5 +204,28 @@ describe('OptionsChainTable', () => {
     )
     const activeTab = document.querySelector('.chain-table__expiry-tab--active')
     expect(activeTab?.textContent).toBe('2026-09-19')
+  })
+
+  it(scenario('OPT-TABLE-009', 'applies an upward flash class when a price rises'), () => {
+    const { container, rerender } = render(
+      <OptionsChainTable chain={makeChain()} strikesPerSide={25} onStrikesPerSideChange={vi.fn()} />
+    )
+    expect(container.querySelectorAll('.chain-table__flash--up').length).toBe(0)
+    // re-render with a higher bid on the same contract
+    rerender(
+      <OptionsChainTable chain={makeChain({ higherBid: true })} strikesPerSide={25} onStrikesPerSideChange={vi.fn()} />
+    )
+    expect(container.querySelectorAll('.chain-table__flash--up').length).toBeGreaterThan(0)
+  })
+
+  it(scenario('OPT-TABLE-010', 'removes a leg when the same contract is clicked twice'), () => {
+    render(
+      <OptionsChainTable chain={makeChain()} strikesPerSide={25} onStrikesPerSideChange={vi.fn()} />
+    )
+    const bidCells = document.querySelectorAll('.chain-table__call-side')
+    fireEvent.click(bidCells[0])
+    expect(mockAddLeg).toHaveBeenCalledTimes(1)
+    fireEvent.click(bidCells[0])
+    expect(mockRemoveLeg).toHaveBeenCalledWith(0)
   })
 })
