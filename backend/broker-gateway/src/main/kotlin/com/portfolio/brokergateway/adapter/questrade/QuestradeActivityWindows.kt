@@ -25,7 +25,7 @@ object QuestradeActivityWindows {
         require(maxWindowDays >= 1) { "maxWindowDays must be >= 1" }
         require(!start.isAfter(endInclusive)) { "start $start must not be after end $endInclusive" }
         val totalDays = ChronoUnit.DAYS.between(start, endInclusive) + 1
-        val windowCount = ((totalDays + maxWindowDays - 1) / maxWindowDays).toInt()
+        val windowCount = (totalDays + maxWindowDays - 1) / maxWindowDays
         require(windowCount <= MAX_WINDOWS) {
             "Requested range $start..$endInclusive requires $windowCount windows, exceeding the $MAX_WINDOWS-window cap"
         }
