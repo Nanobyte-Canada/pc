@@ -50,18 +50,15 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('STRAT-003', 'outlook labels are shown'), async ({ page }) => {
-    const strategyCards = page.locator('button.strategy-card');
-    await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
-    const count = await strategyCards.count();
+    const strategyCards = page.locator('.strategy-card')
+    await expect(strategyCards).toHaveCount(6)
 
-    for (let i = 0; i < count; i++) {
-      const card = strategyCards.nth(i);
-      const badge = card.locator('.strategy-card__outlook');
-      await expect(badge).toBeVisible();
-      const text = (await badge.textContent())?.trim();
-      expect(['Bullish', 'Bearish', 'Neutral', 'Range-Bound']).toContain(text);
+    const labels = await page.locator('.strategy-card__outlook').allTextContents()
+    expect(labels.length).toBe(6)
+    for (const label of labels) {
+      expect(['Bullish', 'Bearish', 'Neutral']).toContain(label.trim())
     }
-  });
+  })
 
   test(scenario('STRAT-004', 'butterfly spread is present with 3-leg description'), async ({ page }) => {
     const strategyCards = page.locator('button.strategy-card');

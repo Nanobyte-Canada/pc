@@ -23,6 +23,13 @@ function outlookBadgeClass(outlook: string): string {
   return 'strategy-card__outlook--neutral'
 }
 
+export function outlookLabel(outlook: string): 'Bullish' | 'Bearish' | 'Neutral' {
+  const lower = outlook.toLowerCase()
+  if (lower.includes('bullish')) return 'Bullish'
+  if (lower.includes('bearish')) return 'Bearish'
+  return 'Neutral'
+}
+
 function riskBadgeClass(risk: string): string {
   const lower = risk.toLowerCase()
   if (lower.includes('high')) return 'strategy-card__risk--high'
@@ -63,7 +70,7 @@ export function StrategySelector({ strategies }: StrategySelectorProps) {
           <div className="strategy-card__top-row">
             <span className="strategy-card__name">{formatStrategyName(s.name)}</span>
             <span className={`strategy-card__outlook ${outlookBadgeClass(s.marketOutlook)}`}>
-              {s.marketOutlook.split(' ')[0]}
+              {outlookLabel(s.marketOutlook)}
             </span>
           </div>
           <div className="strategy-card__bottom-row">
