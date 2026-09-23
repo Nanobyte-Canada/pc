@@ -286,3 +286,33 @@ The deployed UI test workflow sourced `APP_TEST_ADMIN_EMAIL`/`APP_TEST_ADMIN_PAS
 **Decision:** Rename compose service keys in `deploy/uat/docker-compose.yml`, `deploy/prod/docker-compose.yml`, and the root `docker-compose.yml`: `backend` → `portfolio-backend`, `ingestion-service` → `portfolio-ingestion`, `market-data-service` → `portfolio-market-data`, `strategy-service` → `portfolio-strategy`, `broker-gateway-service` → `portfolio-broker-gateway`, `frontend` → `portfolio-frontend`. `frontend/nginx.conf` proxies to the app-prefixed names, so one static config is correct in every environment. Container names, host ports, compose project names, images, and network memberships are unchanged (invariants #2 and #3 preserved). Compose service keys (and therefore network aliases) must be app-prefixed and globally unique; never use generic names (`backend`, `frontend`, `api`, `db`) on shared external networks. `deploy.yml` and `deploy-prod.yml` run `docker compose up -d --remove-orphans` so service removals do not leave stale containers; the deterministic recovery when `up -d --remove-orphans` does not reconcile a renamed service (explicit `container_name` cannot be adopted by a renamed service) is a one-time `docker compose down --remove-orphans` followed by re-dispatch; for the manual prod deploy this `down` is performed deliberately before dispatch. Cross-service URLs use the full container name or the unique `portfolio-*` alias; Prometheus scrapes by host port and Grafana log alerts filter by unchanged container names, so monitoring is unaffected. Loki's `service` label (derived from the compose service key by Promtail) changes value from `backend` to `portfolio-backend`; no current query depends on the old value. The alias fix also restores investclub's frontend resolution (its nginx stops receiving `pc` backend IPs); sibling stacks on the shared networks are advised to adopt the same convention.
 
 **Consequences:** Portfolio UAT and prod resolve every upstream unambiguously; intermittent `403 Invalid CORS request` from cross-app aliasing is eliminated. The first deploy after the rename recreates all containers (a one-to-three-minute interruption); if `up -d --remove-orphans` does not reconcile a renamed service, the documented recovery is a one-time `down --remove-orphans` followed by re-dispatch. Later deploys are unchanged. Historical documents that show the old service keys are append-only records and are not rewritten. This decision also corrects ADR-0031's consequence that credential rotation happens in Vault only — rotation spans both Vault and the database (see the incident record, spec §9.1).
+
+## ADR-0033: Wire BROKER_GATEWAY_URL into the strategy service
+
+### Status
+Accepted
+
+### Context
+The strategy service places atomic multi-leg orders by calling the broker-gateway's
+`.../combo-orders` endpoint through `BrokerGatewayClient`, which reads the Spring
+property `broker-gateway.url` and defaults to `http://localhost:8084`.
+
+`deploy/prod/docker-compose.yml`, `deploy/uat/docker-compose.yml` and the root
+`docker-compose.yml` set `BROKER_GATEWAY_URL` for `portfolio-backend` but not for
+`portfolio-strategy`. Inside the strategy container the fallback resolves to the
+strategy service itself, so every one-click trade would fail with a connection error
+in every deployed environment.
+
+### Decision
+Set `BROKER_GATEWAY_URL` explicitly for the `portfolio-strategy` service in all three
+compose files, pointing at that environment's broker-gateway container:
+
+- prod: `http://prod-portfolio-broker-gateway:8084`
+- uat:  `http://uat-portfolio-broker-gateway:8084`
+- local: `http://portfolio-broker-gateway:8084`
+
+A `scripts/verify-strategy-gateway-url.sh` check guards against regression.
+
+### Consequences
+Trading can reach the broker-gateway in every environment. The compose files now
+carry one more service URL, which must be kept in sync when containers are renamed.

@@ -130,6 +130,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       MARKET_DATA_SERVICE_URL: http://prod-portfolio-market-data:8082
       PORTFOLIO_SERVICE_URL: http://prod-portfolio-backend:8080
+      BROKER_GATEWAY_URL: http://prod-portfolio-broker-gateway:8084
     ports:
       - "10083:8083"
     healthcheck:
