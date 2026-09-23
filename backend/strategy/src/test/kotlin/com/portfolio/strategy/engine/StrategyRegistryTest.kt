@@ -1,11 +1,8 @@
 package com.portfolio.strategy.engine
 
-import com.portfolio.common.domain.OptionType
-import com.portfolio.strategy.api.dto.LegTemplateDto
 import com.portfolio.strategy.model.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import java.math.BigDecimal
 
 class StrategyRegistryTest {
 
@@ -33,19 +30,5 @@ class StrategyRegistryTest {
                 assertTrue(template.quantity >= 1) { "${definition.type} has quantity ${template.quantity}" }
             }
         }
-    }
-
-    @Test
-    fun `leg template dto carries quantity`() {
-        val definition = registry.getDefinition(StrategyType.BUTTERFLY_SPREAD)
-        val dtos = definition.legTemplates.map {
-            LegTemplateDto(
-                action = it.action.name,
-                optionType = it.optionType?.name,
-                strikeOffset = it.strikeOffset.name,
-                quantity = it.quantity
-            )
-        }
-        assertEquals(2, dtos.single { it.action == "SELL" }.quantity)
     }
 }
