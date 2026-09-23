@@ -17,6 +17,7 @@ import { OptionsChainTable } from '@/components/options/OptionsChainTable'
 import { LegBuilder } from '@/components/options/LegBuilder'
 import { PnlChart } from '@/components/options/PnlChart'
 import { useToast } from '@/stores/toastStore'
+import { derivePriceFor } from '@/hooks/liveMids'
 import type { CalculationResult } from '@/types/options'
 import './OptionsPage.css'
 
@@ -153,6 +154,8 @@ export function OptionsPage() {
     return strategies.find(s => s.type === selectedStrategy) ?? null
   }, [selectedStrategy, strategies])
 
+  const priceFor = useMemo(() => derivePriceFor(chains, selectedUnderlying), [chains, selectedUnderlying])
+
   return (
     <div className="options-page">
       {/* ── Header: Title + Search + Live status ── */}
@@ -228,6 +231,7 @@ export function OptionsPage() {
             <LegBuilder
               onCalculate={handleCalculate}
               isCalculating={isCalculating}
+              liveMid={priceFor}
             />
             {calcResult && (
               <DollarValuePnlMetrics
@@ -294,6 +298,7 @@ export function OptionsPage() {
             <LegBuilder
               onCalculate={handleCalculate}
               isCalculating={isCalculating}
+              liveMid={priceFor}
             />
             {calcResult && (
               <DollarValuePnlMetrics
