@@ -157,6 +157,50 @@
   line-height: 1.5;
 }
 
+/* ── Live net debit/credit ── */
+.leg-builder__net {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.leg-builder__net-label {
+  font-size: 10px;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.leg-builder__net-value {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.leg-builder__net-value--credit {
+  color: var(--success-text, #6ee7b7);
+}
+
+.leg-builder__net-value--debit {
+  color: var(--danger-text, #f87171);
+}
+
+.leg-builder__net-value--even {
+  color: var(--text-primary);
+}
+
+.leg-builder__net-value--pending {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted, #64748b);
+}
+
 /* ── Calculate button ── */
 .leg-builder__calculate {
   margin-top: 12px;
