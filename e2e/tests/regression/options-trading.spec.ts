@@ -95,8 +95,8 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
     const callBidCell = page.locator('.chain-table__call-side').first();
     await callBidCell.click();
 
-    // Leg builder should show the leg
-    const legCards = page.locator('.leg-builder__card');
+    // Leg builder should show the leg (scoped: mobile bottom sheet mounts a second LegBuilder)
+    const legCards = page.locator('.options-page__center-panel .leg-builder__card');
     await expect(legCards).toHaveCount(1);
 
     // Per spec: LegBuilder shows correct badges. Scoped to the desktop panel —
@@ -177,15 +177,16 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
     const callBidCell = page.locator('.chain-table__call-side').first();
     await callBidCell.click();
 
-    const legCards = page.locator('.leg-builder__card');
+    // Scoped: mobile bottom sheet mounts a second LegBuilder in the DOM
+    const legCards = page.locator('.options-page__center-panel .leg-builder__card');
     await expect(legCards).toHaveCount(1);
 
     // Click clear all
-    const clearButton = page.locator('.leg-builder__clear');
+    const clearButton = page.locator('.options-page__center-panel .leg-builder__clear');
     await clearButton.click();
 
     // Builder should show empty state
-    await expect(page.locator('.leg-builder__empty')).toBeVisible();
+    await expect(page.locator('.options-page__center-panel .leg-builder__empty')).toBeVisible();
   });
 
   test(scenario('TRADE-007', 'iron condor with too few legs shows a validation error'), async ({ page }) => {
@@ -214,8 +215,9 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
     expect(strategies.length).toBeGreaterThan(0);
 
     // All returned strategies should have "Bullish" in their outlook
+    // (suggest endpoint returns the raw DTO field `outlook`, not the frontend-mapped `marketOutlook`)
     for (const strategy of strategies) {
-      expect(strategy.marketOutlook.toLowerCase()).toContain('bullish');
+      expect(strategy.outlook.toLowerCase()).toContain('bullish');
     }
   });
 
