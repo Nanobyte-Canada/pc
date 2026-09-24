@@ -613,7 +613,7 @@ Transaction history (trades, dividends, fees) synced from brokerages.
 |--------|------|----------|---------|
 | id | bigint | NO | sequence |
 | connection_id | bigint | NO | |
-| external_id | varchar(100) | YES | |
+| external_id (broker id or SHA-256 fingerprint) | varchar(100) | YES | |
 | type | varchar(50) | NO | |
 | symbol | varchar(20) | YES | |
 | description | text | YES | |
@@ -632,7 +632,7 @@ Transaction history (trades, dividends, fees) synced from brokerages.
 | exchange_rate | numeric | YES | |
 
 - **PK**: `id`
-- **Unique**: `(connection_id, external_id)`
+- `external_id` — broker-assigned id when available (e.g. Wealthsimple `canonicalId`); otherwise a SHA-256 fingerprint of the activity fields computed by `ActivityFingerprint` (see ADR-0034). `uq_activity_external UNIQUE (connection_id, external_id)` enforces dedup; note NULLs bypass this constraint, which is why brokers without ids must use the fingerprint.
 - **FK**: `connection_id -> broker_connections.id`
 - **Indexes**: `idx_activities_conn_date` (composite, trade_date DESC), `idx_activities_symbol`, `idx_activities_type`
 - **Size**: 6.2 MB, ~2,396 rows

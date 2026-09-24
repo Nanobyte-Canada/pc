@@ -398,4 +398,55 @@ class ActivityIngestionServiceTest {
         assertEquals(0, count)
         verify(exactly = 0) { gatewayClient.getActivities(any(), any(), any(), any()) }
     }
+
+    private fun questradeActivityWithoutExternalId(): Map<String, Any?> = mapOf(
+        "type" to "BUY",
+        "symbol" to "AAPL",
+        "description" to "Buy 10 AAPL",
+        "quantity" to 10.0,
+        "price" to 150.5,
+        "amount" to -1505.0,
+        "fee" to 1.0,
+        "currency" to "USD",
+        "tradeDate" to "2026-03-02",
+        "settlementDate" to "2026-03-04",
+        "optionType" to null
+    )
+
+    @Test
+    fun `incremental sync stores fingerprint as external id when broker id is absent`() {
+        every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
+        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns LocalDate.of(2026, 3, 1)
+        every { gatewayClient.getActivities("gw-conn-123", "ext-account-123", any(), any()) } returns
+            buildActivitiesJson(questradeActivityWithoutExternalId())
+
+        val fingerprint = "e23ae395c505668a37360d33d08196a2ff38fed00be4d76e3e2330bf0d6e4da6"
+        every { activityRepository.findByConnectionIdAndExternalId(10L, fingerprint) } returns null
+
+        val slot = slot<BrokerActivity>()
+        every { activityRepository.save(capture(slot)) } answers { slot.captured }
+
+        val count = service.syncActivitiesForConnection(10L)
+
+        assertEquals(1, count)
+        assertEquals(fingerprint, slot.captured.externalId)
+    }
+
+    @Test
+    fun `incremental sync skips an activity already present by fingerprint`() {
+        every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
+        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns LocalDate.of(2026, 3, 1)
+        every { gatewayClient.getActivities("gw-conn-123", "ext-account-123", any(), any()) } returns
+            buildActivitiesJson(questradeActivityWithoutExternalId())
+        every {
+            activityRepository.findByConnectionIdAndExternalId(
+                10L, "e23ae395c505668a37360d33d08196a2ff38fed00be4d76e3e2330bf0d6e4da6"
+            )
+        } returns mockk(relaxed = true)
+
+        val count = service.syncActivitiesForConnection(10L)
+
+        assertEquals(0, count)
+        verify(exactly = 0) { activityRepository.save(any<BrokerActivity>()) }
+    }
 }

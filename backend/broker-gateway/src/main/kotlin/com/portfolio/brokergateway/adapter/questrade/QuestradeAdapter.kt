@@ -1,5 +1,6 @@
 package com.portfolio.brokergateway.adapter.questrade
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.portfolio.brokergateway.adapter.*
 import com.portfolio.brokergateway.adapter.dto.*
 import org.slf4j.LoggerFactory
@@ -8,7 +9,6 @@ import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 
 @Component
 @ConditionalOnProperty(prefix = "broker-gateway.questrade", name = ["enabled"], havingValue = "true")
@@ -103,10 +103,26 @@ class QuestradeAdapter(
         startDate: LocalDate?, endDate: LocalDate?
     ): List<UnifiedActivity> {
         val creds = credentials as BrokerCredentials.QuestradeCredentials
-        val start = (startDate ?: LocalDate.now().minusDays(30)).format(DateTimeFormatter.ISO_DATE)
-        val end = (endDate ?: LocalDate.now()).format(DateTimeFormatter.ISO_DATE)
-        val response = restClient.get(creds.apiServerUrl, creds.accessToken,
-            "/v1/accounts/$accountId/activities?startTime=${start}T00:00:00-05:00&endTime=${end}T23:59:59-05:00")
+        val end = endDate ?: LocalDate.now(QuestradeActivityWindows.ZONE)
+        val start = startDate ?: end.minusDays((QuestradeActivityWindows.MAX_WINDOW_DAYS - 1).toLong())
+        val windows = QuestradeActivityWindows.build(start, end)
+        return fetchActivitiesWindowed(windows) { window ->
+            restClient.get(creds.apiServerUrl, creds.accessToken, activitiesPath(accountId, window))
+        }
+    }
+
+    internal fun activitiesPath(accountId: String, window: DateWindow): String =
+        "/v1/accounts/$accountId/activities" +
+            "?startTime=${QuestradeActivityWindows.formatStart(window.start)}" +
+            "&endTime=${QuestradeActivityWindows.formatEnd(window.endInclusive)}"
+
+    internal fun fetchActivitiesWindowed(
+        windows: List<DateWindow>,
+        fetch: (DateWindow) -> JsonNode
+    ): List<UnifiedActivity> =
+        windows.flatMap { mapActivities(fetch(it)) }.sortedBy { it.tradeDate }
+
+    private fun mapActivities(response: JsonNode): List<UnifiedActivity> {
         val activities = response.get("activities") ?: return emptyList()
         return activities.map { act ->
             UnifiedActivity(
@@ -303,7 +319,7 @@ class QuestradeAdapter(
             supportedOrderTypes = listOf(OrderType.MARKET, OrderType.LIMIT, OrderType.STOP, OrderType.STOP_LIMIT),
             supportsOptionPositions = true, supportsFractionalShares = false,
             supportsRealTimeData = true, supportsHistoricalActivities = true,
-            activityHistoryDepth = "Unlimited", orderRateLimit = "~1 req/sec",
+            activityHistoryDepth = "Full history via 30-day windows (31-day API cap)", orderRateLimit = "~1 req/sec",
             isOfficialApi = true, notes = "Order placement may require Questrade Partner App registration"
         )
     }

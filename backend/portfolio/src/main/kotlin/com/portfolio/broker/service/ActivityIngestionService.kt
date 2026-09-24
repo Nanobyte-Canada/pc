@@ -144,36 +144,42 @@ class ActivityIngestionService(
     private fun processAndSaveActivities(activities: JsonNode, connection: BrokerConnection): Int {
         var insertedCount = 0
         for (activity in activities) {
-            val externalId = activity.path("externalId").asText(null)
-            if (externalId != null) {
-                val existing = activityRepository.findByConnectionIdAndExternalId(connection.id, externalId)
-                if (existing != null) continue
-            }
-
             val tradeDate = parseJsonLocalDate(activity.path("tradeDate")) ?: continue
 
             val rawAmount = if (activity.has("amount") && !activity.path("amount").isNull)
                 BigDecimal(activity.path("amount").asText()) else BigDecimal.ZERO
             val currency = activity.path("currency").asText("CAD")
             val type = activity.path("type").asText("OTHER")
-
-            val (amountCad, exchangeRate) = computeCadAmount(rawAmount, currency, tradeDate, type)
-
-            val settlementDate = parseJsonLocalDate(activity.path("settlementDate"))
-
+            val symbol = activity.path("symbol").asText(null)
+            val description = activity.path("description").asText(null)
             val quantity = if (activity.has("quantity") && !activity.path("quantity").isNull)
                 BigDecimal(activity.path("quantity").asText()) else null
             val price = if (activity.has("price") && !activity.path("price").isNull)
                 BigDecimal(activity.path("price").asText()) else null
             val fee = if (activity.has("fee") && !activity.path("fee").isNull)
                 BigDecimal(activity.path("fee").asText()) else null
+            val settlementDate = parseJsonLocalDate(activity.path("settlementDate"))
+            val optionType = activity.path("optionType").asText(null)
+
+            // Questrade activities carry no broker-assigned id; derive a stable fingerprint so
+            // re-syncing overlapping windows stays idempotent. Wealthsimple supplies a
+            // canonicalId as externalId and keeps using it directly.
+            val key = activity.path("externalId").asText(null)
+                ?: ActivityFingerprint.of(
+                    type, symbol, description, quantity, price, rawAmount, fee,
+                    currency, tradeDate, settlementDate, optionType
+                )
+
+            if (activityRepository.findByConnectionIdAndExternalId(connection.id, key) != null) continue
+
+            val (amountCad, exchangeRate) = computeCadAmount(rawAmount, currency, tradeDate, type)
 
             val entity = BrokerActivity(
                 connection = connection,
-                externalId = externalId,
+                externalId = key,
                 type = type,
-                symbol = activity.path("symbol").asText(null),
-                description = activity.path("description").asText(null),
+                symbol = symbol,
+                description = description,
                 quantity = quantity,
                 price = price,
                 amount = rawAmount,
@@ -182,7 +188,7 @@ class ActivityIngestionService(
                 tradeDate = tradeDate,
                 settlementDate = settlementDate,
                 accountName = connection.accountName,
-                optionType = activity.path("optionType").asText(null),
+                optionType = optionType,
                 amountCad = amountCad,
                 exchangeRate = exchangeRate,
                 rawPayload = objectMapper.writeValueAsString(activity)
