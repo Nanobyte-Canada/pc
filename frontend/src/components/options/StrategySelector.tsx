@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useStrategyStore } from '@/stores/strategyStore'
 import { getStrategyInfo } from '@/services/optionsStrategyService'
 import type { StrategyInfo } from '@/types/options'
+import { outlookLabel } from './outlookLabel'
 import './StrategySelector.css'
 
 interface StrategySelectorProps {
@@ -21,13 +22,6 @@ function outlookBadgeClass(outlook: string): string {
   if (lower.includes('bullish')) return 'strategy-card__outlook--bullish'
   if (lower.includes('bearish')) return 'strategy-card__outlook--bearish'
   return 'strategy-card__outlook--neutral'
-}
-
-export function outlookLabel(outlook: string): 'Bullish' | 'Bearish' | 'Neutral' {
-  const lower = outlook.toLowerCase()
-  if (lower.includes('bullish')) return 'Bullish'
-  if (lower.includes('bearish')) return 'Bearish'
-  return 'Neutral'
 }
 
 function riskBadgeClass(risk: string): string {

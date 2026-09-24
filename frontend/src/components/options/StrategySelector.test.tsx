@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { outlookLabel } from './StrategySelector'
+import { outlookLabel } from './outlookLabel'
 
 describe('outlookLabel', () => {
   it('maps a moderately bullish outlook to Bullish', () => {
