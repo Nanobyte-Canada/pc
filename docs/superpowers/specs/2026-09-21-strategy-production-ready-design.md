@@ -59,7 +59,7 @@ Remove:
 Add:
 - `BUTTERFLY_SPREAD`
 
-Resulting enum (5 values):
+Resulting enum (6 values):
 ```
 BULL_CALL_SPREAD, BEAR_PUT_SPREAD, BULL_PUT_SPREAD, BEAR_CALL_SPREAD, IRON_CONDOR, BUTTERFLY_SPREAD
 ```
@@ -138,17 +138,26 @@ Changes:
 
 **New DTO fields in `CalculateResponse`:**
 ```kotlin
-val maxProfitDollars: BigDecimal?   // maxProfit * 100 * quantity
-val maxLossDollars: BigDecimal?     // maxLoss * 100 * quantity (positive value = max loss amount)
-val netDebitCreditDollars: BigDecimal  // netDebitCredit * 100 * quantity
+val maxProfitDollars: BigDecimal   // maxProfit * 100; maxProfit is already position-level
+val maxLossDollars: BigDecimal     // maxLoss * 100 (positive value = max loss amount)
+val netDebitCreditDollars: BigDecimal  // netDebitCredit * 100
 ```
+
+Quantity is applied per leg when the payoff curve is built (`leg.mid * leg.quantity`,
+and the same for intrinsic value), not as a single top-level multiplier. This is
+required for asymmetric structures such as the Butterfly, whose middle leg carries
+quantity 2. Scaling an entire position (e.g. five butterflies) must be expressed by
+editing each leg.
 
 ### 1.5 LegValidator Enhancement
 
 **File:** `backend/strategy/src/main/kotlin/com/portfolio/strategy/engine/LegValidator.kt`
 
 Add validation:
-- For BUTTERFLY_SPREAD: exactly 3 legs required, all calls, middle strike quantity must be 2x the outer strikes
+- For BUTTERFLY_SPREAD: exactly 3 legs required; all legs must share one option type
+  (all calls or all puts — a put butterfly is a valid bearish structure); the SELL leg
+  must carry quantity 2 and the two BUY legs quantity 1 each; the SELL strike must sit
+  strictly between the two BUY strikes
 - For other spreads: leg count must match strategy definition's `legCount`
 
 ### 1.6 New Trade Endpoint
@@ -188,6 +197,11 @@ data class LegResult(
     val status: String
 )
 ```
+
+`strategyType` is accepted as a `String` and parsed server-side, so an unknown value
+yields a 400 with a clear message rather than a Jackson deserialization failure.
+Each leg must also carry `symbol` — the combo-order path needs it to resolve Questrade
+symbolIds, and a leg without one is rejected before any broker call.
 
 **Trade flow:**
 1. Validate legs via `LegValidator`
@@ -233,24 +247,15 @@ fun placeMultiLegOrder(
     accountId: String,
     request: MultiLegOrderRequest
 ): OrderResult {
-    // Default: sequential single-leg fallback
-    val results = request.legs.map { leg ->
-        placeOrder(credentials, accountId, OrderRequest(
-            symbol = leg.symbol,
-            action = leg.action,
-            quantity = leg.quantity,
-            orderType = request.orderType,
-            limitPrice = request.limitPrice,
-            timeInForce = request.timeInForce,
-            symbolId = leg.symbolId,
-            optionType = leg.optionType,
-            strike = leg.strike,
-            expiry = leg.expiry
-        ))
-    }
-    return results.lastOrNull() ?: OrderResult(null, "ERROR", "No legs to place")
+    return OrderResult(null, OrderStatus.REJECTED,
+        "Atomic multi-leg orders are not supported by ${brokerType.name}")
 }
 ```
+
+Rationale: a multi-leg strategy executed as independent single-leg orders has leg risk —
+if any leg fails or fills at a different price, the account is left with an unbalanced
+position that no longer matches the calculated payoff. Rejecting is safer than degrading.
+Only adapters that can submit an atomic combo order (Questrade) support this path.
 
 ### 2.3 QuestradeAdapter Override
 
@@ -264,17 +269,13 @@ Override `placeMultiLegOrder()`:
 
 ### 2.4 New Controller Endpoint
 
-**File:** `backend/broker-gateway/src/main/kotlin/com/portfolio/brokergateway/api/controller/OrderController.kt`
+**File:** `backend/broker-gateway/src/main/kotlin/com/portfolio/brokergateway/api/controller/ComboOrderController.kt`
 
-Add:
-```kotlin
-@PostMapping("/combo")
-fun placeComboOrder(
-    @PathVariable connectionId: String,
-    @PathVariable accountId: String,
-    @RequestBody request: MultiLegOrderRequest
-): ResponseEntity<OrderResult>
-```
+Route: `POST /api/v1/gateway/connections/{connectionId}/accounts/{accountId}/combo-orders`
+
+`connectionId` and `accountId` are both path variables because credential resolution and
+account scoping are per-connection; the originally specified bare `/combo` route on
+`OrderController` could not carry them.
 
 ---
 
@@ -348,7 +349,6 @@ Move `/options` from "More" overflow menu to main navigation:
 **File:** `frontend/src/stores/strategyStore.ts`
 
 Add:
-- `selectedStrategyOutlook: string` — tracks selected strategy's outlook for filtering
 - `connectionStatus: { connected: boolean, brokerType: string }` — broker connection state
 - `tradeInProgress: boolean` — disables trade button during submission
 
@@ -385,42 +385,25 @@ interface TradeResponse {
 
 ### 4.1 Backend (market-data service)
 
-**Extend `OptionStreamingService`** at `backend/market-data/src/main/kotlin/com/portfolio/marketdata/streaming/OptionStreamingService.kt`:
+Options streaming already exists in the market-data service and was **not** part of this
+work: `OptionStreamingService.startStreaming(symbol, expiry, strike, optionType)` /
+`stopStreaming(...)` are reference-counted, and `QuoteWebSocketHandler` broadcasts
+normalized `option_quote` messages that the frontend's `useMarketDataWebSocket` hook
+consumes via `batchUpdateChainQuotes`.
 
-- New method: `startOptionStreaming(conId: Int, symbol: String)` — subscribes to option contract streaming via Questrade
-- New method: `stopOptionStreaming(conId: Int)` — unsubscribes
-- Reference-counted like `QuoteStreamingService` (multiple UI clients can subscribe to same contract)
-- Broadcast normalized option ticks via existing `QuoteWebSocketHandler`
-
-**WebSocket message format:**
-```json
-{
-  "type": "option_tick",
-  "conId": 12345,
-  "symbol": "SPY",
-  "bid": 2.50,
-  "ask": 2.55,
-  "last": 2.52,
-  "delta": 0.45,
-  "volume": 100,
-  "timestamp": "2026-09-21T15:30:00Z"
-}
-```
+Consequently there is no `option_tick` message type and no conId-keyed subscription API.
+The remaining frontend work is consuming this existing stream in the leg builder
+(live mid prices) and flashing price changes in the chain table.
 
 ### 4.2 Frontend Streaming Wiring
 
-**Extend `useMarketDataWebSocket` hook** at `frontend/src/hooks/useMarketDataWebSocket.ts`:
-
-Add methods:
-- `subscribeOptionChain(conIds: number[])` — batch subscribe to option contracts
-- `unsubscribeOptionChain(conIds: number[])` — batch unsubscribe
-- Track subscribed conIds to avoid duplicate subscriptions
-
-**New hook: `useOptionStreaming.ts`**
-- Accepts list of visible contract conIds
-- On mount/contract change: subscribe new, unsubscribe old
-- On unmount: unsubscribe all
-- Returns live bid/ask/last map keyed by conId
+Live leg-builder prices are derived directly from the chain store — a pure helper,
+`derivePriceFor(chains, underlying)` in `frontend/src/hooks/liveMids.ts`, resolves each
+leg's quote using the same strike-key normalization as `batchUpdateChainQuotes` and
+prefers the stored `mid`, falling back to the bid/ask midpoint. The unused
+`useOptionStreaming` hook was deleted: its per-contract subscription logic duplicated
+the page-level chain subscription. Contract-level batch subscription by conId is not
+required by the shipped design.
 
 **Chain table integration:**
 - `OptionsChainTable` cells receive live updates from streaming hook
@@ -456,10 +439,14 @@ Following existing conventions: scenario IDs, `@regression` tag, authenticated b
 | `TRADE-004` | Dollar-value P&L | Max profit/loss shown in both % and $ per contract |
 | `TRADE-005` | Trade button when disconnected | Trade button shows connection prompt |
 | `TRADE-006` | Remove legs | Add legs, Clear All, builder empty |
-| `TRADE-007` | Strategy leg validation | Select Iron Condor, add 2 legs, validation error shown |
-| `TRADE-008` | Butterfly Spread leg count | Select Butterfly Spread, verify 3-leg template loads |
+| `TRADE-007` | Iron Condor with too few legs | Select Iron Condor, add 2 legs, validation error shown |
+| `TRADE-008` | Strategy suggest by outlook | Use suggest endpoint with "bullish", only bullish strategies returned |
 | `TRADE-009` | P&L break-even points | Verify break-even prices shown on chart |
-| `TRADE-010` | Strategy suggest by outlook | Use suggest endpoint with "bullish", only bullish strategies returned |
+| `TRADE-010` | Butterfly Spread leg count | Select Butterfly Spread, verify 3-leg template loads |
+
+TRADE-007 (Iron Condor with too few legs) and TRADE-009 (break-even markers) were added
+after the initial implementation. The suggest-endpoint scenario is TRADE-008, not
+TRADE-010 as first drafted. See ADR-0034 for the deployed-UAT scope of this suite.
 
 ### 5.3 Existing Test Fixes
 
@@ -517,7 +504,7 @@ No schema changes required. Existing Flyway migrations cover all needed tables. 
 
 | Risk | Mitigation |
 |------|------------|
-| Questrade combo order API format changes | Abstract behind `BrokerAdapter` interface; fallback to sequential single-leg |
+| Questrade combo order API format changes | Abstracted behind `BrokerAdapter`; unsupported or failing adapters reject the order rather than degrading to sequential single-leg execution |
 | Streaming WebSocket connection drops | Existing reconnection logic in `useMarketDataWebSocket` handles reconnection |
 | Strategy calculation errors | Add comprehensive unit tests (currently zero) |
 | Multi-leg order partial fill | Questrade combo orders are atomic — all-or-nothing fill |
