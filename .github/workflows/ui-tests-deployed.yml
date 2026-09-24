@@ -1,4 +1,4 @@
-name: UI Tests — Deployed
+name: UI Tests — UAT (Deployed)
 
 on:
   workflow_run:
@@ -95,7 +95,7 @@ jobs:
           retention-days: 3
 
   regression-tests:
-    name: Regression Tests
+    name: Regression Tests (deployed UAT)
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&

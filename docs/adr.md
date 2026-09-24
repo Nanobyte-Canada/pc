@@ -316,3 +316,30 @@ A `scripts/verify-strategy-gateway-url.sh` check guards against regression.
 ### Consequences
 Trading can reach the broker-gateway in every environment. The compose files now
 carry one more service URL, which must be kept in sync when containers are renamed.
+
+## ADR-0034: Regression UI tests target deployed UAT, not the PR artifact
+
+**Date:** 2026-09-23
+
+### Status
+Accepted
+
+### Context
+`.github/workflows/ui-tests-deployed.yml` runs `npx playwright test --grep @regression`
+against `https://uatportfolio.nanobyte.ca`. The environment under test is therefore
+whatever image UAT currently runs, which is not guaranteed to be the PR's build. A PR
+can show a green `UI Tests — PR` check while the specs assert behaviour that the PR's
+own code does not have (this happened: an outlook-label assertion was green while the
+branch rendered a different string).
+
+### Decision
+Keep the deployed-UAT model for now, but make its scope explicit: the workflow and job
+are renamed `UI Tests — UAT (Deployed)` / `Regression Tests (deployed UAT)`. The
+documentation and the workflow name must not imply the PR artifact is verified.
+Specs must additionally avoid vacuous passes — assertions that iterate over a collection
+must first assert the collection is non-empty.
+
+### Consequences
+Green UI checks mean "the deployed UAT environment satisfies these specs", not "this
+branch satisfies these specs". Closing that gap (a PR-scoped preview deployment) is
+deliberately out of scope and remains open work.
