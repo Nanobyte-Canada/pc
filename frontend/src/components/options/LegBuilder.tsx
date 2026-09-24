@@ -9,7 +9,7 @@ interface LegBuilderProps {
   liveMid?: (leg: Leg) => number | undefined
 }
 
-export type NetDebitCreditState =
+type NetDebitCreditState =
   | { kind: 'empty' }
   | { kind: 'pending' }
   | { kind: 'value'; netDollars: number }
@@ -22,7 +22,7 @@ export type NetDebitCreditState =
  * leg.price fallback). Returns 'pending' when any leg has no price yet
  * rather than reporting a misleading $0.00.
  */
-export function computeNetDebitCredit(
+function computeNetDebitCredit(
   legs: Leg[],
   liveMid?: (leg: Leg) => number | undefined,
 ): NetDebitCreditState {
