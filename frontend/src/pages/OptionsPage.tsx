@@ -33,6 +33,7 @@ export function OptionsPage() {
   const [isLoadingChain, setIsLoadingChain] = useState(false)
   const [chainError, setChainError] = useState<string | null>(null)
   const [expiryError, setExpiryError] = useState<string | null>(null)
+  const [calcError, setCalcError] = useState<string | null>(null)
   const [calcResult, setCalcResult] = useState<CalculationResult | null>(null)
   const [calcWarnings, setCalcWarnings] = useState<string[]>([])
   const [strategiesLoaded, setStrategiesLoaded] = useState(false)
@@ -128,6 +129,7 @@ export function OptionsPage() {
     const quote = quotes[selectedUnderlying]
     if (!quote) return
 
+    setCalcError(null)
     setIsCalculating(true)
     try {
       const result = await calculateStrategy(
@@ -140,6 +142,10 @@ export function OptionsPage() {
       setCalcWarnings(result.warnings)
     } catch (err) {
       console.error('Calculation failed:', err)
+      const msg = err instanceof ApiError
+        ? err.message
+        : 'Calculation failed. Please try again.'
+      setCalcError(msg)
     } finally {
       setIsCalculating(false)
     }
@@ -233,6 +239,14 @@ export function OptionsPage() {
               isCalculating={isCalculating}
               liveMid={priceFor}
             />
+            {calcError && (
+              <div className="options-page__error">
+                <p className="options-page__error-message">{calcError}</p>
+                <button className="options-page__error-retry" onClick={() => setCalcError(null)}>
+                  Dismiss
+                </button>
+              </div>
+            )}
             {calcResult && (
               <DollarValuePnlMetrics
                 maxProfit={calcResult.maxProfit}
