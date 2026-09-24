@@ -94,6 +94,22 @@ Add to `specs/ui/quarantine.json`:
 | Quarantine expiry | `@saurabhbilakhia` via weekly triage report |
 | Environment failure | `@saurabhbilakhia` via Slack alert |
 
+## Failure Analysis Records
+
+### Run 35962962845 — UI Tests — UAT (Deployed) — 2026-09-24
+
+- **Context:** main @ `89f4e8e` (first regression run including #272's strategy tests) — 38 failed / 174 passed / 96 skipped
+- **Environment check first:** UAT healthy (smoke green, `strategy-api` health UP, 174 regression passed, all error-contexts show rendered logged-in pages) — environment and data ruled out
+
+| Tests | Failures | Classification | Confidence | Action |
+|-------|----------|----------------|------------|--------|
+| STRAT-001/003/004/005/006, OPT-CHAIN-003, TRADE-005, TRADE-010 | 32 | **test defect** — asserted strategy cards / trade UI without chain load; product only renders them after a successful chain load (`OptionsPage.tsx:76-79,183`), contradicting the contract in `strategies.spec.ts:23-28` | High | Fixed in PR #275 (existing chain-load helpers + market-data skip). Not quarantined — test defects are fixed, not quarantined |
+| TRADE-008 | 4 | **test defect** — GET with query params on a POST-only endpoint (`@PostMapping("/suggest")`); GET fell into `GET /{name}` → 400 | High | Fixed in PR #275 (POST with JSON body). Related latent frontend bug fixed in same PR |
+| DASH-OVERVIEW-002 (firefox + webkit) | 2 | **tentative flaky** — AG Grid not visible within 5000ms; chromium passed same run with same data; passed on prior UAT runs | Medium (single failing run — below the ≥2-intermittent-failure quarantine threshold) | **Watch next 2 UAT runs.** If it recurs → quarantine with owner `@saurabhbilakhia` + expiry ≤30 days, then investigate grid init timing. If not → close as one-off |
+
+- **Quarantine changes:** none (no test met the evidence bar)
+- **Product bugs:** none found
+
 ## Weekly Triage Cadence
 
 Every week (suggested: Monday morning), the test owner performs:
