@@ -1198,7 +1198,7 @@ git commit -m "test(e2e): cover missing strategy and trading scenarios"
 **Files:**
 - Modify: `backend/strategy/build.gradle.kts`
 - Modify: `.github/workflows/ui-tests-deployed.yml` (rename only, no behaviour change)
-- Modify: `docs/adr.md` (append ADR-0034)
+- Modify: `docs/adr.md` (append ADR-0035)
 - Test: coverage gate itself is the test
 
 **Interfaces:**
@@ -1286,12 +1286,12 @@ Rename the regression job and workflow so a green tick cannot be misread as "the
 - In `.github/workflows/ui-tests-deployed.yml`, change the workflow `name:` to `UI Tests — UAT (Deployed)` and the regression job's `name:` to `Regression Tests (deployed UAT)`.
 - Do not change triggers, `BASE_URL`, or the `--grep` filters — behaviour stays identical.
 
-- [ ] **Step 6: Record the limitation as ADR-0034**
+- [ ] **Step 6: Record the limitation as ADR-0035**
 
 Append to `docs/adr.md`:
 
 ```markdown
-## ADR-0034: Regression UI tests target deployed UAT, not the PR artifact
+## ADR-0035: Regression UI tests target deployed UAT, not the PR artifact
 
 ### Status
 Accepted
@@ -1892,7 +1892,7 @@ Replace the §5.2 table's `TRADE-007` / `TRADE-008` / `TRADE-009` / `TRADE-010` 
 ```markdown
 TRADE-007 (Iron Condor with too few legs) and TRADE-009 (break-even markers) were added
 after the initial implementation. The suggest-endpoint scenario is TRADE-008, not
-TRADE-010 as first drafted. See ADR-0034 for the deployed-UAT scope of this suite.
+TRADE-010 as first drafted. See ADR-0035 for the deployed-UAT scope of this suite.
 ```
 
 - [ ] **Step 8: Drop the unused store field and record the trade DTO's lenient typing (§3.5, §1.6)**

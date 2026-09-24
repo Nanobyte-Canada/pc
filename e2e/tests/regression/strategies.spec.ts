@@ -140,7 +140,7 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
     }
 
     const cards = page.locator('button.strategy-card');
-    // ADR-0034: a collection loop must first assert the collection is non-empty
+    // ADR-0035: a collection loop must first assert the collection is non-empty
     await expect(cards.first()).toBeVisible({ timeout: 10000 });
 
     for (const card of await cards.all()) {

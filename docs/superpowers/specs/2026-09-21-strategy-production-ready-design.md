@@ -446,7 +446,7 @@ Following existing conventions: scenario IDs, `@regression` tag, authenticated b
 
 TRADE-007 (Iron Condor with too few legs) and TRADE-009 (break-even markers) were added
 after the initial implementation. The suggest-endpoint scenario is TRADE-008, not
-TRADE-010 as first drafted. See ADR-0034 for the deployed-UAT scope of this suite.
+TRADE-010 as first drafted. See ADR-0035 for the deployed-UAT scope of this suite.
 
 ### 5.3 Existing Test Fixes
 
