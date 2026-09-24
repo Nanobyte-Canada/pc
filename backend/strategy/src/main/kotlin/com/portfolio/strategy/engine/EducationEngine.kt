@@ -18,7 +18,7 @@ class EducationEngine(private val registry: StrategyRegistry) {
     fun generateWarnings(legs: List<Leg>, spotPrice: BigDecimal): List<String> {
         val warnings = mutableListOf<String>()
         if (legs.isEmpty()) return warnings
-        warnings.add("Theta and vega are indicative placeholders until volatility-surface data is available")
+        warnings.add("Greeks assume a flat 20% implied volatility until volatility-surface data is available")
 
         val optionLegs = legs.filter { it.optionType != null }
 

@@ -284,14 +284,33 @@ class StrategyCalculatorTest {
     }
 
     @Test
-    fun `theta and vega are zero (not yet implemented)`() {
+    fun `theta and vega are computed from black scholes`() {
         val legs = listOf(
-            Leg(LegAction.BUY, OptionType.CALL, BigDecimal("50"), LocalDate.now().plusDays(30), 1,
-                delta = BigDecimal("0.6"))
+            Leg(LegAction.BUY, OptionType.CALL, BigDecimal("100"), LocalDate.now().plusDays(30), 1,
+                mid = BigDecimal("3.00"), delta = BigDecimal("0.52"))
         )
-        val result = calculator.calculate(legs, BigDecimal("52"))
-        assertEquals(0, BigDecimal("0").compareTo(result.netGreeks.theta))
-        assertEquals(0, BigDecimal("0").compareTo(result.netGreeks.vega))
+        val result = calculator.calculate(legs, BigDecimal("100"))
+
+        assertTrue(result.netGreeks.theta.compareTo(BigDecimal.ZERO) < 0,
+            "long option theta should be negative, was ${result.netGreeks.theta}")
+        assertTrue(result.netGreeks.vega.compareTo(BigDecimal.ZERO) > 0,
+            "long option vega should be positive, was ${result.netGreeks.vega}")
+        assertTrue(result.netGreeks.gamma.compareTo(BigDecimal.ZERO) > 0,
+            "long option gamma should be positive, was ${result.netGreeks.gamma}")
+    }
+
+    @Test
+    fun `short leg flips theta and vega signs`() {
+        val legs = listOf(
+            Leg(LegAction.SELL, OptionType.CALL, BigDecimal("100"), LocalDate.now().plusDays(30), 1,
+                mid = BigDecimal("3.00"), delta = BigDecimal("0.52"))
+        )
+        val result = calculator.calculate(legs, BigDecimal("100"))
+
+        assertTrue(result.netGreeks.theta.compareTo(BigDecimal.ZERO) > 0,
+            "short option theta should be positive, was ${result.netGreeks.theta}")
+        assertTrue(result.netGreeks.vega.compareTo(BigDecimal.ZERO) < 0,
+            "short option vega should be negative, was ${result.netGreeks.vega}")
     }
 
     @Test

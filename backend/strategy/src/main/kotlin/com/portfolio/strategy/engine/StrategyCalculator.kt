@@ -1,18 +1,48 @@
 package com.portfolio.strategy.engine
 
+import com.portfolio.common.domain.Greeks
+import com.portfolio.common.domain.GreeksSource
 import com.portfolio.common.domain.OptionType
+import com.portfolio.common.math.BlackScholes
 import com.portfolio.strategy.model.*
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @Component
-class StrategyCalculator {
-
-    companion object {
+class StrategyCalculator(
+    @Value("\${risk-free-rate:0.05}") private val riskFreeRate: Double = 0.05
+) {
+    private companion object {
         private const val SCALE = 2
         private const val PNL_POINTS = 100
         private val PRICE_RANGE_PERCENT = BigDecimal("0.20")
+
+        /** Flat volatility fallback, matching market-data's GreeksCalculator (`iv ?: 0.20`). */
+        const val DEFAULT_IV = 0.20
+    }
+
+    private fun legGreeks(leg: Leg, spot: BigDecimal): Greeks? {
+        val expiry = leg.expiry ?: return null
+        val optionType = leg.optionType ?: return null
+        if (spot <= BigDecimal.ZERO) return null
+        val tte = ChronoUnit.DAYS.between(LocalDate.now(), expiry) / 365.0
+        if (tte <= 0.0) return null
+
+        // Leg carries no implied volatility, so Greeks are computed at a flat 20% IV
+        // (same fallback market-data's GreeksCalculator uses). Wiring real IV requires
+        // exposing impliedVolatility from the options-chain DTO — out of scope here.
+        return Greeks(
+            delta = BlackScholes.delta(spot, leg.strike, tte, riskFreeRate, DEFAULT_IV, optionType),
+            gamma = BlackScholes.gamma(spot, leg.strike, tte, riskFreeRate, DEFAULT_IV),
+            theta = BlackScholes.theta(spot, leg.strike, tte, riskFreeRate, DEFAULT_IV, optionType),
+            vega = BlackScholes.vega(spot, leg.strike, tte, riskFreeRate, DEFAULT_IV),
+            rho = BigDecimal.ZERO,
+            source = GreeksSource.BLACK_SCHOLES
+        )
     }
 
     fun calculate(legs: List<Leg>, spotPrice: BigDecimal): CalculationResult {
@@ -122,12 +152,26 @@ class StrategyCalculator {
                 netDelta += leg.delta * multiplier
             }
         }
-        // Approximate gamma as delta / (spotPrice * 0.01)
-        // TODO: compute real gamma from Black-Scholes or market data
-        val gamma = if (spotPrice > BigDecimal.ZERO) {
-            netDelta.divide(spotPrice * BigDecimal("0.01"), SCALE, RoundingMode.HALF_UP)
-        } else BigDecimal.ZERO
-        // TODO: compute real theta and vega from Black-Scholes or market data
-        return NetGreeks(netDelta.setScale(SCALE, RoundingMode.HALF_UP), gamma, BigDecimal.ZERO, BigDecimal.ZERO)
+        var netGamma = BigDecimal.ZERO
+        var netTheta = BigDecimal.ZERO
+        var netVega = BigDecimal.ZERO
+
+        legs.forEach { leg ->
+            val multiplier = when (leg.action) {
+                LegAction.BUY -> BigDecimal.ONE
+                LegAction.SELL -> BigDecimal.ONE.negate()
+            }
+            val greeks = legGreeks(leg, spotPrice) ?: return@forEach
+            netGamma += greeks.gamma * multiplier
+            netTheta += greeks.theta * multiplier
+            netVega += greeks.vega * multiplier
+        }
+
+        return NetGreeks(
+            netDelta.setScale(SCALE, RoundingMode.HALF_UP),
+            netGamma.setScale(SCALE, RoundingMode.HALF_UP),
+            netTheta.setScale(SCALE, RoundingMode.HALF_UP),
+            netVega.setScale(SCALE, RoundingMode.HALF_UP)
+        )
     }
 }
