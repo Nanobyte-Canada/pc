@@ -79,7 +79,31 @@ test.describe('Options - Chain', { tag: ['@regression'] }, () => {
   test(scenario('OPT-CHAIN-003', 'strategy selector is visible'), async ({ page }) => {
     await expect(page).toHaveURL(/\/options/);
 
-    // Strategy selector renders when strategies load from the API (independent of market data)
+    // Data setup: seed known symbol via API (spec §5.3)
+    if ((await seedSymbolViaApi(page)) !== 'ok') {
+      test.skip(true, 'Market data provider unavailable — chain cannot be loaded');
+      return;
+    }
+
+    // Navigation/state: strategy cards only render after a successful chain
+    // load (getStrategies runs inside the chain-load handler), so the UI
+    // search must put the page into its chain-loaded state first.
+    const symbolInput = page.locator('input.underlying-search__input');
+    await symbolInput.fill('SPY');
+    await page.locator('button.underlying-search__button').click();
+
+    // Wait for either the chain to load or an error to appear (market data unavailable)
+    const chainOrError = await Promise.race([
+      page.locator('.chain-table').waitFor({ state: 'visible', timeout: 15000 }).then(() => 'chain' as const),
+      page.locator('.options-page__error').waitFor({ state: 'visible', timeout: 15000 }).then(() => 'error' as const),
+    ]).catch(() => 'timeout' as const);
+
+    if (chainOrError !== 'chain') {
+      test.skip(true, 'Market data provider unavailable — chain cannot be loaded');
+      return;
+    }
+
+    // Strategy selector renders once strategies load from the API during chain load
     const strategyCards = page.locator('button.strategy-card');
     await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
 
