@@ -9,7 +9,7 @@ import java.time.LocalDate
 
 class LegValidatorTest {
 
-    private val validator = LegValidator()
+    private val validator = LegValidator(StrategyRegistry())
 
     // --- Basic Validation ---
 
@@ -249,6 +249,50 @@ class LegValidatorTest {
         // 2 legs, mixed types — valid when no butterfly validation
         val result = validator.validate(legs, null)
         assertTrue(result.valid)
+    }
+
+    // --- Leg count vs strategy definition ---
+
+    private fun leg(action: LegAction, optionType: OptionType, strike: String, quantity: Int) = Leg(
+        action = action,
+        optionType = optionType,
+        strike = BigDecimal(strike),
+        expiry = LocalDate.of(2026, 12, 18),
+        quantity = quantity,
+        mid = BigDecimal("1.00")
+    )
+
+    @Test
+    fun `iron condor with two legs is rejected`() {
+        val legs = listOf(
+            leg(LegAction.BUY, OptionType.PUT, "95", 1),
+            leg(LegAction.SELL, OptionType.PUT, "100", 1)
+        )
+        val result = validator.validate(legs, StrategyType.IRON_CONDOR)
+        assertFalse(result.valid)
+        assertTrue(result.errors.any { it.contains("requires exactly 4 legs") })
+    }
+
+    @Test
+    fun `bull call spread with three legs is rejected`() {
+        val legs = listOf(
+            leg(LegAction.BUY, OptionType.CALL, "100", 1),
+            leg(LegAction.SELL, OptionType.CALL, "105", 1),
+            leg(LegAction.BUY, OptionType.CALL, "110", 1)
+        )
+        val result = validator.validate(legs, StrategyType.BULL_CALL_SPREAD)
+        assertFalse(result.valid)
+        assertTrue(result.errors.any { it.contains("requires exactly 2 legs") })
+    }
+
+    @Test
+    fun `correct leg count is accepted`() {
+        val legs = listOf(
+            leg(LegAction.BUY, OptionType.CALL, "100", 1),
+            leg(LegAction.SELL, OptionType.CALL, "105", 1)
+        )
+        val result = validator.validate(legs, StrategyType.BULL_CALL_SPREAD)
+        assertTrue(result.errors.none { it.contains("legs") })
     }
 
     // --- Validation result structure ---

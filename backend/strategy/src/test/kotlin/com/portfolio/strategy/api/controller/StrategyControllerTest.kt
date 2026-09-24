@@ -15,7 +15,7 @@ class StrategyControllerTest {
         registry = registry,
         calculator = StrategyCalculator(),
         educationEngine = EducationEngine(registry),
-        legValidator = LegValidator(),
+        legValidator = LegValidator(registry),
         brokerGatewayClient = BrokerGatewayClient("http://localhost:8084")
     )
 
