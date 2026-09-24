@@ -117,16 +117,17 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
     await callSideCells.nth(0).click();
     await callSideCells.nth(1).click();
 
-    const legCards = page.locator('.leg-builder__card');
+    // Scoped: mobile bottom sheet mounts a second LegBuilder in the DOM
+    const legCards = page.locator('.options-page__center-panel .leg-builder__card');
     await expect(legCards).toHaveCount(2);
 
-    // Click calculate
-    const calcButton = page.locator('.leg-builder__calculate');
+    // Click calculate (scoped: second LegBuilder in the mobile bottom sheet)
+    const calcButton = page.locator('.options-page__center-panel .leg-builder__calculate');
     await expect(calcButton).toBeEnabled();
     await calcButton.click();
 
-    // P&L chart should render
-    const pnlChart = page.locator('.pnl-chart');
+    // P&L chart should render (scoped: bottom sheet mounts a second chart)
+    const pnlChart = page.locator('.options-page__right-panel .pnl-chart');
     await expect(pnlChart).toBeVisible({ timeout: 10000 });
   });
 
@@ -142,10 +143,11 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
     await callSideCells.nth(0).click();
     await callSideCells.nth(1).click();
 
-    await page.locator('.leg-builder__calculate').click();
+    // Scoped: mobile bottom sheet mounts a second LegBuilder in the DOM
+    await page.locator('.options-page__center-panel .leg-builder__calculate').click();
 
-    // Dollar value metrics should show
-    const dollarMetrics = page.locator('.dollar-metrics');
+    // Dollar value metrics should show (scoped: bottom sheet mounts a second copy)
+    const dollarMetrics = page.locator('.options-page__center-panel .dollar-metrics');
     await expect(dollarMetrics).toBeVisible({ timeout: 10000 });
     await expect(dollarMetrics).toContainText('$');
   });

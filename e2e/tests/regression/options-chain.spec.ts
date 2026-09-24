@@ -15,6 +15,28 @@ test.describe('Options - Chain', { tag: ['@regression'] }, () => {
     await page.goto('/options');
   });
 
+  /**
+   * Seed a known symbol (SPY) through the market-data API — spec §5.3:
+   * "Use API call to seed known symbol (e.g., SPY)".
+   *
+   * Endpoint discovered from the frontend's chain-load call chain:
+   * OptionsPage.handleSearch → getQuote() + getOptionExpirations() →
+   * GET /market-data-api/api/v1/chains/{symbol}/expirations
+   * (frontend/src/services/marketDataService.ts — the chain loader lives
+   * there, not in optionsStrategyService.ts).
+   *
+   * Returns 'ok' when the provider responded, 'unavailable' otherwise so
+   * callers can keep the conditional skip for provider-outage environments.
+   */
+  async function seedSymbolViaApi(
+    page: import('@playwright/test').Page
+  ): Promise<'ok' | 'unavailable'> {
+    const response = await page.request
+      .get('/market-data-api/api/v1/chains/SPY/expirations')
+      .catch(() => null);
+    return response && response.ok() ? 'ok' : 'unavailable';
+  }
+
   test(scenario('OPT-CHAIN-001', 'options page loads successfully'), async ({ page }) => {
     await expect(page).toHaveURL(/\/options/);
     await expect(page.locator('body')).toBeVisible();
@@ -23,7 +45,15 @@ test.describe('Options - Chain', { tag: ['@regression'] }, () => {
   test(scenario('OPT-CHAIN-002', 'chain table renders with rows'), async ({ page }) => {
     await expect(page).toHaveURL(/\/options/);
 
-    // Enter symbol and load chain
+    // Data setup: seed known symbol via API (spec §5.3)
+    if ((await seedSymbolViaApi(page)) !== 'ok') {
+      test.skip(true, 'Market data provider unavailable — chain cannot be loaded');
+      return;
+    }
+
+    // Navigation/state: the chain table renders from client-side store that
+    // only handleSearch populates, so the UI search stays to put the page
+    // into its chain-loaded state.
     const symbolInput = page.locator('input.underlying-search__input');
     await symbolInput.fill('SPY');
     await page.locator('button.underlying-search__button').click();
@@ -60,7 +90,14 @@ test.describe('Options - Chain', { tag: ['@regression'] }, () => {
   test(scenario('OPT-CHAIN-004', 'P&L chart renders after calculation'), async ({ page }) => {
     await expect(page).toHaveURL(/\/options/);
 
-    // Enter symbol and load chain
+    // Data setup: seed known symbol via API (spec §5.3)
+    if ((await seedSymbolViaApi(page)) !== 'ok') {
+      test.skip(true, 'Market data provider unavailable — cannot test P&L chart');
+      return;
+    }
+
+    // Navigation/state: chain table renders from the client-side store that
+    // only handleSearch populates — keep the UI search to load the page state.
     const symbolInput = page.locator('input.underlying-search__input');
     await symbolInput.fill('SPY');
     await page.locator('button.underlying-search__button').click();
@@ -80,13 +117,13 @@ test.describe('Options - Chain', { tag: ['@regression'] }, () => {
     const callBidCell = page.locator('.chain-table__call-side').first();
     await callBidCell.click();
 
-    // Click calculate
-    const calcButton = page.locator('.leg-builder__calculate');
+    // Click calculate (scoped: mobile bottom sheet mounts a second LegBuilder)
+    const calcButton = page.locator('.options-page__center-panel .leg-builder__calculate');
     await expect(calcButton).toBeEnabled();
     await calcButton.click();
 
-    // P&L chart should render
-    const pnlChart = page.locator('.pnl-chart');
+    // P&L chart should render (scoped: bottom sheet mounts a second chart)
+    const pnlChart = page.locator('.options-page__right-panel .pnl-chart');
     await expect(pnlChart).toBeVisible({ timeout: 10000 });
   });
 });
