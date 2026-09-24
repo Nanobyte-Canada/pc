@@ -22,8 +22,14 @@ export function OneClickTradeButton() {
   const handleTrade = useCallback(async () => {
     if (isDisabled || !selectedStrategy || !connection) return
 
+    const limitPrice = legs.reduce((sum, l) => {
+      if (l.action === 'BUY') return sum + (l.price ?? 0)
+      return sum - (l.price ?? 0)
+    }, 0)
+
     const confirmed = window.confirm(
-      `Submit ${legs.length}-leg ${selectedStrategy.replace(/_/g, ' ').toLowerCase()} order to Questrade?`
+      `Submit ${legs.length}-leg ${selectedStrategy.replace(/_/g, ' ').toLowerCase()} order ` +
+      `at a limit of $${Math.abs(limitPrice).toFixed(2)} to Questrade?`
     )
     if (!confirmed) return
 
@@ -31,11 +37,6 @@ export function OneClickTradeButton() {
     setTradeResult(null)
 
     try {
-      const limitPrice = legs.reduce((sum, l) => {
-        if (l.action === 'BUY') return sum + (l.price ?? 0)
-        return sum - (l.price ?? 0)
-      }, 0)
-
       const request: TradeRequest = {
         strategyType: selectedStrategy,
         legs: legs.map(l => ({

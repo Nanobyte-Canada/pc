@@ -254,7 +254,7 @@ export function OptionsPage() {
                 maxProfitDollars={calcResult.maxProfitDollars}
                 maxLossDollars={calcResult.maxLossDollars}
                 netDebitCreditDollars={calcResult.netDebitCreditDollars}
-                quantity={legs.length > 0 ? (legs[0].quantity ?? 1) : 1}
+                quantity={legs.reduce((sum, l) => sum + l.quantity, 0)}
               />
             )}
           </main>
@@ -321,7 +321,7 @@ export function OptionsPage() {
                 maxProfitDollars={calcResult.maxProfitDollars}
                 maxLossDollars={calcResult.maxLossDollars}
                 netDebitCreditDollars={calcResult.netDebitCreditDollars}
-                quantity={legs.length > 0 ? (legs[0].quantity ?? 1) : 1}
+                quantity={legs.reduce((sum, l) => sum + l.quantity, 0)}
               />
             )}
             {calcResult && <PnlChart result={calcResult} warnings={calcWarnings} />}

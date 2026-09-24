@@ -154,7 +154,11 @@ class StrategyController(
                 action = lr.action,
                 symbol = lr.symbol!!,
                 quantity = lr.quantity,
-                status = if (status == "SUBMITTED") "SUBMITTED" else "REJECTED"
+                status = when (status) {
+                    "SUBMITTED" -> "SUBMITTED"
+                    "REJECTED" -> "REJECTED"
+                    else -> "UNKNOWN"
+                }
             )
         }
 
