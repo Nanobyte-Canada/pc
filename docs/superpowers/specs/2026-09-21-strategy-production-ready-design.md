@@ -134,7 +134,7 @@ StrategyType.BUTTERFLY_SPREAD to EducationContent(
 
 Changes:
 1. **Fix Greeks computation** — compute gamma, theta, vega using Black-Scholes from `common/math/BlackScholes.kt` (already exists but unused). Use `GreeksCalculator` pattern from market-data service.
-2. **Add dollar-value P&L** — add `maxProfitDollars` and `maxLossDollars` fields to `CalculationResult` and `CalculateResponse` DTO. Multiply max profit/loss by 100 (per contract) and by quantity.
+2. **Add dollar-value P&L** — add `maxProfitDollars` and `maxLossDollars` fields to `CalculationResult` and `CalculateResponse` DTO. Multiply max profit/loss by 100 (per contract).
 
 **New DTO fields in `CalculateResponse`:**
 ```kotlin
@@ -420,7 +420,7 @@ Following existing conventions: scenario IDs, `@regression` tag, authenticated b
 
 | Scenario ID | Test | Assertions |
 |-------------|------|------------|
-| `STRAT-001` | Strategy list loads | 5 strategies render with correct names |
+| `STRAT-001` | Strategy list loads | 6 strategies render with correct names |
 | `STRAT-002` | Strategy education display | Click each card, education panel shows when-to-use, risk, characteristics |
 | `STRAT-003` | Outlook labels | Each strategy shows correct bullish/bearish/neutral badge |
 | `STRAT-004` | Butterfly Spread present | Butterfly Spread in list with 3-leg description |
@@ -464,7 +464,6 @@ TRADE-010 as first drafted. See ADR-0034 for the deployed-UAT scope of this suit
 │                    Frontend (React)                    │
 │  OptionsPage: StrategySelector + Education + LegBuilder│
 │  + PnlChart + OneClickTradeButton + OptionsChainTable  │
-│  + useOptionStreaming hook (WebSocket)                 │
 └────────┬──────────────┬──────────────────┬────────────┘
          │ HTTP          │ HTTP             │ WebSocket
          ▼               ▼                  ▼
@@ -514,7 +513,7 @@ No schema changes required. Existing Flyway migrations cover all needed tables. 
 
 ## Success Criteria
 
-1. 5 strategies display correctly (Butterfly Spread added, Covered Call + Protective Put removed)
+1. 6 strategies display correctly (Butterfly Spread added, Covered Call + Protective Put removed)
 2. Each strategy shows education content with outlook badge
 3. Max profit/loss displayed in both percentage and dollar values
 4. One-click trade submits atomic combo order to Questrade
