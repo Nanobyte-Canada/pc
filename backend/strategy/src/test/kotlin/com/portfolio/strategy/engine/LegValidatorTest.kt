@@ -314,4 +314,40 @@ class LegValidatorTest {
         assertFalse(result.valid)
         assertTrue(result.errors.size >= 1) // At least "At least one leg"
     }
+
+    // --- Butterfly Strike Ordering ---
+
+    @Test
+    fun `butterfly with sell strike below both buys is rejected`() {
+        val legs = listOf(
+            leg(LegAction.SELL, OptionType.CALL, "95", 2),
+            leg(LegAction.BUY, OptionType.CALL, "100", 1),
+            leg(LegAction.BUY, OptionType.CALL, "110", 1)
+        )
+        val result = validator.validate(legs, StrategyType.BUTTERFLY_SPREAD)
+        assertFalse(result.valid)
+        assertTrue(result.errors.any { it.contains("between the two BUY strikes") })
+    }
+
+    @Test
+    fun `butterfly with correctly ordered strikes is accepted`() {
+        val legs = listOf(
+            leg(LegAction.BUY, OptionType.CALL, "100", 1),
+            leg(LegAction.SELL, OptionType.CALL, "105", 2),
+            leg(LegAction.BUY, OptionType.CALL, "110", 1)
+        )
+        val result = validator.validate(legs, StrategyType.BUTTERFLY_SPREAD)
+        assertTrue(result.valid, "unexpected errors: ${result.errors}")
+    }
+
+    @Test
+    fun `bearish put butterfly is accepted`() {
+        val legs = listOf(
+            leg(LegAction.BUY, OptionType.PUT, "100", 1),
+            leg(LegAction.SELL, OptionType.PUT, "95", 2),
+            leg(LegAction.BUY, OptionType.PUT, "90", 1)
+        )
+        val result = validator.validate(legs, StrategyType.BUTTERFLY_SPREAD)
+        assertTrue(result.valid, "unexpected errors: ${result.errors}")
+    }
 }

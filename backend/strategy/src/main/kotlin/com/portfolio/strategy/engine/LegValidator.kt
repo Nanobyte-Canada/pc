@@ -47,6 +47,15 @@ class LegValidator(private val registry: StrategyRegistry) {
             if (buyLegs.size != 2 || buyLegs.any { it.quantity != 1 }) {
                 errors.add("Butterfly Spread requires exactly 2 BUY legs with quantity 1")
             }
+            val sellStrike = sellLegs.firstOrNull()?.strike
+            val buyStrikes = buyLegs.map { it.strike }
+            if (sellStrike != null && buyStrikes.size == 2) {
+                val low = buyStrikes.minOrNull()!!
+                val high = buyStrikes.maxOrNull()!!
+                if (sellStrike <= low || sellStrike >= high) {
+                    errors.add("Butterfly Spread requires the SELL strike to sit between the two BUY strikes")
+                }
+            }
         }
 
         if (strategyType != null) {
