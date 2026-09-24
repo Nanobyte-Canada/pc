@@ -317,7 +317,17 @@ A `scripts/verify-strategy-gateway-url.sh` check guards against regression.
 Trading can reach the broker-gateway in every environment. The compose files now
 carry one more service URL, which must be kept in sync when containers are renamed.
 
-## ADR-0034: Regression UI tests target deployed UAT, not the PR artifact
+## ADR-0034: Stable activity dedup key for brokers without activity IDs
+
+**Status:** Accepted | **Date:** 2026-09-22
+
+**Context:** Questrade's activities API exposes no unique id per record, and the gateway adapter mapped `externalId = null`. The pre-existing `uq_activity_external UNIQUE (connection_id, external_id)` constraint does not apply to NULLs in PostgreSQL, so the portfolio's dedup lookup never ran: every re-sync of an overlapping window (the incremental path re-fetches one day by design) inserted duplicate rows. UAT had accumulated 29 duplicate groups; UAT activities had also been frozen since 2026-07-17 because the incremental path requested an unbounded range that Questrade rejects beyond 31 days (issue #268).
+
+**Decision:** The gateway now transparently splits any activities range into ET-aligned 30-day windows (merge + sort), and the portfolio computes a SHA-256 fingerprint over the canonical activity fields when the broker supplies no `externalId`, storing it in `broker_activities.external_id`. The existing lookup and unique constraint then apply. Flyway migration `V77` backfills fingerprints for pre-existing rows and deletes duplicates, keeping the earliest row per `(connection, fingerprint)`.
+
+**Consequences:** Re-syncing any window is idempotent for Questrade; activity-derived numbers (dividends, fees, IRR/XIRR) stop inflating. Two byte-identical fills on the same day collapse into one row (accepted and monitored; an occurrence counter would be added only if observed in practice). `external_id` now means "broker-assigned id or stable fingerprint" — consumers must not assume broker provenance.
+
+## ADR-0035: Regression UI tests target deployed UAT, not the PR artifact
 
 **Date:** 2026-09-23
 
