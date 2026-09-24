@@ -13,6 +13,12 @@ object ActivityFingerprint {
 
     private const val SEPARATOR = "\u001F"
 
+    /**
+     * Computes the fingerprint for an activity. The canonical field join below is a frozen
+     * compatibility contract: fingerprints are permanent once written, and any change to the
+     * canonicalization requires a new re-backfill migration, otherwise dedup breaks against
+     * historical rows.
+     */
     fun of(
         type: String,
         symbol: String?,

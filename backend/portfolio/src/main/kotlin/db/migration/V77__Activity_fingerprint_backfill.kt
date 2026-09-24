@@ -4,6 +4,7 @@ import com.portfolio.broker.service.ActivityBackfillPlanner
 import com.portfolio.broker.service.ActivityRowForBackfill
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
+import org.slf4j.LoggerFactory
 import java.sql.Connection
 
 /**
@@ -12,6 +13,8 @@ import java.sql.Connection
  * earliest row per (connection, fingerprint). Only rows with NULL external_id are touched.
  */
 class V77__Activity_fingerprint_backfill : BaseJavaMigration() {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     override fun migrate(context: Context) {
         val connection = context.connection
@@ -36,6 +39,12 @@ class V77__Activity_fingerprint_backfill : BaseJavaMigration() {
             }
             ps.executeBatch()
         }
+
+        log.info(
+            "V77 activity fingerprint backfill complete: {} fingerprints updated, {} duplicate rows deleted",
+            plan.fingerprintById.size,
+            plan.duplicateIdsToDelete.size
+        )
     }
 
     private fun loadRows(connection: Connection): List<ActivityRowForBackfill> {
