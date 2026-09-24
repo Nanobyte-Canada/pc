@@ -96,6 +96,19 @@ export function PnlChart({ result, warnings }: PnlChartProps) {
               <circle cx={toX(be)} cy={zeroY} r="4" fill="var(--bg-secondary, #111827)" stroke="var(--accent, #10b981)" strokeWidth="2" />
             </g>
           ))}
+          {/* Price axis labels (dollars) */}
+          {[minX, (minX + maxX) / 2, maxX].map((price, i) => (
+            <text
+              key={`axis-${i}`}
+              x={toX(price)}
+              y={height - 5}
+              textAnchor="middle"
+              fontSize="10"
+              fill="var(--text-muted, #64748b)"
+            >
+              ${price.toFixed(0)}
+            </text>
+          ))}
         </svg>
       </div>
 

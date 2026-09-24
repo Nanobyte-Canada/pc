@@ -45,6 +45,15 @@ interface BrokerAdapter {
             warnings = listOf("Order impact preview not supported for this broker")
         )
     }
+    /** Places a multi-leg order atomically; unsupported adapters reject it. */
+    fun placeMultiLegOrder(
+        credentials: BrokerCredentials,
+        accountId: String,
+        request: MultiLegOrderRequest
+    ): OrderResult {
+        return OrderResult(null, OrderStatus.REJECTED,
+            "Atomic multi-leg orders are not supported by ${brokerType.name}")
+    }
     fun capabilities(): BrokerCapabilities
 }
 

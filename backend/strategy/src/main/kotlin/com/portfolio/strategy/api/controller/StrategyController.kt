@@ -5,7 +5,10 @@ import com.portfolio.strategy.api.dto.*
 import com.portfolio.strategy.engine.*
 import com.portfolio.strategy.model.Leg
 import com.portfolio.strategy.model.LegAction
+import com.portfolio.strategy.model.LegTemplate
 import com.portfolio.strategy.model.StrategyType
+import com.portfolio.strategy.service.BrokerGatewayClient
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
@@ -17,13 +20,18 @@ class StrategyController(
     private val registry: StrategyRegistry,
     private val calculator: StrategyCalculator,
     private val educationEngine: EducationEngine,
-    private val legValidator: LegValidator
+    private val legValidator: LegValidator,
+    private val brokerGatewayClient: BrokerGatewayClient
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @GetMapping
     fun listStrategies(): List<StrategyListResponse> {
         return registry.listAll().map { d ->
-            StrategyListResponse(d.type.name, d.displayName, d.description, d.outlook, d.riskProfile, d.legCount)
+            StrategyListResponse(
+                d.type.name, d.displayName, d.description, d.outlook, d.riskProfile, d.legCount,
+                d.legTemplates.map { it.toDto() }
+            )
         }
     }
 
@@ -34,27 +42,29 @@ class StrategyController(
         }
         val definition = registry.getDefinition(strategyType)
         val education = educationEngine.getContent(strategyType)
-        return StrategyInfoResponse(definition.type.name, definition.displayName, definition.description,
-            definition.outlook, definition.riskProfile, definition.legCount, education)
+        return StrategyInfoResponse(
+            definition.type.name, definition.displayName, definition.description,
+            definition.outlook, definition.riskProfile, definition.legCount,
+            definition.legTemplates.map { it.toDto() },
+            education
+        )
     }
+
+    private fun LegTemplate.toDto() = LegTemplateDto(
+        action = action.name,
+        optionType = optionType?.name,
+        strikeOffset = strikeOffset.name,
+        quantity = quantity
+    )
 
     @PostMapping("/calculate")
     fun calculate(@RequestBody request: CalculateRequest): CalculateResponse {
-        val legs = request.legs.map { lr ->
-            val action = try { LegAction.valueOf(lr.action.uppercase()) } catch (e: IllegalArgumentException) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid action: ${lr.action}")
-            }
-            val optionType = lr.optionType?.let { try { OptionType.valueOf(it.uppercase()) } catch (e: IllegalArgumentException) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid option type: $it")
-            }}
-            val expiry = lr.expiry?.let { try { LocalDate.parse(it) } catch (e: Exception) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid expiry: $it")
-            }}
-            Leg(action = action, optionType = optionType, strike = lr.strike, expiry = expiry,
-                quantity = lr.quantity, bid = lr.bid, ask = lr.ask, mid = lr.mid, delta = lr.delta)
-        }
+        val legs = parseLegs(request.legs)
 
-        val validation = legValidator.validate(legs)
+        val strategyTypeEnum = request.strategyType?.let {
+            try { StrategyType.valueOf(it) } catch (e: IllegalArgumentException) { null }
+        }
+        val validation = legValidator.validate(legs, strategyTypeEnum)
         if (!validation.valid) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid legs: ${validation.errors.joinToString(", ")}")
         }
@@ -68,7 +78,9 @@ class StrategyController(
             probabilityOfProfit = result.probabilityOfProfit,
             pnlCurve = result.pnlCurve.map { PnlPointDto(it.underlyingPrice, it.pnl) },
             netGreeks = NetGreeksDto(result.netGreeks.delta, result.netGreeks.gamma, result.netGreeks.theta, result.netGreeks.vega),
-            warnings = warnings
+            warnings = warnings,
+            maxProfitDollars = result.maxProfitDollars, maxLossDollars = result.maxLossDollars,
+            netDebitCreditDollars = result.netDebitCreditDollars
         )
     }
 
@@ -82,6 +94,96 @@ class StrategyController(
                 "neutral" -> d.outlook.contains("Neutral", ignoreCase = true) || d.outlook.contains("Range-Bound", ignoreCase = true)
                 else -> false
             }
-        }.map { d -> StrategyListResponse(d.type.name, d.displayName, d.description, d.outlook, d.riskProfile, d.legCount) }
+        }.map { d ->
+            StrategyListResponse(d.type.name, d.displayName, d.description, d.outlook, d.riskProfile, d.legCount,
+                d.legTemplates.map { it.toDto() })
+        }
+    }
+
+    /** Validates and submits an atomic multi-leg strategy order. */
+    @PostMapping("/trade")
+    fun tradeStrategy(@RequestBody request: TradeRequest): TradeResponse {
+        val strategyType = try {
+            StrategyType.valueOf(request.strategyType.uppercase())
+        } catch (e: IllegalArgumentException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid strategy type: ${request.strategyType}")
+        }
+
+        val legs = parseLegs(request.legs)
+
+        // Validate legs
+        val validation = legValidator.validate(legs, strategyType)
+        if (!validation.valid) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid legs: ${validation.errors.joinToString(", ")}")
+        }
+        if (request.legs.any { it.symbol.isNullOrBlank() }) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Every trade leg must include an underlying symbol")
+        }
+
+        // Build combo order legs for broker-gateway
+        val comboLegs = request.legs.map { lr ->
+            mapOf(
+                "symbol" to lr.symbol,
+                "action" to lr.action.uppercase(),
+                "quantity" to lr.quantity,
+                "optionType" to lr.optionType,
+                "strike" to lr.strike,
+                "expiry" to lr.expiry
+            )
+        }
+
+        // Place order via broker-gateway
+        val brokerResult = brokerGatewayClient.placeComboOrder(
+            connectionId = request.connectionId,
+            accountId = request.accountId,
+            legs = comboLegs,
+            orderType = request.orderType,
+            limitPrice = request.limitPrice,
+            timeInForce = request.timeInForce
+        )
+
+        val status = brokerResult["status"]?.toString() ?: "ERROR"
+        val orderId = brokerResult["brokerOrderId"]?.toString()
+        val message = brokerResult["message"]?.toString() ?: when (status) {
+            "SUBMITTED" -> "Order submitted successfully"
+            else -> "Order submission failed"
+        }
+
+        val legResults = request.legs.map { lr ->
+            LegResult(
+                action = lr.action,
+                symbol = lr.symbol!!,
+                quantity = lr.quantity,
+                status = when (status) {
+                    "SUBMITTED" -> "SUBMITTED"
+                    "REJECTED" -> "REJECTED"
+                    else -> "UNKNOWN"
+                }
+            )
+        }
+
+        return TradeResponse(
+            orderId = orderId,
+            status = status,
+            message = message,
+            legs = legResults
+        )
+    }
+
+    private fun parseLegs(legRequests: List<LegRequest>): List<Leg> = legRequests.map { lr ->
+        val action = try { LegAction.valueOf(lr.action.uppercase()) } catch (e: IllegalArgumentException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid action: ${lr.action}")
+        }
+        val optionType = lr.optionType?.let {
+            try { OptionType.valueOf(it.uppercase()) } catch (e: IllegalArgumentException) {
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid option type: $it")
+            }
+        }
+        val expiry = lr.expiry?.let {
+            try { LocalDate.parse(it) } catch (e: Exception) {
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid expiry: $it")
+            }
+        }
+        Leg(action, optionType, lr.strike, expiry, lr.quantity, lr.bid, lr.ask, lr.mid, lr.delta)
     }
 }

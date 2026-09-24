@@ -46,3 +46,20 @@ data class OrderImpactResult(
     val isOrderAccepted: Boolean,
     val warnings: List<String> = emptyList()
 )
+
+data class MultiLegOrderRequest(
+    val legs: List<LegOrderDetail>,
+    val orderType: OrderType,
+    val limitPrice: BigDecimal,
+    val timeInForce: TimeInForce = TimeInForce.DAY
+)
+
+data class LegOrderDetail(
+    val symbol: String,
+    val action: OrderAction,
+    val quantity: BigDecimal,
+    val optionType: String? = null,
+    val strike: BigDecimal? = null,
+    val expiry: String? = null,
+    val symbolId: Long? = null
+)

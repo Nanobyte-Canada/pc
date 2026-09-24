@@ -75,6 +75,11 @@ docs/                         — ADRs, reference docs, runbooks, design specs
 .archive/                     — Completed design specs and plans
 ```
 
+The strategy builder currently supports six strategies: BULL_CALL_SPREAD,
+BEAR_PUT_SPREAD, BULL_PUT_SPREAD, BEAR_CALL_SPREAD, IRON_CONDOR, and
+BUTTERFLY_SPREAD. Options quotes stream in real time, and connected Questrade
+accounts can submit validated atomic multi-leg orders from the strategy UI.
+
 ## Quick Start (Local Dev)
 
 The root `docker-compose.yml` is a standalone local stack — it runs its own Postgres and Redis and builds all services from source.

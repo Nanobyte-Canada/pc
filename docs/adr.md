@@ -287,6 +287,36 @@ The deployed UI test workflow sourced `APP_TEST_ADMIN_EMAIL`/`APP_TEST_ADMIN_PAS
 
 **Consequences:** Portfolio UAT and prod resolve every upstream unambiguously; intermittent `403 Invalid CORS request` from cross-app aliasing is eliminated. The first deploy after the rename recreates all containers (a one-to-three-minute interruption); if `up -d --remove-orphans` does not reconcile a renamed service, the documented recovery is a one-time `down --remove-orphans` followed by re-dispatch. Later deploys are unchanged. Historical documents that show the old service keys are append-only records and are not rewritten. This decision also corrects ADR-0031's consequence that credential rotation happens in Vault only — rotation spans both Vault and the database (see the incident record, spec §9.1).
 
+## ADR-0033: Wire BROKER_GATEWAY_URL into the strategy service
+
+### Status
+Accepted
+
+### Context
+The strategy service places atomic multi-leg orders by calling the broker-gateway's
+`.../combo-orders` endpoint through `BrokerGatewayClient`, which reads the Spring
+property `broker-gateway.url` and defaults to `http://localhost:8084`.
+
+`deploy/prod/docker-compose.yml`, `deploy/uat/docker-compose.yml` and the root
+`docker-compose.yml` set `BROKER_GATEWAY_URL` for `portfolio-backend` but not for
+`portfolio-strategy`. Inside the strategy container the fallback resolves to the
+strategy service itself, so every one-click trade would fail with a connection error
+in every deployed environment.
+
+### Decision
+Set `BROKER_GATEWAY_URL` explicitly for the `portfolio-strategy` service in all three
+compose files, pointing at that environment's broker-gateway container:
+
+- prod: `http://prod-portfolio-broker-gateway:8084`
+- uat:  `http://uat-portfolio-broker-gateway:8084`
+- local: `http://portfolio-broker-gateway:8084`
+
+A `scripts/verify-strategy-gateway-url.sh` check guards against regression.
+
+### Consequences
+Trading can reach the broker-gateway in every environment. The compose files now
+carry one more service URL, which must be kept in sync when containers are renamed.
+
 ## ADR-0034: Stable activity dedup key for brokers without activity IDs
 
 **Status:** Accepted | **Date:** 2026-09-22
@@ -296,3 +326,30 @@ The deployed UI test workflow sourced `APP_TEST_ADMIN_EMAIL`/`APP_TEST_ADMIN_PAS
 **Decision:** The gateway now transparently splits any activities range into ET-aligned 30-day windows (merge + sort), and the portfolio computes a SHA-256 fingerprint over the canonical activity fields when the broker supplies no `externalId`, storing it in `broker_activities.external_id`. The existing lookup and unique constraint then apply. Flyway migration `V77` backfills fingerprints for pre-existing rows and deletes duplicates, keeping the earliest row per `(connection, fingerprint)`.
 
 **Consequences:** Re-syncing any window is idempotent for Questrade; activity-derived numbers (dividends, fees, IRR/XIRR) stop inflating. Two byte-identical fills on the same day collapse into one row (accepted and monitored; an occurrence counter would be added only if observed in practice). `external_id` now means "broker-assigned id or stable fingerprint" — consumers must not assume broker provenance.
+
+## ADR-0035: Regression UI tests target deployed UAT, not the PR artifact
+
+**Date:** 2026-09-23
+
+### Status
+Accepted
+
+### Context
+`.github/workflows/ui-tests-deployed.yml` runs `npx playwright test --grep @regression`
+against `https://uatportfolio.nanobyte.ca`. The environment under test is therefore
+whatever image UAT currently runs, which is not guaranteed to be the PR's build. A PR
+can show a green `UI Tests — PR` check while the specs assert behaviour that the PR's
+own code does not have (this happened: an outlook-label assertion was green while the
+branch rendered a different string).
+
+### Decision
+Keep the deployed-UAT model for now, but make its scope explicit: the workflow and job
+are renamed `UI Tests — UAT (Deployed)` / `Regression Tests (deployed UAT)`. The
+documentation and the workflow name must not imply the PR artifact is verified.
+Specs must additionally avoid vacuous passes — assertions that iterate over a collection
+must first assert the collection is non-empty.
+
+### Consequences
+Green UI checks mean "the deployed UAT environment satisfies these specs", not "this
+branch satisfies these specs". Closing that gap (a PR-scoped preview deployment) is
+deliberately out of scope and remains open work.

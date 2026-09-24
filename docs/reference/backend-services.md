@@ -1113,7 +1113,7 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 
 | Class | Type | Description |
 |---|---|---|
-| `StrategyRegistry` | `@Component` | Registry of 7 strategy definitions with education content. Strategies: BULL_CALL_SPREAD, BEAR_PUT_SPREAD, BULL_PUT_SPREAD, BEAR_CALL_SPREAD, IRON_CONDOR, COVERED_CALL, PROTECTIVE_PUT |
+| `StrategyRegistry` | `@Component` | Registry of 6 strategy definitions with education content. Strategies: BULL_CALL_SPREAD, BEAR_PUT_SPREAD, BULL_PUT_SPREAD, BEAR_CALL_SPREAD, IRON_CONDOR, BUTTERFLY_SPREAD |
 | `StrategyCalculator` | `@Component` | P&L calculation engine: net debit/credit, P&L curve (100 points ±20%), break-even interpolation, risk/reward ratio, net Greeks |
 | `LegValidator` | `@Component` | Validates leg combinations: no duplicates, same expiry for all option legs |
 | `EducationEngine` | `@Component` | Static education content per strategy + dynamic warnings (short DTE, wide spreads, deep ITM, delta-neutral, long DTE) |
@@ -1122,7 +1122,7 @@ Token bucket rate limiter for EODHD API. Tracks daily quota (100k calls/day). Ea
 
 | Class | Description |
 |---|---|
-| `StrategyType` | Enum: 7 strategy types |
+| `StrategyType` | Enum: 6 strategy types |
 | `StrategyDefinition` | Display name, description, outlook, risk profile, leg templates |
 | `Leg` | Action (BUY/SELL), option type, strike, expiry, quantity, bid/ask/mid/delta |
 | `CalculationResult` | Net debit/credit, max profit/loss, break-evens, P&L curve, net Greeks |

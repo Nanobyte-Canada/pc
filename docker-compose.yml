@@ -151,6 +151,7 @@ services:
       REDIS_PORT: 6379
       MARKET_DATA_SERVICE_URL: http://portfolio-market-data:8082
       PORTFOLIO_SERVICE_URL: http://portfolio-backend:8080
+      BROKER_GATEWAY_URL: http://portfolio-broker-gateway:8084
     ports:
       - "8083:8083"
     depends_on:

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuoteStore } from '@/stores/quoteStore'
 import { useStrategyStore } from '@/stores/strategyStore'
@@ -8,23 +8,32 @@ import { getStrategies, calculateStrategy } from '@/services/optionsStrategyServ
 import { UnderlyingSearch } from '@/components/options/UnderlyingSearch'
 import { QuoteBar } from '@/components/options/QuoteBar'
 import { StrategySelector } from '@/components/options/StrategySelector'
+import { StrategyEducationCard } from '@/components/options/StrategyEducationCard'
+import { DollarValuePnlMetrics } from '@/components/options/DollarValuePnlMetrics'
+import { OneClickTradeButton } from '@/components/options/OneClickTradeButton'
+import { ConnectionStatusBadge } from '@/components/options/ConnectionStatusBadge'
 import { ApiError } from '@/services/api'
 import { OptionsChainTable } from '@/components/options/OptionsChainTable'
 import { LegBuilder } from '@/components/options/LegBuilder'
 import { PnlChart } from '@/components/options/PnlChart'
 import { useToast } from '@/stores/toastStore'
+import { derivePriceFor } from '@/hooks/liveMids'
 import type { CalculationResult } from '@/types/options'
 import './OptionsPage.css'
 
 export function OptionsPage() {
   const { selectedUnderlying, setSelectedUnderlying, setQuote, setChain, quotes, chains } = useQuoteStore()
-  const { legs, setIsCalculating, isCalculating, setStrategies, strategies, selectedStrategy } = useStrategyStore()
+  const {
+    legs, setIsCalculating, isCalculating, setStrategies, strategies,
+    selectedStrategy, selectedStrategyEducation,
+  } = useStrategyStore()
   const { isConnected, subscribe, subscribeChainExpiry, unsubscribeChain, switchChainExpiry } = useMarketDataWebSocket()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [isLoadingChain, setIsLoadingChain] = useState(false)
   const [chainError, setChainError] = useState<string | null>(null)
   const [expiryError, setExpiryError] = useState<string | null>(null)
+  const [calcError, setCalcError] = useState<string | null>(null)
   const [calcResult, setCalcResult] = useState<CalculationResult | null>(null)
   const [calcWarnings, setCalcWarnings] = useState<string[]>([])
   const [strategiesLoaded, setStrategiesLoaded] = useState(false)
@@ -120,25 +129,23 @@ export function OptionsPage() {
     const quote = quotes[selectedUnderlying]
     if (!quote) return
 
+    setCalcError(null)
     setIsCalculating(true)
     try {
       const result = await calculateStrategy(
         selectedStrategy ?? 'BULL_CALL_SPREAD',
         selectedUnderlying,
         quote.last,
-        legs.map((l) => ({
-          action: l.action,
-          optionType: l.optionType,
-          strike: l.strike,
-          expiry: l.expiry,
-          quantity: l.quantity ?? 1,
-          price: l.price,
-        }))
+        legs,
       )
       setCalcResult(result)
-      setCalcWarnings(result.probabilityOfProfit !== undefined ? [] : [])
+      setCalcWarnings(result.warnings)
     } catch (err) {
       console.error('Calculation failed:', err)
+      const msg = err instanceof ApiError
+        ? err.message
+        : 'Calculation failed. Please try again.'
+      setCalcError(msg)
     } finally {
       setIsCalculating(false)
     }
@@ -146,6 +153,14 @@ export function OptionsPage() {
 
   const quote = selectedUnderlying ? quotes[selectedUnderlying] : null
   const chain = selectedUnderlying ? chains[selectedUnderlying] : null
+
+  // Determine selected strategy info for education card
+  const selectedStrategyInfo = useMemo(() => {
+    if (!selectedStrategy) return null
+    return strategies.find(s => s.type === selectedStrategy) ?? null
+  }, [selectedStrategy, strategies])
+
+  const priceFor = useMemo(() => derivePriceFor(chains, selectedUnderlying), [chains, selectedUnderlying])
 
   return (
     <div className="options-page">
@@ -164,7 +179,7 @@ export function OptionsPage() {
       {/* ── Quote bar ── */}
       {quote && <QuoteBar quote={quote} />}
 
-      {/* ── Strategy selector ── */}
+      {/* ── Strategy selector (card layout) ── */}
       {strategies.length > 0 && <StrategySelector strategies={strategies} />}
 
       {/* ── Error state ── */}
@@ -198,24 +213,70 @@ export function OptionsPage() {
       {/* ── Loading state ── */}
       {isLoadingChain && <div className="options-page__loading">Loading options chain...</div>}
 
-      {/* ── Main content: two-column layout ── */}
+      {/* ── Three-panel layout ── */}
       {chain && !isLoadingChain && (
-        <div className="options-page__content">
-          <div className="options-page__chain-section">
-            <OptionsChainTable
-              chain={chain}
-              onExpiryChange={handleExpiryChange}
-              strikesPerSide={strikesPerSide}
-              onStrikesPerSideChange={handleStrikesPerSideChange}
-            />
-          </div>
-          <div className="options-page__sidebar">
+        <div className="options-page__layout">
+          {/* Left panel: Education */}
+          <aside className="options-page__left-panel">
+            {selectedStrategyInfo && selectedStrategyEducation ? (
+              <StrategyEducationCard
+                strategy={selectedStrategyInfo}
+                education={selectedStrategyEducation}
+              />
+            ) : (
+              <div className="options-page__left-placeholder">
+                <p className="options-page__left-placeholder-text">
+                  Select a strategy above to view details
+                </p>
+              </div>
+            )}
+          </aside>
+
+          {/* Center panel: Leg Builder + Dollar Metrics */}
+          <main className="options-page__center-panel">
             <LegBuilder
               onCalculate={handleCalculate}
               isCalculating={isCalculating}
+              liveMid={priceFor}
             />
+            {calcError && (
+              <div className="options-page__error">
+                <p className="options-page__error-message">{calcError}</p>
+                <button className="options-page__error-retry" onClick={() => setCalcError(null)}>
+                  Dismiss
+                </button>
+              </div>
+            )}
+            {calcResult && (
+              <DollarValuePnlMetrics
+                maxProfit={calcResult.maxProfit}
+                maxLoss={calcResult.maxLoss}
+                maxProfitDollars={calcResult.maxProfitDollars}
+                maxLossDollars={calcResult.maxLossDollars}
+                netDebitCreditDollars={calcResult.netDebitCreditDollars}
+                quantity={legs.reduce((sum, l) => sum + l.quantity, 0)}
+              />
+            )}
+          </main>
+
+          {/* Right panel: P&L Chart + Trade + Connection */}
+          <aside className="options-page__right-panel">
             {calcResult && <PnlChart result={calcResult} warnings={calcWarnings} />}
-          </div>
+            <OneClickTradeButton />
+            <ConnectionStatusBadge />
+          </aside>
+        </div>
+      )}
+
+      {/* ── Bottom panel: Options Chain (full width) ── */}
+      {chain && !isLoadingChain && (
+        <div className="options-page__bottom-panel">
+          <OptionsChainTable
+            chain={chain}
+            onExpiryChange={handleExpiryChange}
+            strikesPerSide={strikesPerSide}
+            onStrikesPerSideChange={handleStrikesPerSideChange}
+          />
         </div>
       )}
 
@@ -251,8 +312,20 @@ export function OptionsPage() {
             <LegBuilder
               onCalculate={handleCalculate}
               isCalculating={isCalculating}
+              liveMid={priceFor}
             />
+            {calcResult && (
+              <DollarValuePnlMetrics
+                maxProfit={calcResult.maxProfit}
+                maxLoss={calcResult.maxLoss}
+                maxProfitDollars={calcResult.maxProfitDollars}
+                maxLossDollars={calcResult.maxLossDollars}
+                netDebitCreditDollars={calcResult.netDebitCreditDollars}
+                quantity={legs.reduce((sum, l) => sum + l.quantity, 0)}
+              />
+            )}
             {calcResult && <PnlChart result={calcResult} warnings={calcWarnings} />}
+            <OneClickTradeButton />
           </div>
         </>
       )}

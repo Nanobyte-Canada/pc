@@ -262,6 +262,53 @@ class QuestradeAdapter(
         return OrderResult(brokerOrderId = orderId, status = OrderStatus.SUBMITTED)
     }
 
+    override fun placeMultiLegOrder(
+        credentials: BrokerCredentials, accountId: String, request: MultiLegOrderRequest
+    ): OrderResult {
+        val creds = credentials as BrokerCredentials.QuestradeCredentials
+
+        // Resolve symbolIds for all option legs that don't have one
+        val resolvedLegs = request.legs.map { leg ->
+            val resolvedSymbolId = leg.symbolId ?: if (leg.optionType != null && leg.strike != null && leg.expiry != null) {
+                resolveOptionSymbolId(creds, leg.symbol, leg.strike, leg.expiry, leg.optionType)
+                    ?: throw IllegalArgumentException(
+                        "Could not resolve Questrade symbolId for ${leg.symbol} ${leg.optionType} ${leg.strike} ${leg.expiry}")
+            } else {
+                null
+            }
+            leg.copy(symbolId = resolvedSymbolId)
+        }
+
+        // Build Questrade order legs
+        val orderLegs = resolvedLegs.map { leg ->
+            mutableMapOf<String, Any?>(
+                "symbolId" to leg.symbolId,
+                "quantity" to leg.quantity,
+                "quantityType" to "Quantity",
+                "action" to if (leg.action == OrderAction.BUY) "Buy" else "Sell"
+            ).filterValues { it != null }
+        }
+
+        // Build the full order body
+        val body = mutableMapOf<String, Any?>(
+            "orderType" to when (request.orderType) {
+                OrderType.MARKET -> "Market"; OrderType.LIMIT -> "Limit"
+                OrderType.STOP -> "Stop"; OrderType.STOP_LIMIT -> "StopLimit"
+            },
+            "timeInForce" to when (request.timeInForce) {
+                TimeInForce.DAY -> "Day"; TimeInForce.GTC -> "GoodTillCanceled"
+                TimeInForce.IOC -> "ImmediateOrCancel"; TimeInForce.FOK -> "FillOrKill"
+            },
+            "limitPrice" to request.limitPrice,
+            "orderLegs" to orderLegs
+        ).filterValues { it != null }
+
+        val response = restClient.post(creds.apiServerUrl, creds.accessToken,
+            "/v1/accounts/$accountId/orders", body)
+        val orderId = response.get("orderId")?.asText() ?: response.get("id")?.asText()
+        return OrderResult(brokerOrderId = orderId, status = OrderStatus.SUBMITTED)
+    }
+
     override fun cancelOrder(
         credentials: BrokerCredentials, accountId: String, brokerOrderId: String
     ): CancelResult {

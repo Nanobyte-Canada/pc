@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { LayoutGrid, Target, Link2, Menu, X, Clock, Search, FileText, Shield, User } from 'lucide-react'
+import { LayoutGrid, Target, Link2, LineChart, Menu, X, Search, FileText, Shield, User } from 'lucide-react'
 import './BottomTabBar.css'
 
 interface TabItem {
@@ -12,11 +12,11 @@ interface TabItem {
 const tabs: TabItem[] = [
   { icon: LayoutGrid, path: '/', label: 'Portfolio' },
   { icon: Target, path: '/wheel', label: 'Wheel' },
+  { icon: LineChart, path: '/options', label: 'Strategies' },
   { icon: Link2, path: '/brokers/connections', label: 'Connections' },
 ]
 
 const moreItems: TabItem[] = [
-  { icon: Clock, path: '/options', label: 'Options Trading' },
   { icon: Search, path: '/screener/stocks', label: 'Screener' },
   { icon: FileText, path: '/brokers/reporting', label: 'Reporting' },
   { icon: Shield, path: '/admin', label: 'Admin' },
@@ -32,10 +32,11 @@ export function BottomTabBar() {
     if (path === '/') return location.pathname === '/'
     if (path === '/brokers/connections') return location.pathname.startsWith('/brokers') && !location.pathname.startsWith('/brokers/reporting')
     if (path === '/wheel') return location.pathname.startsWith('/wheel')
+    if (path === '/options') return location.pathname.startsWith('/options')
     return location.pathname.startsWith(path)
   }
 
-  const moreOverflowPaths = ['/options', '/screener', '/brokers/reporting', '/admin', '/profile']
+  const moreOverflowPaths = ['/screener', '/brokers/reporting', '/admin', '/profile']
   const isMoreActive = moreOverflowPaths.some((p) => location.pathname.startsWith(p))
 
   return (

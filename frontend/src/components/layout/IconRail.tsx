@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  LayoutGrid, Target, Link2,
+  LayoutGrid, Target, Link2, LineChart,
   Sun, Moon, Settings
 } from 'lucide-react'
 import { ConnectionBadge } from '@/components/ConnectionBadge'
@@ -17,6 +17,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: LayoutGrid, path: '/', label: 'Portfolio' },
   { icon: Target, path: '/wheel', label: 'Wheel' },
+  { icon: LineChart, path: '/options', label: 'Strategies' },
   { icon: Link2, path: '/brokers/connections', label: 'Connections' },
 ]
 
@@ -39,6 +40,7 @@ export function IconRail() {
     if (path === '/') return location.pathname === '/'
     if (path === '/brokers/connections') return location.pathname.startsWith('/brokers')
     if (path === '/wheel') return location.pathname.startsWith('/wheel')
+    if (path === '/options') return location.pathname.startsWith('/options')
     return location.pathname.startsWith(path)
   }
 

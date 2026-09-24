@@ -59,22 +59,14 @@ class StrategyRegistry {
                     LegTemplate(LegAction.BUY, OptionType.PUT, StrikeOffset.OTM_2)
                 )
             ),
-            StrategyType.COVERED_CALL to StrategyDefinition(
-                type = StrategyType.COVERED_CALL, displayName = "Covered Call",
-                description = "Own 100 shares of stock and sell one call option",
-                outlook = "Neutral to Mildly Bullish", riskProfile = "Downside risk from stock ownership, limited upside", legCount = 2,
+            StrategyType.BUTTERFLY_SPREAD to StrategyDefinition(
+                type = StrategyType.BUTTERFLY_SPREAD, displayName = "Butterfly Spread",
+                description = "Buy 1 ATM call, sell 2 OTM calls, buy 1 further OTM call — profits from low volatility at the middle strike",
+                outlook = "Neutral (Range-Bound)", riskProfile = "Limited risk, limited profit", legCount = 3,
                 legTemplates = listOf(
-                    LegTemplate(LegAction.BUY, null, StrikeOffset.STOCK),
-                    LegTemplate(LegAction.SELL, OptionType.CALL, StrikeOffset.OTM_1)
-                )
-            ),
-            StrategyType.PROTECTIVE_PUT to StrategyDefinition(
-                type = StrategyType.PROTECTIVE_PUT, displayName = "Protective Put",
-                description = "Own 100 shares of stock and buy one put option for protection",
-                outlook = "Bullish (with downside protection)", riskProfile = "Limited downside risk, unlimited upside potential", legCount = 2,
-                legTemplates = listOf(
-                    LegTemplate(LegAction.BUY, null, StrikeOffset.STOCK),
-                    LegTemplate(LegAction.BUY, OptionType.PUT, StrikeOffset.OTM_1)
+                    LegTemplate(LegAction.BUY, OptionType.CALL, StrikeOffset.ATM),
+                    LegTemplate(LegAction.SELL, OptionType.CALL, StrikeOffset.OTM_1, quantity = 2),
+                    LegTemplate(LegAction.BUY, OptionType.CALL, StrikeOffset.OTM_2)
                 )
             )
         )
@@ -110,17 +102,20 @@ class StrategyRegistry {
                 keyCharacteristics = listOf("Four-legged strategy combining two credit spreads", "Profits from time decay and decreasing volatility", "Two break-even points creating a profit zone"),
                 warnings = listOf("Requires significant buying power/margin", "Can lose on both sides in high volatility", "Commission costs higher due to four legs")
             ),
-            StrategyType.COVERED_CALL to EducationContent(
-                whenToUse = "Use when you own stock and expect neutral to slightly bullish price action.",
-                riskExplanation = "Full downside risk from the stock, partially offset by call premium. Upside capped at call strike plus premium.",
-                keyCharacteristics = listOf("Generates income from call premium", "Reduces cost basis of stock ownership", "Break-even is stock price minus premium received"),
-                warnings = listOf("Stock can be called away above strike", "Still have downside risk if stock falls", "Requires owning 100 shares per contract")
-            ),
-            StrategyType.PROTECTIVE_PUT to EducationContent(
-                whenToUse = "Use when you own stock and want downside protection while maintaining upside potential.",
-                riskExplanation = "Maximum loss is limited to stock entry minus put strike plus put premium. Upside is unlimited.",
-                keyCharacteristics = listOf("Provides defined downside protection", "Maintains unlimited upside potential", "Break-even is stock entry price plus put premium"),
-                warnings = listOf("Premium cost reduces overall returns", "Put value decays over time", "More expensive than selling covered calls")
+            StrategyType.BUTTERFLY_SPREAD to EducationContent(
+                whenToUse = "Use when you expect the underlying to stay near a specific price (the middle strike) with low volatility.",
+                riskExplanation = "Maximum loss is the net debit paid to enter the spread. Maximum profit is the difference between the middle and outer strikes minus the net debit.",
+                keyCharacteristics = listOf(
+                    "Low-cost way to profit from low volatility",
+                    "Three strike prices create a profit 'tent' at the middle strike",
+                    "Max profit at exactly the middle strike price",
+                    "Two break-even points define the profit zone"
+                ),
+                warnings = listOf(
+                    "Profit potential is capped at the middle strike",
+                    "Time decay works against you if stock doesn't move",
+                    "Narrow profit zone means precision matters"
+                )
             )
         )
     }

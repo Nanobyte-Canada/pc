@@ -55,24 +55,56 @@
   box-shadow: 0 0 6px rgba(248, 113, 113, 0.4);
 }
 
-/* ── Two-column layout: 55% chain / 45% sidebar ── */
-.options-page__content {
+/* ── Three-panel layout ── */
+.options-page__layout {
   display: grid;
-  grid-template-columns: 55fr 45fr;
-  gap: 20px;
+  grid-template-columns: 280px 1fr 340px;
+  gap: 16px;
   align-items: start;
 }
 
-.options-page__chain-section {
+/* ── Left panel: Strategy education ── */
+.options-page__left-panel {
+  position: sticky;
+  top: 20px;
+}
+
+.options-page__left-placeholder {
+  padding: 32px 16px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md, 10px);
+  background: var(--bg-secondary, #111827);
+}
+
+.options-page__left-placeholder-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Center panel: Leg builder ── */
+.options-page__center-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   min-width: 0;
 }
 
-.options-page__sidebar {
+/* ── Right panel: P&L chart + trade ── */
+.options-page__right-panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
   position: sticky;
   top: 20px;
+}
+
+/* ── Bottom panel: Options chain (full width) ── */
+.options-page__bottom-panel {
+  margin-top: 20px;
+  min-width: 0;
 }
 
 /* ── Error state ── */
@@ -169,12 +201,24 @@
     margin-left: 0;
   }
 
-  .options-page__content {
+  /* Stack panels vertically on mobile */
+  .options-page__layout {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
-  /* Hide desktop sidebar on mobile — use bottom sheet instead */
-  .options-page__sidebar {
+  .options-page__left-panel,
+  .options-page__right-panel {
+    position: static;
+  }
+
+  .options-page__left-placeholder {
+    display: none;
+  }
+
+  /* Hide desktop sidebar on mobile -- use bottom sheet instead */
+  .options-page__center-panel,
+  .options-page__right-panel {
     display: none;
   }
 
@@ -249,6 +293,9 @@
     transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
     padding: 0 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 
   .options-page__bottom-sheet--open {
@@ -278,7 +325,6 @@
   .options-page__bottom-sheet-close {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 8px;
   }
 
   .options-page__bottom-sheet-close-btn {
@@ -293,12 +339,16 @@
 }
 
 /* Tablet breakpoint */
-@media (min-width: 769px) and (max-width: 1100px) {
-  .options-page__content {
-    grid-template-columns: 1fr;
+@media (min-width: 769px) and (max-width: 1200px) {
+  .options-page__layout {
+    grid-template-columns: 220px 1fr 280px;
+    gap: 12px;
   }
+}
 
-  .options-page__sidebar {
-    position: static;
+@media (min-width: 1201px) and (max-width: 1400px) {
+  .options-page__layout {
+    grid-template-columns: 250px 1fr 310px;
+    gap: 14px;
   }
 }
