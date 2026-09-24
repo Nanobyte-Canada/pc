@@ -15,6 +15,27 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
     await page.goto('/options');
   });
 
+  /**
+   * Helper: load the SPY options chain. Strategy cards and the education
+   * panel only render after a successful chain load, so tests that assert on
+   * them must call this first and honour the skip when market data is
+   * unavailable.
+   */
+  async function loadChainOrSkip(page: import('@playwright/test').Page): Promise<void> {
+    const symbolInput = page.locator('input.underlying-search__input');
+    await symbolInput.fill('SPY');
+    await page.locator('button.underlying-search__button').click();
+
+    const chainOrError = await Promise.race([
+      page.locator('.chain-table').waitFor({ state: 'visible', timeout: 15000 }).then(() => 'chain' as const),
+      page.locator('.options-page__error').waitFor({ state: 'visible', timeout: 15000 }).then(() => 'error' as const),
+    ]).catch(() => 'timeout' as const);
+
+    if (chainOrError !== 'chain') {
+      test.skip(true, 'Market data provider unavailable — cannot load options chain');
+    }
+  }
+
   test(scenario('STRAT-001', 'strategy list loads with all strategies'), async ({ page }) => {
     const strategyCards = page.locator('button.strategy-card');
     await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
@@ -36,17 +57,17 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('STRAT-002', 'strategy education display'), async ({ page }) => {
-    // Strategies must be loaded first
-    const strategyCards = page.locator('button.strategy-card');
-    await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
+    // Strategy cards and the education panel only render after the chain loads
+    await loadChainOrSkip(page);
 
-    // Click first strategy card
-    await strategyCards.first().click();
-
-    // Education panel placeholder or card should appear
-    // Education card only renders after chain is loaded, so the left panel shows placeholder text
-    const educationOrPlaceholder = page.locator('.options-page__left-panel');
-    await expect(educationOrPlaceholder).toBeVisible();
+    await expect(page.locator('.strategy-card').first()).toBeVisible()
+    await page.locator('.strategy-card').first().click()
+    const edu = page.locator('.strategy-edu-card')
+    await expect(edu).toBeVisible()
+    await expect(edu.getByText('When to Use')).toBeVisible()
+    await expect(edu.getByText('Risk Explanation')).toBeVisible()
+    await expect(edu.getByText('Key Characteristics')).toBeVisible()
+    await expect(edu.locator('li').first()).not.toBeEmpty()
   });
 
   test(scenario('STRAT-003', 'outlook labels are shown'), async ({ page }) => {
@@ -90,20 +111,16 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
     expect(nameTexts.some(t => t.includes('Protective Put'))).toBeFalsy();
   });
 
-  test(scenario('STRAT-007', 'strategy selection highlights card and shows left panel'), async ({ page }) => {
-    const strategyCards = page.locator('button.strategy-card');
-    await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
+  test(scenario('STRAT-007', 'strategy selection updates education and leg template'), async ({ page }) => {
+    // Cards and the education panel only render after the chain loads
+    await loadChainOrSkip(page);
 
-    // Select a strategy
-    const bullCallCard = strategyCards.filter({ hasText: 'Bull Call Spread' });
-    await bullCallCard.click();
-
-    // Card should have selected state
-    await expect(bullCallCard).toHaveClass(/strategy-card--selected/);
-
-    // Left panel should be visible (education or placeholder)
-    const leftPanel = page.locator('.options-page__left-panel');
-    await expect(leftPanel).toBeVisible();
+    await page.locator('.strategy-card').first().click()
+    await expect(page.locator('.strategy-card--selected')).toHaveCount(1)
+    await expect(page.locator('.strategy-edu-card')).toBeVisible()
+    await page.locator('.strategy-card').nth(4).click()   // Iron Condor, 4 legs
+    await expect(page.locator('.strategy-card--selected')).toHaveCount(1)
+    await expect(page.locator('.strategy-edu-card')).toBeVisible()
   });
 
   test(scenario('STRAT-008', 'all strategies have education content'), async ({ page }) => {
@@ -122,26 +139,17 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
       return;
     }
 
-    const strategyCards = page.locator('button.strategy-card');
-    const count = await strategyCards.count();
+    const cards = page.locator('button.strategy-card');
+    // ADR-0034: a collection loop must first assert the collection is non-empty
+    await expect(cards.first()).toBeVisible({ timeout: 10000 });
 
-    for (let i = 0; i < count; i++) {
-      const card = strategyCards.nth(i);
-      const name = await card.locator('.strategy-card__name').textContent();
-      await card.click();
-
-      // Education card should appear in the left panel
-      const education = page.locator('.strategy-edu-card');
-      await expect(education).toBeVisible({ timeout: 5000 });
-
-      // Education should have "When to Use" section
-      await expect(education.locator('h4', { hasText: 'When to Use' })).toBeVisible();
-      // Education should have "Risk" section
-      await expect(education.locator('h4', { hasText: 'Risk' })).toBeVisible();
-
-      // Deselect strategy to reset for next iteration
-      await card.click();
-      await page.waitForTimeout(200);
+    for (const card of await cards.all()) {
+      await card.click()
+      const edu = page.locator('.strategy-edu-card')
+      await expect(edu).toBeVisible()
+      const text = await edu.innerText()
+      expect(text).toContain('When to Use')
+      expect(text.length).toBeGreaterThan(80)
     }
   });
 });

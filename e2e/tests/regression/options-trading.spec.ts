@@ -31,6 +31,45 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
     ]).catch(() => 'timeout' as const);
   }
 
+  /**
+   * Helper: select a strategy card by display name and wait for its
+   * selected state.
+   */
+  async function selectStrategy(page: import('@playwright/test').Page, name: string): Promise<void> {
+    const card = page.locator('button.strategy-card').filter({ hasText: name });
+    await expect(card).toBeVisible({ timeout: 10000 });
+    await card.click();
+    await expect(card).toHaveClass(/strategy-card--selected/);
+  }
+
+  /**
+   * Helper: add one leg by clicking the first chain cell that is not already
+   * in the builder. Cells toggle (clicking a leg that is already added removes
+   * it), so start scanning after the legs already present and confirm the leg
+   * count actually increased before returning.
+   */
+  async function addFirstAvailableLeg(page: import('@playwright/test').Page): Promise<void> {
+    const legCards = page.locator('.leg-builder__card');
+    const before = await legCards.count();
+    const legCountText = await page.locator('.leg-builder__count').first().textContent();
+    const alreadyAdded = parseInt(legCountText?.replace(/\D/g, '') ?? '0', 10) || 0;
+
+    const callCells = page.locator('.chain-table__call-side');
+    const cellCount = await callCells.count();
+
+    for (let i = alreadyAdded; i < cellCount; i++) {
+      await callCells.nth(i).click();
+      try {
+        await expect.poll(() => legCards.count(), { timeout: 2000 }).toBeGreaterThan(before);
+        return;
+      } catch {
+        // This cell did not add a leg (no live quote on that row) — try the next.
+      }
+    }
+
+    throw new Error(`could not add a leg: no chain cell raised the leg count above ${before}`);
+  }
+
   test(scenario('TRADE-001', 'load options chain for symbol'), async ({ page }) => {
     const result = await loadSpyChain(page);
     if (result !== 'chain') {
@@ -59,6 +98,11 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
     // Leg builder should show the leg
     const legCards = page.locator('.leg-builder__card');
     await expect(legCards).toHaveCount(1);
+
+    // Per spec: LegBuilder shows correct badges. Scoped to the desktop panel —
+    // the mobile bottom sheet renders a second LegBuilder in the DOM.
+    await expect(page.locator('.options-page__center-panel .leg-builder__badge--buy, .options-page__center-panel .leg-builder__badge--sell')).toHaveCount(1)
+    await expect(page.locator('.options-page__center-panel .leg-builder__badge--call, .options-page__center-panel .leg-builder__badge--put')).toHaveCount(1)
   });
 
   test(scenario('TRADE-003', 'calculate P&L after adding legs'), async ({ page }) => {
@@ -144,21 +188,20 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
     await expect(page.locator('.leg-builder__empty')).toBeVisible();
   });
 
-  test(scenario('TRADE-007', 'butterfly spread card shows 3 legs'), async ({ page }) => {
-    const strategyCards = page.locator('button.strategy-card');
-    await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
+  test(scenario('TRADE-007', 'iron condor with too few legs shows a validation error'), async ({ page }) => {
+    const result = await loadSpyChain(page);
+    if (result !== 'chain') {
+      test.skip(true, 'Market data provider unavailable — cannot test leg validation');
+      return;
+    }
 
-    const butterflyCard = strategyCards.filter({ hasText: 'Butterfly Spread' });
-    await expect(butterflyCard).toBeVisible();
-
-    // Verify it shows "3 legs" in the card
-    const legCount = butterflyCard.locator('.strategy-card__legs');
-    await expect(legCount).toContainText('3');
-
-    // Click to select — education or placeholder should appear
-    await butterflyCard.click();
-    await expect(butterflyCard).toHaveClass(/strategy-card--selected/);
-  });
+    await selectStrategy(page, 'Iron Condor')
+    // add only two of the four required legs
+    await addFirstAvailableLeg(page)
+    await addFirstAvailableLeg(page)
+    await page.locator('.leg-builder__calculate').first().click()
+    await expect(page.getByText(/requires exactly 4 legs/i)).toBeVisible()
+  })
 
   test(scenario('TRADE-008', 'strategy suggest endpoint returns bullish strategies'), async ({ page }) => {
     // Test the suggest API endpoint directly
@@ -174,5 +217,35 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
     for (const strategy of strategies) {
       expect(strategy.marketOutlook.toLowerCase()).toContain('bullish');
     }
+  });
+
+  test(scenario('TRADE-009', 'break-even prices are shown on the chart'), async ({ page }) => {
+    const result = await loadSpyChain(page);
+    if (result !== 'chain') {
+      test.skip(true, 'Market data provider unavailable — cannot test break-even markers');
+      return;
+    }
+
+    await selectStrategy(page, 'Bull Call Spread')
+    await addFirstAvailableLeg(page)
+    await addFirstAvailableLeg(page)
+    await page.locator('.leg-builder__calculate').first().click()
+    await expect(page.locator('.pnl-chart__breakeven').first()).toBeVisible()
+  })
+
+  test(scenario('TRADE-010', 'butterfly spread card shows 3 legs'), async ({ page }) => {
+    const strategyCards = page.locator('button.strategy-card');
+    await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
+
+    const butterflyCard = strategyCards.filter({ hasText: 'Butterfly Spread' });
+    await expect(butterflyCard).toBeVisible();
+
+    // Verify it shows "3 legs" in the card
+    const legCount = butterflyCard.locator('.strategy-card__legs');
+    await expect(legCount).toContainText('3');
+
+    // Click to select — education or placeholder should appear
+    await butterflyCard.click();
+    await expect(butterflyCard).toHaveClass(/strategy-card--selected/);
   });
 });
