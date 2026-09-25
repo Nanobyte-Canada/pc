@@ -31,12 +31,46 @@ class PositionFetchService(
     private val objectMapper: ObjectMapper,
     private val jdbcTemplate: NamedParameterJdbcTemplate,
     private val accountAnalyticsComputeService: AccountAnalyticsComputeService,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val syncGuard: ConnectionSyncGuard
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    /**
+     * Manual fetch entry point (also the positions step of `/sync-all`). Single-flight per
+     * connection: an overlapping run is skipped with a failure-shaped log instead of piling on.
+     */
     @Transactional
     fun triggerManualFetch(connectionId: Long, userId: Long): PositionFetchLog {
+        if (!syncGuard.tryAcquire(connectionId)) {
+            log.info("Sync already in progress for connection {}; skipping", connectionId)
+            return skippedFetchLog(connectionId, userId)
+        }
+        try {
+            val connection = connectionRepository.findByIdAndUserId(connectionId, userId)
+                ?: throw IllegalArgumentException("Connection not found: $connectionId")
+
+            val fetchLog = PositionFetchLog(
+                connection = connection,
+                user = connection.user,
+                fetchType = PositionFetchType.MANUAL,
+                status = FetchStatus.PENDING,
+                triggeredBy = "user:$userId"
+            )
+            val savedLog = fetchLogRepository.save(fetchLog)
+
+            return executePositionFetch(connectionId, savedLog.id, userId)
+        } finally {
+            syncGuard.release(connectionId)
+        }
+    }
+
+    /**
+     * The value a skipped run returns: the same failure-shaped [PositionFetchLog] a failed
+     * fetch writes (FAILED + error message), so callers see a normal return, not an exception.
+     * The ownership check still runs so an unauthorized caller gets the usual not-found error.
+     */
+    private fun skippedFetchLog(connectionId: Long, userId: Long): PositionFetchLog {
         val connection = connectionRepository.findByIdAndUserId(connectionId, userId)
             ?: throw IllegalArgumentException("Connection not found: $connectionId")
 
@@ -47,9 +81,8 @@ class PositionFetchService(
             status = FetchStatus.PENDING,
             triggeredBy = "user:$userId"
         )
-        val savedLog = fetchLogRepository.save(fetchLog)
-
-        return executePositionFetch(connectionId, savedLog.id, userId)
+        fetchLog.markFailed("FETCH_ERROR", "already in progress; skipped")
+        return fetchLogRepository.save(fetchLog)
     }
 
     @Transactional

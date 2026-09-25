@@ -28,6 +28,7 @@ class ActivityIngestionService(
     private val exchangeRateService: ExchangeRateService,
     private val transactionOperations: TransactionOperations,
     private val progressService: BrokerSyncProgressService,
+    private val syncGuard: ConnectionSyncGuard,
     @Value("\${broker.sync.max-lookback-years:30}")
     private val maxLookbackYears: Int = 30,
     @Value("\${broker.sync.chunk-days:29}")
@@ -38,8 +39,23 @@ class ActivityIngestionService(
     /**
      * Non-transactional entry point: each chunk of the full-history sync commits in its own
      * transaction (see [syncFullHistory]) so a failure loses at most the chunk in flight.
+     *
+     * Single-flight per connection: scheduled, manual and dashboard runs all converge here,
+     * so an overlapping run for the same connection is skipped rather than queued.
      */
     fun syncActivitiesForConnection(connectionId: Long): Int {
+        if (!syncGuard.tryAcquire(connectionId)) {
+            log.info("Sync already in progress for connection {}; skipping", connectionId)
+            return 0
+        }
+        try {
+            return doSyncActivitiesForConnection(connectionId)
+        } finally {
+            syncGuard.release(connectionId)
+        }
+    }
+
+    private fun doSyncActivitiesForConnection(connectionId: Long): Int {
         val connection = connectionRepository.findById(connectionId).orElseThrow {
             IllegalArgumentException("Connection not found: $connectionId")
         }
@@ -278,6 +294,10 @@ class ActivityIngestionService(
      * is rethrown unchanged so callers still see the failure.
      */
     fun syncBalanceForConnection(connectionId: Long) {
+        if (!syncGuard.tryAcquire(connectionId)) {
+            log.info("Sync already in progress for connection {}; skipping", connectionId)
+            return
+        }
         try {
             transactionOperations.execute<Boolean> {
                 syncBalanceInTransaction(connectionId)
@@ -286,6 +306,8 @@ class ActivityIngestionService(
         } catch (e: Exception) {
             recordBalanceFailure(connectionId)
             throw e
+        } finally {
+            syncGuard.release(connectionId)
         }
     }
 

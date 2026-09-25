@@ -93,7 +93,7 @@ class ActivityIngestionServiceTest {
         service = ActivityIngestionService(
             connectionRepository, activityRepository, balanceRepository,
             gatewayClient, objectMapper, exchangeRateService,
-            inlineTx, progressService,
+            inlineTx, progressService, ConnectionSyncGuard(),
             maxLookbackYears = 30,
             chunkDays = 29
         )
@@ -702,7 +702,7 @@ class ActivityIngestionServiceTest {
         val svc = ActivityIngestionService(
             connectionRepository, activityRepository, balanceRepository,
             gatewayClient, objectMapper, exchangeRateService,
-            tx, progressService,
+            tx, progressService, ConnectionSyncGuard(),
             maxLookbackYears = 30,
             chunkDays = 29
         )
