@@ -5,6 +5,7 @@ import com.portfolio.broker.repository.BrokerSyncProgressRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -37,7 +38,7 @@ class BrokerSyncProgressServiceTest {
     @Test
     fun `get returns null when no progress row exists`() {
         every { repo.findByConnectionIdAndSyncKind(7L, "ACTIVITIES_FULL") } returns null
-        assert(service.get(7L, "ACTIVITIES_FULL") == null)
+        assertNull(service.get(7L, "ACTIVITIES_FULL"))
     }
 
     @Test
