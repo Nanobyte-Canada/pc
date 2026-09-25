@@ -48,11 +48,18 @@ class ActivityIngestionService(
 
         val latestDate = activityRepository.findLatestTradeDateByConnectionId(connectionId)
 
+        // A stored full-history progress row means an interrupted backfill is still owed. The
+        // incremental path only fetches the recent window, so dispatching on latestDate alone
+        // would leave the historical gap (up to maxLookbackYears) unfilled forever. A completed
+        // walk deletes its row (clear), and a row that survived a crash after the final advance
+        // sits below the lookback floor, so syncFullHistory falls straight through and clears it.
+        val resumeFullHistory =
+            progressService.get(connectionId, BrokerSyncProgressService.ACTIVITIES_FULL) != null
+
         val insertedCount = try {
             val gwConnId = connection.gatewayConnectionId
             val accountId = connection.accountIdExternal
-            if (latestDate == null) {
-                // No activities exist — full historical sync
+            if (latestDate == null || resumeFullHistory) {
                 when {
                     gwConnId == null -> {
                         log.warn("Connection {} has no gateway connection ID, skipping historical sync", connectionId)
@@ -63,8 +70,13 @@ class ActivityIngestionService(
                         0
                     }
                     else -> {
-                        log.info("No existing activities for connection {} (user {}), starting full historical sync " +
-                            "(lookback={}y)", connectionId, connection.user.id, maxLookbackYears)
+                        if (resumeFullHistory) {
+                            log.info("Resuming interrupted full historical sync for connection {} (user {})",
+                                connectionId, connection.user.id)
+                        } else {
+                            log.info("No existing activities for connection {} (user {}), starting full " +
+                                "historical sync (lookback={}y)", connectionId, connection.user.id, maxLookbackYears)
+                        }
                         syncFullHistory(connection.id, gwConnId, accountId)
                     }
                 }

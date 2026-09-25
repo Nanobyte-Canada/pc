@@ -21,6 +21,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Optional
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ActivityIngestionServiceTest {
 
@@ -505,5 +506,67 @@ class ActivityIngestionServiceTest {
         assertEquals(1, secondRun)
         verify { progressService.advance(10L, "ACTIVITIES_FULL", LocalDate.of(2026, 9, 2)) }
         verify { progressService.clear(10L, "ACTIVITIES_FULL") }
+    }
+
+    @Test
+    fun `sync resumes full history from saved progress even when activities already exist`() {
+        val today = LocalDate.now()
+        every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
+        // Partial save: some chunks already committed, so a latest trade date exists. Dispatching
+        // on latestDate alone would take the incremental path and never fetch the historical gap.
+        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns today.minusDays(3)
+        val resumePoint = today.minusDays(40)
+        every { progressService.get(10L, BrokerSyncProgressService.ACTIVITIES_FULL) } returns BrokerSyncProgress(
+            connectionId = 10L,
+            syncKind = BrokerSyncProgressService.ACTIVITIES_FULL,
+            nextChunkEnd = resumePoint
+        )
+
+        val calls = mutableListOf<Pair<LocalDate, LocalDate?>>()
+        every { gatewayClient.getActivities(any(), any(), any(), any()) } answers {
+            calls.add(thirdArg<LocalDate>() to arg<LocalDate?>(3))
+            buildActivitiesJson() // empty → 12 consecutive empty chunks terminate the walk
+        }
+
+        service.syncActivitiesForConnection(10L)
+
+        assertTrue(calls.isNotEmpty(), "expected gateway activity calls")
+        // 1. walk restarts exactly at the stored next_chunk_end (chunk window is chunkDays inclusive)
+        assertEquals(resumePoint.minusDays(28), calls.first().first)
+        assertEquals(resumePoint, calls.first().second)
+        // 2. NOT the incremental shape — that call passes endDate = null over an open window
+        assertTrue(calls.none { it.second == null }, "incremental call shape detected: $calls")
+        assertTrue(calls.size > 1, "expected a multi-chunk historical walk, got ${calls.size} call(s)")
+        // incremental would have started at latestDate.minusDays(1) — never used here
+        verify(exactly = 0) { gatewayClient.getActivities("gw-conn-123", "ext-account-123", today.minusDays(4), null) }
+    }
+
+    @Test
+    fun `stale completed progress record does not pin connection into resume mode`() {
+        val today = LocalDate.now()
+        every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
+        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns today.minusDays(5)
+        // A finished walk's last advance wrote a point below the 30y lookback floor; if the process
+        // died before clear(), the row lingers. It must fall through (no re-walk) and be cleaned up.
+        val completedPoint = today.minusYears(30).minusDays(1)
+        every { progressService.get(10L, BrokerSyncProgressService.ACTIVITIES_FULL) } returns BrokerSyncProgress(
+            connectionId = 10L,
+            syncKind = BrokerSyncProgressService.ACTIVITIES_FULL,
+            nextChunkEnd = completedPoint
+        )
+        every { gatewayClient.getActivities(any(), any(), any(), any()) } returns buildActivitiesJson()
+
+        val firstRun = service.syncActivitiesForConnection(10L)
+
+        assertEquals(0, firstRun)
+        verify(exactly = 0) { gatewayClient.getActivities(any(), any(), any(), any()) } // no re-walk
+        verify { progressService.clear(10L, BrokerSyncProgressService.ACTIVITIES_FULL) } // stale row removed
+
+        // Row cleared → next run falls through to the normal incremental path
+        every { progressService.get(10L, BrokerSyncProgressService.ACTIVITIES_FULL) } returns null
+
+        service.syncActivitiesForConnection(10L)
+
+        verify { gatewayClient.getActivities("gw-conn-123", "ext-account-123", today.minusDays(6), null) }
     }
 }
