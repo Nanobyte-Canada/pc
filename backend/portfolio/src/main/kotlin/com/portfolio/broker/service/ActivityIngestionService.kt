@@ -17,6 +17,7 @@ import org.springframework.transaction.support.TransactionOperations
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneId
 
 @Service
 class ActivityIngestionService(
@@ -29,12 +30,17 @@ class ActivityIngestionService(
     private val transactionOperations: TransactionOperations,
     private val progressService: BrokerSyncProgressService,
     private val syncGuard: ConnectionSyncGuard,
-    @Value("\${broker.sync.max-lookback-years:30}")
-    private val maxLookbackYears: Int = 30,
+    @Value("\${broker.sync.max-lookback-years:5}")
+    private val maxLookbackYears: Int = 5,
     @Value("\${broker.sync.chunk-days:29}")
     private val chunkDays: Int = 29
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
+
+    /** Broker days are ET days: the walk floor, the newest chunk and the balance as-of date. */
+    private companion object {
+        val ZONE: ZoneId = ZoneId.of("America/Toronto")
+    }
 
     /**
      * Non-transactional entry point: each chunk of the full-history sync commits in its own
@@ -150,9 +156,9 @@ class ActivityIngestionService(
      * only happen once the account's retention horizon is reached when walking toward the past.
      */
     internal fun syncFullHistory(connectionId: Long, gwConnId: String, accountId: String): Int {
-        val earliest = LocalDate.now().minusYears(maxLookbackYears.toLong())
+        val earliest = LocalDate.now(ZONE).minusYears(maxLookbackYears.toLong())
         val resumeFrom = progressService.get(connectionId, BrokerSyncProgressService.ACTIVITIES_FULL)?.nextChunkEnd
-        var chunkEnd = resumeFrom ?: LocalDate.now()
+        var chunkEnd = resumeFrom ?: LocalDate.now(ZONE)
         var totalInserted = 0
         var emptyChunksInRow = 0
 
@@ -346,7 +352,7 @@ class ActivityIngestionService(
             throw e
         }
 
-        val today = LocalDate.now()
+        val today = LocalDate.now(ZONE)
         val cashMap = mutableMapOf<String, BigDecimal>()
         val buyingPowerMap = mutableMapOf<String, BigDecimal>()
 

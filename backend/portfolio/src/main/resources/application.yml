@@ -90,4 +90,4 @@ broker:
     enabled: ${BROKER_SYNC_ENABLED:true}
     cron: ${BROKER_SYNC_CRON:0 20 16 * * *}
     cron-morning: ${BROKER_SYNC_CRON_MORNING:0 0 6 * * *}
-    max-lookback-years: ${BROKER_SYNC_MAX_LOOKBACK_YEARS:30}
+    max-lookback-years: ${BROKER_SYNC_MAX_LOOKBACK_YEARS:5}

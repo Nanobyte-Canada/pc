@@ -12,6 +12,7 @@ import com.portfolio.broker.repository.BrokerActivityRepository
 import com.portfolio.broker.repository.BrokerBalanceRepository
 import com.portfolio.broker.repository.BrokerConnectionRepository
 import io.mockk.*
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.transaction.support.SimpleTransactionStatus
@@ -19,6 +20,7 @@ import org.springframework.transaction.support.TransactionCallback
 import org.springframework.transaction.support.TransactionOperations
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Optional
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -94,7 +96,7 @@ class ActivityIngestionServiceTest {
             connectionRepository, activityRepository, balanceRepository,
             gatewayClient, objectMapper, exchangeRateService,
             inlineTx, progressService, ConnectionSyncGuard(),
-            maxLookbackYears = 30,
+            // maxLookbackYears omitted → production default (5y), which the lookback test asserts
             chunkDays = 29
         )
 
@@ -577,7 +579,7 @@ class ActivityIngestionServiceTest {
         val today = LocalDate.now()
         every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
         every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns today.minusDays(5)
-        // A finished walk's last advance wrote a point below the 30y lookback floor; if the process
+        // A finished walk's last advance wrote a point below the lookback floor; if the process
         // died before clear(), the row lingers. It must fall through (no re-walk) and be cleaned up.
         val completedPoint = today.minusYears(30).minusDays(1)
         every { progressService.get(10L, BrokerSyncProgressService.ACTIVITIES_FULL) } returns BrokerSyncProgress(
@@ -599,6 +601,26 @@ class ActivityIngestionServiceTest {
         service.syncActivitiesForConnection(10L)
 
         verify { gatewayClient.getActivities("gw-conn-123", "ext-account-123", today.minusDays(6), null) }
+    }
+
+    @Test
+    fun `full history starts five years back by default`() {
+        every { connectionRepository.findById(10L) } returns Optional.of(fullHistoryConnection())
+        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns null
+        every { progressService.get(10L, "ACTIVITIES_FULL") } returns null
+        // One new activity per chunk keeps the 12-consecutive-empty terminator from stopping the
+        // walk before it reaches the lookback floor.
+        every { activityRepository.findByConnectionIdAndExternalId(10L, any()) } returns null
+        val starts = mutableListOf<LocalDate>()
+        every { gatewayClient.getActivities(any(), any(), capture(starts), any()) } returns
+            buildActivitiesJson(questradeActivityWithoutExternalId())
+
+        service.syncActivitiesForConnection(10L)
+
+        // newest chunk is [today(ET)-28d .. today(ET)]; the walked-back window must reach ~5y back
+        val earliest = LocalDate.now(ZoneId.of("America/Toronto")).minusYears(5)
+        assertThat(starts.min()).isAfterOrEqualTo(earliest)
+        assertThat(starts.min()).isBeforeOrEqualTo(earliest.plusDays(30))   // 29-day chunks: last chunk clamps to earliest
     }
 
     // Real entity rather than a relaxed mock: MockK relaxed mocks answer unstubbed nullable
@@ -703,7 +725,6 @@ class ActivityIngestionServiceTest {
             connectionRepository, activityRepository, balanceRepository,
             gatewayClient, objectMapper, exchangeRateService,
             tx, progressService, ConnectionSyncGuard(),
-            maxLookbackYears = 30,
             chunkDays = 29
         )
         var txIdAtSave: Int? = null
