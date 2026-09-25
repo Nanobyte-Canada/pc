@@ -47,16 +47,7 @@ class PositionFetchService(
             return skippedFetchLog(connectionId, userId)
         }
         try {
-            val connection = connectionRepository.findByIdAndUserId(connectionId, userId)
-                ?: throw IllegalArgumentException("Connection not found: $connectionId")
-
-            val fetchLog = PositionFetchLog(
-                connection = connection,
-                user = connection.user,
-                fetchType = PositionFetchType.MANUAL,
-                status = FetchStatus.PENDING,
-                triggeredBy = "user:$userId"
-            )
+            val fetchLog = newManualFetchLog(connectionId, userId)
             val savedLog = fetchLogRepository.save(fetchLog)
 
             return executePositionFetch(connectionId, savedLog.id, userId)
@@ -71,18 +62,28 @@ class PositionFetchService(
      * The ownership check still runs so an unauthorized caller gets the usual not-found error.
      */
     private fun skippedFetchLog(connectionId: Long, userId: Long): PositionFetchLog {
+        val fetchLog = newManualFetchLog(connectionId, userId)
+        fetchLog.markFailed("FETCH_ERROR", "already in progress; skipped")
+        return fetchLogRepository.save(fetchLog)
+    }
+
+    /**
+     * Shared construction of a PENDING MANUAL fetch log: the ownership lookup (a caller
+     * without access gets the usual `Connection not found` exception) plus the log itself.
+     * Returned unsaved — the normal path saves it before executing, the skipped path marks
+     * it failed first.
+     */
+    private fun newManualFetchLog(connectionId: Long, userId: Long): PositionFetchLog {
         val connection = connectionRepository.findByIdAndUserId(connectionId, userId)
             ?: throw IllegalArgumentException("Connection not found: $connectionId")
 
-        val fetchLog = PositionFetchLog(
+        return PositionFetchLog(
             connection = connection,
             user = connection.user,
             fetchType = PositionFetchType.MANUAL,
             status = FetchStatus.PENDING,
             triggeredBy = "user:$userId"
         )
-        fetchLog.markFailed("FETCH_ERROR", "already in progress; skipped")
-        return fetchLogRepository.save(fetchLog)
     }
 
     @Transactional

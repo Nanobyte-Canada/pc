@@ -2,6 +2,7 @@ package com.portfolio.broker.scheduler
 
 import com.portfolio.broker.entity.OrderStatus
 import com.portfolio.broker.repository.TradeOrderRepository
+import com.portfolio.broker.service.ConnectionSyncGuard
 import com.portfolio.broker.service.PositionFetchService
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -18,7 +19,8 @@ import java.time.OffsetDateTime
 )
 class OrderStatusSyncScheduler(
     private val tradeOrderRepository: TradeOrderRepository,
-    private val positionFetchService: PositionFetchService
+    private val positionFetchService: PositionFetchService,
+    private val syncGuard: ConnectionSyncGuard
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -42,12 +44,20 @@ class OrderStatusSyncScheduler(
                 val gwConnId = connection.gatewayConnectionId ?: continue
                 val accountId = connection.accountIdExternal ?: continue
 
-                positionFetchService.syncOrdersForConnection(
-                    connection = connection,
-                    user = connection.user,
-                    gwConnId = gwConnId,
-                    accountId = accountId
-                )
+                if (!syncGuard.tryAcquire(connectionId)) {
+                    log.info("Order status sync already in progress for connection {}; skipping", connectionId)
+                    continue
+                }
+                try {
+                    positionFetchService.syncOrdersForConnection(
+                        connection = connection,
+                        user = connection.user,
+                        gwConnId = gwConnId,
+                        accountId = accountId
+                    )
+                } finally {
+                    syncGuard.release(connectionId)
+                }
             } catch (e: Exception) {
                 log.warn("Order sync failed for connection {}: {}", connectionId, e.message)
             }
