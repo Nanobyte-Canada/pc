@@ -22,6 +22,7 @@ import java.time.LocalDate
 import java.util.Optional
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -45,6 +46,33 @@ class ActivityIngestionServiceTest {
     private val inlineTx = object : TransactionOperations {
         override fun <T : Any?> execute(action: TransactionCallback<T>): T? =
             action.doInTransaction(SimpleTransactionStatus())
+    }
+
+    /**
+     * Tags every transaction so a test can tell *which* transaction a write landed in: [openTxId]
+     * is the transaction currently open (null outside one) and [lastFailedTxId] is the one that
+     * rolled back. Used to prove a status write survives the balance transaction's rollback.
+     */
+    private class TrackingTransactionOperations : TransactionOperations {
+        var openTxId: Int? = null
+            private set
+        var lastFailedTxId: Int? = null
+            private set
+        private var nextId = 0
+
+        override fun <T : Any?> execute(action: TransactionCallback<T>): T? {
+            val id = ++nextId
+            val enclosing = openTxId
+            openTxId = id
+            return try {
+                action.doInTransaction(SimpleTransactionStatus())
+            } catch (e: Throwable) {
+                lastFailedTxId = id
+                throw e
+            } finally {
+                openTxId = enclosing
+            }
+        }
     }
 
     @BeforeEach
@@ -649,6 +677,54 @@ class ActivityIngestionServiceTest {
 
         assertNull(connSlot.captured.lastBalanceFetchedAt)
         assertEquals("FAILED", connSlot.captured.lastBalanceSyncStatus)
+    }
+
+    @Test
+    fun `balance FAILED status is recorded outside the transaction that rolls back`() {
+        val conn = fullHistoryConnection()
+        every { connectionRepository.findById(10L) } returns Optional.of(conn)
+
+        // Inner sync throws *inside* the balance transaction — after the fetch, while persisting —
+        // so only a wrapper sitting outside that transaction can still record the status.
+        every { gatewayClient.getBalances("gw-conn-123", "ext-account-123") } returns
+            objectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
+                mapOf(
+                    "totalValue" to 10000.0,
+                    "cashBalances" to emptyList<Any>(),
+                    "buyingPower" to 0,
+                    "currency" to "CAD"
+                )
+            )
+        every { balanceRepository.findByConnectionIdAndAsOfDate(10L, any()) } returns null
+        every { balanceRepository.save(any<BrokerBalanceSnapshot>()) } throws IllegalStateException("db down")
+
+        val tx = TrackingTransactionOperations()
+        val svc = ActivityIngestionService(
+            connectionRepository, activityRepository, balanceRepository,
+            gatewayClient, objectMapper, exchangeRateService,
+            tx, progressService,
+            maxLookbackYears = 30,
+            chunkDays = 29
+        )
+        var txIdAtSave: Int? = null
+        every { connectionRepository.save(any<BrokerConnection>()) } answers {
+            txIdAtSave = tx.openTxId
+            firstArg()
+        }
+
+        val ex = assertFailsWith<IllegalStateException> { svc.syncBalanceForConnection(10L) }
+
+        // the original exception still propagates, unchanged
+        assertEquals("db down", ex.message)
+        // ...and the FAILED status was still recorded, exactly once, without the watermark moving
+        verify(exactly = 1) { connectionRepository.save(any<BrokerConnection>()) }
+        assertEquals("FAILED", conn.lastBalanceSyncStatus)
+        assertNull(conn.lastBalanceFetchedAt)
+        // the balance transaction did run and did roll back
+        assertNotNull(tx.lastFailedTxId)
+        // ...and the FAILED status was written inside a *different* transaction, so it survives
+        assertNotNull(txIdAtSave)
+        assertNotEquals(tx.lastFailedTxId, txIdAtSave)
     }
 
     @Test

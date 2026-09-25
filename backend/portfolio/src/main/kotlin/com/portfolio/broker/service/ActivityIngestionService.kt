@@ -13,8 +13,6 @@ import com.portfolio.broker.repository.BrokerConnectionRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionOperations
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -270,8 +268,47 @@ class ActivityIngestionService(
         return insertedCount
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    /**
+     * Non-transactional wrapper around [syncBalanceInTransaction], which runs in its own
+     * transaction. A failure rolls that transaction back, so a FAILED status written *inside* it
+     * (what the old `@Transactional(REQUIRES_NEW)` version did) was discarded for every caller
+     * that went through the transaction proxy — `BrokerController.sync-all` — while the
+     * scheduler's self-invocation path, which never got a proxy, accidentally kept it. The status
+     * is now written after the rollback, in its own small transaction, and the original exception
+     * is rethrown unchanged so callers still see the failure.
+     */
     fun syncBalanceForConnection(connectionId: Long) {
+        try {
+            transactionOperations.execute<Boolean> {
+                syncBalanceInTransaction(connectionId)
+                true
+            }
+        } catch (e: Exception) {
+            recordBalanceFailure(connectionId)
+            throw e
+        }
+    }
+
+    /**
+     * Records the FAILED balance status in its own transaction, outside the balance transaction
+     * that just rolled back, so the write commits. Never throws: a failure to record is logged
+     * because the original sync exception must reach the caller untouched.
+     */
+    private fun recordBalanceFailure(connectionId: Long) {
+        try {
+            transactionOperations.execute<Boolean> {
+                connectionRepository.findById(connectionId).ifPresent { conn ->
+                    conn.lastBalanceSyncStatus = "FAILED"
+                    connectionRepository.save(conn)
+                }
+                true
+            }
+        } catch (e: Exception) {
+            log.error("Failed to record FAILED balance status for connection {}", connectionId, e)
+        }
+    }
+
+    private fun syncBalanceInTransaction(connectionId: Long) {
         val connection = connectionRepository.findById(connectionId).orElseThrow {
             IllegalArgumentException("Connection not found: $connectionId")
         }
@@ -284,8 +321,6 @@ class ActivityIngestionService(
             gatewayClient.getBalances(gwConnId, accountId)
         } catch (e: Exception) {
             log.error("Failed to fetch balance for connection {}: {}", connectionId, e.message)
-            connection.lastBalanceSyncStatus = "FAILED"
-            connectionRepository.save(connection)
             throw e
         }
 
