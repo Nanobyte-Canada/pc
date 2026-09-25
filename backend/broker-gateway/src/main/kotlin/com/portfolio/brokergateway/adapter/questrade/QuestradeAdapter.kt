@@ -17,7 +17,10 @@ class QuestradeAdapter(
 ) : BrokerAdapter {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    private val restClient = QuestradeRestClient()
+    private val restClient = QuestradeRestClient(
+        responseTimeoutMs = config.responseTimeoutMs,
+        connectTimeoutMs = config.connectTimeoutMs
+    )
     private val tokenManager = QuestradeTokenManager(config)
     private val symbolIdCache = java.util.concurrent.ConcurrentHashMap<String, Long>()
 

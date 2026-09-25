@@ -6,6 +6,7 @@ import com.portfolio.brokergateway.adapter.BrokerType
 import com.portfolio.brokergateway.exception.BrokerAuthenticationException
 import org.slf4j.LoggerFactory
 import org.springframework.web.reactive.function.client.WebClient
+import java.time.Duration
 
 class QuestradeTokenManager(
     private val config: QuestradeConfig,
@@ -24,7 +25,7 @@ class QuestradeTokenManager(
                 .get().uri(url)
                 .retrieve()
                 .bodyToMono(JsonNode::class.java)
-                .block() ?: throw BrokerAuthenticationException(
+                .block(Duration.ofSeconds(10)) ?: throw BrokerAuthenticationException(
                     "Empty response from Questrade token exchange", BrokerType.QUESTRADE)
         } catch (e: BrokerAuthenticationException) {
             throw e

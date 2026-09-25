@@ -5,14 +5,20 @@ import com.portfolio.brokergateway.adapter.BrokerType
 import com.portfolio.brokergateway.exception.BrokerAuthenticationException
 import com.portfolio.brokergateway.exception.BrokerConnectionException
 import com.portfolio.brokergateway.exception.BrokerDataException
+import io.netty.channel.ChannelOption
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatusCode
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import reactor.netty.http.client.HttpClient
+import java.time.Duration
 
 class QuestradeRestClient(
-    private val webClientBuilder: WebClient.Builder = WebClient.builder()
+    private val webClientBuilder: WebClient.Builder = WebClient.builder(),
+    private val responseTimeoutMs: Long = 30_000,
+    private val connectTimeoutMs: Int = 10_000,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -63,10 +69,14 @@ class QuestradeRestClient(
         }
     }
 
-    private fun buildClient(apiServerUrl: String, accessToken: String): WebClient {
+    private fun buildClient(baseUrl: String, token: String): WebClient {
+        val httpClient = HttpClient.create()
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMs)
+            .responseTimeout(Duration.ofMillis(responseTimeoutMs))
         return webClientBuilder
-            .baseUrl(apiServerUrl)
-            .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
+            .baseUrl(baseUrl)
+            .clientConnector(ReactorClientHttpConnector(httpClient))
+            .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer $token")
             .build()
     }
 

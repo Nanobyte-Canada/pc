@@ -8,5 +8,7 @@ data class QuestradeConfig(
     val authUrl: String = "https://login.questrade.com/oauth2/token",
     val practiceAuthUrl: String = "https://practicelogin.questrade.com/oauth2/token",
     val usePractice: Boolean = false,
-    val rateLimitPerSecond: Int = 1
+    val rateLimitPerSecond: Int = 1,
+    val responseTimeoutMs: Long = 30_000,
+    val connectTimeoutMs: Int = 10_000
 )

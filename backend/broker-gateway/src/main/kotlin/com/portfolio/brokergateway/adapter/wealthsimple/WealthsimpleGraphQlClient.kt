@@ -8,12 +8,16 @@ import com.portfolio.brokergateway.adapter.BrokerType
 import com.portfolio.brokergateway.exception.BrokerAuthenticationException
 import com.portfolio.brokergateway.exception.BrokerConnectionException
 import com.portfolio.brokergateway.exception.BrokerDataException
+import io.netty.channel.ChannelOption
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import reactor.netty.http.client.HttpClient
+import java.time.Duration
 
 class WealthsimpleGraphQlClient(
     private val config: WealthsimpleConfig,
@@ -30,8 +34,12 @@ class WealthsimpleGraphQlClient(
         )
 
         return try {
+            val httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.connectTimeoutMs)
+                .responseTimeout(Duration.ofMillis(config.responseTimeoutMs))
             val client = webClientBuilder
                 .baseUrl(config.graphqlUrl)
+                .clientConnector(ReactorClientHttpConnector(httpClient))
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader("x-ws-api-version", "12")
