@@ -353,3 +353,24 @@ must first assert the collection is non-empty.
 Green UI checks mean "the deployed UAT environment satisfies these specs", not "this
 branch satisfies these specs". Closing that gap (a PR-scoped preview deployment) is
 deliberately out of scope and remains open work.
+
+## ADR-0036: No pre-merge browser gate; post-merge UAT regression is the accepted detection point
+
+**Date:** 2026-09-24
+
+### Status
+Accepted
+
+### Context
+The first `UI Tests — UAT (Deployed)` run after #272 (run 35962962845, main `89f4e8e`) failed with 38 test instances across 9 unique scenarios. Root-cause analysis found zero product bugs: 36 failures were test defects (missing chain-load setup, wrong HTTP method) and 2 were a timing flake. None of these tests had ever executed before merge — `ui-tests-pr.yml` runs only static checks (impact analysis, test lint, spec validation, route coverage) and no Playwright step — so first execution happened post-merge on deployed UAT.
+
+Four gate designs were considered: (a) impact-selected regression on every PR against UAT (non-blocking), (b) label-triggered full regression on demand, (c) a blocking smoke-only PR check, (d) deferring any gate until a PR-scoped preview environment exists (the open work ADR-0035 flagged). Options (a)–(c) all run PR specs against the *deployed* UAT image, so tests covering not-yet-deployed PR behavior would be false-red; a true preview environment is substantial new infrastructure (per-PR deploy, isolated data, host allowlist changes in `e2e/support/environment.ts`).
+
+### Decision
+Ship none of the PR browser gates for now. `ui-tests-pr.yml` stays static-analysis-only, and the Playwright suite's single execution point remains the post-merge `UI Tests — UAT (Deployed)` workflow (ADR-0035). Owner decision 2026-09-24: a red regression on UAT after merge is acceptable because UAT contains the blast radius — it is not prod, merging to main is not a release, and prod still requires a separate manual deploy with `environment: prod` protection.
+
+### Consequences
+- Test defects can reach `main` undetected and will surface (and be triaged) in the post-merge UAT run; `docs/testing/triage.md` failure-analysis records are the tracking mechanism.
+- A red `UI Tests — UAT (Deployed)` check on `main` does not block or revert anything by itself; the SDLC deployer still gates prod on explicit human promotion.
+- If the post-merge defect rate becomes costly, the next escalation is a PR-scoped preview environment (revisit this ADR); options (a)–(c) remain on the table but should not be added while they would produce false-reds against stale UAT.
+- `workflow_dispatch` on `ui-tests-deployed.yml` remains available for manual pre-merge validation of a branch's specs when a change is judged high-risk.
