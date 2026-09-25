@@ -64,7 +64,7 @@ class TokenRefreshScheduler(
                                 "Validation failed after force-refresh: ${retry.message}", credentials.brokerType)
                         }
                     }
-                    conn.lastValidatedAt = OffsetDateTime.now()   // nothing writes this today; required or staleness never clears
+                    conn.lastValidatedAt = OffsetDateTime.now()   // only writer of lastValidatedAt: without this stamp the staleness check above would re-validate on every run
                 }
 
                 if (conn.status == "ERROR") {

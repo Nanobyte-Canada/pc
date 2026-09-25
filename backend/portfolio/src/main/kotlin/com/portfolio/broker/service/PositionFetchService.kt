@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneId
 
 @Service
 class PositionFetchService(
@@ -35,6 +36,11 @@ class PositionFetchService(
     private val syncGuard: ConnectionSyncGuard
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
+
+    /** Broker days are ET days: the balance as-of/dedup key and the position as-of date. */
+    private companion object {
+        val ZONE: ZoneId = ZoneId.of("America/Toronto")
+    }
 
     /**
      * Manual fetch entry point (also the positions step of `/sync-all`). Single-flight per
@@ -151,7 +157,7 @@ class PositionFetchService(
                         totalPnl = totalPnl,
                         totalPnlPercent = totalPnlPercent,
                         currency = currency,
-                        asOfDate = LocalDate.now(),
+                        asOfDate = LocalDate.now(ZONE),
                         asOfTimestamp = OffsetDateTime.now(),
                         isCurrent = true,
                         strikePrice = strikePrice,
@@ -252,7 +258,7 @@ class PositionFetchService(
             cashMap["buying_power_$bpCurrency"] = buyingPower
         }
 
-        val today = LocalDate.now()
+        val today = LocalDate.now(ZONE)
 
         val existing = balanceRepository.findByConnectionIdAndAsOfDate(connection.id, today)
         if (existing != null) {
