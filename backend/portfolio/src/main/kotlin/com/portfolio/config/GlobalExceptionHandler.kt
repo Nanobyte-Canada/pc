@@ -1,11 +1,13 @@
 package com.portfolio.config
 
 import com.portfolio.auth.exception.AccountLockedException
+import com.portfolio.broker.client.GatewayApiException
 import com.portfolio.exception.*
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -75,6 +77,19 @@ class GlobalExceptionHandler {
             setProperty("code", "CONFLICT")
             setProperty("timestamp", OffsetDateTime.now())
         }
+    }
+
+    @ExceptionHandler(GatewayApiException::class)
+    fun handleGatewayApi(e: GatewayApiException): ResponseEntity<ProblemDetail> {
+        // GatewayApiException exposes gatewayStatusCode/gatewayErrorCode as properties only —
+        // the broker detail lives in message (set by the exception's buildMessage)
+        val problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_GATEWAY,
+            e.message ?: "Broker gateway error",
+        )
+        problem.title = "Broker gateway error"
+        problem.setProperty("code", e.gatewayErrorCode ?: "GATEWAY_ERROR")
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(problem)
     }
 
     @ExceptionHandler(Exception::class)

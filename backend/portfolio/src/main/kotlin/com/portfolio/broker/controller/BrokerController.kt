@@ -193,30 +193,53 @@ class BrokerController(
     ): ResponseEntity<Map<String, Any>> {
         brokerService.getConnection(connectionId, principal.id)
 
-        val fetchLog = positionFetchService.triggerManualFetch(connectionId, principal.id)
-        val positionsFetched = fetchLog.positionsCount ?: 0
-
-        val activitiesSynced = try {
-            activityIngestionService.syncActivitiesForConnection(connectionId)
+        // Each step is independent: a failure records FAILED for that step and the remaining
+        // steps still run, so the response always reports per-step truth instead of aborting.
+        val (positionsFetched, positionsStatus) = try {
+            val fetchLog = positionFetchService.triggerManualFetch(connectionId, principal.id)
+            (fetchLog.positionsCount ?: 0) to "SUCCESS"
         } catch (e: Exception) {
-            log.warn("Activity sync failed for connection {}: {}", connectionId, e.message)
-            0
+            log.warn("Position fetch failed for connection {}: {}", connectionId, e.message)
+            0 to "FAILED"
         }
 
-        val balanceSynced = try {
+        val (activitiesSynced, activitiesStatus) = try {
+            activityIngestionService.syncActivitiesForConnection(connectionId) to "SUCCESS"
+        } catch (e: Exception) {
+            log.warn("Activity sync failed for connection {}: {}", connectionId, e.message)
+            0 to "FAILED"
+        }
+
+        val (balanceSynced, balanceStatus) = try {
             activityIngestionService.syncBalanceForConnection(connectionId)
-            true
+            true to "SUCCESS"
         } catch (e: Exception) {
             log.warn("Balance sync failed for connection {}: {}", connectionId, e.message)
-            false
+            false to "FAILED"
+        }
+
+        val failedSteps = listOfNotNull(
+            if (positionsStatus != "SUCCESS") "positions" else null,
+            if (activitiesStatus != "SUCCESS") "activities" else null,
+            if (balanceStatus != "SUCCESS") "balance" else null,
+        )
+        val overall = if (failedSteps.isEmpty()) "SUCCESS" else "PARTIAL"
+        val message = if (failedSteps.isEmpty()) {
+            "Sync completed successfully"
+        } else {
+            "Sync completed with failures in: ${failedSteps.joinToString(", ")}"
         }
 
         return ResponseEntity.ok(mapOf(
             "connectionId" to connectionId,
-            "positionsFetched" to positionsFetched,
-            "activitiesSynced" to activitiesSynced,
-            "balanceSynced" to balanceSynced,
-            "message" to "Sync completed successfully"
+            "positionsFetched" to positionsFetched,    // KEPT — frontend sums this
+            "positionsStatus" to positionsStatus,      // SUCCESS | FAILED
+            "activitiesSynced" to activitiesSynced,    // Int (0 on failure, as today)
+            "activitiesStatus" to activitiesStatus,    // SUCCESS | FAILED
+            "balanceSynced" to balanceSynced,          // KEPT — frontend type requires it
+            "balanceStatus" to balanceStatus,
+            "status" to overall,                       // SUCCESS if all succeeded else PARTIAL
+            "message" to message,                      // accurate: names the failed steps
         ))
     }
 
