@@ -52,4 +52,4 @@ class BrokerTransientException(
     message: String,
     val brokerType: BrokerType,
     cause: Throwable? = null,
-) : RuntimeException(message, cause)
+) : BrokerGatewayException("BROKER_CONNECTION_FAILED", message, cause)

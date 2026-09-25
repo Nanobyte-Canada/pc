@@ -24,6 +24,7 @@ class GlobalExceptionHandler {
             is BrokerOrderRejectedException -> HttpStatus.UNPROCESSABLE_ENTITY
             is BrokerUnsupportedOperationException -> HttpStatus.NOT_IMPLEMENTED
             is BrokerDataException -> HttpStatus.BAD_GATEWAY
+            is BrokerTransientException -> HttpStatus.BAD_GATEWAY
         }
 
         log.warn("Gateway error [{}] {}: {} at {}", status.value(), ex.errorCode, ex.message, request.requestURI)
@@ -36,20 +37,6 @@ class GlobalExceptionHandler {
             if (ex is BrokerRateLimitException && ex.retryAfterSeconds != null) {
                 setProperty("retryAfterSeconds", ex.retryAfterSeconds)
             }
-        }
-    }
-
-    @ExceptionHandler(BrokerTransientException::class)
-    fun handleTransientException(ex: BrokerTransientException, request: HttpServletRequest): ProblemDetail {
-        val status = HttpStatus.BAD_GATEWAY
-
-        log.warn("Gateway error [{}] {}: {} at {}", status.value(), "BROKER_CONNECTION_FAILED", ex.message, request.requestURI)
-
-        return ProblemDetail.forStatusAndDetail(status, ex.message).apply {
-            title = status.reasonPhrase
-            instance = URI.create(request.requestURI)
-            setProperty("code", "BROKER_CONNECTION_FAILED")
-            setProperty("timestamp", OffsetDateTime.now())
         }
     }
 
