@@ -18,8 +18,35 @@ class AuthError extends Error {
 }
 
 async function handleAuthError(response: Response): Promise<never> {
-  const error: AuthErrorResponse = await response.json();
-  throw new AuthError(error.error, error.message, error.field, error.lockedUntil);
+  let body: Partial<AuthErrorResponse> | null = null;
+  try {
+    const parsed: unknown = await response.json();
+    if (parsed && typeof parsed === 'object') {
+      body = parsed as Partial<AuthErrorResponse>;
+    }
+  } catch {
+    // Non-JSON body — e.g. an HTML error page from Cloudflare/CDN on a 502.
+    body = null;
+  }
+
+  if (body && typeof body.message === 'string' && body.message) {
+    throw new AuthError(
+      body.error ?? String(response.status),
+      body.message,
+      body.field,
+      body.lockedUntil
+    );
+  }
+
+  // No usable JSON error body: surface a human-readable message instead of a
+  // raw JSON parse error (UAT run 36076869672 — WebKit surfaced
+  // "The string did not match the expected pattern." from a Cloudflare 502 HTML page).
+  throw new AuthError(
+    String(response.status),
+    response.status >= 500
+      ? 'The service is temporarily unavailable. Please try again.'
+      : 'Login failed. Please try again.'
+  );
 }
 
 export async function logout(): Promise<void> {
