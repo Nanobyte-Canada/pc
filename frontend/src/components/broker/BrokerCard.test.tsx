@@ -84,6 +84,10 @@ describe('BrokerCard', () => {
       totalValue: 10000,
       errorMessage: null,
       createdAt: '2024-01-01',
+      lastActivitiesFetchedAt: null,
+      lastActivitiesSyncStatus: null,
+      lastBalanceFetchedAt: null,
+      lastBalanceSyncStatus: null,
       modelPortfolioId: null,
       modelPortfolioName: null,
     }]

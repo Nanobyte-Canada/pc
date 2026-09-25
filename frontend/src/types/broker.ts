@@ -42,6 +42,10 @@ export interface BrokerConnection {
   totalValue: number | null
   errorMessage: string | null
   createdAt: string
+  lastActivitiesFetchedAt: string | null
+  lastActivitiesSyncStatus: string | null
+  lastBalanceFetchedAt: string | null
+  lastBalanceSyncStatus: string | null
   modelPortfolioId: number | null
   modelPortfolioName: string | null
   supportedOrderTypes?: string[]

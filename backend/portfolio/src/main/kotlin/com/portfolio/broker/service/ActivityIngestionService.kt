@@ -92,14 +92,39 @@ class ActivityIngestionService(
             // progress row drive the next run's resume point.
             log.warn("Full history sync for connection {} stopped after {} new activities; " +
                 "progress saved for resume", connectionId, e.insertedSoFar)
+            recordActivitiesOutcome(connection, e.insertedSoFar, e)
             return e.insertedSoFar
+        } catch (e: Exception) {
+            // Incremental fetch/persist failure — record the outcome first so the status is
+            // honest for this path too, then propagate so callers still see the error.
+            recordActivitiesOutcome(connection, 0, e)
+            throw e
         }
 
-        connection.lastActivitiesFetchedAt = OffsetDateTime.now()
-        connectionRepository.save(connection)
+        recordActivitiesOutcome(connection, insertedCount, null)
 
         log.info("Synced {} new activities for connection {}", insertedCount, connectionId)
         return insertedCount
+    }
+
+    /**
+     * Records the honest outcome of an activities sync. The watermark only advances on a clean
+     * run — a PARTIAL or FAILED sync leaves it at the last genuine success — while the status is
+     * written on every path so the API and UI can show staleness truthfully.
+     */
+    private fun recordActivitiesOutcome(
+        connection: BrokerConnection,
+        inserted: Int,
+        failure: Throwable?
+    ) {
+        val status = when {
+            failure == null -> "SUCCESS"
+            inserted > 0 -> "PARTIAL"
+            else -> "FAILED"
+        }
+        if (status == "SUCCESS") connection.lastActivitiesFetchedAt = OffsetDateTime.now()
+        connection.lastActivitiesSyncStatus = status
+        connectionRepository.save(connection)
     }
 
     /**
@@ -259,6 +284,8 @@ class ActivityIngestionService(
             gatewayClient.getBalances(gwConnId, accountId)
         } catch (e: Exception) {
             log.error("Failed to fetch balance for connection {}: {}", connectionId, e.message)
+            connection.lastBalanceSyncStatus = "FAILED"
+            connectionRepository.save(connection)
             throw e
         }
 
@@ -303,6 +330,7 @@ class ActivityIngestionService(
         balanceRepository.save(snapshot)
 
         connection.lastBalanceFetchedAt = OffsetDateTime.now()
+        connection.lastBalanceSyncStatus = "SUCCESS"
         connectionRepository.save(connection)
 
         log.info("Balance snapshot saved for connection {} as of {}", connectionId, today)

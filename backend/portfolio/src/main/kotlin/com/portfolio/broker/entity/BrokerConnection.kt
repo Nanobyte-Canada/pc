@@ -81,6 +81,12 @@ class BrokerConnection(
     @Column(name = "last_balance_fetched_at")
     var lastBalanceFetchedAt: OffsetDateTime? = null,
 
+    @Column(name = "last_activities_sync_status", length = 20)
+    var lastActivitiesSyncStatus: String? = null,
+
+    @Column(name = "last_balance_sync_status", length = 20)
+    var lastBalanceSyncStatus: String? = null,
+
     @Column(name = "updated_at", nullable = false)
     var updatedAt: OffsetDateTime = OffsetDateTime.now(),
 

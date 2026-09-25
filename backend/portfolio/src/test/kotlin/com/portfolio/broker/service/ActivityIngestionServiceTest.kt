@@ -21,6 +21,9 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Optional
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ActivityIngestionServiceTest {
@@ -568,5 +571,106 @@ class ActivityIngestionServiceTest {
         service.syncActivitiesForConnection(10L)
 
         verify { gatewayClient.getActivities("gw-conn-123", "ext-account-123", today.minusDays(6), null) }
+    }
+
+    // Real entity rather than a relaxed mock: MockK relaxed mocks answer unstubbed nullable
+    // properties with child mocks, which would hide the honest nulls these tests assert on.
+    private fun fullHistoryConnection(): BrokerConnection = BrokerConnection(
+        id = 10L,
+        user = mockUser,
+        gatewayConnectionId = "gw-conn-123",
+        accountIdExternal = "ext-account-123",
+        accountName = "My RRSP"
+    )
+
+    private fun stubFullHistoryConnection(conn: BrokerConnection) {
+        every { connectionRepository.findById(10L) } returns Optional.of(conn)
+        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns null
+    }
+
+    @Test
+    fun `activities watermark is NOT advanced when the first chunk fails mid-history`() {
+        val conn = fullHistoryConnection()
+        stubFullHistoryConnection(conn)
+        every { gatewayClient.getActivities(any(), any(), any(), any()) } throws RuntimeException("boom")
+        val connSlot = slot<BrokerConnection>()
+        every { connectionRepository.save(capture(connSlot)) } answers { firstArg() }
+
+        service.syncActivitiesForConnection(10L)
+
+        assertNull(connSlot.captured.lastActivitiesFetchedAt)
+        assertEquals("FAILED", connSlot.captured.lastActivitiesSyncStatus)
+    }
+
+    @Test
+    fun `activities watermark records PARTIAL when some chunks succeeded before a failure`() {
+        val conn = fullHistoryConnection()
+        stubFullHistoryConnection(conn)
+        every { activityRepository.findByConnectionIdAndExternalId(10L, any()) } returns null
+        var calls = 0
+        every { gatewayClient.getActivities(any(), any(), any(), any()) } answers {
+            if (++calls == 1) buildActivitiesJson(questradeActivityWithoutExternalId())
+            else throw RuntimeException("boom")
+        }
+        val connSlot = slot<BrokerConnection>()
+        every { connectionRepository.save(capture(connSlot)) } answers { firstArg() }
+
+        service.syncActivitiesForConnection(10L)
+
+        // only a genuine success advances the watermark
+        assertNull(connSlot.captured.lastActivitiesFetchedAt)
+        assertEquals("PARTIAL", connSlot.captured.lastActivitiesSyncStatus)
+        verify { activityRepository.save(any()) } // chunk 1 rows persisted
+    }
+
+    @Test
+    fun `activities watermark set to SUCCESS only after a clean full run`() {
+        val conn = fullHistoryConnection()
+        stubFullHistoryConnection(conn)
+        every { gatewayClient.getActivities(any(), any(), any(), any()) } returns buildActivitiesJson()
+        val connSlot = slot<BrokerConnection>()
+        every { connectionRepository.save(capture(connSlot)) } answers { firstArg() }
+
+        service.syncActivitiesForConnection(10L)
+
+        assertNotNull(connSlot.captured.lastActivitiesFetchedAt)
+        assertEquals("SUCCESS", connSlot.captured.lastActivitiesSyncStatus)
+    }
+
+    @Test
+    fun `balance sync records FAILED status without advancing the watermark`() {
+        val conn = fullHistoryConnection()
+        every { connectionRepository.findById(10L) } returns Optional.of(conn)
+        every { gatewayClient.getBalances("gw-conn-123", "ext-account-123") } throws RuntimeException("boom")
+        val connSlot = slot<BrokerConnection>()
+        every { connectionRepository.save(capture(connSlot)) } answers { firstArg() }
+
+        assertFailsWith<RuntimeException> { service.syncBalanceForConnection(10L) }
+
+        assertNull(connSlot.captured.lastBalanceFetchedAt)
+        assertEquals("FAILED", connSlot.captured.lastBalanceSyncStatus)
+    }
+
+    @Test
+    fun `balance sync records SUCCESS status after a clean fetch`() {
+        val conn = fullHistoryConnection()
+        every { connectionRepository.findById(10L) } returns Optional.of(conn)
+        every { gatewayClient.getBalances("gw-conn-123", "ext-account-123") } returns
+            objectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
+                mapOf(
+                    "totalValue" to 10000.0,
+                    "cashBalances" to emptyList<Any>(),
+                    "buyingPower" to 0,
+                    "currency" to "CAD"
+                )
+            )
+        every { balanceRepository.findByConnectionIdAndAsOfDate(10L, any()) } returns null
+        val connSlot = slot<BrokerConnection>()
+        every { connectionRepository.save(capture(connSlot)) } answers { firstArg() }
+
+        service.syncBalanceForConnection(10L)
+
+        assertNotNull(connSlot.captured.lastBalanceFetchedAt)
+        assertEquals("SUCCESS", connSlot.captured.lastBalanceSyncStatus)
     }
 }
