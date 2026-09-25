@@ -105,10 +105,22 @@ Add to `specs/ui/quarantine.json`:
 |-------|----------|----------------|------------|--------|
 | STRAT-001/003/004/005/006, OPT-CHAIN-003, TRADE-005, TRADE-010 | 32 | **test defect** — asserted strategy cards / trade UI without chain load; product only renders them after a successful chain load (`OptionsPage.tsx:76-79,183`), contradicting the contract in `strategies.spec.ts:23-28` | High | Fixed in PR #275 (existing chain-load helpers + market-data skip). Not quarantined — test defects are fixed, not quarantined |
 | TRADE-008 | 4 | **test defect** — GET with query params on a POST-only endpoint (`@PostMapping("/suggest")`); GET fell into `GET /{name}` → 400 | High | Fixed in PR #275 (POST with JSON body). Related latent frontend bug fixed in same PR |
-| DASH-OVERVIEW-002 (firefox + webkit) | 2 | **tentative flaky** — AG Grid not visible within 5000ms; chromium passed same run with same data; passed on prior UAT runs | Medium (single failing run — below the ≥2-intermittent-failure quarantine threshold) | **Watch next 2 UAT runs.** If it recurs → quarantine with owner `@saurabhbilakhia` + expiry ≤30 days, then investigate grid init timing. If not → close as one-off |
+| DASH-OVERVIEW-002 (firefox + webkit) | 2 | **tentative flaky** — AG Grid not visible within 5000ms; chromium passed same run with same data; passed on prior UAT runs | Medium (single failing run — below the ≥2-intermittent-failure quarantine threshold) | **Watch met and closed 2026-09-25:** passed runs `36076869672` (`f2bd4d1`), `36077378885` (`62a399b`), `36084237761` (`3e1d547`) without recurrence → closed as one-off. No quarantine |
 
 - **Quarantine changes:** none (no test met the evidence bar)
 - **Product bugs:** none found
+
+### Run 36076869672 — UI Tests — UAT (Deployed) — 2026-09-25
+
+- **Context:** main @ `f2bd4d1` — 1 failed / 179 passed / 128 skipped (all other jobs green)
+- **Environment check first:** deploy completed 00:17:41Z, 6 minutes before the failure window (not a deploy race); the next run (`62a399b`) was fully green without code changes — transient, self-recovered
+
+| Tests | Failures | Classification | Confidence | Action |
+|-------|----------|----------------|------------|--------|
+| AUTHZ-MATRIX-001 (webkit, `authz-role-matrix.spec.ts:25`) | 1 (+1 retry) | **environment** — failure trace shows Cloudflare **502** on `GET /auth/me` ×2 and `POST /auth/login` at 00:23:44Z (HTML body); retry loaded the Cloudflare 502 page itself. The test's assertions are correct | High (infrastructure evidence: 502 responses + Cloudflare error page in trace) | No test change (environment → fix environment, don't touch the test). Product defect exposed by the failure — non-JSON error body crashed `handleAuthError` into a raw SyntaxError shown to users — **fixed in PR #278** |
+
+- **Quarantine changes:** none
+- **Product bugs:** 1 found and fixed (#278 — readable auth error message on gateway HTML responses; the e2e test itself needed no change)
 
 ## Weekly Triage Cadence
 
