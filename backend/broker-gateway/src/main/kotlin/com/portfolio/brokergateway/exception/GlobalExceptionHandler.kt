@@ -39,6 +39,20 @@ class GlobalExceptionHandler {
         }
     }
 
+    @ExceptionHandler(BrokerTransientException::class)
+    fun handleTransientException(ex: BrokerTransientException, request: HttpServletRequest): ProblemDetail {
+        val status = HttpStatus.BAD_GATEWAY
+
+        log.warn("Gateway error [{}] {}: {} at {}", status.value(), "BROKER_CONNECTION_FAILED", ex.message, request.requestURI)
+
+        return ProblemDetail.forStatusAndDetail(status, ex.message).apply {
+            title = status.reasonPhrase
+            instance = URI.create(request.requestURI)
+            setProperty("code", "BROKER_CONNECTION_FAILED")
+            setProperty("timestamp", OffsetDateTime.now())
+        }
+    }
+
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgument(ex: IllegalArgumentException, request: HttpServletRequest): ProblemDetail {
         log.warn("Bad request: {} at {}", ex.message, request.requestURI)
