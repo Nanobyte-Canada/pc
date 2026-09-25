@@ -349,18 +349,18 @@ Note: `retryPolicy` is a ctor param (`private val retryPolicy: HttpRetryPolicy =
 
 **Critical detail:** `handleError` (`:73-85`) converts every HTTP error before it escapes `get`, so a `catch (e: WebClientResponseException)` at the retry site would be **dead code**. Retry must key off the *converted* exception types. Add a transient type first:
 
-- `Exceptions.kt` — add, mirroring `BrokerDataException`'s shape (`:45`):
+- `Exceptions.kt` — add, mirroring `BrokerDataException`'s shape (`:45`), extending the sealed `BrokerGatewayException` (human-approved simplification 2026-09-24, superseding the original `RuntimeException` sketch — avoids a duplicate handler block):
 
 ```kotlin
 class BrokerTransientException(
     message: String,
     val brokerType: BrokerType,
     cause: Throwable? = null,
-) : RuntimeException(message, cause)
+) : BrokerGatewayException("BROKER_CONNECTION_FAILED", message, cause)
 ```
 
 - `QuestradeRestClient.handleError` (`:73-85`): 429 → parse the `Retry-After` header (seconds; non-numeric → null) into `BrokerRateLimitException(retryAfterSeconds = parsed)`; **502/503/504 → throw `BrokerTransientException(...)`**; everything else (incl. 500 — deliberate) stays `BrokerDataException`.
-- Gateway `GlobalExceptionHandler.kt` — add a handler mapping `BrokerTransientException` to **502 BROKER_CONNECTION_FAILED** (same shape as the existing `BrokerConnectionException` branch, `:17-40`).
+- Gateway `GlobalExceptionHandler.kt` — add one branch `is BrokerTransientException -> HttpStatus.BAD_GATEWAY` to the existing `when` in the `BrokerGatewayException` handler (`:19-27`); **no separate `@ExceptionHandler` block** (output stays byte-identical: detail=`ex.message`, code=`BROKER_CONNECTION_FAILED`, same log format).
 - Keep the public `get` signature **unchanged** (`get(apiServerUrl: String, accessToken: String, path: String): JsonNode`) — rename only the current body to `private fun fetchOnce(apiServerUrl, accessToken, path): JsonNode` and wrap it:
 
 ```kotlin
