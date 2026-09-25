@@ -6,6 +6,7 @@ import com.portfolio.broker.client.BrokerGatewayClient
 import com.portfolio.broker.entity.BrokerActivity
 import com.portfolio.broker.entity.BrokerBalanceSnapshot
 import com.portfolio.broker.entity.BrokerConnection
+import com.portfolio.broker.entity.BrokerSyncProgress
 import com.portfolio.broker.entity.ConnectionStatus
 import com.portfolio.broker.repository.BrokerActivityRepository
 import com.portfolio.broker.repository.BrokerBalanceRepository
@@ -13,6 +14,9 @@ import com.portfolio.broker.repository.BrokerConnectionRepository
 import io.mockk.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.transaction.support.SimpleTransactionStatus
+import org.springframework.transaction.support.TransactionCallback
+import org.springframework.transaction.support.TransactionOperations
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Optional
@@ -26,10 +30,18 @@ class ActivityIngestionServiceTest {
     private lateinit var balanceRepository: BrokerBalanceRepository
     private lateinit var gatewayClient: BrokerGatewayClient
     private lateinit var exchangeRateService: ExchangeRateService
+    private lateinit var progressService: BrokerSyncProgressService
     private val objectMapper = ObjectMapper()
 
     private lateinit var mockUser: User
     private lateinit var mockConnection: BrokerConnection
+
+    // Runs the chunk callback inline with no real transaction — a relaxed TransactionTemplate
+    // mock would return null and silently skip every chunk.
+    private val inlineTx = object : TransactionOperations {
+        override fun <T : Any?> execute(action: TransactionCallback<T>): T? =
+            action.doInTransaction(SimpleTransactionStatus())
+    }
 
     @BeforeEach
     fun setup() {
@@ -38,14 +50,18 @@ class ActivityIngestionServiceTest {
         balanceRepository = mockk(relaxed = true)
         gatewayClient = mockk()
         exchangeRateService = mockk()
+        progressService = mockk(relaxed = true)
 
         // Default: return ONE for CAD, null for everything else (tests override as needed)
         every { exchangeRateService.getRate("CAD", any()) } returns BigDecimal.ONE
         every { exchangeRateService.getRate(neq("CAD"), any()) } returns null
+        // Default: no stored progress — full history from now (tests override as needed)
+        every { progressService.get(any(), any()) } returns null
 
         service = ActivityIngestionService(
             connectionRepository, activityRepository, balanceRepository,
             gatewayClient, objectMapper, exchangeRateService,
+            inlineTx, progressService,
             maxLookbackYears = 30,
             chunkDays = 29
         )
@@ -54,6 +70,7 @@ class ActivityIngestionServiceTest {
         // MockK relaxed mocks can't resolve the generic and return Object(), causing ClassCastException.
         every { connectionRepository.save(any<BrokerConnection>()) } answers { firstArg() }
         every { balanceRepository.save(any<BrokerBalanceSnapshot>()) } answers { firstArg() }
+        every { activityRepository.save(any<BrokerActivity>()) } answers { firstArg() }
 
         mockUser = mockk {
             every { id } returns 1L
@@ -448,5 +465,45 @@ class ActivityIngestionServiceTest {
 
         assertEquals(0, count)
         verify(exactly = 0) { activityRepository.save(any<BrokerActivity>()) }
+    }
+
+    @Test
+    fun `full history resumes from saved progress after a chunk failure`() {
+        every { connectionRepository.findById(10L) } returns Optional.of(mockConnection)
+        every { activityRepository.findLatestTradeDateByConnectionId(10L) } returns null
+
+        // Seed a mid-history resume point: the next chunk to attempt is 2026-09-03..2026-10-01 (chunkDays = 29).
+        every { progressService.get(10L, "ACTIVITIES_FULL") } returns BrokerSyncProgress(
+            connectionId = 10L, syncKind = "ACTIVITIES_FULL", nextChunkEnd = LocalDate.of(2026, 10, 1)
+        )
+        // Catch-all first (keeps the loop terminating), then override the chunk being resumed with a failure.
+        every { gatewayClient.getActivities(any(), any(), any(), any()) } returns buildActivitiesJson()
+        every {
+            gatewayClient.getActivities(
+                "gw-conn-123", "ext-account-123",
+                LocalDate.of(2026, 9, 3), LocalDate.of(2026, 10, 1)
+            )
+        } throws RuntimeException("boom")
+
+        val firstRun = service.syncActivitiesForConnection(10L)
+
+        assertEquals(0, firstRun)
+        verify(exactly = 0) { progressService.advance(10L, "ACTIVITIES_FULL", any()) } // failed chunk never advances
+        verify(exactly = 0) { progressService.clear(10L, "ACTIVITIES_FULL") }          // progress survives for resume
+
+        // Second run resumes at the SAME saved point and succeeds.
+        every {
+            gatewayClient.getActivities(
+                "gw-conn-123", "ext-account-123",
+                LocalDate.of(2026, 9, 3), LocalDate.of(2026, 10, 1)
+            )
+        } returns buildActivitiesJson(questradeActivityWithoutExternalId())
+        every { activityRepository.findByConnectionIdAndExternalId(10L, any()) } returns null
+
+        val secondRun = service.syncActivitiesForConnection(10L)
+
+        assertEquals(1, secondRun)
+        verify { progressService.advance(10L, "ACTIVITIES_FULL", LocalDate.of(2026, 9, 2)) }
+        verify { progressService.clear(10L, "ACTIVITIES_FULL") }
     }
 }

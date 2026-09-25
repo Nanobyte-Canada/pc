@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionOperations
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -27,6 +28,8 @@ class ActivityIngestionService(
     private val gatewayClient: BrokerGatewayClient,
     private val objectMapper: ObjectMapper,
     private val exchangeRateService: ExchangeRateService,
+    private val transactionOperations: TransactionOperations,
+    private val progressService: BrokerSyncProgressService,
     @Value("\${broker.sync.max-lookback-years:30}")
     private val maxLookbackYears: Int = 30,
     @Value("\${broker.sync.chunk-days:29}")
@@ -34,7 +37,10 @@ class ActivityIngestionService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    /**
+     * Non-transactional entry point: each chunk of the full-history sync commits in its own
+     * transaction (see [syncFullHistory]) so a failure loses at most the chunk in flight.
+     */
     fun syncActivitiesForConnection(connectionId: Long): Int {
         val connection = connectionRepository.findById(connectionId).orElseThrow {
             IllegalArgumentException("Connection not found: $connectionId")
@@ -42,17 +48,39 @@ class ActivityIngestionService(
 
         val latestDate = activityRepository.findLatestTradeDateByConnectionId(connectionId)
 
-        val insertedCount = if (latestDate == null) {
-            // No activities exist — full historical sync
-            log.info("No existing activities for connection {} (user {}), starting full historical sync " +
-                "(lookback={}y)", connectionId, connection.user.id, maxLookbackYears)
-            syncFullHistory(connection)
-        } else {
-            // Incremental sync from latest known date
-            val startDate = latestDate.minusDays(1)
-            log.info("Incremental sync for connection {} (user {}), startDate={}",
-                connectionId, connection.user.id, startDate)
-            syncIncremental(connection, startDate)
+        val insertedCount = try {
+            val gwConnId = connection.gatewayConnectionId
+            val accountId = connection.accountIdExternal
+            if (latestDate == null) {
+                // No activities exist — full historical sync
+                when {
+                    gwConnId == null -> {
+                        log.warn("Connection {} has no gateway connection ID, skipping historical sync", connectionId)
+                        0
+                    }
+                    accountId == null -> {
+                        log.warn("Connection {} has no external account ID, skipping historical sync", connectionId)
+                        0
+                    }
+                    else -> {
+                        log.info("No existing activities for connection {} (user {}), starting full historical sync " +
+                            "(lookback={}y)", connectionId, connection.user.id, maxLookbackYears)
+                        syncFullHistory(connection.id, gwConnId, accountId)
+                    }
+                }
+            } else {
+                // Incremental sync from latest known date
+                val startDate = latestDate.minusDays(1)
+                log.info("Incremental sync for connection {} (user {}), startDate={}",
+                    connectionId, connection.user.id, startDate)
+                syncIncremental(connection, startDate)
+            }
+        } catch (e: SyncInterruptedException) {
+            // Scheduled runs stay resilient: report what was ingested so far and let the stored
+            // progress row drive the next run's resume point.
+            log.warn("Full history sync for connection {} stopped after {} new activities; " +
+                "progress saved for resume", connectionId, e.insertedSoFar)
+            return e.insertedSoFar
         }
 
         connection.lastActivitiesFetchedAt = OffsetDateTime.now()
@@ -62,59 +90,62 @@ class ActivityIngestionService(
         return insertedCount
     }
 
-    private fun syncFullHistory(connection: BrokerConnection): Int {
-        val now = LocalDate.now()
-        val earliest = now.minusYears(maxLookbackYears.toLong())
-        val gwConnId = connection.gatewayConnectionId
-            ?: run {
-                log.warn("Connection {} has no gateway connection ID, skipping historical sync", connection.id)
-                return 0
-            }
-        val accountId = connection.accountIdExternal
-            ?: run {
-                log.warn("Connection {} has no external account ID, skipping historical sync", connection.id)
-                return 0
-            }
-
-        log.info("Full historical sync for connection {}: {} to {} in {}-day chunks",
-            connection.id, earliest, now, chunkDays)
-
+    /**
+     * Walks backward from now (or from stored progress) one chunk at a time, committing each
+     * chunk — fetched activities + the advanced progress row — in a single transaction. The
+     * broker HTTP call happens outside the transaction so no connection is held across it.
+     *
+     * Iteration must stay backward: the loop stops after 12 consecutive empty chunks, which
+     * only happen once the account's retention horizon is reached when walking toward the past.
+     */
+    internal fun syncFullHistory(connectionId: Long, gwConnId: String, accountId: String): Int {
+        val earliest = LocalDate.now().minusYears(maxLookbackYears.toLong())
+        val resumeFrom = progressService.get(connectionId, BrokerSyncProgressService.ACTIVITIES_FULL)?.nextChunkEnd
+        var chunkEnd = resumeFrom ?: LocalDate.now()
         var totalInserted = 0
-        var chunkEnd = now
         var emptyChunksInRow = 0
 
-        while (chunkEnd.isAfter(earliest)) {
-            val chunkStart = maxOf(chunkEnd.minusDays(chunkDays.toLong()), earliest)
+        log.info("Full historical sync for connection {}: {} to {} in {}-day chunks{}",
+            connectionId, earliest, chunkEnd, chunkDays,
+            if (resumeFrom != null) " (resuming from $resumeFrom)" else "")
 
-            try {
-                val activitiesJson = gatewayClient.getActivities(gwConnId, accountId, chunkStart, chunkEnd)
-                val activities = activitiesJson.path("activities")
-                val inserted = processAndSaveActivities(activities, connection)
-                totalInserted += inserted
+        while (!chunkEnd.isBefore(earliest)) {
+            val chunkStart = maxOf(chunkEnd.minusDays((chunkDays - 1).toLong()), earliest)
 
-                if (activities.size() == 0) {
-                    emptyChunksInRow++
-                } else {
-                    emptyChunksInRow = 0
-                    log.info("Chunk {} to {}: {} fetched, {} new for connection {}",
-                        chunkStart, chunkEnd, activities.size(), inserted, connection.id)
+            val inserted = try {
+                val response = gatewayClient.getActivities(gwConnId, accountId, chunkStart, chunkEnd)
+                val activities = response.path("activities")
+                val count = transactionOperations.execute<Int> {
+                    val connection = connectionRepository.findById(connectionId).orElseThrow()
+                    val saved = processAndSaveActivities(activities, connection)
+                    progressService.advance(
+                        connectionId, BrokerSyncProgressService.ACTIVITIES_FULL, chunkStart.minusDays(1)
+                    )
+                    saved
+                } ?: 0
+                if (activities.size() > 0) {
+                    log.info("Chunk {}..{}: {} fetched, {} new for connection {}",
+                        chunkStart, chunkEnd, activities.size(), count, connectionId)
                 }
-
-                if (emptyChunksInRow >= 12) {
-                    log.info("Stopping historical sync for connection {} — {} consecutive empty chunks (reached account start)",
-                        connection.id, emptyChunksInRow)
-                    break
-                }
+                count
             } catch (e: Exception) {
-                log.warn("Chunk {} to {} failed for connection {}: {}", chunkStart, chunkEnd, connection.id, e.message)
+                log.warn("Activity chunk {}..{} failed for connection {}; resuming from saved progress next run",
+                    chunkStart, chunkEnd, connectionId, e)
+                throw SyncInterruptedException(totalInserted)
             }
 
+            totalInserted += inserted
+            emptyChunksInRow = if (inserted == 0) emptyChunksInRow + 1 else 0
+            if (emptyChunksInRow >= 12) {
+                log.info("Stopping historical sync for connection {} — {} consecutive empty chunks " +
+                    "(reached account start)", connectionId, emptyChunksInRow)
+                break
+            }
             chunkEnd = chunkStart.minusDays(1)
         }
 
-        log.info("Historical sync complete for connection {}: {} new activities",
-            connection.id, totalInserted)
-
+        progressService.clear(connectionId, BrokerSyncProgressService.ACTIVITIES_FULL)
+        log.info("Historical sync complete for connection {}: {} new activities", connectionId, totalInserted)
         return totalInserted
     }
 
@@ -137,8 +168,11 @@ class ActivityIngestionService(
             throw e
         }
 
-        val activities = activitiesJson.path("activities")
-        return processAndSaveActivities(activities, connection)
+        // The fetch above is deliberately outside the transaction; persist in its own.
+        return transactionOperations.execute {
+            val conn = connectionRepository.findById(connection.id).orElseThrow()
+            processAndSaveActivities(activitiesJson.path("activities"), conn)
+        } ?: 0
     }
 
     private fun processAndSaveActivities(activities: JsonNode, connection: BrokerConnection): Int {
@@ -330,3 +364,10 @@ class ActivityIngestionService(
         }
     }
 }
+
+/**
+ * A full-history chunk failed; the sync stops but the progress row survives, so the next run
+ * resumes at the failed chunk. Carries the activities already committed so callers can report
+ * a partial sync instead of failing the whole run.
+ */
+class SyncInterruptedException(val insertedSoFar: Int) : RuntimeException()
