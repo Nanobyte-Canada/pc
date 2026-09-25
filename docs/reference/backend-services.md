@@ -799,7 +799,7 @@ Spring Security filter chain configuration:
 |---|---|---|---|
 | `broker.sync.enabled` | Boolean | false | Enable data sync schedulers |
 | `broker.sync.cron` | String | "0 30 22 * * *" | Nightly sync cron expression |
-| `broker.sync.max-lookback-years` | Int | 25 | Max years of historical activity data to fetch on first sync |
+| `broker.sync.max-lookback-years` | Int | 5 | Max years of historical activity data to fetch on first sync |
 
 ### IngestionConfig
 
