@@ -25,13 +25,13 @@ class AccountDataSyncScheduler(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Scheduled(cron = "\${broker.sync.cron:0 20 16 * * *}")
+    @Scheduled(cron = "\${broker.sync.cron:0 20 16 * * *}", zone = "America/Toronto")
     fun runPostMarketSync() {
         log.info("Starting post-market data sync (4:20 PM)")
         runSync()
     }
 
-    @Scheduled(cron = "\${broker.sync.cron-morning:0 0 6 * * *}")
+    @Scheduled(cron = "\${broker.sync.cron-morning:0 0 6 * * *}", zone = "America/Toronto")
     fun runMorningSync() {
         log.info("Starting morning data sync (6:00 AM)")
         runSync()

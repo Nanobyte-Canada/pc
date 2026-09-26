@@ -122,6 +122,25 @@ export function BrokerConnectionCard({
             </span>
           </div>
 
+          {(connection.lastActivitiesFetchedAt || connection.lastBalanceFetchedAt) && (
+            <div className="connection-account-meta">
+              {connection.lastActivitiesFetchedAt && (
+                <span className="connection-last-fetched">
+                  Activities: {getRelativeTime(connection.lastActivitiesFetchedAt)}
+                  {connection.lastActivitiesSyncStatus && connection.lastActivitiesSyncStatus !== 'SUCCESS' &&
+                    ` (${connection.lastActivitiesSyncStatus.toLowerCase()})`}
+                </span>
+              )}
+              {connection.lastBalanceFetchedAt && (
+                <span className="connection-last-fetched">
+                  Balance: {getRelativeTime(connection.lastBalanceFetchedAt)}
+                  {connection.lastBalanceSyncStatus && connection.lastBalanceSyncStatus !== 'SUCCESS' &&
+                    ` (${connection.lastBalanceSyncStatus.toLowerCase()})`}
+                </span>
+              )}
+            </div>
+          )}
+
           {connection.errorMessage && (
             <div className="connection-error-msg">{connection.errorMessage}</div>
           )}

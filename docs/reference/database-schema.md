@@ -6,13 +6,13 @@ Complete database schema reference for AI coding agents. All column definitions 
 
 - **Database**: PostgreSQL 16 (Alpine image)
 - **Schema**: `public`
-- **Tables**: 50
+- **Tables**: 51
 - **Views**: 1 (`v_aggregated_positions`)
-- **Indexes**: 218 (including primary keys)
-- **Foreign Keys**: 52
-- **Migration tool**: Flyway (65 applied migrations, V1 through V73, gaps at V4, V5, V19, V20, V70, V71)
+- **Indexes**: 219 (including primary keys)
+- **Foreign Keys**: 53
+- **Migration tool**: Flyway (75 applied migrations, V1 through V79, gaps at V4, V5, V19, V20)
 - **Hibernate DDL mode**: `validate` (schema managed exclusively by Flyway)
-- **Migration files**: `backend/portfolio/src/main/resources/db/migration/V{N}__{description}.sql`
+- **Migration files**: `backend/portfolio/src/main/resources/db/migration/V{N}__{description}.sql` (exception: V77 is a Kotlin `BaseJavaMigration` in `backend/portfolio/src/main/kotlin/db/migration/`)
 
 ---
 
@@ -507,7 +507,7 @@ Maps alternative sub-industry codes (from data providers) to canonical GICS sub-
 
 ---
 
-### 3. Broker Integration Domain (9 tables)
+### 3. Broker Integration Domain (10 tables)
 
 #### brokers
 
@@ -562,12 +562,14 @@ Links a user's brokerage account to the system. Central to all brokerage data.
 | last_rebalanced_at | timestamp | YES | |
 | connection_type | varchar(20) | YES | |
 | gateway_connection_id | varchar(36) | YES | |
+| last_activities_sync_status | varchar(20) | YES | |
+| last_balance_sync_status | varchar(20) | YES | |
 
 - **PK**: `id`
 - **Unique**: `(user_id, account_id_external)`
 - **FKs**: `user_id -> users.id`, `model_portfolio_id -> model_portfolios.id`
 - **Indexes**: `idx_broker_connections_user`, `idx_broker_connections_status`, `idx_broker_connections_user_active` (partial: status='ACTIVE'), `idx_broker_connections_model`
-- **Notes**: `status` values: PENDING, ACTIVE, DISABLED, ERROR. `connection_type` added in V62. `model_portfolio_id` links to the assigned model portfolio for drift calculation. `broker_name` and `broker_logo_url` are denormalized from the `brokers` table for display. **V72:** Added `gateway_connection_id` (references `broker_gateway.connections.id`). **V73:** Dropped `snaptrade_authorization_id` and `broker_id` columns (SnapTrade fully removed).
+- **Notes**: `status` values: PENDING, ACTIVE, DISABLED, ERROR. `connection_type` added in V62. `model_portfolio_id` links to the assigned model portfolio for drift calculation. `broker_name` and `broker_logo_url` are denormalized from the `brokers` table for display. **V72:** Added `gateway_connection_id` (references `broker_gateway.connections.id`). **V73:** Dropped `snaptrade_authorization_id` and `broker_id` columns (SnapTrade fully removed). **V79:** Added `last_activities_sync_status` and `last_balance_sync_status` — last sync outcome per stream, values SUCCESS / PARTIAL / FAILED (nullable = never synced). The `last_activities_fetched_at` / `last_balance_fetched_at` watermarks now advance only on SUCCESS (see ADR-0037).
 
 #### broker_positions
 
@@ -683,6 +685,22 @@ Audit log for position sync operations. Tracks success/failure and timing.
 - **PK**: `id`
 - **FKs**: `connection_id -> broker_connections.id`, `user_id -> users.id`
 - **Indexes**: `idx_position_fetch_log_conn`, `idx_position_fetch_log_user`, `idx_position_fetch_log_started`, `idx_position_fetch_log_status`, `idx_position_fetch_log_type_status` (composite)
+
+#### broker_sync_progress
+
+Durable resume point for the full-history activity sync (V78, added by ADR-0037). One row per connection per sync kind; the sync walks backward chunk by chunk and advances `next_chunk_end` in the same transaction that commits each chunk's activities.
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| connection_id | bigint | NO | |
+| sync_kind | varchar(20) | NO | |
+| next_chunk_end | date | NO | |
+| updated_at | timestamptz | NO | now() |
+
+- **PK**: `(connection_id, sync_kind)`
+- **FK**: `connection_id -> broker_connections.id` (ON DELETE CASCADE)
+- **Indexes**: (primary key only)
+- **Notes**: `sync_kind` values: `ACTIVITIES_FULL` (currently the only kind, managed by `BrokerSyncProgressService`). `next_chunk_end` is the next (earlier) chunk end date to attempt; a mid-run failure resumes from the stored value instead of restarting at the lookback boundary. The row is created lazily on the first advance and **deleted when the walk completes**; a row that survives a crash also forces the next run down the full-history path (otherwise the incremental path would leave the historical gap unfilled forever).
 
 #### snaptrade_status_checks (DROPPED IN V72)
 
@@ -1251,6 +1269,7 @@ Listed as `source_table.column -> target_table.column`:
 **From broker tables:**
 21. `broker_connections.user_id -> users.id`
 22. `broker_connections.model_portfolio_id -> model_portfolios.id`
+23. `broker_sync_progress.connection_id -> broker_connections.id`
 24. `broker_positions.connection_id -> broker_connections.id`
 25. `broker_positions.instrument_id -> stocks.id`
 26. `broker_activities.connection_id -> broker_connections.id`
@@ -1335,7 +1354,7 @@ All other tables: 24-40 kB each (empty or near-empty).
 
 ## Flyway Migration History
 
-65 applied migrations from V1 through V73 (gaps at V4, V5, V19, V20, V70, V71).
+75 applied migrations from V1 through V79 (gaps at V4, V5, V19, V20).
 
 | Version | Description | Notes |
 |---------|------------|-------|
@@ -1406,8 +1425,14 @@ All other tables: 24-40 kB each (empty or near-empty).
 | V69 | account analytics | `account_analytics` table for pre-computed per-connection analytics snapshots (sector exposure, geography exposure, risk profile, holdings, weighted MER). UNIQUE constraint on `connection_id`, INDEX on `user_id`. |
 | V72 | snaptrade to gateway migration | Added `gateway_connection_id` column to `broker_connections`. Dropped `snaptrade_status_checks` table. Dropped `snaptrade_user_id` and `snaptrade_user_secret_encrypted` columns from `users`. Part of SnapTrade to broker-gateway migration. |
 | V73 | remove snaptrade columns | Dropped `snaptrade_authorization_id` and `broker_id` columns from `broker_connections`. Completes SnapTrade removal. |
+| V74 | add option fields to trade orders | `option_type`, `strike_price`, `expiration_date`, `symbol_id`, `stop_price` on `trade_orders` (wheel strategy). |
+| V75 | uat test admin user | Conditional UAT test-admin seed gated on the `app.environment` PostgreSQL GUC — a no-op because the GUC was never set (superseded by V76). |
+| V76 | uat seed test admin user | Unconditional UAT test-admin seed + ADMIN role assignment. |
+| V77 | activity fingerprint backfill | Java migration (`backend/portfolio/src/main/kotlin/db/migration/`): backfills `external_id` SHA-256 fingerprints on `broker_activities` and deletes duplicates, keeping the earliest row per `(connection_id, fingerprint)` (ADR-0034). |
+| V78 | broker sync progress | New `broker_sync_progress` table — durable resume point for chunked full-history activity sync. PK `(connection_id, sync_kind)`, `next_chunk_end`, FK `connection_id -> broker_connections.id ON DELETE CASCADE` (ADR-0037). |
+| V79 | connection sync status | `last_activities_sync_status`, `last_balance_sync_status` (`varchar(20)`, nullable) on `broker_connections` — last sync outcome per stream, SUCCESS / PARTIAL / FAILED (ADR-0037). |
 
-**Next migration**: V74 (always check by running `ls backend/portfolio/src/main/resources/db/migration/` to confirm)
+**Next migration**: V80 (always check by running `ls backend/portfolio/src/main/resources/db/migration/` to confirm)
 
 ---
 

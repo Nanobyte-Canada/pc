@@ -1,12 +1,15 @@
 package com.portfolio.config
 
 import com.portfolio.auth.exception.*
+import com.portfolio.broker.client.GatewayApiException
 import io.mockk.every
 import io.mockk.mockk
 import jakarta.servlet.http.HttpServletRequest
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpStatus
 
 class GlobalExceptionHandlerTest {
 
@@ -102,5 +105,19 @@ class GlobalExceptionHandlerTest {
         val exception = EmailAlreadyExistsException()
         val problem = handler.handleAppException(exception, request)
         assertNotNull(problem.properties?.get("timestamp"))
+    }
+
+    @Test
+    fun `GatewayApiException maps to 502 with broker detail`() {
+        val ex = GatewayApiException(
+            gatewayStatusCode = 502,
+            gatewayErrorCode = "BROKER_DATA_ERROR",
+            gatewayDetail = "Questrade error 502 on /v1/accounts: {\"code\":1003}",
+        )
+        val response = handler.handleGatewayApi(ex)
+
+        assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_GATEWAY)
+        assertThat(response.body!!.detail).contains("1003")
+        assertThat(response.body!!.properties!!["code"]).isEqualTo("BROKER_DATA_ERROR")
     }
 }

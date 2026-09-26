@@ -51,6 +51,7 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("io.mockk:mockk:1.13.9")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 kotlin {

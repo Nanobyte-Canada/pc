@@ -8,6 +8,7 @@ import com.portfolio.brokergateway.exception.BrokerAuthenticationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.WebClient
+import java.time.Duration
 
 class WealthsimpleTokenManager(
     private val config: WealthsimpleConfig,
@@ -31,7 +32,7 @@ class WealthsimpleTokenManager(
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(JsonNode::class.java)
-                .block() ?: throw BrokerAuthenticationException(
+                .block(Duration.ofSeconds(10)) ?: throw BrokerAuthenticationException(
                     "Empty response from Wealthsimple token refresh", BrokerType.WEALTHSIMPLE)
         } catch (e: BrokerAuthenticationException) {
             throw e

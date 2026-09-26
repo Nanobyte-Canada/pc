@@ -51,6 +51,10 @@ data class BrokerConnectionDto(
     val totalValue: BigDecimal?,
     val errorMessage: String?,
     val createdAt: OffsetDateTime,
+    val lastActivitiesFetchedAt: OffsetDateTime? = null,
+    val lastActivitiesSyncStatus: String? = null,
+    val lastBalanceFetchedAt: OffsetDateTime? = null,
+    val lastBalanceSyncStatus: String? = null,
     val modelPortfolioId: Long? = null,
     val modelPortfolioName: String? = null,
     val supportedOrderTypes: List<String> = listOf("MARKET", "LIMIT")
@@ -179,6 +183,10 @@ fun BrokerConnection.toDto(): BrokerConnectionDto {
         totalValue = totalValue,
         errorMessage = connectionErrorMessage,
         createdAt = createdAt,
+        lastActivitiesFetchedAt = lastActivitiesFetchedAt,
+        lastActivitiesSyncStatus = lastActivitiesSyncStatus,
+        lastBalanceFetchedAt = lastBalanceFetchedAt,
+        lastBalanceSyncStatus = lastBalanceSyncStatus,
         modelPortfolioId = modelPortfolio?.id,
         modelPortfolioName = modelPortfolio?.name,
         supportedOrderTypes = orderTypes

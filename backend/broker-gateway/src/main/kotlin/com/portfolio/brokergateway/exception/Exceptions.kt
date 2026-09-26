@@ -47,3 +47,9 @@ class BrokerDataException(
     val brokerType: BrokerType,
     cause: Throwable? = null
 ) : BrokerGatewayException("BROKER_DATA_ERROR", message, cause)
+
+class BrokerTransientException(
+    message: String,
+    val brokerType: BrokerType,
+    cause: Throwable? = null,
+) : BrokerGatewayException("BROKER_CONNECTION_FAILED", message, cause)

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneId
 
 @Service
 class PositionFetchService(
@@ -31,25 +32,64 @@ class PositionFetchService(
     private val objectMapper: ObjectMapper,
     private val jdbcTemplate: NamedParameterJdbcTemplate,
     private val accountAnalyticsComputeService: AccountAnalyticsComputeService,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val syncGuard: ConnectionSyncGuard
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    /** Broker days are ET days: the balance as-of/dedup key and the position as-of date. */
+    private companion object {
+        val ZONE: ZoneId = ZoneId.of("America/Toronto")
+    }
+
+    /**
+     * Manual fetch entry point (also the positions step of `/sync-all`). Single-flight per
+     * connection: an overlapping run is skipped with a failure-shaped log instead of piling on.
+     */
     @Transactional
     fun triggerManualFetch(connectionId: Long, userId: Long): PositionFetchLog {
+        if (!syncGuard.tryAcquire(connectionId)) {
+            log.info("Sync already in progress for connection {}; skipping", connectionId)
+            return skippedFetchLog(connectionId, userId)
+        }
+        try {
+            val fetchLog = newManualFetchLog(connectionId, userId)
+            val savedLog = fetchLogRepository.save(fetchLog)
+
+            return executePositionFetch(connectionId, savedLog.id, userId)
+        } finally {
+            syncGuard.release(connectionId)
+        }
+    }
+
+    /**
+     * The value a skipped run returns: the same failure-shaped [PositionFetchLog] a failed
+     * fetch writes (FAILED + error message), so callers see a normal return, not an exception.
+     * The ownership check still runs so an unauthorized caller gets the usual not-found error.
+     */
+    private fun skippedFetchLog(connectionId: Long, userId: Long): PositionFetchLog {
+        val fetchLog = newManualFetchLog(connectionId, userId)
+        fetchLog.markFailed("FETCH_ERROR", "already in progress; skipped")
+        return fetchLogRepository.save(fetchLog)
+    }
+
+    /**
+     * Shared construction of a PENDING MANUAL fetch log: the ownership lookup (a caller
+     * without access gets the usual `Connection not found` exception) plus the log itself.
+     * Returned unsaved — the normal path saves it before executing, the skipped path marks
+     * it failed first.
+     */
+    private fun newManualFetchLog(connectionId: Long, userId: Long): PositionFetchLog {
         val connection = connectionRepository.findByIdAndUserId(connectionId, userId)
             ?: throw IllegalArgumentException("Connection not found: $connectionId")
 
-        val fetchLog = PositionFetchLog(
+        return PositionFetchLog(
             connection = connection,
             user = connection.user,
             fetchType = PositionFetchType.MANUAL,
             status = FetchStatus.PENDING,
             triggeredBy = "user:$userId"
         )
-        val savedLog = fetchLogRepository.save(fetchLog)
-
-        return executePositionFetch(connectionId, savedLog.id, userId)
     }
 
     @Transactional
@@ -117,7 +157,7 @@ class PositionFetchService(
                         totalPnl = totalPnl,
                         totalPnlPercent = totalPnlPercent,
                         currency = currency,
-                        asOfDate = LocalDate.now(),
+                        asOfDate = LocalDate.now(ZONE),
                         asOfTimestamp = OffsetDateTime.now(),
                         isCurrent = true,
                         strikePrice = strikePrice,
@@ -218,7 +258,7 @@ class PositionFetchService(
             cashMap["buying_power_$bpCurrency"] = buyingPower
         }
 
-        val today = LocalDate.now()
+        val today = LocalDate.now(ZONE)
 
         val existing = balanceRepository.findByConnectionIdAndAsOfDate(connection.id, today)
         if (existing != null) {

@@ -24,6 +24,7 @@ class GlobalExceptionHandler {
             is BrokerOrderRejectedException -> HttpStatus.UNPROCESSABLE_ENTITY
             is BrokerUnsupportedOperationException -> HttpStatus.NOT_IMPLEMENTED
             is BrokerDataException -> HttpStatus.BAD_GATEWAY
+            is BrokerTransientException -> HttpStatus.BAD_GATEWAY
         }
 
         log.warn("Gateway error [{}] {}: {} at {}", status.value(), ex.errorCode, ex.message, request.requestURI)
