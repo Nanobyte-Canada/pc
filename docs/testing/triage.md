@@ -122,6 +122,24 @@ Add to `specs/ui/quarantine.json`:
 - **Quarantine changes:** none
 - **Product bugs:** 1 found and fixed (#278 — readable auth error message on gateway HTML responses; the e2e test itself needed no change)
 
+### Run 36221230365 — UI Tests — UAT (Deployed) — 2026-09-26
+
+- **Context:** main @ `eef17d6` (first regression run after Phase 2 merge, PR #280) — 20 failed / 241 passed / 47 skipped. Build & Push and Deploy green; smoke 8/8 green in the same workflow
+- **Environment check first:** UAT healthy (smoke green, 241 regression passed, error-contexts show rendered logged-in pages with live SPY chain data) — environment and data ruled out
+- **Why they surfaced now:** prior green run `36148619823` (`469ce2d`) was 180 passed / **128 skipped** — every one of these tests was skipped (market-data seed unavailable) and executed for the first time today. Not intermittent: deterministic across retries and all affected browsers
+- **Phase 2 not implicated:** PR #280's frontend diff touches only broker components + `authService`/`optionsStrategyService`; all failures are in options-chain / trade-builder / strategy-education paths unchanged since #272/#275
+
+| Tests | Failures | Classification | Confidence | Action |
+|-------|----------|----------------|------------|--------|
+| STRAT-008 (all 4 browsers, `strategies.spec.ts:136`) | 4 | **test defect** — asserts `toContain('When to Use')` but `StrategyEducationCard.css:75` applies `text-transform: uppercase`; `innerText` returns `WHEN TO USE` → case-sensitive assertion never matches rendered text | High (CSS + error-context received string) | Fix the test (case-insensitive match) — not yet fixed |
+| TRADE-005 (all 4 browsers, `options-trading.spec.ts:155`) | 4 | **test defect** — unscoped `.one-click-trade` matches 2 legitimate mounts (`OptionsPage.tsx:265` right panel + `:328` mobile bottom sheet) → strict-mode violation | High (strict-mode error lists both refs) | Fix the test (scope locator like sibling assertions) — not yet fixed |
+| OPT-CHAIN-004 (all 4 browsers, `options-chain.spec.ts:114`) | 4 | **test defect** — clicks a single call bid cell then calculates; #272 validation rejects it (`Invalid legs: Bull Call Spread requires exactly 2 legs`), so the P&L chart never renders | High (error-context shows the validation error + `Legs(1)`) | Fix the test (add 2nd leg or pick a 1-leg strategy) — not yet fixed |
+| TRADE-004 (all 4 browsers, `options-trading.spec.ts:134`) | 4 | **test defect** — asserts `'$'` in `.dollar-metrics`, but `DollarValuePnlMetrics.tsx` never renders a `$` literal (only `toFixed(2)` values) | High (component grep: no `$` anywhere) | Fix the test — not yet fixed. **Watch:** error-context showed dollar values as `+0.00` while the trade ticket showed net debit $4,836.50 — possible product bug in dollar-value calc; needs separate check |
+| TRADE-003/006/007/009 (mobile-chrome only, `options-trading.spec.ts:108/177/200/234`) | 4 | **test defect** — locators target `.options-page__center-panel …`, which is `display: none` at ≤768px (`OptionsPage.css` mobile block hides center + right panels in favor of the bottom sheet) → 30s "element is not visible" click timeouts | High (click call logs + CSS media block) | Fix the tests (mobile-safe selectors / viewport handling) — not yet fixed |
+
+- **Quarantine changes:** none (all are test defects — fixed, not quarantined; no test met the flaky evidence bar)
+- **Product bugs:** none confirmed; one candidate flagged (TRADE-004 zero dollar values) pending investigation
+
 ## Weekly Triage Cadence
 
 Every week (suggested: Monday morning), the test owner performs:
