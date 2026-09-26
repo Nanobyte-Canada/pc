@@ -37,6 +37,8 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
   }
 
   test(scenario('STRAT-001', 'strategy list loads with all strategies'), async ({ page }) => {
+    await loadChainOrSkip(page);
+
     const strategyCards = page.locator('button.strategy-card');
     await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
     await expect(strategyCards).toHaveCount(6);
@@ -71,6 +73,8 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('STRAT-003', 'outlook labels are shown'), async ({ page }) => {
+    await loadChainOrSkip(page);
+
     const strategyCards = page.locator('.strategy-card')
     await expect(strategyCards).toHaveCount(6)
 
@@ -82,6 +86,8 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
   })
 
   test(scenario('STRAT-004', 'butterfly spread is present with 3-leg description'), async ({ page }) => {
+    await loadChainOrSkip(page);
+
     const strategyCards = page.locator('button.strategy-card');
     await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
 
@@ -94,6 +100,8 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('STRAT-005', 'covered call is removed'), async ({ page }) => {
+    await loadChainOrSkip(page);
+
     const strategyCards = page.locator('button.strategy-card');
     await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
 
@@ -103,6 +111,8 @@ test.describe('Strategy Selector', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('STRAT-006', 'protective put is removed'), async ({ page }) => {
+    await loadChainOrSkip(page);
+
     const strategyCards = page.locator('button.strategy-card');
     await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
 

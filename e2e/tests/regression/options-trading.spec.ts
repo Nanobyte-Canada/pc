@@ -153,6 +153,12 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
   });
 
   test(scenario('TRADE-005', 'trade button shows connection prompt when disconnected'), async ({ page }) => {
+    const result = await loadSpyChain(page);
+    if (result !== 'chain') {
+      test.skip(true, 'Market data provider unavailable — cannot test trade section');
+      return;
+    }
+
     // The trade section should be visible (either button or disconnected message)
     const tradeSection = page.locator('.one-click-trade');
     await expect(tradeSection).toBeVisible();
@@ -207,9 +213,11 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
   })
 
   test(scenario('TRADE-008', 'strategy suggest endpoint returns bullish strategies'), async ({ page }) => {
-    // Test the suggest API endpoint directly
-    const response = await page.request.get(
-      '/strategy-api/api/v1/strategies/suggest?outlook=bullish&underlying=SPY'
+    // Test the suggest API endpoint directly (POST with body per API reference:
+    // docs/reference/api-endpoints.md — @PostMapping("/suggest") + @RequestBody)
+    const response = await page.request.post(
+      '/strategy-api/api/v1/strategies/suggest',
+      { data: { outlook: 'bullish', underlying: 'SPY' } }
     );
 
     expect(response.ok()).toBeTruthy();
@@ -238,6 +246,12 @@ test.describe('Options Trading', { tag: ['@regression'] }, () => {
   })
 
   test(scenario('TRADE-010', 'butterfly spread card shows 3 legs'), async ({ page }) => {
+    const result = await loadSpyChain(page);
+    if (result !== 'chain') {
+      test.skip(true, 'Market data provider unavailable — cannot test butterfly spread card');
+      return;
+    }
+
     const strategyCards = page.locator('button.strategy-card');
     await expect(strategyCards.first()).toBeVisible({ timeout: 10000 });
 

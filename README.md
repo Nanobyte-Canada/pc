@@ -122,6 +122,8 @@ Workflows live in `.github/workflows/`:
 | **Build & Push Images** (`build.yml`) | push / PR to `main` | Runs backend + frontend tests, then on push builds 5 backend images + 2 frontend variants (prod and uat build-args) and pushes to GHCR tagged `main-<short-sha>` + `latest` |
 | **Deploy** (`deploy.yml`) | auto after Build & Push Images succeeds (`workflow_run`), or manual dispatch | Deploys the built tag to **UAT** at `/opt/portfolio/uat` |
 | **Deploy to Production** (`deploy-prod.yml`) | manual dispatch only (`environment: prod` protection) | Deploys a chosen tag to **prod** at `/opt/portfolio/prod` |
+| **UI Tests — PR** (`ui-tests-pr.yml`) | PR to `main` | Static test checks only (impact analysis, test lint, spec validation, route coverage) — no browser execution; see ADR-0036 |
+| **UI Tests — UAT (Deployed)** (`ui-tests-deployed.yml`) | auto after Deploy succeeds (`workflow_run`), or manual dispatch | Runs Playwright @smoke → @regression → @a11y → @visual against deployed UAT (`uatportfolio.nanobyte.ca`) — first execution point for browser tests (ADR-0035) |
 | **SDLC Agent** (`sdlc-agent.yml`) | board labels / PR events / dispatch | Runs planner/builder/tester/deployer agents against the GitHub Projects v2 board; tester auto-merges PRs, deployer only deploys prod after a human moves the card to "Publish" |
 
 Manual deploy of a specific build:

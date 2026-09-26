@@ -124,7 +124,13 @@ export async function suggestStrategy(
   outlook: string,
   underlying: string
 ): Promise<StrategyInfo[]> {
-  const response = await proxyFetch(`/strategy-api/api/v1/strategies/suggest?outlook=${outlook}&underlying=${encodeURIComponent(underlying)}`)
+  // POST with JSON body per @PostMapping("/suggest") + @RequestBody SuggestRequest
+  // (StrategyController.kt:87, docs/reference/api-endpoints.md:637). A GET falls
+  // into GET /{name} and returns 400 "Invalid strategy name: suggest".
+  const response = await proxyFetch('/strategy-api/api/v1/strategies/suggest', {
+    method: 'POST',
+    body: JSON.stringify({ outlook, underlying }),
+  })
   if (!response.ok) throw await parseErrorResponse(response)
   const data: BackendStrategyListResponse[] = await response.json()
   return data.map(mapStrategyInfo)

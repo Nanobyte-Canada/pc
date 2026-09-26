@@ -14,7 +14,7 @@
 - Build needs `export JAVA_HOME=/tmp/opencode/jdk21` (no system java).
 - Portfolio tests: `cd backend/portfolio && ./gradlew test -PexcludeIntegration --console=plain`. Gateway tests: `cd backend/broker-gateway && ./gradlew test --console=plain`.
 - Never add `Co-Authored-By:` or any AI-attribution lines to commits. Never push unless the human asks.
-- DB schema change (V78) requires an ADR entry (**ADR-0036** — ADR-0035 was taken by "Regression UI tests target deployed UAT" after the Phase 1 baseline; re-check the tail of `docs/adr.md` before writing) and `docs/reference/database-schema.md` update in the same PR.
+- DB schema change (V78) requires an ADR entry (**ADR-0037** — ADR-0035 was taken by "Regression UI tests target deployed UAT" after the Phase 1 baseline; re-check the tail of `docs/adr.md` before writing) and `docs/reference/database-schema.md` update in the same PR.
 - `broker.sync.max-lookback-years` default changes 30 → **5** (human decision 2026-09-24; Questrade retention ~16 months).
 - Schedulers get ET wall-clock via `@Scheduled(zone = "America/Toronto")` in code — **no compose/TZ changes** (avoids infra ADR).
 - Single-flight is in-process only (single-replica deployment); note ShedLock as the multi-replica path in a comment — do not add the dependency.
@@ -55,7 +55,7 @@ backend/portfolio/src/main/resources/
 backend/portfolio/src/test/kotlin/...           — per-task tests
 frontend/src/services/brokerService.ts          — DTO fields
 frontend/src/components/broker/BrokerConnectionCard.tsx — staleness display
-docs/adr.md                                     — ADR-0036
+docs/adr.md                                     — ADR-0037
 docs/reference/database-schema.md               — broker_sync_progress table
 ```
 
@@ -1228,15 +1228,15 @@ git commit -m "fix(portfolio): run sync schedulers on ET wall-clock and default 
 
 ---
 
-### Task 9: Docs — ADR-0036 + schema reference
+### Task 9: Docs — ADR-0037 + schema reference
 
 **Files:**
-- Modify: `docs/adr.md` (append ADR-0036 — **not** ADR-0035: that number is taken by "Regression UI tests target deployed UAT, not the PR artifact", `docs/adr.md:330`; confirm the tail before writing)
+- Modify: `docs/adr.md` (append ADR-0037 — **not** ADR-0035 or ADR-0036: those are taken by "Regression UI tests target deployed UAT" and "No pre-merge browser gate"; confirm the tail before writing)
 - Modify: `docs/reference/database-schema.md` (add `broker_sync_progress` + new `broker_connections` columns)
 
 **Interfaces:** none — docs only.
 
-- [ ] **Step 1: Append ADR-0036**
+- [ ] **Step 1: Append ADR-0037**
 
 Follow the file's existing format (blank lines between heading/Status/Context/Decision/Consequences). Content: durable per-chunk sync progress table `broker_sync_progress` (PK `(connection_id, sync_kind)`, `next_chunk_end`), per-chunk transactions replacing the single full-history transaction, honest watermark/status columns on `broker_connections`, in-process single-flight (ShedLock deferred until multi-replica), ET scheduler zones (broker sync only; `RebalanceScheduler` explicitly out of scope), 5-year default lookback (Questrade retention ~16 months). Status: Accepted. Date: 2026-09-24.
 
@@ -1248,7 +1248,7 @@ Add the `broker_sync_progress` table section and the two new `broker_connections
 
 ```bash
 git add docs/adr.md docs/reference/database-schema.md
-git commit -m "docs: record ADR-0036 sync robustness semantics and schema changes"
+git commit -m "docs: record ADR-0037 sync robustness semantics and schema changes"
 ```
 
 ---
